@@ -66,25 +66,31 @@ export default async function CoursesPage({
   ])
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">探索课程</h1>
-        <p className="text-muted-foreground">
-          发现 {totalCount} 门精品 AI 课程
-        </p>
-      </div>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-5xl font-bold mb-6">探索课程</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            发现 {totalCount} 门精品 AI 课程，开启你的学习之旅
+          </p>
+        </div>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Filters Sidebar */}
-        <aside className="lg:col-span-1">
-          <Suspense fallback={<div>Loading...</div>}>
-            <CourseFilters categories={categories} instructors={instructors} />
-          </Suspense>
-        </aside>
+      {/* Content Section */}
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Filters Sidebar */}
+          <aside className="lg:col-span-1">
+            <Suspense fallback={<div>Loading...</div>}>
+              <CourseFilters categories={categories} instructors={instructors} />
+            </Suspense>
+          </aside>
 
-        {/* Course Grid */}
-        <div className="lg:col-span-3">
-          <CourseGrid courses={courses} />
+          {/* Course Grid */}
+          <div className="lg:col-span-3">
+            <CourseGrid courses={courses} />
+          </div>
         </div>
       </div>
     </div>

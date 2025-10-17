@@ -26,17 +26,21 @@ export default async function NanoDegreesPage() {
   })
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Nano Degree 认证项目</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          系统化的学习路径，完成后获得行业认可的专业认证
-        </p>
-      </div>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950 dark:to-blue-950 py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-5xl font-bold mb-6">Nano Degree 认证项目</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            系统化的学习路径，完成后获得行业认可的专业认证
+          </p>
+        </div>
+      </section>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* Content Section */}
+      <div className="container mx-auto px-4 py-12">
+        {/* Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {nanoDegrees.map((nd) => {
           const totalDuration = nd.courses.reduce(
             (sum, c) => sum + c.course.duration,
@@ -87,6 +91,7 @@ export default async function NanoDegreesPage() {
             </Link>
           )
         })}
+        </div>
       </div>
     </div>
   )
