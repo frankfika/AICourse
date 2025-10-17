@@ -1,0 +1,183 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses     Course[]
+}
+
+model Instructor {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  avatar      String
+  title       String
+  bio         String
+  experience  String?
+  socialLinks String?  // JSON string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses     Course[]
+}
+
+model Course {
+  id                 String   @id @default(uuid())
+  title              String
+  slug               String   @unique
+  shortDescription   String
+  description        String
+  coverImage         String
+  previewVideoUrl    String?
+  duration           Int      // minutes
+  level              String   // beginner, intermediate, advanced
+  categoryId         String
+  instructorId       String
+  prerequisites      String   // JSON array
+  learningObjectives String   // JSON array
+  highlights         String   // JSON array
+  targetAudience     String
+  suggestedWeeks     Int?
+  hoursPerWeek       Int?
+  viewCount          Int      @default(0)
+  enrollCount        Int      @default(0)
+  featured           Boolean  @default(false)
+  status             String   @default("draft") // draft, published, archived
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  category           Category    @relation(fields: [categoryId], references: [id])
+  instructor         Instructor  @relation(fields: [instructorId], references: [id])
+  chapters           Chapter[]
+  faqs               CourseFAQ[]
+  nanoDegreeCourses  NanoDegreeCourse[]
+}
+
+model Chapter {
+  id        String   @id @default(uuid())
+  courseId  String
+  title     String
+  duration  Int      // minutes
+  topics    String   // JSON array
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CourseFAQ {
+  id        String   @id @default(uuid())
+  courseId  String
+  question  String
+  answer    String
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model NanoDegree {
+  id                     String   @id @default(uuid())
+  title                  String
+  slug                   String   @unique
+  shortDescription       String
+  description            String
+  coverImage             String
+  previewVideoUrl        String?
+  level                  String   // beginner, intermediate, advanced
+  certificateImage       String
+  certificateDescription String
+  certificateType        String
+  completionCriteria     String
+  learningPath           String
+  skills                 String   // JSON array
+  highlights             String   // JSON array
+  targetAudience         String
+  prerequisites          String   // JSON array
+  suggestedMonths        Int?
+  hoursPerWeek           Int?
+  viewCount              Int      @default(0)
+  enrollCount            Int      @default(0)
+  featured               Boolean  @default(false)
+  status                 String   @default("draft") // draft, published, archived
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  courses                NanoDegreeCourse[]
+  faqs                   NanoDegreeFAQ[]
+}
+
+model NanoDegreeCourse {
+  id            String   @id @default(uuid())
+  nanoDegreeId  String
+  courseId      String
+  order         Int
+  createdAt     DateTime @default(now())
+
+  nanoDegree    NanoDegree @relation(fields: [nanoDegreeId], references: [id], onDelete: Cascade)
+  course        Course     @relation(fields: [courseId], references: [id])
+
+  @@unique([nanoDegreeId, courseId])
+}
+
+model NanoDegreeFAQ {
+  id            String   @id @default(uuid())
+  nanoDegreeId  String
+  question      String
+  answer        String
+  order         Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  nanoDegree    NanoDegree @relation(fields: [nanoDegreeId], references: [id], onDelete: Cascade)
+}
+
+model Banner {
+  id            String   @id @default(uuid())
+  title         String
+  image         String
+  link          String?
+  openInNewTab  Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  order         Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SiteConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   // JSON string
+  updatedAt DateTime @updatedAt
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("admin") // admin, super_admin
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
