@@ -1,0 +1,103 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#f5576c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4facfe;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:0.95" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#bg)"/>
+  
+  <!-- Floating elements -->
+  <circle cx="100" cy="80" r="40" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="700" cy="100" r="50" fill="rgba(255,255,255,0.08)"/>
+  <circle cx="750" cy="500" r="35" fill="rgba(255,255,255,0.12)"/>
+  <circle cx="80" cy="520" r="45" fill="rgba(255,255,255,0.06)"/>
+  
+  <!-- Main card -->
+  <rect x="50" y="80" width="700" height="440" rx="25" fill="url(#card)" stroke="rgba(255,255,255,0.3)" stroke-width="3"/>
+  
+  <!-- Language processing pipeline -->
+  <g transform="translate(100, 150)">
+    <!-- Text input -->
+    <rect x="0" y="0" width="120" height="60" rx="10" fill="#f093fb" opacity="0.8"/>
+    <text x="60" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">文本输入</text>
+    
+    <!-- Arrow -->
+    <path d="M 130 30 L 150 30" stroke="#666" stroke-width="3" marker-end="url(#arrowhead)"/>
+    
+    <!-- Tokenization -->
+    <rect x="160" y="0" width="120" height="60" rx="10" fill="#f5576c" opacity="0.8"/>
+    <text x="220" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">分词处理</text>
+    
+    <!-- Arrow -->
+    <path d="M 290 30 L 310 30" stroke="#666" stroke-width="3" marker-end="url(#arrowhead)"/>
+    
+    <!-- Embedding -->
+    <rect x="320" y="0" width="120" height="60" rx="10" fill="#4facfe" opacity="0.8"/>
+    <text x="380" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">词向量化</text>
+    
+    <!-- Arrow -->
+    <path d="M 450 30 L 470 30" stroke="#666" stroke-width="3" marker-end="url(#arrowhead)"/>
+    
+    <!-- Model processing -->
+    <rect x="480" y="0" width="120" height="60" rx="10" fill="#00f2fe" opacity="0.8"/>
+    <text x="540" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">模型处理</text>
+  </g>
+  
+  <!-- NLP Models -->
+  <g transform="translate(150, 250)">
+    <!-- BERT -->
+    <rect x="0" y="0" width="100" height="50" rx="8" fill="#f093fb" opacity="0.8"/>
+    <text x="50" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">BERT</text>
+    
+    <!-- GPT -->
+    <rect x="120" y="0" width="100" height="50" rx="8" fill="#f5576c" opacity="0.8"/>
+    <text x="170" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">GPT</text>
+    
+    <!-- Transformer -->
+    <rect x="240" y="0" width="100" height="50" rx="8" fill="#4facfe" opacity="0.8"/>
+    <text x="290" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Transformer</text>
+    
+    <!-- Word2Vec -->
+    <rect x="360" y="0" width="100" height="50" rx="8" fill="#00f2fe" opacity="0.8"/>
+    <text x="410" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white">Word2Vec</text>
+  </g>
+  
+  <!-- Text examples -->
+  <g transform="translate(100, 350)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">"自然语言处理是人工智能的重要分支"</text>
+    <text x="0" y="25" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">→ 分词: [自然, 语言, 处理, 是, 人工智能, 的, 重要, 分支]</text>
+    <text x="0" y="50" font-family="Arial, sans-serif" font-size="14" fill="#4a5568">→ 词性: [名词, 名词, 动词, 动词, 名词, 助词, 形容词, 名词]</text>
+  </g>
+  
+  <!-- Certification Badge -->
+  <g transform="translate(500, 300)">
+    <circle cx="100" cy="100" r="80" fill="url(#bg)" stroke="#ffd700" stroke-width="4"/>
+    <circle cx="100" cy="100" r="60" fill="white" opacity="0.9"/>
+    <text x="100" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#f093fb">NLP</text>
+    <text x="100" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#f5576c">专家</text>
+    <text x="100" y="125" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#666">认证</text>
+  </g>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+    </marker>
+  </defs>
+  
+  <!-- Title -->
+  <text x="400" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#2d3748">NLP 专家认证</text>
+  <text x="400" y="485" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#4a5568">深度掌握自然语言处理技术</text>
+  
+  <!-- Course badge -->
+  <rect x="320" y="520" width="160" height="40" rx="20" fill="#f093fb"/>
+  <text x="400" y="545" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">Nano Degree</text>
+</svg>

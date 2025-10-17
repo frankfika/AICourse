@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { NanoDegreeDetailTabs } from '@/components/nano-degrees/nanodegree-detail-tabs'
 import { formatDuration } from '@/lib/utils'
 import { COURSE_LEVELS } from '@/lib/constants'
-import { Award, BookOpen, Clock, Eye } from 'lucide-react'
+import { Award, BookOpen, Clock, Eye, Calendar } from 'lucide-react'
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const nanoDegree = await prisma.nanoDegree.findUnique({
@@ -83,50 +83,74 @@ export default async function NanoDegreeDetailPage({
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white py-16">
-        <div className="container mx-auto px-4">
+      {/* Hero Section - Coursera Style */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left: Info */}
+            {/* Left: Program Info */}
             <div className="lg:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <Badge className="bg-yellow-500 border-yellow-500">
-                  <Award className="h-4 w-4 mr-1" />
-                  专业认证
-                </Badge>
-                <Badge variant="outline" className="bg-white/20 border-white/40 text-white">
-                  {COURSE_LEVELS[nanoDegree.level as keyof typeof COURSE_LEVELS]}
-                </Badge>
+              {/* Breadcrumb and Category */}
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                <Award className="h-4 w-4 text-yellow-600" />
+                <span>专业认证</span>
+                <span>•</span>
+                <span>{COURSE_LEVELS[nanoDegree.level as keyof typeof COURSE_LEVELS]}</span>
                 {nanoDegree.featured && (
-                  <Badge className="bg-red-500 border-red-500">热门</Badge>
+                  <>
+                    <span>•</span>
+                    <span className="text-red-600 font-medium">热门</span>
+                  </>
                 )}
               </div>
-              <h1 className="text-4xl font-bold mb-4">{nanoDegree.title}</h1>
-              <p className="text-xl mb-6 opacity-90">
+              
+              {/* Title */}
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                {nanoDegree.title}
+              </h1>
+              
+              {/* Description */}
+              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
                 {nanoDegree.shortDescription}
               </p>
 
               {/* Meta Info */}
-              <div className="flex flex-wrap gap-6">
+              <div className="flex flex-wrap gap-6 text-sm text-gray-600 mb-6">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
+                  <BookOpen className="h-4 w-4" />
                   <span>{nanoDegree.courses.length} 门课程</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
+                  <Clock className="h-4 w-4" />
                   <span>{formatDuration(totalDuration)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  <span>{nanoDegree.viewCount} 浏览</span>
+                  <Eye className="h-4 w-4" />
+                  <span>{nanoDegree.viewCount.toLocaleString()} 名学生</span>
                 </div>
+                {nanoDegree.suggestedMonths && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>建议 {nanoDegree.suggestedMonths} 个月完成</span>
+                  </div>
+                )}
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap gap-4">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
+                  免费注册
+                </Button>
+                <Button variant="outline" size="lg" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3">
+                  添加到收藏
+                </Button>
               </div>
             </div>
 
-            {/* Right: Certificate Preview */}
+            {/* Right: Program Card */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg p-6 shadow-xl">
-                <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm sticky top-4">
+                {/* Certificate Preview */}
+                <div className="relative w-full h-48 rounded-t-lg overflow-hidden bg-gray-100">
                   <Image
                     src={nanoDegree.certificateImage}
                     alt="证书预览"
@@ -134,14 +158,24 @@ export default async function NanoDegreeDetailPage({
                     className="object-cover"
                   />
                 </div>
-                <Button className="w-full" size="lg">
-                  开始学习路径
-                </Button>
-                {nanoDegree.suggestedMonths && (
-                  <p className="text-sm text-center mt-3 text-muted-foreground">
-                    建议 {nanoDegree.suggestedMonths} 个月完成
-                  </p>
-                )}
+                
+                {/* Program Info */}
+                <div className="p-6">
+                  <div className="text-center mb-4">
+                    <div className="text-2xl font-bold text-gray-900 mb-1">免费</div>
+                    <div className="text-sm text-gray-600">开始学习路径</div>
+                  </div>
+                  
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 mb-4">
+                    免费注册
+                  </Button>
+                  
+                  <div className="text-xs text-gray-500 text-center space-y-1">
+                    <div>• 获得专业认证证书</div>
+                    <div>• 可自定进度</div>
+                    <div>• 行业认可</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -149,15 +183,17 @@ export default async function NanoDegreeDetailPage({
       </div>
 
       {/* Tab Content */}
-      <div className="container mx-auto px-4 py-12">
-        <NanoDegreeDetailTabs
-          nanoDegree={{
-            ...nanoDegree,
-            skills: JSON.parse(nanoDegree.skills),
-            highlights: JSON.parse(nanoDegree.highlights),
-            prerequisites: JSON.parse(nanoDegree.prerequisites),
-          }}
-        />
+      <div className="bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <NanoDegreeDetailTabs
+            nanoDegree={{
+              ...nanoDegree,
+              skills: JSON.parse(nanoDegree.skills),
+              highlights: JSON.parse(nanoDegree.highlights),
+              prerequisites: JSON.parse(nanoDegree.prerequisites),
+            }}
+          />
+        </div>
       </div>
     </div>
   )

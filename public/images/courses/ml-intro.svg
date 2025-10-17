@@ -1,0 +1,57 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:0.9" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="url(#bg)"/>
+  
+  <!-- Floating circles -->
+  <circle cx="150" cy="100" r="40" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="650" cy="150" r="60" fill="rgba(255,255,255,0.08)"/>
+  <circle cx="700" cy="450" r="30" fill="rgba(255,255,255,0.12)"/>
+  <circle cx="100" cy="500" r="50" fill="rgba(255,255,255,0.06)"/>
+  
+  <!-- Main card -->
+  <rect x="50" y="100" width="700" height="400" rx="20" fill="url(#card)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+  
+  <!-- Neural network nodes -->
+  <circle cx="200" cy="200" r="15" fill="#667eea"/>
+  <circle cx="300" cy="180" r="15" fill="#764ba2"/>
+  <circle cx="400" cy="200" r="15" fill="#667eea"/>
+  <circle cx="500" cy="180" r="15" fill="#764ba2"/>
+  <circle cx="600" cy="200" r="15" fill="#667eea"/>
+  
+  <!-- Neural network connections -->
+  <line x1="200" y1="200" x2="300" y2="180" stroke="#667eea" stroke-width="3" opacity="0.6"/>
+  <line x1="300" y1="180" x2="400" y2="200" stroke="#764ba2" stroke-width="3" opacity="0.6"/>
+  <line x1="400" y1="200" x2="500" y2="180" stroke="#667eea" stroke-width="3" opacity="0.6"/>
+  <line x1="500" y1="180" x2="600" y2="200" stroke="#764ba2" stroke-width="3" opacity="0.6"/>
+  
+  <!-- Data visualization bars -->
+  <rect x="200" y="280" width="20" height="80" fill="#667eea" opacity="0.8"/>
+  <rect x="240" y="260" width="20" height="100" fill="#764ba2" opacity="0.8"/>
+  <rect x="280" y="240" width="20" height="120" fill="#667eea" opacity="0.8"/>
+  <rect x="320" y="250" width="20" height="110" fill="#764ba2" opacity="0.8"/>
+  <rect x="360" y="270" width="20" height="90" fill="#667eea" opacity="0.8"/>
+  
+  <!-- Binary code background -->
+  <text x="100" y="400" font-family="monospace" font-size="12" fill="rgba(255,255,255,0.3)">01001000 01100101 01101100 01101100 01101111</text>
+  <text x="100" y="420" font-family="monospace" font-size="12" fill="rgba(255,255,255,0.3)">01001101 01100001 01100011 01101000 01101001 01101110 01100101</text>
+  <text x="100" y="440" font-family="monospace" font-size="12" fill="rgba(255,255,255,0.3)">01001100 01100101 01100001 01110010 01101110 01101001 01101110 01100111</text>
+  
+  <!-- Title -->
+  <text x="400" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#2d3748">机器学习入门</text>
+  <text x="400" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#4a5568">从零到实战</text>
+  
+  <!-- Course badge -->
+  <rect x="320" y="450" width="160" height="30" rx="15" fill="#667eea"/>
+  <text x="400" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white">AI 课程</text>
+</svg>

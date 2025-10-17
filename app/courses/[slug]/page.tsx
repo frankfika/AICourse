@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { CourseDetailTabs } from '@/components/courses/course-detail-tabs'
 import { formatDuration, formatDate } from '@/lib/utils'
 import { COURSE_LEVELS } from '@/lib/constants'
-import { Clock, Eye, Calendar, User } from 'lucide-react'
+import { Clock, Eye, Calendar, User, BookOpen } from 'lucide-react'
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const course = await prisma.course.findUnique({
@@ -97,29 +97,40 @@ export default async function CourseDetailPage({
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="bg-muted/50 py-12">
-        <div className="container mx-auto px-4">
+      {/* Hero Section - Coursera Style */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left: Course Info */}
             <div className="lg:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <Badge variant="secondary">{course.category.name}</Badge>
-                <Badge variant="outline">
-                  {COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}
-                </Badge>
-                {course.featured && <Badge className="bg-yellow-500">热门</Badge>}
+              {/* Breadcrumb and Category */}
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                <span>{course.category.name}</span>
+                <span>•</span>
+                <span>{COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}</span>
+                {course.featured && (
+                  <>
+                    <span>•</span>
+                    <span className="text-red-600 font-medium">热门</span>
+                  </>
+                )}
               </div>
-              <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
-              <p className="text-xl text-muted-foreground mb-6">
+              
+              {/* Title */}
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                {course.title}
+              </h1>
+              
+              {/* Description */}
+              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
                 {course.shortDescription}
               </p>
 
               {/* Meta Info */}
-              <div className="flex flex-wrap gap-6 text-sm">
+              <div className="flex flex-wrap gap-6 text-sm text-gray-600 mb-6">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  <span>{course.instructor.name}</span>
+                  <span>由 {course.instructor.name} 授课</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
@@ -127,19 +138,30 @@ export default async function CourseDetailPage({
                 </div>
                 <div className="flex items-center gap-2">
                   <Eye className="h-4 w-4" />
-                  <span>{course.viewCount} 浏览</span>
+                  <span>{course.viewCount.toLocaleString()} 名学生</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span>更新于 {formatDate(course.updatedAt)}</span>
+                  <span>最近更新 {formatDate(course.updatedAt)}</span>
                 </div>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap gap-4">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
+                  免费注册
+                </Button>
+                <Button variant="outline" size="lg" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3">
+                  添加到收藏
+                </Button>
               </div>
             </div>
 
-            {/* Right: Cover Image & CTA */}
+            {/* Right: Course Card */}
             <div className="lg:col-span-1">
-              <div className="bg-background rounded-lg p-6 shadow-lg sticky top-4">
-                <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm sticky top-4">
+                {/* Course Image */}
+                <div className="relative w-full h-48 rounded-t-lg overflow-hidden">
                   <Image
                     src={course.coverImage}
                     alt={course.title}
@@ -147,14 +169,26 @@ export default async function CourseDetailPage({
                     className="object-cover"
                   />
                 </div>
-                <Button className="w-full mb-4" size="lg">
-                  开始学习
-                </Button>
-                {course.suggestedWeeks && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    建议 {course.suggestedWeeks} 周完成 · 每周 {course.hoursPerWeek || 5} 小时
-                  </p>
-                )}
+                
+                {/* Course Info */}
+                <div className="p-6">
+                  <div className="text-center mb-4">
+                    <div className="text-2xl font-bold text-gray-900 mb-1">免费</div>
+                    <div className="text-sm text-gray-600">开始学习</div>
+                  </div>
+                  
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 mb-4">
+                    免费注册
+                  </Button>
+                  
+                  <div className="text-xs text-gray-500 text-center space-y-1">
+                    {course.suggestedWeeks && (
+                      <div>• 建议 {course.suggestedWeeks} 周完成</div>
+                    )}
+                    <div>• 每周 {course.hoursPerWeek || 5} 小时</div>
+                    <div>• 可自定进度</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -162,22 +196,21 @@ export default async function CourseDetailPage({
       </div>
 
       {/* Tab Content */}
-      <div className="container mx-auto px-4 py-12">
-        <CourseDetailTabs
-          course={{
-            ...course,
-            prerequisites: JSON.parse(course.prerequisites),
-            learningObjectives: JSON.parse(course.learningObjectives),
-            highlights: JSON.parse(course.highlights),
-            chapters: course.chapters.map((ch) => ({
-              ...ch,
-              topics: JSON.parse(ch.topics),
-            })),
-          }}
-          relatedCourses={relatedCourses}
-        />
+      <div className="bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <CourseDetailTabs
+            course={{
+              ...course,
+              highlights: JSON.parse(course.highlights),
+              chapters: course.chapters.map((ch) => ({
+                ...ch,
+                topics: JSON.parse(ch.topics),
+              })),
+            }}
+            relatedCourses={relatedCourses}
+          />
+        </div>
       </div>
     </div>
   )
 }
-

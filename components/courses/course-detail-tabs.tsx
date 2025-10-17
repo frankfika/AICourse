@@ -34,37 +34,58 @@ export function CourseDetailTabs({ course, relatedCourses }: any) {
 
             <h3 className="text-xl font-semibold mt-6 mb-4">你将学到什么</h3>
             <ul className="space-y-2">
-              {course.learningObjectives.map((obj: string, index: number) => (
-                <li key={index} className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>{obj}</span>
-                </li>
-              ))}
+              {Array.isArray(course.learningObjectives) 
+                ? course.learningObjectives.map((obj: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{obj}</span>
+                    </li>
+                  ))
+                : JSON.parse(course.learningObjectives || '[]').map((obj: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>{obj}</span>
+                    </li>
+                  ))
+              }
             </ul>
 
             <h3 className="text-xl font-semibold mt-6 mb-4">课程亮点</h3>
             <ul className="space-y-2">
-              {course.highlights.map((highlight: string, index: number) => (
-                <li key={index} className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                  <span>{highlight}</span>
-                </li>
-              ))}
+              {Array.isArray(course.highlights) 
+                ? course.highlights.map((highlight: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <span>{highlight}</span>
+                    </li>
+                  ))
+                : JSON.parse(course.highlights || '[]').map((highlight: string, index: number) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <span>{highlight}</span>
+                    </li>
+                  ))
+              }
             </ul>
 
             <h3 className="text-xl font-semibold mt-6 mb-4">适合人群</h3>
             <p>{course.targetAudience}</p>
 
-            {course.prerequisites.length > 0 && (
-              <>
-                <h3 className="text-xl font-semibold mt-6 mb-4">先修要求</h3>
-                <ul className="list-disc list-inside space-y-1">
-                  {course.prerequisites.map((prereq: string, index: number) => (
-                    <li key={index}>{prereq}</li>
-                  ))}
-                </ul>
-              </>
-            )}
+            {(() => {
+              const prereqs = Array.isArray(course.prerequisites) 
+                ? course.prerequisites 
+                : JSON.parse(course.prerequisites || '[]');
+              return prereqs.length > 0 && (
+                <>
+                  <h3 className="text-xl font-semibold mt-6 mb-4">先修要求</h3>
+                  <ul className="list-disc list-inside space-y-1">
+                    {prereqs.map((prereq: string, index: number) => (
+                      <li key={index}>{prereq}</li>
+                    ))}
+                  </ul>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
       </TabsContent>
@@ -92,11 +113,18 @@ export function CourseDetailTabs({ course, relatedCourses }: any) {
                     </div>
                   </div>
                   <ul className="text-sm text-muted-foreground space-y-1">
-                    {chapter.topics.map((topic: string, topicIndex: number) => (
-                      <li key={topicIndex} className="pl-4">
-                        • {topic}
-                      </li>
-                    ))}
+                    {Array.isArray(chapter.topics) 
+                      ? chapter.topics.map((topic: string, topicIndex: number) => (
+                          <li key={topicIndex} className="pl-4">
+                            • {topic}
+                          </li>
+                        ))
+                      : JSON.parse(chapter.topics || '[]').map((topic: string, topicIndex: number) => (
+                          <li key={topicIndex} className="pl-4">
+                            • {topic}
+                          </li>
+                        ))
+                    }
                   </ul>
                 </div>
               ))}
