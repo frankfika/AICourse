@@ -1,0 +1,342 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Anthropic-Inspired Design System
+ * Clean, minimal, elegant
+ */
+
+@layer base {
+  :root {
+    /* Anthropic Warm Palette - Light Mode */
+    --background: 40 20% 98%;           /* #FDFCFA - Warm off-white */
+    --foreground: 20 20% 10%;           /* #1A1512 - Deep warm black */
+
+    --muted: 40 15% 95%;                /* #F5F3EE - Light cream */
+    --muted-foreground: 20 10% 45%;     /* #6B6460 - Muted brown */
+
+    --card: 0 0% 100%;                  /* #FFFFFF - Pure white */
+    --card-foreground: 20 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 20% 10%;
+
+    --primary: 25 45% 50%;              /* #A0715E - Warm terracotta */
+    --primary-foreground: 40 20% 98%;
+
+    --secondary: 40 15% 92%;            /* #EAE7E0 - Light beige */
+    --secondary-foreground: 20 20% 10%;
+
+    --accent: 30 50% 55%;               /* #CD7F32 - Bronze accent */
+    --accent-foreground: 40 20% 98%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 40 15% 88%;               /* #D9D5CC - Subtle warm gray */
+    --input: 40 15% 88%;
+    --ring: 25 45% 50%;
+
+    --radius: 12px;                     /* Softer corners */
+  }
+
+  .dark {
+    /* Anthropic Dark Mode - Warm blacks */
+    --background: 20 15% 8%;            /* #14110E - Deep warm black */
+    --foreground: 40 15% 95%;           /* #F5F3EE - Light cream */
+
+    --muted: 20 12% 12%;                /* #1F1C18 - Dark brown */
+    --muted-foreground: 40 10% 60%;     /* #948F88 - Medium gray */
+
+    --card: 20 12% 10%;                 /* #1A1714 - Card background */
+    --card-foreground: 40 15% 95%;
+
+    --popover: 20 12% 10%;
+    --popover-foreground: 40 15% 95%;
+
+    --primary: 30 55% 60%;              /* #D4956C - Light terracotta */
+    --primary-foreground: 20 15% 8%;
+
+    --secondary: 20 12% 15%;            /* #26221E - Dark beige */
+    --secondary-foreground: 40 15% 95%;
+
+    --accent: 30 50% 55%;               /* #CD7F32 - Bronze */
+    --accent-foreground: 20 15% 8%;
+
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 40 15% 95%;
+
+    --border: 20 10% 20%;               /* #33302C - Dark border */
+    --input: 20 10% 20%;
+    --ring: 30 55% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+  }
+
+  /* Typography - Anthropic Style */
+  h1 {
+    @apply scroll-m-20 text-4xl font-medium tracking-tight sm:text-5xl md:text-6xl lg:text-7xl;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: hsl(var(--foreground));
+  }
+
+  h2 {
+    @apply scroll-m-20 text-3xl font-medium tracking-tight sm:text-4xl md:text-5xl;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    color: hsl(var(--foreground));
+  }
+
+  h3 {
+    @apply scroll-m-20 text-xl font-medium tracking-tight sm:text-2xl md:text-3xl;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    color: hsl(var(--foreground));
+  }
+
+  h4 {
+    @apply scroll-m-20 text-lg font-medium tracking-tight sm:text-xl;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+  }
+
+  p {
+    line-height: 1.75;
+    letter-spacing: -0.01em;
+    color: hsl(var(--muted-foreground));
+    font-size: 1.0625rem; /* 17px - Anthropic's body size */
+  }
+
+  a {
+    @apply transition-colors duration-200;
+    color: hsl(var(--foreground));
+  }
+
+  a:hover {
+    color: hsl(var(--primary));
+  }
+}
+
+/* Anthropic Card Style - Minimal with subtle border */
+.anthropic-card {
+  @apply bg-card rounded-2xl border border-border/60 transition-all duration-300;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.anthropic-card:hover {
+  @apply border-border;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.dark .anthropic-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.dark .anthropic-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Anthropic Button - Minimal and elegant */
+.anthropic-button {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full;
+  @apply font-medium text-base transition-all duration-200;
+  @apply bg-foreground text-background border-2 border-foreground;
+  letter-spacing: -0.01em;
+}
+
+.anthropic-button:hover {
+  @apply bg-foreground/90;
+  transform: translateY(-1px);
+}
+
+.anthropic-button:active {
+  transform: translateY(0);
+}
+
+.anthropic-button-secondary {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full;
+  @apply font-medium text-base transition-all duration-200;
+  @apply bg-transparent text-foreground border-2 border-border;
+  letter-spacing: -0.01em;
+}
+
+.anthropic-button-secondary:hover {
+  @apply border-foreground bg-foreground/5;
+  transform: translateY(-1px);
+}
+
+/* Section Styles */
+.section-padding {
+  @apply py-16 sm:py-20 md:py-24 lg:py-32;
+}
+
+.container-anthropic {
+  @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
+}
+
+/* Smooth Transitions */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar - Minimal */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/30;
+}
+
+/* Badge - Anthropic Style */
+.anthropic-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  @apply bg-muted text-muted-foreground border border-border/60;
+  letter-spacing: 0.02em;
+}
+
+/* Subtle Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Stats Display */
+.stat-number {
+  @apply text-4xl sm:text-5xl font-medium tracking-tight;
+  letter-spacing: -0.03em;
+  color: hsl(var(--foreground));
+}
+
+.stat-label {
+  @apply text-sm text-muted-foreground uppercase tracking-wider;
+  letter-spacing: 0.1em;
+}
+
+/* Divider */
+.section-divider {
+  @apply border-t border-border/60;
+}
+
+/* Hero Gradient - Subtle */
+.hero-gradient {
+  background: linear-gradient(
+    to bottom,
+    hsl(var(--background)),
+    hsl(var(--muted)) 100%
+  );
+}
+
+/* Link Underline Effect */
+.link-underline {
+  @apply relative;
+}
+
+.link-underline::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-0 h-px bg-current transition-all duration-300;
+}
+
+.link-underline:hover::after {
+  @apply w-full;
+}
+
+/* Focus Styles */
+*:focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+  border-radius: var(--radius);
+}
+
+/* Image Container */
+.image-container {
+  @apply relative overflow-hidden rounded-2xl bg-muted;
+}
+
+.image-container img {
+  @apply transition-transform duration-500;
+}
+
+.image-container:hover img {
+  transform: scale(1.05);
+}
+
+/* Text Balance for Headlines */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Selection */
+::selection {
+  @apply bg-primary/20 text-foreground;
+}
+
+/* React Quill Editor Styles */
+.ql-container {
+  font-family: inherit !important;
+  @apply border-border;
+}
+
+.ql-editor {
+  min-height: 200px;
+  @apply text-foreground;
+}
+
+.ql-toolbar {
+  @apply border-border bg-muted/30;
+}
+
+/* Responsive Typography Scale */
+@media (max-width: 640px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 1280px) {
+  html {
+    font-size: 16px;
+  }
+}

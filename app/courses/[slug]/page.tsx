@@ -3,15 +3,16 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { CourseDetailTabs } from '@/components/courses/course-detail-tabs'
-import { formatDuration, formatDate } from '@/lib/utils'
+import { EnrollButton } from '@/components/courses/enroll-button'
+import { formatDuration } from '@/lib/utils'
 import { COURSE_LEVELS } from '@/lib/constants'
-import { Clock, Eye, Calendar, User, BookOpen } from 'lucide-react'
+import { Clock, BookOpen, Users, ChevronRight } from 'lucide-react'
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   const course = await prisma.course.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
   })
 
   if (!course) {
@@ -29,10 +30,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function CourseDetailPage({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
+  const { slug } = await params
   const course = await prisma.course.findUnique({
-    where: { slug: params.slug, status: 'published' },
+    where: { slug, status: 'published' },
     include: {
       category: true,
       instructor: true,
@@ -74,143 +76,150 @@ export default async function CourseDetailPage({
     take: 3,
   })
 
+  const isFree = course.price === 0
+
   return (
     <div className="min-h-screen">
       {/* Breadcrumb */}
-      <div className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-primary">
+      <div className="section-divider bg-muted/30">
+        <div className="container-anthropic py-4">
+          <div className="flex items-center gap-2 text-sm">
+            <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
               首页
             </Link>
-            <span>/</span>
-            <Link href="/courses" className="hover:text-primary">
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+            <Link href="/courses" className="text-muted-foreground hover:text-primary transition-colors">
               课程
             </Link>
-            <span>/</span>
-            <Link href={`/courses/category/${course.category.slug}`} className="hover:text-primary">
-              {course.category.name}
-            </Link>
-            <span>/</span>
-            <span className="text-foreground">{course.title}</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground" />
+            <span className="text-foreground">{course.category.name}</span>
           </div>
         </div>
       </div>
 
-      {/* Hero Section - Coursera Style */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left: Course Info */}
-            <div className="lg:col-span-2">
-              {/* Breadcrumb and Category */}
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                <span>{course.category.name}</span>
-                <span>•</span>
-                <span>{COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}</span>
-                {course.featured && (
-                  <>
-                    <span>•</span>
-                    <span className="text-red-600 font-medium">热门</span>
-                  </>
-                )}
-              </div>
-              
-              {/* Title */}
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">
-                {course.title}
-              </h1>
-              
-              {/* Description */}
-              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-                {course.shortDescription}
-              </p>
-
-              {/* Meta Info */}
-              <div className="flex flex-wrap gap-6 text-sm text-gray-600 mb-6">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span>由 {course.instructor.name} 授课</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>{formatDuration(course.duration)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Eye className="h-4 w-4" />
-                  <span>{course.viewCount.toLocaleString()} 名学生</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>最近更新 {formatDate(course.updatedAt)}</span>
-                </div>
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
-                  免费注册
-                </Button>
-                <Button variant="outline" size="lg" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3">
-                  添加到收藏
-                </Button>
-              </div>
+      {/* Hero Section */}
+      <section className="hero-gradient">
+        <div className="container-anthropic py-16 sm:py-20 md:py-24">
+          <div className="max-w-4xl">
+            {/* Meta */}
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <Badge className="anthropic-badge">{course.category.name}</Badge>
+              <Badge className="anthropic-badge">
+                {COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}
+              </Badge>
+              {course.featured && (
+                <Badge className="anthropic-badge">热门</Badge>
+              )}
             </div>
 
-            {/* Right: Course Card */}
-            <div className="lg:col-span-1">
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm sticky top-4">
-                {/* Course Image */}
-                <div className="relative w-full h-48 rounded-t-lg overflow-hidden">
+            {/* Title */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl mb-6">
+              {course.title}
+            </h1>
+
+            {/* Description */}
+            <p className="text-xl text-muted-foreground mb-10 max-w-3xl">
+              {course.shortDescription}
+            </p>
+
+            {/* Instructor */}
+            <div className="flex items-center gap-4 mb-10">
+              <div className="relative w-12 h-12 rounded-full overflow-hidden bg-muted">
+                {course.instructor.avatar ? (
                   <Image
-                    src={course.coverImage}
-                    alt={course.title}
+                    src={course.instructor.avatar}
+                    alt={course.instructor.name}
                     fill
                     className="object-cover"
                   />
-                </div>
-                
-                {/* Course Info */}
-                <div className="p-6">
-                  <div className="text-center mb-4">
-                    <div className="text-2xl font-bold text-gray-900 mb-1">免费</div>
-                    <div className="text-sm text-gray-600">开始学习</div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-lg font-medium">
+                    {course.instructor.name.charAt(0)}
                   </div>
-                  
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 mb-4">
-                    免费注册
-                  </Button>
-                  
-                  <div className="text-xs text-gray-500 text-center space-y-1">
-                    {course.suggestedWeeks && (
-                      <div>• 建议 {course.suggestedWeeks} 周完成</div>
+                )}
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">授课讲师</div>
+                <div className="font-medium">{course.instructor.name}</div>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex flex-wrap gap-8 mb-10 pb-10 border-b border-border/60">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-muted-foreground" />
+                <span className="text-muted-foreground">{formatDuration(course.duration)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-muted-foreground" />
+                <span className="text-muted-foreground">{course.chapters.length} 章节</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-muted-foreground" />
+                <span className="text-muted-foreground">{course.viewCount.toLocaleString()} 学生</span>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              <div>
+                {isFree ? (
+                  <div className="text-3xl font-medium mb-2">免费课程</div>
+                ) : (
+                  <div className="flex items-baseline gap-3 mb-2">
+                    <div className="text-4xl font-medium">¥{course.price}</div>
+                    {course.originalPrice && course.originalPrice > course.price && (
+                      <div className="text-xl text-muted-foreground line-through">
+                        ¥{course.originalPrice}
+                      </div>
                     )}
-                    <div>• 每周 {course.hoursPerWeek || 5} 小时</div>
-                    <div>• 可自定进度</div>
                   </div>
+                )}
+                <div className="text-sm text-muted-foreground">
+                  {isFree ? '立即开始学习' : '一次购买，终身访问'}
                 </div>
+              </div>
+
+              <div className="flex-shrink-0">
+                <EnrollButton
+                  courseId={course.id}
+                  courseSlug={course.slug}
+                  price={course.price}
+                  originalPrice={course.originalPrice}
+                />
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Tab Content */}
-      <div className="bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
+      {/* Cover Image */}
+      {course.coverImage && (
+        <section className="section-divider">
+          <div className="container-anthropic py-12">
+            <div className="image-container aspect-video max-w-4xl">
+              <Image
+                src={course.coverImage}
+                alt={course.title}
+                fill
+                className="object-cover"
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Course Content */}
+      <section className="section-divider">
+        <div className="container-anthropic py-16 sm:py-20">
           <CourseDetailTabs
-            course={{
-              ...course,
-              highlights: JSON.parse(course.highlights),
-              chapters: course.chapters.map((ch) => ({
-                ...ch,
-                topics: JSON.parse(ch.topics),
-              })),
-            }}
+            course={course}
+            chapters={course.chapters}
+            faqs={course.faqs}
             relatedCourses={relatedCourses}
           />
         </div>
-      </div>
+      </section>
     </div>
   )
 }

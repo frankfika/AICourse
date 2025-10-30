@@ -10,8 +10,12 @@ import { formatDuration } from '@/lib/utils'
 import { COURSE_LEVELS } from '@/lib/constants'
 import { CheckCircle, Clock } from 'lucide-react'
 
-export function CourseDetailTabs({ course, relatedCourses }: any) {
+export function CourseDetailTabs({ course, chapters, faqs, relatedCourses = [] }: any) {
   const [activeTab, setActiveTab] = useState('intro')
+
+  // Use the passed props or fallback to course properties
+  const courseChapters = chapters || course.chapters || []
+  const courseFaqs = faqs || course.faqs || []
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -96,12 +100,12 @@ export function CourseDetailTabs({ course, relatedCourses }: any) {
           <CardHeader>
             <CardTitle>课程大纲</CardTitle>
             <p className="text-sm text-muted-foreground">
-              共 {course.chapters.length} 个章节 · 总时长 {formatDuration(course.duration)}
+              共 {courseChapters.length} 个章节 · 总时长 {formatDuration(course.duration)}
             </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {course.chapters.map((chapter: any, index: number) => (
+              {courseChapters.map((chapter: any, index: number) => (
                 <div key={chapter.id} className="border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-semibold">
@@ -173,11 +177,11 @@ export function CourseDetailTabs({ course, relatedCourses }: any) {
             <CardTitle>常见问题</CardTitle>
           </CardHeader>
           <CardContent>
-            {course.faqs.length === 0 ? (
+            {courseFaqs.length === 0 ? (
               <p className="text-muted-foreground">暂无常见问题</p>
             ) : (
               <div className="space-y-4">
-                {course.faqs.map((faq: any) => (
+                {courseFaqs.map((faq: any) => (
                   <div key={faq.id} className="border-b pb-4 last:border-0">
                     <h4 className="font-semibold mb-2">{faq.question}</h4>
                     <div
@@ -217,7 +221,7 @@ export function CourseDetailTabs({ course, relatedCourses }: any) {
           )}
 
           {/* Related Courses */}
-          {relatedCourses.length > 0 && (
+          {relatedCourses && relatedCourses.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>相关课程</CardTitle>

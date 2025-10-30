@@ -2,64 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Modern Design System - Inspired by Apple, Stripe, Linear */
+/*
+ * Premium Design System - 高端温暖米色 + 顶级精致细节
+ * Anthropic 风格配色，极致视觉层次和交互体验
+ */
 
 @layer base {
   :root {
-    /* Modern Color Palette */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
-    
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    
-    --card: 210 40% 98%;
-    --card-foreground: 222 47% 11%;
-    
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
-    
-    --radius: 1rem;
-    
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --gradient-soft: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    /* 温暖米色调配色 - 顶级精致 */
+    --background: 32 32% 98%;             /* #FDFCFA 极致浅温暖米色 */
+    --foreground: 24 22% 7%;              /* #140F09 深邃棕黑 */
+
+    --muted: 30 24% 95%;                  /* #F4EFE8 轻柔米色 */
+    --muted-foreground: 24 12% 42%;       /* #69635E 雅致灰棕 */
+
+    --card: 0 0% 100%;                    /* #FFFFFF 纯白卡片 */
+    --card-foreground: 24 22% 7%;
+
+    --primary: 15 74% 48%;                /* #C65331 精致铁锈橙 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 28 24% 92%;              /* #EBE5DC 柔和米棕 */
+    --secondary-foreground: 24 22% 7%;
+
+    --accent: 15 74% 48%;
+    --accent-foreground: 0 0% 100%;
+
+    --border: 30 16% 91%;                 /* #E7E3DB 高端边框 */
+    --input: 30 16% 91%;
+    --ring: 15 74% 48%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --radius: 14px;                       /* 更圆润的圆角 */
   }
-  
+
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
-    
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
-    
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-    
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 217 91% 60%;
+    --background: 24 18% 10%;            /* #1C1714 深棕黑背景 */
+    --foreground: 32 25% 94%;            /* #F2EDE7 温暖白 */
+    --muted: 24 15% 15%;                 /* #221F1C 深米棕 */
+    --muted-foreground: 30 12% 62%;      /* #9A9390 中灰 */
+    --card: 24 16% 12%;                  /* #1E1A17 深卡片 */
+    --card-foreground: 32 25% 94%;
+    --primary: 15 70% 62%;               /* #D9754C 明亮橙 */
+    --primary-foreground: 24 18% 10%;
+    --secondary: 24 14% 18%;             /* #282421 次级深色 */
+    --secondary-foreground: 32 25% 94%;
+    --accent: 15 70% 62%;
+    --accent-foreground: 24 18% 10%;
+    --border: 24 12% 22%;                /* #322D28 深边框 */
+    --input: 24 12% 22%;
+    --ring: 15 70% 62%;
   }
 }
 
@@ -67,118 +61,387 @@
   * {
     @apply border-border;
   }
-  
+
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    font-synthesis: none;
+    @apply bg-background text-foreground antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Performance optimizations */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
-  
-  /* Modern Typography */
+
+  /* 精确的排版层级 - 增强层次感和移动端适配 */
   h1 {
-    @apply scroll-m-20 text-5xl font-bold tracking-tight lg:text-7xl;
-    letter-spacing: -0.02em;
+    font-size: clamp(2.25rem, 6vw + 1rem, 4.5rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    color: hsl(var(--foreground));
   }
-  
+
   h2 {
-    @apply scroll-m-20 text-4xl font-semibold tracking-tight lg:text-5xl;
-    letter-spacing: -0.02em;
+    font-size: clamp(1.875rem, 4vw + 0.5rem, 3.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: hsl(var(--foreground));
   }
-  
+
   h3 {
-    @apply scroll-m-20 text-3xl font-semibold tracking-tight lg:text-4xl;
+    font-size: clamp(1.5rem, 3vw + 0.25rem, 2.25rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+  }
+
+  h4 {
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+    font-weight: 600;
     letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: hsl(var(--foreground));
+  }
+
+  p {
+    font-size: clamp(0.9375rem, 1vw, 1.0625rem);
+    line-height: 1.7;
+    color: hsl(var(--foreground));
+  }
+
+  a {
+    @apply transition-colors duration-200;
+    color: inherit;
+  }
+
+  a:hover {
+    color: hsl(var(--primary));
   }
 }
 
-/* Modern Glass Effect */
-.glass-effect {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+/* 文本层次工具类 */
+.text-display {
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1;
 }
 
-.dark .glass-effect {
-  background: rgba(17, 24, 39, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.text-lead {
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  font-weight: 400;
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
 }
 
-/* Modern Card Hover Effect */
-.modern-card {
+.text-subtle {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+
+.text-micro {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--muted-foreground));
+}
+
+/* 卡片 - 高端精致设计 */
+.anthropic-card {
+  @apply bg-card border border-border rounded-2xl transition-all duration-500 ease-out;
+  box-shadow:
+    0 0 0 1px hsl(var(--border) / 0.8),
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 4px 8px rgb(0 0 0 / 0.03),
+    0 12px 24px rgb(0 0 0 / 0.02);
+}
+
+.anthropic-card:hover {
+  border-color: hsl(var(--primary) / 0.35);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.35),
+    0 2px 4px rgb(0 0 0 / 0.06),
+    0 8px 16px rgb(0 0 0 / 0.06),
+    0 20px 40px rgb(0 0 0 / 0.05),
+    0 0 60px hsl(var(--primary) / 0.08);
+  transform: translateY(-6px) scale(1.01);
+}
+
+/* 卡片变体 - 不同层次 */
+.anthropic-card-elevated {
+  @apply bg-card border border-border rounded-2xl;
+  box-shadow:
+    0 0 0 1px hsl(var(--border)),
+    0 2px 4px rgb(0 0 0 / 0.06),
+    0 8px 16px rgb(0 0 0 / 0.05),
+    0 16px 32px rgb(0 0 0 / 0.04);
+}
+
+.anthropic-card-subtle {
+  @apply bg-muted/40 border border-border/40 rounded-2xl backdrop-blur-sm;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.03);
+}
+
+/* 按钮 - 高端橙色设计 */
+.anthropic-button {
+  @apply inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl;
+  @apply font-semibold text-sm bg-primary text-primary-foreground border-0;
   @apply transition-all duration-500 ease-out;
-  transform: translateY(0);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary)),
+    0 2px 4px rgb(0 0 0 / 0.1),
+    0 6px 16px hsl(var(--primary) / 0.25),
+    inset 0 1px 0 rgb(255 255 255 / 0.15);
 }
 
-.modern-card:hover {
-  @apply shadow-2xl;
-  transform: translateY(-8px);
+.anthropic-button:hover {
+  background: hsl(15 78% 45%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 0 0 1px hsl(15 78% 45%),
+    0 4px 8px rgb(0 0 0 / 0.15),
+    0 12px 28px hsl(var(--primary) / 0.35),
+    0 0 48px hsl(var(--primary) / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
 }
 
-/* Smooth Scroll */
-html {
-  scroll-behavior: smooth;
+.anthropic-button:active {
+  transform: translateY(-1px) scale(1.01);
 }
 
-/* Custom Scrollbar */
+.anthropic-button-primary {
+  @apply inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl;
+  @apply font-semibold text-sm bg-primary text-primary-foreground border-0;
+  @apply transition-all duration-500 ease-out;
+  box-shadow:
+    0 0 0 1px hsl(var(--primary)),
+    0 2px 4px rgb(0 0 0 / 0.1),
+    0 6px 16px hsl(var(--primary) / 0.25),
+    inset 0 1px 0 rgb(255 255 255 / 0.15);
+}
+
+.anthropic-button-primary:hover {
+  background: hsl(15 78% 45%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 0 0 1px hsl(15 78% 45%),
+    0 4px 8px rgb(0 0 0 / 0.15),
+    0 12px 28px hsl(var(--primary) / 0.35),
+    0 0 48px hsl(var(--primary) / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+
+.anthropic-button-secondary {
+  @apply inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl;
+  @apply font-semibold text-sm bg-card text-foreground border border-border;
+  @apply transition-all duration-500 ease-out;
+  box-shadow:
+    0 0 0 1px hsl(var(--border) / 0.6),
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 2px 6px rgb(0 0 0 / 0.03);
+}
+
+.anthropic-button-secondary:hover {
+  border-color: hsl(var(--primary) / 0.35);
+  background: hsl(var(--muted) / 0.7);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.35),
+    0 4px 8px rgb(0 0 0 / 0.08),
+    0 8px 20px hsl(var(--primary) / 0.1);
+}
+
+.anthropic-button-secondary:active {
+  transform: translateY(-1px) scale(1.01);
+}
+
+/* 徽章 - 精致设计 */
+.anthropic-badge {
+  @apply inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold;
+  @apply bg-muted/70 text-foreground border border-border/60;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
+  transition: all 0.3s ease;
+}
+
+.anthropic-badge:hover {
+  background: hsl(var(--muted) / 0.9);
+  border-color: hsl(var(--border) / 0.8);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.08);
+}
+
+/* 容器 - 更大留白 */
+.container-anthropic {
+  @apply max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12;
+}
+
+.section-padding {
+  @apply py-16 sm:py-20 md:py-28 lg:py-36;
+}
+
+.section-padding-sm {
+  @apply py-10 sm:py-12 md:py-16;
+}
+
+.section-padding-lg {
+  @apply py-24 sm:py-32 md:py-40 lg:py-52;
+}
+
+/* Hero 渐变 - 更精致 */
+.hero-gradient {
+  background:
+    radial-gradient(
+      ellipse 100% 60% at 50% -30%,
+      hsl(15 74% 48% / 0.12),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      hsl(28 24% 92% / 0.4),
+      transparent 50%
+    ),
+    linear-gradient(
+      to bottom,
+      hsl(var(--background)),
+      hsl(30 24% 96%)
+    );
+  position: relative;
+}
+
+.hero-gradient::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    hsl(var(--border) / 0.8),
+    transparent
+  );
+}
+
+.section-divider {
+  @apply border-t border-border/50;
+  position: relative;
+}
+
+.section-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    hsl(var(--primary) / 0.3),
+    transparent
+  );
+}
+
+.section-elevated {
+  background: linear-gradient(
+    to bottom,
+    hsl(30 20% 97%),
+    hsl(30 22% 95%)
+  );
+  box-shadow: inset 0 1px 0 hsl(var(--border) / 0.4);
+}
+
+/* 图片容器 - 高端设计 */
+.image-container {
+  @apply relative overflow-hidden rounded-2xl bg-muted/30;
+  box-shadow:
+    0 0 0 1px hsl(var(--border) / 0.4),
+    0 2px 6px rgb(0 0 0 / 0.03),
+    0 8px 16px rgb(0 0 0 / 0.02);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.image-container img {
+  @apply transition-all duration-700 ease-out;
+}
+
+.image-container:hover {
+  box-shadow:
+    0 0 0 1px hsl(var(--border) / 0.6),
+    0 4px 12px rgb(0 0 0 / 0.06),
+    0 16px 32px rgb(0 0 0 / 0.04);
+}
+
+.image-container:hover img {
+  transform: scale(1.08);
+  filter: brightness(1.08) contrast(1.02);
+}
+
+/* Featured card - 高端突出设计 */
+.anthropic-card-featured {
+  @apply bg-card border border-primary/25 rounded-2xl transition-all duration-500;
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.25),
+    0 4px 12px rgb(0 0 0 / 0.06),
+    0 16px 32px rgb(0 0 0 / 0.05),
+    0 0 48px hsl(var(--primary) / 0.08);
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card)),
+    hsl(var(--muted) / 0.3)
+  );
+}
+
+.anthropic-card-featured:hover {
+  border-color: hsl(var(--primary) / 0.4);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.4),
+    0 8px 20px rgb(0 0 0 / 0.08),
+    0 24px 48px rgb(0 0 0 / 0.06),
+    0 0 72px hsl(var(--primary) / 0.12);
+  transform: translateY(-8px) scale(1.02);
+}
+
+/* 滚动条 - 精致设计 */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  @apply bg-muted/30;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full;
+  @apply bg-border/60 rounded-xl;
+  transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400;
+  @apply bg-primary/40;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  @apply bg-gray-700;
+/* Focus */
+*:focus-visible {
+  @apply outline-none ring-2 ring-primary/50 ring-offset-2;
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-600;
-}
-
-/* Gradient Text */
-.gradient-text {
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Animated Gradient Background */
-.animated-gradient {
-  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
-  background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
-}
-
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Fade In Animation */
-.fade-in {
-  animation: fadeIn 0.8s ease-in-out;
-}
-
-@keyframes fadeIn {
+/* 高级动画和过渡效果 */
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
@@ -186,149 +449,230 @@ html {
   }
 }
 
-/* Blur Load Effect */
-.blur-load {
-  background-size: cover;
-  background-position: center;
-}
-
-.blur-load::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-}
-
-/* Modern Button */
-.modern-button {
-  @apply relative overflow-hidden;
-}
-
-.modern-button::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.modern-button:hover::before {
-  width: 300px;
-  height: 300px;
-}
-
-/* Floating Animation */
-.floating {
-  animation: floating 3s ease-in-out infinite;
-}
-
-@keyframes floating {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-}
-
-/* Section Spacing - More breathing room */
-.section-padding {
-  @apply py-24 lg:py-32;
-}
-
-.container-custom {
-  @apply container mx-auto px-6 lg:px-8 max-w-7xl;
-}
-
-/* Blob Animation */
-@keyframes blob {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
+  to {
+    opacity: 1;
   }
 }
 
-.animate-blob {
-  animation: blob 7s infinite;
-}
-
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
-
-@layer base {
-  :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 210 40% 98%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 210 40% 98%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%;
-    --radius: 0.5rem;
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
   }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 217 91% 60%;
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* 页面加载动画 */
+.fade-in-up {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.6s ease-out;
+}
+
+.scale-in {
+  animation: scaleIn 0.5s ease-out;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Selection */
+::selection {
+  background-color: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
+}
+
+/* Performance optimizations */
+.anthropic-card,
+.anthropic-button,
+.image-container {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Loading skeleton */
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0px,
+    hsl(var(--muted) / 0.5) 40px,
+    hsl(var(--muted)) 80px
+  );
+  background-size: 200px 100%;
+  animation: skeleton-loading 1.4s ease-in-out infinite;
+}
+
+/* Enhanced focus states for accessibility */
+:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-on-scroll {
+    animation: fadeInUp 0.6s ease-out;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    background: white;
+    color: black;
+  }
+
+  .anthropic-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
   }
 }
 
-/* React Quill Styles */
+/* Stats */
+.stat-number {
+  @apply text-4xl sm:text-5xl font-medium;
+  letter-spacing: -0.03em;
+}
+
+.stat-label {
+  @apply text-sm text-muted-foreground uppercase tracking-wider font-medium;
+}
+
+/* Content spacing hierarchy */
+.content-section {
+  @apply space-y-12 sm:space-y-16 md:space-y-20;
+}
+
+.content-block {
+  @apply space-y-6 sm:space-y-8;
+}
+
+.content-group {
+  @apply space-y-4;
+}
+
+/* Layered backgrounds for depth */
+.layer-base {
+  @apply bg-background;
+}
+
+.layer-elevated-1 {
+  @apply bg-muted/20;
+}
+
+.layer-elevated-2 {
+  @apply bg-muted/40;
+}
+
+.layer-inset {
+  @apply bg-muted/60;
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.04);
+}
+
+/* Interactive elements */
+.interactive-lift {
+  @apply transition-all duration-200;
+}
+
+.interactive-lift:hover {
+  transform: translateY(-2px);
+}
+
+.interactive-lift:active {
+  transform: translateY(0);
+}
+
+/* React Quill */
 .ql-container {
   font-family: inherit !important;
+  @apply border-border;
 }
 
 .ql-editor {
   min-height: 200px;
+  @apply text-foreground;
 }
 
+.ql-toolbar {
+  @apply border-border bg-muted/30;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+::selection {
+  @apply bg-primary/15;
+}

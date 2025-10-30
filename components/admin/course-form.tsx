@@ -46,6 +46,9 @@ export function CourseForm({ course, categories, instructors }: CourseFormProps)
     highlights: course?.highlights || [''],
     status: course?.status || 'draft',
     featured: course?.featured || false,
+    price: course?.price || 0,
+    originalPrice: course?.originalPrice || null,
+    currency: course?.currency || 'CNY',
   })
 
   const [chapters, setChapters] = useState(course?.chapters || [])
@@ -61,6 +64,8 @@ export function CourseForm({ course, categories, instructors }: CourseFormProps)
         duration: parseInt(formData.duration as any),
         suggestedWeeks: formData.suggestedWeeks ? parseInt(formData.suggestedWeeks as any) : null,
         hoursPerWeek: formData.hoursPerWeek ? parseInt(formData.hoursPerWeek as any) : null,
+        price: parseFloat(formData.price as any),
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice as any) : null,
         chapters: chapters.map((ch: any, index: number) => ({
           ...ch,
           order: index,
@@ -650,6 +655,61 @@ export function CourseForm({ course, categories, instructors }: CourseFormProps)
                   className="w-4 h-4"
                 />
                 <Label htmlFor="featured">设为热门课程</Label>
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-lg font-semibold mb-4">定价信息</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">课程价格 *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={formData.price}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price: e.target.value as any })
+                      }
+                      placeholder="0 表示免费"
+                    />
+                    <p className="text-xs text-gray-500">输入 0 表示免费课程</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="originalPrice">原价（选填）</Label>
+                    <Input
+                      id="originalPrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.originalPrice || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          originalPrice: e.target.value as any,
+                        })
+                      }
+                      placeholder="用于显示折扣"
+                    />
+                    <p className="text-xs text-gray-500">显示划线价格</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">货币单位</Label>
+                    <select
+                      id="currency"
+                      className="w-full px-3 py-2 border rounded-md"
+                      value={formData.currency}
+                      onChange={(e) =>
+                        setFormData({ ...formData, currency: e.target.value })
+                      }
+                    >
+                      <option value="CNY">人民币 (¥)</option>
+                      <option value="USD">美元 ($)</option>
+                      <option value="EUR">欧元 (€)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
