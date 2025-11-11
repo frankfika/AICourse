@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db'
 import { NanoDegreeForm } from '@/components/admin/nanodegree-form'
 
 export const metadata = {
-  title: '创建 Nano Degree - CourseAI 后台',
+  title: '创建 Nano Degree - OpenCSG AI学院 后台',
 }
 
 export default async function NewNanoDegreePage() {

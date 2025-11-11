@@ -15,7 +15,7 @@ export default async function AdminSettingsPage() {
         <CardContent className="space-y-4">
           <div>
             <h4 className="font-semibold mb-2">网站名称</h4>
-            <p className="text-muted-foreground">CourseAI</p>
+            <p className="text-muted-foreground">OpenCSG AI学院</p>
           </div>
           <div>
             <h4 className="font-semibold mb-2">网站描述</h4>

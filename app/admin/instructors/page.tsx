@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Plus, Edit } from 'lucide-react'
 
 export const metadata = {
-  title: '讲师管理 - CourseAI 后台',
+  title: '讲师管理 - OpenCSG AI学院 后台',
 }
 
 export default async function AdminInstructorsPage() {

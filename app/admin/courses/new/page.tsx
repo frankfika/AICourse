@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db'
 import { CourseForm } from '@/components/admin/course-form'
 
 export const metadata = {
-  title: '创建课程 - CourseAI 后台',
+  title: '创建课程 - OpenCSG AI学院 后台',
 }
 
 export default async function NewCoursePage() {

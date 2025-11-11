@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { NanoDegreeForm } from '@/components/admin/nanodegree-form'
 
 export const metadata = {
-  title: '编辑 Nano Degree - CourseAI 后台',
+  title: '编辑 Nano Degree - OpenCSG AI学院 后台',
 }
 
 export default async function EditNanoDegreePage({

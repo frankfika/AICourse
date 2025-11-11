@@ -21,7 +21,8 @@ const sessionOptions = {
 }
 
 export async function getSession(): Promise<IronSession<SessionData>> {
-  return getIronSession<SessionData>(cookies(), sessionOptions)
+  const cookieStore = await cookies()
+  return getIronSession<SessionData>(cookieStore, sessionOptions)
 }
 
 export async function isAuthenticated(): Promise<boolean> {

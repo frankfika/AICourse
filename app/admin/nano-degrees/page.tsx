@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/utils'
 import { COURSE_LEVELS } from '@/lib/constants'
 
 export const metadata = {
-  title: 'Nano Degree 管理 - CourseAI 后台',
+  title: 'Nano Degree 管理 - OpenCSG AI学院 后台',
 }
 
 export default async function AdminNanoDegreesPage() {

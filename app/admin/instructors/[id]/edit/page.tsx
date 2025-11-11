@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { InstructorForm } from '@/components/admin/instructor-form'
 
 export const metadata = {
-  title: '编辑讲师 - CourseAI 后台',
+  title: '编辑讲师 - OpenCSG AI学院 后台',
 }
 
 export default async function EditInstructorPage({

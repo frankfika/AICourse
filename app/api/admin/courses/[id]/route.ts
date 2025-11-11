@@ -32,7 +32,7 @@ export async function PUT(
 ) {
   try {
     const data = await request.json()
-    const { chapters, faqs, ...courseData } = data
+    const { chapters, faqs, startDate, ...courseData } = data
 
     // Delete existing chapters and FAQs
     await Promise.all([
@@ -45,6 +45,7 @@ export async function PUT(
       where: { id: params.id },
       data: {
         ...courseData,
+        startDate: startDate ? new Date(startDate) : null,
         prerequisites: JSON.stringify(courseData.prerequisites || []),
         learningObjectives: JSON.stringify(courseData.learningObjectives || []),
         highlights: JSON.stringify(courseData.highlights || []),

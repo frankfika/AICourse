@@ -33,7 +33,7 @@ export async function PUT(
 ) {
   try {
     const data = await request.json()
-    const { courseIds, faqs, ...nanoDegreeData } = data
+    const { courseIds, faqs, startDate, ...nanoDegreeData } = data
 
     // Delete existing relationships
     await Promise.all([
@@ -46,6 +46,7 @@ export async function PUT(
       where: { id: params.id },
       data: {
         ...nanoDegreeData,
+        startDate: startDate ? new Date(startDate) : null,
         prerequisites: JSON.stringify(nanoDegreeData.prerequisites || []),
         skills: JSON.stringify(nanoDegreeData.skills || []),
         highlights: JSON.stringify(nanoDegreeData.highlights || []),

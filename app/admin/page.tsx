@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BookOpen, Award, Users, Eye } from 'lucide-react'
 
 export const metadata = {
-  title: '仪表盘 - CourseAI 后台',
+  title: '仪表盘 - OpenCSG AI学院 后台',
 }
 
 export default async function AdminDashboard() {

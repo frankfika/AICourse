@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -12,9 +11,6 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react'
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
-import 'react-quill/dist/quill.snow.css'
 
 interface NanoDegreeFormProps {
   nanoDegree?: any
@@ -39,6 +35,7 @@ export function NanoDegreeForm({ nanoDegree, courses }: NanoDegreeFormProps) {
     level: nanoDegree?.level || 'intermediate',
     suggestedMonths: nanoDegree?.suggestedMonths || null,
     hoursPerWeek: nanoDegree?.hoursPerWeek || null,
+    startDate: nanoDegree?.startDate ? new Date(nanoDegree.startDate).toISOString().slice(0, 16) : '',
     targetAudience: nanoDegree?.targetAudience || '',
     prerequisites: nanoDegree?.prerequisites || [''],
     skills: nanoDegree?.skills || [''],
@@ -65,6 +62,7 @@ export function NanoDegreeForm({ nanoDegree, courses }: NanoDegreeFormProps) {
         ...formData,
         suggestedMonths: formData.suggestedMonths ? parseInt(formData.suggestedMonths as any) : null,
         hoursPerWeek: formData.hoursPerWeek ? parseInt(formData.hoursPerWeek as any) : null,
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
         price: parseFloat(formData.price as any),
         originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice as any) : null,
         courseIds: selectedCourses,
@@ -268,6 +266,21 @@ export function NanoDegreeForm({ nanoDegree, courses }: NanoDegreeFormProps) {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="startDate">开课日期（可选）</Label>
+                <Input
+                  id="startDate"
+                  type="datetime-local"
+                  value={formData.startDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, startDate: e.target.value })
+                  }
+                />
+                <p className="text-sm text-gray-500">
+                  如果设置了开课日期，Nano Degree 将在该日期之前显示"即将开始"状态
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="coverImage">封面图片 URL</Label>
@@ -386,23 +399,25 @@ export function NanoDegreeForm({ nanoDegree, courses }: NanoDegreeFormProps) {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>项目详细介绍</Label>
-                <ReactQuill
+                <Textarea
                   value={formData.description}
-                  onChange={(value) =>
-                    setFormData({ ...formData, description: value })
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
                   }
-                  theme="snow"
+                  rows={10}
+                  placeholder="输入项目详细介绍..."
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>学习路径说明</Label>
-                <ReactQuill
+                <Textarea
                   value={formData.learningPath}
-                  onChange={(value) =>
-                    setFormData({ ...formData, learningPath: value })
+                  onChange={(e) =>
+                    setFormData({ ...formData, learningPath: e.target.value })
                   }
-                  theme="snow"
+                  rows={6}
+                  placeholder="输入学习路径说明..."
                 />
               </div>
 
@@ -644,23 +659,25 @@ export function NanoDegreeForm({ nanoDegree, courses }: NanoDegreeFormProps) {
 
               <div className="space-y-2">
                 <Label>证书说明</Label>
-                <ReactQuill
+                <Textarea
                   value={formData.certificateDescription}
-                  onChange={(value) =>
-                    setFormData({ ...formData, certificateDescription: value })
+                  onChange={(e) =>
+                    setFormData({ ...formData, certificateDescription: e.target.value })
                   }
-                  theme="snow"
+                  rows={4}
+                  placeholder="输入证书说明..."
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>获得条件</Label>
-                <ReactQuill
+                <Textarea
                   value={formData.completionCriteria}
-                  onChange={(value) =>
-                    setFormData({ ...formData, completionCriteria: value })
+                  onChange={(e) =>
+                    setFormData({ ...formData, completionCriteria: e.target.value })
                   }
-                  theme="snow"
+                  rows={4}
+                  placeholder="输入获得条件..."
                 />
               </div>
             </CardContent>
@@ -706,10 +723,11 @@ export function NanoDegreeForm({ nanoDegree, courses }: NanoDegreeFormProps) {
                     </div>
                     <div className="space-y-2">
                       <Label>答案</Label>
-                      <ReactQuill
+                      <Textarea
                         value={faq.answer}
-                        onChange={(value) => updateFaq(index, 'answer', value)}
-                        theme="snow"
+                        onChange={(e) => updateFaq(index, 'answer', e.target.value)}
+                        rows={4}
+                        placeholder="输入答案..."
                       />
                     </div>
                   </CardContent>

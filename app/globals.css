@@ -3,57 +3,69 @@
 @tailwind utilities;
 
 /*
- * Premium Design System - 高端温暖米色 + 顶级精致细节
- * Anthropic 风格配色，极致视觉层次和交互体验
+ * Fresh Green Design System - 清新绿色风格
+ * 纯净白色背景 + 生机绿色主题
+ * 现代、清爽、充满活力
  */
 
 @layer base {
   :root {
-    /* 温暖米色调配色 - 顶级精致 */
-    --background: 32 32% 98%;             /* #FDFCFA 极致浅温暖米色 */
-    --foreground: 24 22% 7%;              /* #140F09 深邃棕黑 */
+    /* 🌿 清新配色 - 绿色 + 白色 */
+    --background: 0 0% 100%;                 /* #FFFFFF 纯净白 */
+    --foreground: 222 47% 11%;               /* #0F172A 深色文字 */
 
-    --muted: 30 24% 95%;                  /* #F4EFE8 轻柔米色 */
-    --muted-foreground: 24 12% 42%;       /* #69635E 雅致灰棕 */
+    --muted: 210 40% 98%;                    /* #F8FAFC 浅灰背景 */
+    --muted-foreground: 215 16% 47%;         /* #64748B 次要文字 */
 
-    --card: 0 0% 100%;                    /* #FFFFFF 纯白卡片 */
-    --card-foreground: 24 22% 7%;
+    --card: 0 0% 100%;                       /* #FFFFFF 白色卡片 */
+    --card-foreground: 222 47% 11%;          /* #0F172A 深色文字 */
 
-    --primary: 15 74% 48%;                /* #C65331 精致铁锈橙 */
-    --primary-foreground: 0 0% 100%;
+    --primary: 142 76% 36%;                  /* #10B981 翠绿色 */
+    --primary-foreground: 0 0% 100%;         /* #FFFFFF 白色 */
 
-    --secondary: 28 24% 92%;              /* #EBE5DC 柔和米棕 */
-    --secondary-foreground: 24 22% 7%;
+    --secondary: 210 40% 96%;                /* #F1F5F9 浅灰 */
+    --secondary-foreground: 222 47% 11%;     /* #0F172A 深色文字 */
 
-    --accent: 15 74% 48%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 158 64% 52%;                   /* #34D399 明亮绿 */
+    --accent-foreground: 0 0% 100%;          /* #FFFFFF 白色 */
 
-    --border: 30 16% 91%;                 /* #E7E3DB 高端边框 */
-    --input: 30 16% 91%;
-    --ring: 15 74% 48%;
+    --border: 214 32% 91%;                   /* #E2E8F0 边框 */
+    --input: 214 32% 91%;                    /* #E2E8F0 输入框 */
+    --ring: 142 76% 36%;                     /* #10B981 焦点环 */
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;                /* #EF4444 红色 */
+    --destructive-foreground: 0 0% 100%;     /* #FFFFFF 白色 */
 
-    --radius: 14px;                       /* 更圆润的圆角 */
+    --radius: 12px;                          /* 圆角 */
+    
+    /* 🌈 渐变色 */
+    --gradient-primary: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    --gradient-shine: linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%);
+    --gradient-glow: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.1), transparent 50%);
   }
 
   .dark {
-    --background: 24 18% 10%;            /* #1C1714 深棕黑背景 */
-    --foreground: 32 25% 94%;            /* #F2EDE7 温暖白 */
-    --muted: 24 15% 15%;                 /* #221F1C 深米棕 */
-    --muted-foreground: 30 12% 62%;      /* #9A9390 中灰 */
-    --card: 24 16% 12%;                  /* #1E1A17 深卡片 */
-    --card-foreground: 32 25% 94%;
-    --primary: 15 70% 62%;               /* #D9754C 明亮橙 */
-    --primary-foreground: 24 18% 10%;
-    --secondary: 24 14% 18%;             /* #282421 次级深色 */
-    --secondary-foreground: 32 25% 94%;
-    --accent: 15 70% 62%;
-    --accent-foreground: 24 18% 10%;
-    --border: 24 12% 22%;                /* #322D28 深边框 */
-    --input: 24 12% 22%;
-    --ring: 15 70% 62%;
+    --background: 222 47% 11%;               /* #0F172A 深色 */
+    --foreground: 210 40% 98%;               /* #F8FAFC 浅色 */
+
+    --muted: 217 33% 17%;                    /* #1E293B 深灰 */
+    --muted-foreground: 215 20% 65%;         /* #94A3B8 次要文字 */
+
+    --card: 222 47% 11%;                     /* #0F172A 深色卡片 */
+    --card-foreground: 210 40% 98%;          /* #F8FAFC 浅色文字 */
+
+    --primary: 142 76% 36%;                  /* #10B981 翠绿色 */
+    --primary-foreground: 0 0% 100%;         /* #FFFFFF 白色 */
+
+    --secondary: 217 33% 17%;                /* #1E293B 深灰 */
+    --secondary-foreground: 210 40% 98%;     /* #F8FAFC 浅色文字 */
+
+    --accent: 158 64% 52%;                   /* #34D399 明亮绿 */
+    --accent-foreground: 222 47% 11%;        /* #0F172A 深色文字 */
+
+    --border: 217 33% 17%;                   /* #1E293B 边框 */
+    --input: 217 33% 17%;                    /* #1E293B 输入框 */
+    --ring: 142 76% 36%;                     /* #10B981 焦点环 */
   }
 }
 
@@ -64,15 +76,15 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Helvetica, Arial, sans-serif;
     font-size: 16px;
-    line-height: 1.6;
+    line-height: 1.7;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Performance optimizations */
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    background: #FFFFFF;
   }
 
   /* 精确的排版层级 - 增强层次感和移动端适配 */
@@ -153,264 +165,64 @@
   color: hsl(var(--muted-foreground));
 }
 
-/* 卡片 - 高端精致设计 */
+/* 卡片 - 简洁统一 */
 .anthropic-card {
-  @apply bg-card border border-border rounded-2xl transition-all duration-500 ease-out;
-  box-shadow:
-    0 0 0 1px hsl(var(--border) / 0.8),
-    0 1px 2px rgb(0 0 0 / 0.04),
-    0 4px 8px rgb(0 0 0 / 0.03),
-    0 12px 24px rgb(0 0 0 / 0.02);
+  @apply bg-white border border-gray-200 rounded-xl transition-all duration-300;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .anthropic-card:hover {
-  border-color: hsl(var(--primary) / 0.35);
-  box-shadow:
-    0 0 0 1px hsl(var(--primary) / 0.35),
-    0 2px 4px rgb(0 0 0 / 0.06),
-    0 8px 16px rgb(0 0 0 / 0.06),
-    0 20px 40px rgb(0 0 0 / 0.05),
-    0 0 60px hsl(var(--primary) / 0.08);
-  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
-/* 卡片变体 - 不同层次 */
-.anthropic-card-elevated {
-  @apply bg-card border border-border rounded-2xl;
-  box-shadow:
-    0 0 0 1px hsl(var(--border)),
-    0 2px 4px rgb(0 0 0 / 0.06),
-    0 8px 16px rgb(0 0 0 / 0.05),
-    0 16px 32px rgb(0 0 0 / 0.04);
-}
-
-.anthropic-card-subtle {
-  @apply bg-muted/40 border border-border/40 rounded-2xl backdrop-blur-sm;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.03);
-}
-
-/* 按钮 - 高端橙色设计 */
+/* 按钮 - 简洁设计 */
 .anthropic-button {
-  @apply inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl;
-  @apply font-semibold text-sm bg-primary text-primary-foreground border-0;
-  @apply transition-all duration-500 ease-out;
-  box-shadow:
-    0 0 0 1px hsl(var(--primary)),
-    0 2px 4px rgb(0 0 0 / 0.1),
-    0 6px 16px hsl(var(--primary) / 0.25),
-    inset 0 1px 0 rgb(255 255 255 / 0.15);
+  @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg;
+  @apply font-semibold text-sm text-white;
+  @apply transition-all duration-200;
+  background: linear-gradient(135deg, #10B981, #059669);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .anthropic-button:hover {
-  background: hsl(15 78% 45%);
-  transform: translateY(-3px) scale(1.02);
-  box-shadow:
-    0 0 0 1px hsl(15 78% 45%),
-    0 4px 8px rgb(0 0 0 / 0.15),
-    0 12px 28px hsl(var(--primary) / 0.35),
-    0 0 48px hsl(var(--primary) / 0.2),
-    inset 0 1px 0 rgb(255 255 255 / 0.2);
-}
-
-.anthropic-button:active {
-  transform: translateY(-1px) scale(1.01);
-}
-
-.anthropic-button-primary {
-  @apply inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl;
-  @apply font-semibold text-sm bg-primary text-primary-foreground border-0;
-  @apply transition-all duration-500 ease-out;
-  box-shadow:
-    0 0 0 1px hsl(var(--primary)),
-    0 2px 4px rgb(0 0 0 / 0.1),
-    0 6px 16px hsl(var(--primary) / 0.25),
-    inset 0 1px 0 rgb(255 255 255 / 0.15);
-}
-
-.anthropic-button-primary:hover {
-  background: hsl(15 78% 45%);
-  transform: translateY(-3px) scale(1.02);
-  box-shadow:
-    0 0 0 1px hsl(15 78% 45%),
-    0 4px 8px rgb(0 0 0 / 0.15),
-    0 12px 28px hsl(var(--primary) / 0.35),
-    0 0 48px hsl(var(--primary) / 0.2),
-    inset 0 1px 0 rgb(255 255 255 / 0.2);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
 }
 
 .anthropic-button-secondary {
-  @apply inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-2xl;
-  @apply font-semibold text-sm bg-card text-foreground border border-border;
-  @apply transition-all duration-500 ease-out;
-  box-shadow:
-    0 0 0 1px hsl(var(--border) / 0.6),
-    0 1px 2px rgb(0 0 0 / 0.04),
-    0 2px 6px rgb(0 0 0 / 0.03);
+  @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg;
+  @apply font-semibold text-sm text-foreground border border-gray-300;
+  @apply transition-all duration-200;
+  background: white;
 }
 
 .anthropic-button-secondary:hover {
-  border-color: hsl(var(--primary) / 0.35);
-  background: hsl(var(--muted) / 0.7);
-  transform: translateY(-3px) scale(1.02);
-  box-shadow:
-    0 0 0 1px hsl(var(--primary) / 0.35),
-    0 4px 8px rgb(0 0 0 / 0.08),
-    0 8px 20px hsl(var(--primary) / 0.1);
-}
-
-.anthropic-button-secondary:active {
-  transform: translateY(-1px) scale(1.01);
-}
-
-/* 徽章 - 精致设计 */
-.anthropic-badge {
-  @apply inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold;
-  @apply bg-muted/70 text-foreground border border-border/60;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
-  transition: all 0.3s ease;
-}
-
-.anthropic-badge:hover {
-  background: hsl(var(--muted) / 0.9);
-  border-color: hsl(var(--border) / 0.8);
+  border-color: #10B981;
+  background: rgba(16, 185, 129, 0.05);
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.08);
 }
 
-/* 容器 - 更大留白 */
+
+/* 容器 - 平衡设计 */
 .container-anthropic {
-  @apply max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12;
+  @apply max-w-7xl mx-auto px-5 sm:px-6 lg:px-8;
 }
 
 .section-padding {
-  @apply py-16 sm:py-20 md:py-28 lg:py-36;
+  @apply py-12 sm:py-16 lg:py-20;
 }
 
 .section-padding-sm {
-  @apply py-10 sm:py-12 md:py-16;
+  @apply py-10 sm:py-12 lg:py-14;
 }
 
 .section-padding-lg {
-  @apply py-24 sm:py-32 md:py-40 lg:py-52;
+  @apply py-16 sm:py-20 lg:py-24;
 }
 
-/* Hero 渐变 - 更精致 */
-.hero-gradient {
-  background:
-    radial-gradient(
-      ellipse 100% 60% at 50% -30%,
-      hsl(15 74% 48% / 0.12),
-      transparent 70%
-    ),
-    radial-gradient(
-      circle at 80% 20%,
-      hsl(28 24% 92% / 0.4),
-      transparent 50%
-    ),
-    linear-gradient(
-      to bottom,
-      hsl(var(--background)),
-      hsl(30 24% 96%)
-    );
-  position: relative;
-}
 
-.hero-gradient::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    hsl(var(--border) / 0.8),
-    transparent
-  );
-}
-
-.section-divider {
-  @apply border-t border-border/50;
-  position: relative;
-}
-
-.section-divider::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120px;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    hsl(var(--primary) / 0.3),
-    transparent
-  );
-}
-
-.section-elevated {
-  background: linear-gradient(
-    to bottom,
-    hsl(30 20% 97%),
-    hsl(30 22% 95%)
-  );
-  box-shadow: inset 0 1px 0 hsl(var(--border) / 0.4);
-}
-
-/* 图片容器 - 高端设计 */
-.image-container {
-  @apply relative overflow-hidden rounded-2xl bg-muted/30;
-  box-shadow:
-    0 0 0 1px hsl(var(--border) / 0.4),
-    0 2px 6px rgb(0 0 0 / 0.03),
-    0 8px 16px rgb(0 0 0 / 0.02);
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.image-container img {
-  @apply transition-all duration-700 ease-out;
-}
-
-.image-container:hover {
-  box-shadow:
-    0 0 0 1px hsl(var(--border) / 0.6),
-    0 4px 12px rgb(0 0 0 / 0.06),
-    0 16px 32px rgb(0 0 0 / 0.04);
-}
-
-.image-container:hover img {
-  transform: scale(1.08);
-  filter: brightness(1.08) contrast(1.02);
-}
-
-/* Featured card - 高端突出设计 */
-.anthropic-card-featured {
-  @apply bg-card border border-primary/25 rounded-2xl transition-all duration-500;
-  box-shadow:
-    0 0 0 1px hsl(var(--primary) / 0.25),
-    0 4px 12px rgb(0 0 0 / 0.06),
-    0 16px 32px rgb(0 0 0 / 0.05),
-    0 0 48px hsl(var(--primary) / 0.08);
-  background: linear-gradient(
-    135deg,
-    hsl(var(--card)),
-    hsl(var(--muted) / 0.3)
-  );
-}
-
-.anthropic-card-featured:hover {
-  border-color: hsl(var(--primary) / 0.4);
-  box-shadow:
-    0 0 0 1px hsl(var(--primary) / 0.4),
-    0 8px 20px rgb(0 0 0 / 0.08),
-    0 24px 48px rgb(0 0 0 / 0.06),
-    0 0 72px hsl(var(--primary) / 0.12);
-  transform: translateY(-8px) scale(1.02);
-}
 
 /* 滚动条 - 精致设计 */
 ::-webkit-scrollbar {
@@ -432,78 +244,8 @@
   @apply bg-primary/40;
 }
 
-/* Focus */
 *:focus-visible {
   @apply outline-none ring-2 ring-primary/50 ring-offset-2;
-}
-
-/* 高级动画和过渡效果 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-/* 页面加载动画 */
-.fade-in-up {
-  animation: fadeInUp 0.8s ease-out;
-}
-
-.fade-in {
-  animation: fadeIn 0.6s ease-out;
-}
-
-.slide-in-right {
-  animation: slideInRight 0.6s ease-out;
-}
-
-.scale-in {
-  animation: scaleIn 0.5s ease-out;
 }
 
 /* Smooth scrolling */
@@ -525,125 +267,9 @@ html {
   }
 }
 
-/* Selection */
 ::selection {
-  background-color: hsl(var(--primary) / 0.2);
-  color: hsl(var(--foreground));
-}
-
-/* Performance optimizations */
-.anthropic-card,
-.anthropic-button,
-.image-container {
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Loading skeleton */
-@keyframes skeleton-loading {
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-}
-
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--muted)) 0px,
-    hsl(var(--muted) / 0.5) 40px,
-    hsl(var(--muted)) 80px
-  );
-  background-size: 200px 100%;
-  animation: skeleton-loading 1.4s ease-in-out infinite;
-}
-
-/* Enhanced focus states for accessibility */
-:focus-visible {
-  outline: 2px solid hsl(var(--primary));
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: no-preference) {
-  .animate-on-scroll {
-    animation: fadeInUp 0.6s ease-out;
-  }
-}
-
-/* Print styles */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-
-  body {
-    background: white;
-    color: black;
-  }
-
-  .anthropic-card {
-    box-shadow: none;
-    border: 1px solid #ccc;
-  }
-}
-
-/* Stats */
-.stat-number {
-  @apply text-4xl sm:text-5xl font-medium;
-  letter-spacing: -0.03em;
-}
-
-.stat-label {
-  @apply text-sm text-muted-foreground uppercase tracking-wider font-medium;
-}
-
-/* Content spacing hierarchy */
-.content-section {
-  @apply space-y-12 sm:space-y-16 md:space-y-20;
-}
-
-.content-block {
-  @apply space-y-6 sm:space-y-8;
-}
-
-.content-group {
-  @apply space-y-4;
-}
-
-/* Layered backgrounds for depth */
-.layer-base {
-  @apply bg-background;
-}
-
-.layer-elevated-1 {
-  @apply bg-muted/20;
-}
-
-.layer-elevated-2 {
-  @apply bg-muted/40;
-}
-
-.layer-inset {
-  @apply bg-muted/60;
-  box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.04);
-}
-
-/* Interactive elements */
-.interactive-lift {
-  @apply transition-all duration-200;
-}
-
-.interactive-lift:hover {
-  transform: translateY(-2px);
-}
-
-.interactive-lift:active {
-  transform: translateY(0);
+  background-color: rgba(16, 185, 129, 0.2);
+  color: inherit;
 }
 
 /* React Quill */
@@ -663,16 +289,4 @@ html {
 
 html {
   scroll-behavior: smooth;
-}
-
-h1, h2, h3 {
-  text-wrap: balance;
-}
-
-p {
-  text-wrap: pretty;
-}
-
-::selection {
-  @apply bg-primary/15;
 }

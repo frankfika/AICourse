@@ -10,7 +10,7 @@ import { ShoppingBag, Clock, CheckCircle2, XCircle, Receipt } from 'lucide-react
 import { formatDate } from '@/lib/utils'
 
 export const metadata = {
-  title: '我的订单 - CourseAI',
+  title: '我的订单 - OpenCSG AI学院',
 }
 
 const statusConfig = {

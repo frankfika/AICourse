@@ -4,7 +4,8 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus } from 'lucide-react'
+import { Plus, Edit, Trash2 } from 'lucide-react'
+import { DeleteBannerButton } from '@/components/admin/delete-banner-button'
 
 export default async function AdminBannersPage() {
   const banners = await prisma.banner.findMany({
@@ -31,7 +32,7 @@ export default async function AdminBannersPage() {
           <Card key={banner.id}>
             <CardContent className="p-6">
               <div className="flex gap-6">
-                <div className="relative w-64 h-36 rounded-lg overflow-hidden">
+                <div className="relative w-64 h-36 rounded-lg overflow-hidden flex-shrink-0">
                   <Image
                     src={banner.image}
                     alt={banner.title}
@@ -52,6 +53,15 @@ export default async function AdminBannersPage() {
                       排序: {banner.order}
                     </span>
                   </div>
+                </div>
+                <div className="flex flex-col gap-2 justify-center">
+                  <Link href={`/admin/banners/${banner.id}/edit`}>
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Edit className="h-4 w-4 mr-2" />
+                      编辑
+                    </Button>
+                  </Link>
+                  <DeleteBannerButton bannerId={banner.id} />
                 </div>
               </div>
             </CardContent>

@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Edit } from 'lucide-react'
+import { Plus, Edit, Trash2 } from 'lucide-react'
+import { DeleteCategoryButton } from '@/components/admin/delete-category-button'
 
 export default async function AdminCategoriesPage() {
   const categories = await prisma.category.findMany({
@@ -48,11 +49,17 @@ export default async function AdminCategoriesPage() {
                     </p>
                   </div>
                 </div>
-                <Link href={`/admin/categories/${category.id}/edit`}>
-                  <Button variant="ghost" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link href={`/admin/categories/${category.id}/edit`}>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <DeleteCategoryButton
+                    categoryId={category.id}
+                    hasCourses={category._count.courses > 0}
+                  />
+                </div>
               </div>
             ))}
           </div>

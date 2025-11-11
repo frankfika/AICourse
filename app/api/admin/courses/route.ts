@@ -25,12 +25,13 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     
-    const { chapters, faqs, ...courseData } = data
+    const { chapters, faqs, startDate, ...courseData } = data
 
     // Create course with chapters and FAQs
     const course = await prisma.course.create({
       data: {
         ...courseData,
+        startDate: startDate ? new Date(startDate) : null,
         prerequisites: JSON.stringify(courseData.prerequisites || []),
         learningObjectives: JSON.stringify(courseData.learningObjectives || []),
         highlights: JSON.stringify(courseData.highlights || []),

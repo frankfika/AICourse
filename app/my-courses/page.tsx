@@ -11,7 +11,7 @@ import { formatDuration } from '@/lib/utils'
 import { COURSE_LEVELS } from '@/lib/constants'
 
 export const metadata = {
-  title: '我的课程 - CourseAI',
+  title: '我的课程 - OpenCSG AI学院',
   description: '管理您已报名的课程',
 }
 

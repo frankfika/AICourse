@@ -22,7 +22,8 @@ export function EnrollButton({ courseId, courseSlug, price, originalPrice }: Enr
 
   useEffect(() => {
     checkEnrollment()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId])
 
   const checkEnrollment = async () => {
     try {

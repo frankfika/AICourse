@@ -50,28 +50,28 @@ export function CourseFilters({
   const hasFilters = Array.from(searchParams.keys()).length > 0
 
   return (
-    <div className="space-y-6 sticky top-24">
+    <div className="space-y-5 sticky top-24">
       {/* Search */}
-      <div className="anthropic-card p-7">
-        <h3 className="text-sm font-semibold mb-5 uppercase tracking-widest text-muted-foreground">搜索</h3>
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-sm font-bold mb-4 text-gray-900">搜索课程</h3>
         <form onSubmit={handleSearch} className="flex gap-2">
           <Input
             name="search"
-            placeholder="搜索课程..."
+            placeholder="输入关键词..."
             defaultValue={searchParams.get('search') || ''}
-            className="flex-1 rounded-2xl border-border/60 focus:border-primary h-11 text-sm"
+            className="flex-1 rounded-xl border-gray-200 focus:border-primary h-11 text-sm"
           />
-          <Button type="submit" size="icon" variant="outline" className="rounded-2xl h-11 w-11">
+          <Button type="submit" size="icon" className="rounded-xl h-11 w-11 bg-primary hover:bg-emerald-600">
             <Search className="h-4 w-4" />
           </Button>
         </form>
       </div>
 
       {/* Category Filter */}
-      <div className="anthropic-card p-7">
-        <h3 className="text-sm font-semibold mb-5 uppercase tracking-widest text-muted-foreground">分类</h3>
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-sm font-bold mb-4 text-gray-900">课程分类</h3>
         <select
-          className="w-full px-5 py-3 border-2 border-border/60 rounded-2xl bg-background text-sm font-medium transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-sm font-medium transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
           value={searchParams.get('category') || ''}
           onChange={(e) => handleFilterChange('category', e.target.value)}
         >
@@ -85,10 +85,10 @@ export function CourseFilters({
       </div>
 
       {/* Level Filter */}
-      <div className="anthropic-card p-7">
-        <h3 className="text-sm font-semibold mb-5 uppercase tracking-widest text-muted-foreground">难度</h3>
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-sm font-bold mb-4 text-gray-900">难度等级</h3>
         <select
-          className="w-full px-5 py-3 border-2 border-border/60 rounded-2xl bg-background text-sm font-medium transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-sm font-medium transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
           value={searchParams.get('level') || ''}
           onChange={(e) => handleFilterChange('level', e.target.value)}
         >
@@ -100,17 +100,17 @@ export function CourseFilters({
       </div>
 
       {/* Sort */}
-      <div className="anthropic-card p-7">
-        <h3 className="text-sm font-semibold mb-5 uppercase tracking-widest text-muted-foreground">排序</h3>
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-sm font-bold mb-4 text-gray-900">排序方式</h3>
         <select
-          className="w-full px-5 py-3 border-2 border-border/60 rounded-2xl bg-background text-sm font-medium transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 cursor-pointer"
+          className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-sm font-medium transition-all hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
           value={searchParams.get('sort') || 'latest'}
           onChange={(e) => handleFilterChange('sort', e.target.value)}
         >
           <option value="latest">最新发布</option>
           <option value="popular">最受欢迎</option>
-          <option value="duration-asc">时长从短到长</option>
-          <option value="duration-desc">时长从长到短</option>
+          <option value="duration-asc">时长：短到长</option>
+          <option value="duration-desc">时长：长到短</option>
         </select>
       </div>
 
@@ -118,7 +118,7 @@ export function CourseFilters({
       {hasFilters && (
         <Button
           variant="outline"
-          className="w-full rounded-2xl h-11 font-medium transition-all hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+          className="w-full rounded-xl h-11 font-semibold transition-all hover:bg-red-50 hover:text-red-600 hover:border-red-200"
           onClick={clearFilters}
         >
           <X className="h-4 w-4 mr-2" />

@@ -32,7 +32,7 @@ export function AdminSidebar() {
         {/* Logo */}
         <div className="flex h-14 items-center border-b px-6">
           <Link href="/admin" className="flex items-center gap-2 font-semibold">
-            <span className="text-xl">CourseAI</span>
+            <span className="text-xl">OpenCSG <span className="text-primary">AI学院</span></span>
           </Link>
         </div>
 
@@ -65,7 +65,7 @@ export function AdminSidebar() {
         {/* Footer */}
         <div className="border-t px-6 py-4">
           <p className="text-xs text-muted-foreground">
-            CourseAI 后台管理系统
+            OpenCSG AI学院 后台管理系统
           </p>
         </div>
       </div>

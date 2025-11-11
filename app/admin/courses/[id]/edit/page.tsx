@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { CourseForm } from '@/components/admin/course-form'
 
 export const metadata = {
-  title: '编辑课程 - CourseAI 后台',
+  title: '编辑课程 - OpenCSG AI学院 后台',
 }
 
 export default async function EditCoursePage({

@@ -60,6 +60,9 @@ model Course {
   enrollCount        Int      @default(0)
   featured           Boolean  @default(false)
   status             String   @default("draft") // draft, published, archived
+  
+  // Course Schedule
+  startDate          DateTime? // 开课日期，如果为null或已过期则表示已开始
 
   // Pricing
   price              Float    @default(0) // 0 means free
@@ -128,6 +131,9 @@ model NanoDegree {
   enrollCount            Int      @default(0)
   featured               Boolean  @default(false)
   status                 String   @default("draft") // draft, published, archived
+  
+  // Course Schedule
+  startDate              DateTime? // 开课日期，如果为null或已过期则表示已开始
 
   // Pricing
   price                  Float    @default(0) // 0 means free
@@ -354,5 +360,20 @@ model Certificate {
   @@index([certificateNo])
   @@index([type, itemId])
   @@index([status])
+}
+
+// 课程等待列表（邮箱订阅）
+model CourseWaitlist {
+  id           String   @id @default(uuid())
+  email        String
+  courseId     String
+  courseTitle  String   // 冗余存储课程标题
+  notified     Boolean  @default(false) // 是否已通知
+  notifiedAt   DateTime?
+  createdAt    DateTime @default(now())
+
+  @@unique([email, courseId])
+  @@index([courseId])
+  @@index([notified])
 }
 

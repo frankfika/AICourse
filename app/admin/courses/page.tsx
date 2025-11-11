@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/utils'
 import { COURSE_LEVELS } from '@/lib/constants'
 
 export const metadata = {
-  title: '课程管理 - CourseAI 后台',
+  title: '课程管理 - OpenCSG AI学院 后台',
 }
 
 export default async function AdminCoursesPage() {

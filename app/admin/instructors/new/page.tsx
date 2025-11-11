@@ -1,7 +1,7 @@
 import { InstructorForm } from '@/components/admin/instructor-form'
 
 export const metadata = {
-  title: '添加讲师 - CourseAI 后台',
+  title: '添加讲师 - OpenCSG AI学院 后台',
 }
 
 export default function NewInstructorPage() {

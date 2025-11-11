@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,10 +10,6 @@ import { Label } from '@/components/ui/label'
 // Removed Select import - using native select
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Trash2 } from 'lucide-react'
-
-// Dynamically import ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
-import 'react-quill/dist/quill.snow.css'
 
 interface CourseFormProps {
   course?: any
@@ -40,6 +35,7 @@ export function CourseForm({ course, categories, instructors }: CourseFormProps)
     duration: course?.duration || 0,
     suggestedWeeks: course?.suggestedWeeks || null,
     hoursPerWeek: course?.hoursPerWeek || null,
+    startDate: course?.startDate ? new Date(course.startDate).toISOString().slice(0, 16) : '',
     targetAudience: course?.targetAudience || '',
     prerequisites: course?.prerequisites || [''],
     learningObjectives: course?.learningObjectives || [''],
@@ -64,6 +60,7 @@ export function CourseForm({ course, categories, instructors }: CourseFormProps)
         duration: parseInt(formData.duration as any),
         suggestedWeeks: formData.suggestedWeeks ? parseInt(formData.suggestedWeeks as any) : null,
         hoursPerWeek: formData.hoursPerWeek ? parseInt(formData.hoursPerWeek as any) : null,
+        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
         price: parseFloat(formData.price as any),
         originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice as any) : null,
         chapters: chapters.map((ch: any, index: number) => ({
@@ -319,6 +316,21 @@ export function CourseForm({ course, categories, instructors }: CourseFormProps)
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="startDate">开课日期（可选）</Label>
+                <Input
+                  id="startDate"
+                  type="datetime-local"
+                  value={formData.startDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, startDate: e.target.value })
+                  }
+                />
+                <p className="text-sm text-gray-500">
+                  如果设置了开课日期，课程将在该日期之前显示"即将开始"状态
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="coverImage">封面图片 URL</Label>
                 <Input
                   id="coverImage"
@@ -341,12 +353,13 @@ export function CourseForm({ course, categories, instructors }: CourseFormProps)
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>课程详细介绍</Label>
-                <ReactQuill
+                <Textarea
                   value={formData.description}
-                  onChange={(value) =>
-                    setFormData({ ...formData, description: value })
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
                   }
-                  theme="snow"
+                  rows={10}
+                  placeholder="输入课程详细介绍..."
                 />
               </div>
 
@@ -609,10 +622,11 @@ export function CourseForm({ course, categories, instructors }: CourseFormProps)
                     </div>
                     <div className="space-y-2">
                       <Label>答案</Label>
-                      <ReactQuill
+                      <Textarea
                         value={faq.answer}
-                        onChange={(value) => updateFaq(index, 'answer', value)}
-                        theme="snow"
+                        onChange={(e) => updateFaq(index, 'answer', e.target.value)}
+                        rows={4}
+                        placeholder="输入答案..."
                       />
                     </div>
                   </CardContent>

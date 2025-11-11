@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { PaymentFlow } from '@/components/payment/payment-flow'
 
 export const metadata = {
-  title: '订单支付 - CourseAI',
+  title: '订单支付 - OpenCSG AI学院',
 }
 
 export default async function OrderPaymentPage({

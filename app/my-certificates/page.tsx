@@ -9,7 +9,7 @@ import { Award, Download, Eye, Printer } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export const metadata = {
-  title: '我的证书 - CourseAI',
+  title: '我的证书 - OpenCSG AI学院',
 }
 
 export default async function MyCertificatesPage() {

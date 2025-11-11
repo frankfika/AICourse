@@ -1,291 +1,252 @@
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Badge } from '@/components/ui/badge'
-import { ArrowRight, Clock, Users } from 'lucide-react'
-import { COURSE_LEVELS } from '@/lib/constants'
+import { ArrowRight, Sparkles, Play, Users, BookOpen, Award } from 'lucide-react'
 
 export default async function HomePage() {
   // Fetch data
-  const [categories, featuredCourses, featuredNanoDegrees, stats] =
-    await Promise.all([
-      prisma.category.findMany({
-        orderBy: { order: 'asc' },
-        include: {
-          _count: { select: { courses: true } },
-        },
-      }),
-      prisma.course.findMany({
-        where: { status: 'published', featured: true },
-        include: {
-          category: true,
-          instructor: true,
-        },
-        orderBy: { viewCount: 'desc' },
-        take: 6,
-      }),
-      prisma.nanoDegree.findMany({
-        where: { status: 'published', featured: true },
-        include: {
-          _count: { select: { courses: true } },
-        },
-        orderBy: { viewCount: 'desc' },
-        take: 3,
-      }),
-      prisma.$transaction([
-        prisma.course.count({ where: { status: 'published' } }),
-        prisma.nanoDegree.count({ where: { status: 'published' } }),
-        prisma.instructor.count(),
-      ]),
-    ])
+  const [featuredCourses, stats] = await Promise.all([
+    prisma.course.findMany({
+      where: { status: 'published', featured: true },
+      include: {
+        category: true,
+        instructor: true,
+      },
+      orderBy: { viewCount: 'desc' },
+      take: 3,
+    }),
+    prisma.$transaction([
+      prisma.course.count({ where: { status: 'published' } }),
+      prisma.user.count(),
+      prisma.nanoDegree.count({ where: { status: 'published' } }),
+    ]),
+  ])
 
-  const [coursesCount, nanoDegreesCount, instructorsCount] = stats
+  const [coursesCount, usersCount, nanoDegreesCount] = stats
 
   return (
-    <div className="min-h-screen">
-      {/* Hero Section - Premium Design: Large, impactful, elegant */}
-      <section className="section-padding-lg hero-gradient overflow-hidden">
-        <div className="container-anthropic">
-          <div className="max-w-5xl space-y-12">
-            {/* Eyebrow with animation hint */}
-            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 backdrop-blur-sm">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-              <span className="text-sm font-semibold tracking-wide text-foreground/80">
-                AI 在线学习平台
-              </span>
-            </div>
-
-            {/* Main Heading - Larger, bolder */}
-            <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-[1.1]">
-              掌握 AI
-              <br />
-              <span className="bg-gradient-to-r from-primary via-primary to-primary/80 bg-clip-text text-transparent">
-                从这里开始
-              </span>
-            </h1>
-
-            {/* Subtitle - Better hierarchy */}
-            <p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground/90 max-w-3xl leading-relaxed font-light">
-              系统化的课程体系，专业的讲师团队，助你在 AI 领域不断成长
-            </p>
-
-            {/* CTA Buttons - More prominent */}
-            <div className="flex flex-col sm:flex-row gap-5 pt-8">
-              <Link href="/courses" className="anthropic-button text-base">
-                探索课程
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link href="/nano-degrees" className="anthropic-button-secondary text-base">
-                查看认证项目
-              </Link>
-            </div>
-
-            {/* Stats - More refined */}
-            <div className="flex flex-wrap gap-x-16 gap-y-8 pt-16 border-t border-border/40">
-              <div className="space-y-2">
-                <div className="stat-number text-5xl font-bold">{coursesCount}+</div>
-                <div className="stat-label text-base">精品课程</div>
-              </div>
-              <div className="space-y-2">
-                <div className="stat-number text-5xl font-bold">{nanoDegreesCount}+</div>
-                <div className="stat-label text-base">认证项目</div>
-              </div>
-              <div className="space-y-2">
-                <div className="stat-number text-5xl font-bold">{instructorsCount}+</div>
-                <div className="stat-label text-base">专业讲师</div>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section - 创新布局 */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-50/30 via-white to-green-50/20">
+        {/* 装饰背景 */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-emerald-400/5 rounded-full blur-3xl"></div>
         </div>
-      </section>
 
-      {/* Categories Section */}
-      <section className="section-padding section-divider">
-        <div className="container-anthropic">
-          <div className="max-w-3xl mb-20">
-            <h2 className="mb-6 text-4xl sm:text-5xl font-bold tracking-tight">探索学习方向</h2>
-            <p className="text-xl text-muted-foreground/90 leading-relaxed">
-              从基础到进阶，覆盖 AI 领域的各个方向
-            </p>
-          </div>
+        <div className="container-anthropic relative py-32 lg:py-40">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* 左侧：文字内容 */}
+            <div className="space-y-10">
+              {/* 标签 */}
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm font-bold text-primary">AI 驱动学习</span>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/courses?category=${category.slug}`}
-                className="group anthropic-card p-10 block hover:scale-[1.02] transition-all duration-500"
-              >
-                <div className="text-5xl mb-8 transform group-hover:scale-110 transition-transform duration-500">{category.icon}</div>
-                <h3 className="text-2xl font-semibold mb-3 group-hover:text-primary transition-colors duration-300">
-                  {category.name}
-                </h3>
-                <p className="text-sm text-muted-foreground/80 font-medium">
-                  {category._count.courses} 门课程
+              {/* 标题 */}
+              <div className="space-y-6">
+                <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight leading-[0.9]">
+                  <span className="block text-gray-900">掌握 AI</span>
+                  <span className="block bg-gradient-to-r from-primary via-emerald-500 to-green-500 bg-clip-text text-transparent">
+                    改变未来
+                  </span>
+                </h1>
+                
+                <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+                  系统化课程体系，顶尖讲师团队，实战项目驱动，助力你成为 AI 领域专家
                 </p>
-              </Link>
-            ))}
+              </div>
+
+              {/* 按钮 */}
+              <div className="flex flex-wrap items-center gap-4">
+                <Link 
+                  href="/courses" 
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary to-emerald-600 text-white text-lg font-bold rounded-2xl shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105"
+                >
+                  <Play className="w-5 h-5" fill="white" />
+                  <span>开始学习</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                
+                <Link 
+                  href="/nano-degrees" 
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-white border-2 border-gray-200 text-gray-900 text-lg font-bold rounded-2xl hover:border-primary/30 hover:bg-gray-50 transition-all duration-300"
+                >
+                  <Award className="w-5 h-5 text-primary" />
+                  <span>认证项目</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* 右侧：视觉元素 */}
+            <div className="relative">
+              {/* 统计卡片组 - 创新布局 */}
+              <div className="relative space-y-4">
+                {/* 第一行 */}
+                <div className="flex gap-4">
+                  <div className="flex-1 group relative overflow-hidden bg-gradient-to-br from-white to-gray-50 rounded-3xl p-8 border-2 border-gray-100 hover:border-primary/30 transition-all hover:-translate-y-1">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16"></div>
+                    <div className="relative">
+                      <div className="text-5xl font-black text-gray-900 mb-2">{coursesCount}</div>
+                      <div className="text-sm font-semibold text-gray-600 uppercase tracking-wider">精品课程</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 group relative overflow-hidden bg-gradient-to-br from-primary/5 to-emerald-50/50 rounded-3xl p-8 border-2 border-primary/20 hover:border-primary/40 transition-all hover:-translate-y-1">
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/10 rounded-full -ml-16 -mb-16"></div>
+                    <div className="relative">
+                      <div className="text-5xl font-black bg-gradient-to-r from-primary to-emerald-600 bg-clip-text text-transparent mb-2">
+                        {usersCount}+
+                      </div>
+                      <div className="text-sm font-semibold text-primary uppercase tracking-wider">活跃学员</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 第二行 */}
+                <div className="flex gap-4">
+                  <div className="flex-1 group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-green-50/50 rounded-3xl p-8 border-2 border-emerald-200/50 hover:border-emerald-400/50 transition-all hover:-translate-y-1">
+                    <div className="absolute top-0 left-0 w-32 h-32 bg-emerald-400/10 rounded-full -ml-16 -mt-16"></div>
+                    <div className="relative">
+                      <div className="text-5xl font-black text-emerald-700 mb-2">{nanoDegreesCount}</div>
+                      <div className="text-sm font-semibold text-emerald-600 uppercase tracking-wider">认证项目</div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 group relative overflow-hidden bg-gradient-to-br from-white to-gray-50 rounded-3xl p-8 border-2 border-gray-100 hover:border-primary/30 transition-all hover:-translate-y-1">
+                    <div className="absolute bottom-0 right-0 w-32 h-32 bg-green-400/5 rounded-full -mr-16 -mb-16"></div>
+                    <div className="relative">
+                      <div className="text-5xl font-black text-gray-900 mb-2">100%</div>
+                      <div className="text-sm font-semibold text-gray-600 uppercase tracking-wider">实战项目</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Courses */}
-      <section className="section-padding section-divider">
+      {/* 精选课程 - 紧凑列表 */}
+      <section className="py-16 bg-gradient-to-b from-gray-50/50 to-white">
         <div className="container-anthropic">
-          <div className="flex items-end justify-between mb-20">
-            <div className="max-w-3xl">
-              <h2 className="mb-6 text-4xl sm:text-5xl font-bold tracking-tight">精选课程</h2>
-              <p className="text-xl text-muted-foreground/90 leading-relaxed">
-                由行业专家精心打造的高质量课程
+          <div className="flex items-end justify-between mb-10">
+            <div className="space-y-2">
+              <h2 className="text-3xl sm:text-4xl font-black text-gray-900">精选课程</h2>
+              <p className="text-base text-gray-600">
+                热门 AI 课程推荐
               </p>
             </div>
             <Link
               href="/courses"
-              className="hidden lg:flex items-center gap-3 text-foreground hover:text-primary transition-all group font-medium text-lg"
+              className="inline-flex items-center gap-2 text-primary hover:gap-3 transition-all font-semibold group"
             >
-              查看全部
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
+              <span>查看全部</span>
+              <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {featuredCourses.map((course) => (
-              <Link
-                key={course.id}
-                href={`/courses/${course.slug}`}
-                className="group block"
-              >
-                <div className="anthropic-card overflow-hidden h-full flex flex-col">
-                  {/* Image */}
-                  <div className="image-container aspect-[16/9] relative overflow-hidden">
-                    <Image
-                      src={course.coverImage}
-                      alt={course.title}
-                      fill
-                      className="object-cover"
-                    />
-                    {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  </div>
+          {/* 紧凑课程列表 */}
+          <div className="space-y-4">
+            {featuredCourses.map((course, idx) => {
+              const isComingSoon = course.startDate && new Date(course.startDate) > new Date()
+              
+              return (
+                <Link
+                  key={course.id}
+                  href={`/courses/${course.slug}`}
+                  className="group relative block"
+                >
+                <div className="relative bg-white rounded-2xl overflow-hidden border-2 border-gray-100 hover:border-primary/30 transition-all hover:shadow-xl">
+                  <div className="grid md:grid-cols-5 gap-0">
+                    {/* 左侧：文字内容 */}
+                    <div className="md:col-span-3 p-6 flex flex-col justify-center">
+                      <div className="space-y-3">
+                        {/* 标签和序号 */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-primary/10 to-emerald-500/10 border border-primary/20">
+                            <span className="text-sm font-black text-primary">{idx + 1}</span>
+                          </div>
+                          <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+                            {course.category.name}
+                          </span>
+                          {isComingSoon && (
+                            <span className="px-3 py-1 rounded-full bg-orange-500 text-white text-xs font-bold">
+                              即将开始
+                            </span>
+                          )}
+                          {course.price === 0 && (
+                            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                              免费
+                            </span>
+                          )}
+                        </div>
 
-                  {/* Content */}
-                  <div className="p-8 space-y-5 flex flex-col flex-grow">
-                    {/* Meta */}
-                    <div className="flex items-center gap-3 text-xs">
-                      <Badge variant="outline" className="anthropic-badge font-semibold">
-                        {course.category.name}
-                      </Badge>
-                      <span className="text-muted-foreground/60">·</span>
-                      <span className="text-muted-foreground/80 font-medium">{COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}</span>
+                        {/* 标题 */}
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-primary transition-colors leading-tight">
+                          {course.title}
+                        </h3>
+
+                        {/* 底部信息 */}
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1.5">
+                            <Users className="w-4 h-4 text-primary" />
+                            <span className="font-medium">{course.viewCount.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <BookOpen className="w-4 h-4 text-primary" />
+                            <span className="font-medium">{course.instructor.name}</span>
+                          </div>
+                          <ArrowRight className="w-5 h-5 text-primary ml-auto group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Title */}
-                    <h3 className="text-2xl font-semibold group-hover:text-primary transition-colors duration-300 line-clamp-2 leading-tight">
-                      {course.title}
-                    </h3>
-
-                    {/* Description */}
-                    <p className="text-base text-muted-foreground/80 line-clamp-2 leading-relaxed flex-grow">
-                      {course.shortDescription}
-                    </p>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-5 border-t border-border/50">
-                      <span className="text-sm text-muted-foreground/80 font-medium">
-                        {course.instructor.name}
-                      </span>
-                      {course.price === 0 ? (
-                        <span className="text-base font-semibold text-primary">免费</span>
-                      ) : (
-                        <span className="text-base font-semibold">¥{course.price}</span>
-                      )}
+                    {/* 右侧：封面图 */}
+                    <div className="md:col-span-2 relative">
+                      <div className="aspect-video md:aspect-auto md:absolute md:inset-0 bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
+                        <Image
+                          src={course.coverImage}
+                          alt={course.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               </Link>
-            ))}
-          </div>
-
-          {/* Mobile CTA */}
-          <div className="text-center mt-12 lg:hidden">
-            <Link
-              href="/courses"
-              className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors group"
-            >
-              查看全部课程
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+              )
+            })}
           </div>
         </div>
       </section>
 
-      {/* Nano Degrees */}
-      {featuredNanoDegrees.length > 0 && (
-        <section className="section-padding section-divider bg-muted/30">
-          <div className="container-anthropic">
-            <div className="max-w-3xl mb-16">
-              <h2 className="mb-4">专业认证项目</h2>
-              <p className="text-lg text-muted-foreground">
-                系统化的学习路径，完成后获得权威认证证书
+      {/* CTA */}
+      <section className="py-32 relative overflow-hidden bg-gradient-to-br from-primary/5 via-emerald-50/30 to-green-50/20">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="container-anthropic relative">
+          <div className="max-w-4xl mx-auto text-center space-y-10">
+            <div className="space-y-6">
+              <h2 className="text-5xl sm:text-6xl lg:text-7xl font-black text-gray-900">
+                开启你的 AI 之旅
+              </h2>
+              <p className="text-2xl text-gray-600 max-w-2xl mx-auto">
+                立即加入，掌握未来核心技能
               </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredNanoDegrees.map((nanoDegree) => (
-                <Link
-                  key={nanoDegree.id}
-                  href={`/nano-degrees/${nanoDegree.slug}`}
-                  className="group block"
-                >
-                  <div className="anthropic-card p-8 h-full flex flex-col">
-                    {/* Badge */}
-                    <Badge className="anthropic-badge w-fit mb-6">
-                      专业认证
-                    </Badge>
-
-                    {/* Title */}
-                    <h3 className="text-2xl mb-4 group-hover:text-primary transition-colors">
-                      {nanoDegree.title}
-                    </h3>
-
-                    {/* Description */}
-                    <p className="text-muted-foreground mb-6 flex-grow line-clamp-3">
-                      {nanoDegree.shortDescription}
-                    </p>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-6 border-t border-border/60">
-                      <span className="text-sm text-muted-foreground">
-                        {nanoDegree._count.courses} 门课程
-                      </span>
-                      {nanoDegree.price === 0 ? (
-                        <span className="text-sm font-medium">免费</span>
-                      ) : (
-                        <span className="text-sm font-medium">¥{nanoDegree.price}</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Final CTA Section */}
-      <section className="section-padding section-divider">
-        <div className="container-anthropic">
-          <div className="max-w-3xl mx-auto text-center space-y-8">
-            <h2 className="text-4xl sm:text-5xl md:text-6xl">
-              开启你的 AI 学习之旅
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              加入数千名学员，一起探索人工智能的无限可能
-            </p>
-            <div className="pt-4">
-              <Link href="/courses" className="anthropic-button">
-                立即开始学习
-                <ArrowRight className="w-4 h-4" />
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              <Link 
+                href="/courses" 
+                className="group inline-flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-primary to-emerald-600 text-white text-xl font-bold rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 hover:scale-105"
+              >
+                <span>立即开始</span>
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
               </Link>
             </div>
           </div>

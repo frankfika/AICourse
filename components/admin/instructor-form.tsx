@@ -2,15 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
-import 'react-quill/dist/quill.snow.css'
 
 interface InstructorFormProps {
   instructor?: any
@@ -114,12 +110,13 @@ export function InstructorForm({ instructor }: InstructorFormProps) {
 
           <div className="space-y-2">
             <Label>教学经验</Label>
-            <ReactQuill
+            <Textarea
               value={formData.experience}
-              onChange={(value) =>
-                setFormData({ ...formData, experience: value })
+              onChange={(e) =>
+                setFormData({ ...formData, experience: e.target.value })
               }
-              theme="snow"
+              rows={6}
+              placeholder="描述教学经验..."
             />
           </div>
         </CardContent>
