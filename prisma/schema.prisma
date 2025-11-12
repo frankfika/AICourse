@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -60,7 +60,7 @@ model Course {
   enrollCount        Int      @default(0)
   featured           Boolean  @default(false)
   status             String   @default("draft") // draft, published, archived
-  
+
   // Course Schedule
   startDate          DateTime? // 开课日期，如果为null或已过期则表示已开始
 
