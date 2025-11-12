@@ -20,8 +20,6 @@ export async function POST(
     const body = await request.json()
     const { completed, lastPosition } = body
 
-    const chapterId = chapterId
-
     // Upsert chapter progress
     const progress = await prisma.chapterProgress.upsert({
       where: {

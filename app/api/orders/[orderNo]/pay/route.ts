@@ -18,8 +18,6 @@ export async function POST(
       )
     }
 
-    const orderNo = orderNo
-
     // 查找订单
     const order = await prisma.order.findUnique({
       where: { orderNo },

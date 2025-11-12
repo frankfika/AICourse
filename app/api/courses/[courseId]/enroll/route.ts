@@ -17,8 +17,6 @@ export async function POST(
       )
     }
 
-    const courseId = courseId
-
     // Check if course exists
     const course = await prisma.course.findUnique({
       where: { id: courseId, status: 'published' },
