@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/lib/user-auth'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderNo: string } }
+  { params }: { params: Promise<{ orderNo: string }> }
 ) {
   try {
+    const { orderNo } = await params
     const user = await getCurrentUser()
 
     if (!user) {
@@ -16,7 +17,7 @@ export async function GET(
       )
     }
 
-    const orderNo = params.orderNo
+    const orderNo = orderNo
 
     const order = await prisma.order.findUnique({
       where: { orderNo },

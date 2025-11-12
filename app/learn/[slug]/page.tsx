@@ -6,8 +6,9 @@ import { CoursePlayer } from '@/components/learn/course-player'
 export default async function LearnCoursePage({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
+  const { slug } = await params
   const user = await getCurrentUser()
 
   if (!user) {
@@ -15,7 +16,7 @@ export default async function LearnCoursePage({
   }
 
   const course = await prisma.course.findUnique({
-    where: { slug: params.slug, status: 'published' },
+    where: { slug, status: 'published' },
     include: {
       category: true,
       instructor: true,
@@ -40,7 +41,7 @@ export default async function LearnCoursePage({
   })
 
   if (!enrollment) {
-    redirect(`/courses/${params.slug}`)
+    redirect(`/courses/${slug}`)
   }
 
   // Get chapter progress

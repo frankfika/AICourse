@@ -12,6 +12,7 @@ export async function POST(
 ) {
   try {
     const { courseId } = await params
+    const { courseId } = await params
     const body = await request.json()
     const { email } = waitlistSchema.parse(body)
 

@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/lib/user-auth'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { chapterId: string } }
+  { params }: { params: Promise<{ chapterId: string }> }
 ) {
   try {
+    const { chapterId } = await params
     const user = await getCurrentUser()
 
     if (!user) {
@@ -19,7 +20,7 @@ export async function POST(
     const body = await request.json()
     const { completed, lastPosition } = body
 
-    const chapterId = params.chapterId
+    const chapterId = chapterId
 
     // Upsert chapter progress
     const progress = await prisma.chapterProgress.upsert({

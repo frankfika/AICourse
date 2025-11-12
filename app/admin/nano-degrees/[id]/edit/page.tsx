@@ -9,11 +9,12 @@ export const metadata = {
 export default async function EditNanoDegreePage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const [nanoDegree, courses] = await Promise.all([
     prisma.nanoDegree.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         courses: {
           include: { course: true },

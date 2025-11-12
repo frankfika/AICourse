@@ -5,10 +5,11 @@ import { CertificateView } from '@/components/certificates/certificate-view'
 export async function generateMetadata({
   params,
 }: {
-  params: { certificateNo: string }
+  params: Promise<{ certificateNo: string }>
 }) {
+  const { certificateNo } = await params
   const certificate = await prisma.certificate.findUnique({
-    where: { certificateNo: params.certificateNo },
+    where: { certificateNo },
   })
 
   if (!certificate) {
@@ -24,11 +25,12 @@ export async function generateMetadata({
 export default async function CertificateDetailPage({
   params,
 }: {
-  params: { certificateNo: string }
+  params: Promise<{ certificateNo: string }>
 }) {
+  const { certificateNo } = await params
   const certificate = await prisma.certificate.findUnique({
     where: {
-      certificateNo: params.certificateNo,
+      certificateNo,
       status: 'active',
     },
     include: {

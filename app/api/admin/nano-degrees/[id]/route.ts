@@ -3,11 +3,12 @@ import { prisma } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const nanoDegree = await prisma.nanoDegree.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         courses: {
           include: { course: true },
@@ -29,21 +30,22 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const data = await request.json()
     const { courseIds, faqs, startDate, ...nanoDegreeData } = data
 
     // Delete existing relationships
     await Promise.all([
-      prisma.nanoDegreeCourse.deleteMany({ where: { nanoDegreeId: params.id } }),
-      prisma.nanoDegreeFAQ.deleteMany({ where: { nanoDegreeId: params.id } }),
+      prisma.nanoDegreeCourse.deleteMany({ where: { nanoDegreeId: id } }),
+      prisma.nanoDegreeFAQ.deleteMany({ where: { nanoDegreeId: id } }),
     ])
 
     // Update nano degree
     const nanoDegree = await prisma.nanoDegree.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...nanoDegreeData,
         startDate: startDate ? new Date(startDate) : null,
@@ -75,11 +77,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await prisma.nanoDegree.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     return NextResponse.json({ success: true })

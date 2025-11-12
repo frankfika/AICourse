@@ -3,12 +3,13 @@ import { prisma } from '@/lib/db'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const data = await request.json()
     const instructor = await prisma.instructor.update({
-      where: { id: params.id },
+      where: { id: id },
       data,
     })
     return NextResponse.json(instructor)
@@ -19,10 +20,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await prisma.instructor.delete({ where: { id: params.id } })
+    const { id } = await params
+    await prisma.instructor.delete({ where: { id: id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: '删除失败' }, { status: 500 })

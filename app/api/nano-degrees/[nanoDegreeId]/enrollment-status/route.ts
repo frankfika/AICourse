@@ -8,6 +8,7 @@ export async function GET(
 ) {
   try {
     const { nanoDegreeId } = await params
+    const { nanoDegreeId } = await params
     const user = await getCurrentUser()
 
     if (!user) {

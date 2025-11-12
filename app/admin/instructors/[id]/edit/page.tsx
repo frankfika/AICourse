@@ -9,10 +9,11 @@ export const metadata = {
 export default async function EditInstructorPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const instructor = await prisma.instructor.findUnique({
-    where: { id: params.id },
+    where: { id },
   })
 
   if (!instructor) {

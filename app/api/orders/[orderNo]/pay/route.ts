@@ -5,9 +5,10 @@ import { getCurrentUser } from '@/lib/user-auth'
 // 模拟支付（用于测试）
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orderNo: string } }
+  { params }: { params: Promise<{ orderNo: string }> }
 ) {
   try {
+    const { orderNo } = await params
     const user = await getCurrentUser()
 
     if (!user) {
@@ -17,7 +18,7 @@ export async function POST(
       )
     }
 
-    const orderNo = params.orderNo
+    const orderNo = orderNo
 
     // 查找订单
     const order = await prisma.order.findUnique({

@@ -3,11 +3,12 @@ import { prisma } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const course = await prisma.course.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         category: true,
         instructor: true,
@@ -28,21 +29,22 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const data = await request.json()
     const { chapters, faqs, startDate, ...courseData } = data
 
     // Delete existing chapters and FAQs
     await Promise.all([
-      prisma.chapter.deleteMany({ where: { courseId: params.id } }),
-      prisma.courseFAQ.deleteMany({ where: { courseId: params.id } }),
+      prisma.chapter.deleteMany({ where: { courseId: id } }),
+      prisma.courseFAQ.deleteMany({ where: { courseId: id } }),
     ])
 
     // Update course with new chapters and FAQs
     const course = await prisma.course.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...courseData,
         startDate: startDate ? new Date(startDate) : null,
@@ -76,11 +78,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await prisma.course.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ success: true })

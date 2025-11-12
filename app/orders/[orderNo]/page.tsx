@@ -10,8 +10,9 @@ export const metadata = {
 export default async function OrderPaymentPage({
   params,
 }: {
-  params: { orderNo: string }
+  params: Promise<{ orderNo: string }>
 }) {
+  const { orderNo } = await params
   const user = await getCurrentUser()
 
   if (!user) {
@@ -19,7 +20,7 @@ export default async function OrderPaymentPage({
   }
 
   const order = await prisma.order.findUnique({
-    where: { orderNo: params.orderNo },
+    where: { orderNo },
   })
 
   if (!order) {

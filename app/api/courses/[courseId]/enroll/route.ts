@@ -4,9 +4,10 @@ import { getCurrentUser } from '@/lib/user-auth'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const { courseId } = await params
     const user = await getCurrentUser()
 
     if (!user) {
@@ -16,7 +17,7 @@ export async function POST(
       )
     }
 
-    const courseId = params.courseId
+    const courseId = courseId
 
     // Check if course exists
     const course = await prisma.course.findUnique({
@@ -76,9 +77,10 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const { courseId } = await params
     const user = await getCurrentUser()
 
     if (!user) {
@@ -88,7 +90,7 @@ export async function DELETE(
       )
     }
 
-    const courseId = params.courseId
+    const courseId = courseId
 
     // Delete enrollment
     const enrollment = await prisma.enrollment.deleteMany({
@@ -123,9 +125,10 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ courseId: string }> }
 ) {
   try {
+    const { courseId } = await params
     const user = await getCurrentUser()
 
     if (!user) {
@@ -136,7 +139,7 @@ export async function GET(
       where: {
         userId_courseId: {
           userId: user.id,
-          courseId: params.courseId,
+          courseId: courseId,
         },
       },
     })
