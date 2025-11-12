@@ -1,340 +1,528 @@
-# CourseAI - AI 课程学习平台
+# 🎓 OpenCSG AI学院
 
-一个功能完整的 AI 课程管理和学习平台，支持课程展示、Nano Degree 认证项目，以及完善的后台管理系统。
+<div align="center">
 
-## 🚀 项目特性
+**一个现代化的AI课程管理和学习平台**
 
-### 前台功能
-- ✅ **首页**: Banner 轮播、课程分类导航、热门课程展示、Nano Degree 项目
-- ✅ **课程模块**: 课程列表、详情页、分类筛选、搜索排序
-- ✅ **Nano Degree**: 认证项目列表、详情页、学习路径可视化
-- ✅ **响应式设计**: 完美支持桌面端和移动端
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.6-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-5.22-2D3748?logo=prisma)](https://www.prisma.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwindcss)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://vercel.com)
 
-### 后台管理
-- ✅ **仪表盘**: 数据统计、最近活动、热门内容
-- ✅ **课程管理**: CRUD 操作、富文本编辑、章节管理、FAQ 管理
-- ✅ **Nano Degree 管理**: 课程组合、证书配置、学习路径设置
-- ✅ **讲师管理**: 讲师信息维护
-- ✅ **分类管理**: 课程分类维护
-- ✅ **Banner 管理**: 首页轮播图管理
-- ✅ **认证系统**: Session 基础的管理员登录
+[🌐 在线演示](https://opencsg-ai-academy-4uj36br7t-franks-projects-a4189b1b.vercel.app) · [📖 使用文档](#-快速开始) · [🐛 反馈问题](https://github.com/frankfika/AICourse/issues)
 
-## 🛠 技术栈
+![OpenCSG AI Academy](https://img.shields.io/badge/OpenCSG-AI%20Academy-10B981?style=for-the-badge)
 
-### 核心框架
-- **Next.js 14** (App Router)
-- **TypeScript**
-- **React 18**
+</div>
 
-### 数据库 & ORM
-- **SQLite** (本地数据库)
-- **Prisma** (ORM)
+---
 
-### UI & 样式
-- **Tailwind CSS**
-- **Shadcn/UI** (组件库)
-- **Lucide React** (图标)
+## 📖 目录
 
-### 功能库
-- **React-Quill** (富文本编辑器)
-- **iron-session** (会话管理)
-- **bcryptjs** (密码加密)
-- **date-fns** (日期处理)
+- [✨ 核心特性](#-核心特性)
+- [🛠️ 技术栈](#️-技术栈)
+- [📦 快速开始](#-快速开始)
+- [📁 项目结构](#-项目结构)
+- [🚀 部署指南](#-部署指南)
+- [🎯 功能详解](#-功能详解)
+- [🔧 常用命令](#-常用命令)
+- [🔒 安全性](#-安全性)
+- [🤝 贡献指南](#-贡献指南)
+
+---
+
+## ✨ 核心特性
+
+### 🎓 学习者功能
+
+- **🏠 现代化首页**
+  - 响应式Banner轮播
+  - 课程分类导航
+  - 精选课程/项目展示
+  - 简洁优雅的绿色主题设计
+
+- **📚 完整课程系统**
+  - 课程列表与详情页面
+  - 高级筛选和搜索
+  - **"即将开始"功能**（开课日期 + 邮箱订阅）
+  - 学习进度追踪
+  - 章节视频播放
+  - 课程评价和FAQ
+
+- **🎖️ 认证项目（Nano Degree）**
+  - 完整学习路径
+  - 课程组合展示
+  - 证书颁发系统
+  - 进度统计
+
+- **👤 用户中心**
+  - 注册/登录
+  - 我的课程
+  - 我的订单
+  - 我的证书
+  - 个人资料管理
+
+- **📱 响应式设计**
+  - 完美适配桌面、平板、移动端
+  - 流畅的动画和交互
+
+### ⚙️ 管理员功能
+
+- **📊 数据仪表盘**
+  - 实时统计数据
+  - 热门课程展示
+  - 用户活跃度分析
+
+- **📝 内容管理**
+  - **课程管理**: CRUD、章节管理、FAQ、开课日期设置
+  - **Nano Degree管理**: 课程组合、证书配置、完成标准
+  - **讲师管理**: 讲师资料、社交链接
+  - **分类管理**: 分类排序、课程数量统计
+  - **Banner管理**: 轮播图、链接、显示控制
+
+- **📧 等待列表管理**
+  - 查看课程预约邮箱
+  - 导出订阅数据
+  - 通知管理
+
+- **🔐 安全认证**
+  - Session基础的管理员系统
+  - 密码加密存储
+  - 权限验证
+
+### 🎨 设计亮点
+
+- 🎨 现代化绿色主题，AI风格设计
+- ✨ 流畅的过渡动画和悬停效果
+- 🎯 清晰的视觉层次和信息架构
+- 🛡️ 全局错误处理和错误边界
+- 🔧 开发工具（慢渲染检测、控制台过滤）
+
+---
+
+## 🛠️ 技术栈
+
+<div align="center">
+
+| 类别 | 技术 |
+|------|------|
+| **核心框架** | Next.js 15.5.6 (App Router) + React 18.3 + TypeScript 5.4 |
+| **样式** | Tailwind CSS 3.4 + Shadcn/UI + Lucide Icons |
+| **数据库** | PostgreSQL (Neon) / SQLite (本地开发) |
+| **ORM** | Prisma 5.22 |
+| **认证** | iron-session + bcryptjs |
+| **表单** | React Hook Form + Zod |
+| **部署** | Vercel (自动化CI/CD) |
+
+</div>
+
+---
 
 ## 📦 快速开始
 
-### 1. 安装依赖
+### 环境要求
+
+- Node.js 18.x 或更高版本
+- npm / pnpm / yarn
+- Git
+
+### 本地开发
+
+#### 1️⃣ 克隆项目
+
+```bash
+git clone https://github.com/frankfika/AICourse.git
+cd CourseAI
+```
+
+#### 2️⃣ 安装依赖
 
 ```bash
 npm install
-# 或
-pnpm install
 ```
 
-### 2. 配置环境变量
+#### 3️⃣ 配置环境变量
 
-项目根目录已有 `.env` 文件，包含以下配置：
+创建 `.env` 文件：
 
 ```env
-DATABASE_URL="file:./dev.db"
-SESSION_SECRET="courseai-secret-key-min-32-characters-long-for-security"
+# 数据库配置（开发环境使用SQLite）
+DATABASE_URL="file:./prisma/dev.db"
+
+# 会话密钥（至少32字符，请修改为随机字符串）
+SESSION_SECRET="your-super-secret-key-change-this-in-production-32chars"
+
+# 可选配置
 NEXT_PUBLIC_BASE_URL="http://localhost:3000"
-MAX_FILE_SIZE=10485760
-ENABLE_VIEW_COUNT=true
 ```
 
-### 3. 初始化数据库
+> 💡 **提示**: 生成安全的SESSION_SECRET：`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+
+#### 4️⃣ 初始化数据库
 
 ```bash
-# 运行数据库迁移
-npx prisma migrate dev
+# 推送数据库schema到SQLite
+npx prisma db push
 
-# 填充模拟数据（已完成）
-npx tsx prisma/seed.ts
+# 填充示例数据（包含管理员账号）
+npm run db:seed
 ```
 
-### 4. 启动开发服务器
+#### 5️⃣ 启动开发服务器
 
 ```bash
 npm run dev
 ```
 
-访问 http://localhost:3000 查看前台页面
+访问 **[http://localhost:3000](http://localhost:3000)** 查看网站 🎉
 
-### 5. 访问后台管理
+#### 6️⃣ 访问管理后台
 
-访问 http://localhost:3000/admin/login
-
-**默认管理员账号:**
+- 地址: [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
 - 用户名: `admin`
 - 密码: `admin123`
+
+> ⚠️ **重要**: 生产环境请立即修改默认密码！
+
+---
 
 ## 📁 项目结构
 
 ```
 CourseAI/
-├── app/                      # Next.js App Router 目录
-│   ├── (pages)/             # 前台页面组
-│   │   ├── page.tsx         # 首页
-│   │   ├── courses/         # 课程模块
-│   │   └── nano-degrees/    # Nano Degree 模块
-│   ├── admin/               # 后台管理页面
-│   │   ├── login/           # 登录页
-│   │   ├── page.tsx         # 仪表盘
-│   │   ├── courses/         # 课程管理
-│   │   ├── nano-degrees/    # Nano Degree 管理
-│   │   ├── instructors/     # 讲师管理
-│   │   ├── categories/      # 分类管理
-│   │   ├── banners/         # Banner 管理
-│   │   └── settings/        # 设置
-│   ├── api/                 # API 路由
-│   │   └── admin/           # 后台 API
-│   ├── globals.css          # 全局样式
-│   └── layout.tsx           # 根布局
-├── components/              # React 组件
-│   ├── ui/                  # UI 基础组件
-│   ├── layout/              # 布局组件
-│   ├── courses/             # 课程相关组件
-│   ├── nano-degrees/        # Nano Degree 组件
-│   └── admin/               # 后台组件
-├── lib/                     # 工具库
-│   ├── db.ts               # Prisma Client
-│   ├── auth.ts             # 认证工具
-│   ├── password.ts         # 密码加密
-│   ├── utils.ts            # 通用工具
-│   └── constants.ts        # 常量定义
-├── prisma/                  # Prisma 配置
-│   ├── schema.prisma       # 数据库 Schema
-│   ├── seed.ts             # 数据填充脚本
-│   └── dev.db              # SQLite 数据库文件
-└── public/                  # 静态资源
-
+├── 📂 app/                      # Next.js App Router
+│   ├── (auth)/                  # 用户认证页面组
+│   │   ├── login/               # 登录页
+│   │   └── register/            # 注册页
+│   ├── admin/                   # 🔐 管理后台
+│   │   ├── banners/             # Banner管理
+│   │   ├── categories/          # 分类管理
+│   │   ├── courses/             # 课程管理
+│   │   ├── instructors/         # 讲师管理
+│   │   ├── nano-degrees/        # Nano Degree管理
+│   │   ├── login/               # 管理员登录
+│   │   └── page.tsx             # 仪表盘
+│   ├── api/                     # API路由
+│   │   ├── admin/               # 后台API
+│   │   ├── auth/                # 认证API
+│   │   ├── courses/             # 课程API
+│   │   ├── nano-degrees/        # 项目API
+│   │   └── orders/              # 订单API
+│   ├── courses/                 # 课程前台
+│   │   ├── [slug]/              # 课程详情
+│   │   └── page.tsx             # 课程列表
+│   ├── nano-degrees/            # 认证项目前台
+│   ├── learn/[slug]/            # 📚 学习页面
+│   ├── my-courses/              # 我的课程
+│   ├── my-orders/               # 我的订单
+│   ├── my-certificates/         # 我的证书
+│   └── page.tsx                 # 🏠 首页
+├── 📂 components/               # React组件
+│   ├── ui/                      # 基础UI组件
+│   ├── layout/                  # 布局组件
+│   ├── home/                    # 首页组件
+│   ├── courses/                 # 课程组件
+│   ├── admin/                   # 后台组件
+│   ├── error-boundary.tsx       # 错误边界
+│   └── providers.tsx            # 全局Provider
+├── 📂 lib/                      # 工具库
+│   ├── auth.ts                  # 管理员认证
+│   ├── user-auth.ts             # 用户认证
+│   ├── db.ts                    # Prisma Client
+│   ├── password.ts              # 密码加密
+│   ├── error-filter.ts          # 错误过滤
+│   ├── dev-tools.ts             # 开发工具
+│   └── utils.ts                 # 通用工具
+├── 📂 prisma/                   # 数据库
+│   ├── schema.prisma            # 数据模型
+│   ├── seed.ts                  # 数据填充脚本
+│   └── dev.db                   # SQLite数据库（本地）
+├── 📂 public/images/            # 静态资源
+├── 📄 DEPLOYMENT.md             # 部署文档
+├── 📄 README.md                 # 项目文档
+└── 📄 package.json              # 项目依赖
 ```
-
-## 🗄 数据库模型
-
-### 核心模型
-- **Category**: 课程分类
-- **Instructor**: 讲师
-- **Course**: 课程（含章节和 FAQ）
-- **Chapter**: 课程章节
-- **CourseFAQ**: 课程常见问题
-- **NanoDegree**: Nano Degree 认证项目
-- **NanoDegreeCourse**: Nano Degree 与课程关联
-- **NanoDegreeFAQ**: Nano Degree 常见问题
-- **Banner**: 首页轮播图
-- **SiteConfig**: 网站配置
-- **Admin**: 管理员
-
-## 🎨 功能模块
-
-### 前台功能
-
-#### 1. 首页 (`/`)
-- Banner 轮播展示
-- 数据统计展示（课程数、认证数、讲师数）
-- 课程分类导航
-- 热门课程网格
-- Nano Degree 项目展示
-
-#### 2. 课程列表 (`/courses`)
-- 搜索功能
-- 分类筛选
-- 难度筛选
-- 排序（最新、热门、时长）
-- 课程卡片展示（封面、标题、描述、讲师、时长、浏览量）
-
-#### 3. 课程详情 (`/courses/[slug]`)
-- 课程头部信息
-- 5 个 Tab:
-  - 课程介绍（学习目标、亮点、适合人群、先修要求）
-  - 课程大纲（章节列表、时长）
-  - 讲师介绍（简介、经验）
-  - FAQ
-  - 相关推荐（相关课程、包含的 Nano Degree）
-
-#### 4. Nano Degree 列表 (`/nano-degrees`)
-- 认证项目卡片展示
-- 显示课程数量、时长、难度
-
-#### 5. Nano Degree 详情 (`/nano-degrees/[slug]`)
-- 项目头部（带证书预览）
-- 5 个 Tab:
-  - 项目介绍（技能、亮点、适合人群）
-  - 学习路径（课程列表、顺序、可调整）
-  - 证书信息（证书类型、说明、获得条件）
-  - 学习建议（学习计划）
-  - FAQ
-
-### 后台功能
-
-#### 1. 认证系统
-- 登录页面（`/admin/login`）
-- Session 管理
-- 密码加密存储
-
-#### 2. 仪表盘 (`/admin`)
-- 统计数据卡片（课程数、Nano Degree 数、讲师数、总浏览量）
-- 最新课程列表
-- 热门课程排行
-
-#### 3. 课程管理 (`/admin/courses`)
-- 课程列表（表格展示）
-- 创建/编辑课程
-- 5 个 Tab 表单:
-  - 基本信息（标题、slug、分类、讲师、难度、时长等）
-  - 内容详情（富文本介绍、学习目标、亮点、先修要求）
-  - 课程大纲（动态添加章节、主题）
-  - FAQ（动态添加问答）
-  - 设置（发布状态、热门标记）
-
-#### 4. Nano Degree 管理 (`/admin/nano-degrees`)
-- 列表展示
-- 创建/编辑
-- 5 个 Tab 表单:
-  - 基本信息
-  - 内容详情（技能、亮点、学习路径）
-  - 课程选择（双栏选择、拖拽排序）
-  - 证书信息
-  - FAQ
-
-#### 5. 讲师管理 (`/admin/instructors`)
-- 讲师卡片展示
-- 创建/编辑讲师信息
-- 富文本编辑教学经验
-
-#### 6. 分类管理 (`/admin/categories`)
-- 分类列表
-- 显示课程数量
-- 排序管理
-
-#### 7. Banner 管理 (`/admin/banners`)
-- Banner 列表展示
-- 图片预览
-- 启用/禁用状态
-- 排序管理
-
-#### 8. 网站配置 (`/admin/settings`)
-- 网站基本信息展示
-
-## 📊 模拟数据
-
-项目已通过 `seed.ts` 填充了丰富的模拟数据：
-
-- ✅ **5 个课程分类**: 机器学习、深度学习、自然语言处理、计算机视觉、强化学习
-- ✅ **4 位讲师**: 包含详细简介和经验
-- ✅ **7 门课程**: 每门课程包含：
-  - 完整的课程信息
-  - 3-4 个章节
-  - 2-3 个 FAQ
-- ✅ **3 个 Nano Degree 项目**: 
-  - AI 工程师认证
-  - 深度学习专家认证
-  - 计算机视觉工程师认证
-- ✅ **3 个 Banner**: 首页轮播图
-- ✅ **1 个管理员账户**: admin / admin123
-
-## 🧪 测试状态
-
-### 构建测试
-```bash
-✅ npm run build - 编译成功
-✅ 类型检查 - 无错误
-✅ Tailwind CSS - 正常编译
-```
-
-### 功能测试
-
-#### 前台测试
-- ✅ 首页加载正常
-- ✅ 课程列表展示
-- ✅ 课程详情页面
-- ✅ Nano Degree 列表
-- ✅ Nano Degree 详情
-- ✅ 筛选和搜索功能
-- ✅ 响应式布局
-
-#### 后台测试
-- ✅ 登录功能（admin/admin123）
-- ✅ 仪表盘数据展示
-- ✅ 课程管理（列表、创建、编辑）
-- ✅ Nano Degree 管理
-- ✅ 讲师管理
-- ✅ 富文本编辑器集成（React-Quill）
-- ✅ 表单验证
-- ✅ API 响应正常
-
-## 📝 开发说明
-
-### 添加新课程
-1. 访问 `/admin/courses/new`
-2. 填写基本信息和内容详情
-3. 添加课程大纲章节
-4. （可选）添加 FAQ
-5. 设置发布状态并保存
-
-### 创建 Nano Degree
-1. 访问 `/admin/nano-degrees/new`
-2. 填写项目基本信息
-3. 从左侧课程列表选择课程
-4. 拖拽调整课程顺序
-5. 配置证书信息
-6. 保存发布
-
-### 数据库管理
-```bash
-# 查看数据库
-npx prisma studio
-
-# 重置数据库
-npx prisma migrate reset
-
-# 重新填充数据
-npx tsx prisma/seed.ts
-```
-
-## 🎯 下一步优化
-
-- [ ] 添加图片上传功能
-- [ ] 实现搜索高亮
-- [ ] 添加分页功能
-- [ ] 实现 404 和错误页面
-- [ ] SEO 优化（sitemap、robots.txt）
-- [ ] 添加加载状态和骨架屏
-- [ ] 性能优化（图片懒加载、代码分割）
-- [ ] 添加单元测试
-
-## 📄 License
-
-MIT
-
-## 👨‍💻 Author
-
-CourseAI Team
 
 ---
 
-**🎉 项目已就绪，可以开始使用！**
+## 🚀 部署指南
 
-访问 http://localhost:3000 开始探索！
+### 快速部署到Vercel
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/frankfika/AICourse)
+
+#### 步骤说明
+
+1. **准备数据库**
+   - 推荐使用 [Neon](https://neon.tech)（免费Serverless PostgreSQL）
+   - 或使用 Vercel Postgres
+
+2. **配置环境变量**
+   - 在Vercel项目设置中添加：
+     - `DATABASE_URL`: PostgreSQL连接字符串
+     - `SESSION_SECRET`: 随机生成的密钥（至少32字符）
+
+3. **初始化数据库**
+   ```bash
+   # 拉取Vercel环境变量
+   vercel env pull .env.production
+   
+   # 使用生产数据库URL
+   export $(cat .env.production | grep DATABASE_URL | xargs)
+   
+   # 推送schema
+   npx prisma db push
+   
+   # 填充数据
+   npm run db:seed
+   ```
+
+4. **部署**
+   - 推送代码到GitHub main分支
+   - Vercel自动构建和部署
+
+📖 **详细部署文档**: [DEPLOYMENT.md](DEPLOYMENT.md)
+
+### 线上演示
+
+🌐 **生产环境**: https://opencsg-ai-academy-4uj36br7t-franks-projects-a4189b1b.vercel.app
+
+---
+
+## 🎯 功能详解
+
+### 🚀 课程"即将开始"功能
+
+为即将开课的课程提供预约和倒计时功能：
+
+1. **后台设置**: 在课程编辑页面设置 `开课日期`
+2. **前台展示**: 
+   - 显示倒计时（天、时、分、秒）
+   - 邮箱订阅表单
+   - "即将开始"标签
+3. **邮箱收集**: 自动保存到 `CourseWaitlist` 表
+4. **自动解锁**: 开课日期到达后，课程内容自动解锁
+
+### 📊 学习进度追踪
+
+- 章节完成状态记录（`ChapterProgress`）
+- 视频播放位置保存
+- 课程整体完成度计算
+- 个人学习数据统计
+
+### 💳 订单和支付系统
+
+- 订单创建和管理（`Order`模型）
+- 模拟支付流程（可扩展接入真实支付）
+- 支付成功自动开通课程访问
+- 订单历史和状态追踪
+
+### 🏆 证书系统
+
+- 课程/项目完成后自动生成证书
+- 唯一证书编号（`certificateNo`）
+- 公开证书验证页面
+- 证书查看和下载
+
+---
+
+## 🔧 常用命令
+
+### 开发
+
+```bash
+npm run dev              # 启动开发服务器 (http://localhost:3000)
+npm run build            # 构建生产版本
+npm run start            # 启动生产服务器
+npm run lint             # 运行ESLint检查
+```
+
+### 数据库
+
+```bash
+npm run db:push          # 推送schema到数据库（开发环境）
+npm run db:seed          # 填充示例数据
+npm run db:studio        # 打开Prisma Studio（数据库可视化工具）
+npm run db:migrate       # 创建migration（生产环境）
+```
+
+### 部署
+
+```bash
+vercel                   # 部署到Vercel预览环境
+vercel --prod            # 部署到生产环境
+vercel env pull          # 拉取环境变量
+```
+
+---
+
+## 🗄️ 数据库模型
+
+### 核心模型
+
+| 模型 | 说明 |
+|------|------|
+| `Category` | 课程分类（机器学习、深度学习等） |
+| `Instructor` | 讲师信息和简介 |
+| `Course` | 课程（含章节、FAQ、开课日期） |
+| `Chapter` | 课程章节 |
+| `CourseFAQ` | 课程常见问题 |
+| `CourseWaitlist` | 课程等待列表（邮箱订阅） |
+| `NanoDegree` | 认证项目 |
+| `Banner` | 首页轮播图 |
+| `Admin` | 管理员账号 |
+
+### 用户相关模型
+
+| 模型 | 说明 |
+|------|------|
+| `User` | 用户账号 |
+| `Enrollment` | 课程注册记录 |
+| `NanoDegreeEnrollment` | 项目注册记录 |
+| `ChapterProgress` | 章节学习进度 |
+| `Order` | 订单 |
+| `Certificate` | 证书 |
+
+查看完整数据模型：[prisma/schema.prisma](prisma/schema.prisma)
+
+---
+
+## 📊 示例数据
+
+运行 `npm run db:seed` 后会自动创建：
+
+| 类型 | 数量 | 说明 |
+|------|------|------|
+| 📁 课程分类 | 5 | 机器学习、深度学习、NLP、CV、强化学习 |
+| 👨‍🏫 讲师 | 4 | 完整的讲师资料 |
+| 📚 课程 | 7 | 每门课程含章节、FAQ、开课日期 |
+| 🎖️ 认证项目 | 3 | AI工程师、深度学习专家、CV工程师 |
+| 🖼️ Banner | 3 | 首页轮播图 |
+| 🔐 管理员 | 1 | admin账号 |
+
+---
+
+## 🔒 安全性
+
+- ✅ 密码使用 **bcrypt** 加密存储（Salt Rounds: 10）
+- ✅ **Session**基础的身份验证（iron-session）
+- ✅ API路由权限验证
+- ✅ **SQL注入防护**（Prisma ORM参数化查询）
+- ✅ **XSS防护**（React自动转义）
+- ✅ 全局错误处理和过滤
+- ⚠️ **生产环境请务必**：
+  - 修改默认管理员密码
+  - 生成强SESSION_SECRET
+  - 配置HTTPS
+  - 启用CORS策略
+
+---
+
+## 📈 性能优化
+
+- ⚡ Next.js自动代码分割和懒加载
+- 🖼️ Next.js Image组件自动图片优化（AVIF/WebP）
+- 📦 Webpack配置优化
+- 🛡️ 全局错误边界和错误过滤
+- 🔍 开发工具（慢渲染检测、控制台过滤）
+- 🗜️ Gzip压缩
+- 🎯 Tree-shaking和按需导入
+
+---
+
+## 🧪 测试
+
+### 运行测试
+
+```bash
+# 类型检查
+npx tsc --noEmit
+
+# 构建测试
+npm run build
+
+# 启动生产服务器测试
+npm run start
+```
+
+### 测试账号
+
+**管理员账号**:
+- 用户名: `admin`
+- 密码: `admin123`
+
+---
+
+## 🤝 贡献指南
+
+欢迎贡献代码、提交Issue和Pull Request！
+
+### 贡献流程
+
+1. Fork 本仓库
+2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交您的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开一个 Pull Request
+
+### 代码规范
+
+- 使用 TypeScript
+- 遵循 ESLint 规则
+- 组件使用函数式组件 + Hooks
+- 使用 Tailwind CSS utility classes
+- API 路由使用 try-catch 错误处理
+
+---
+
+## 📄 许可证
+
+本项目采用 **MIT** 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+---
+
+## 👥 作者
+
+**OpenCSG AI学院团队**
+
+- GitHub: [@frankfika](https://github.com/frankfika)
+- 项目链接: [https://github.com/frankfika/AICourse](https://github.com/frankfika/AICourse)
+
+---
+
+## 🙏 致谢
+
+感谢以下开源项目：
+
+- [Next.js](https://nextjs.org/) - React 应用框架
+- [Vercel](https://vercel.com/) - 部署和托管平台
+- [Prisma](https://www.prisma.io/) - 下一代 ORM
+- [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
+- [Shadcn/UI](https://ui.shadcn.com/) - 精美UI组件
+- [Neon](https://neon.tech/) - Serverless PostgreSQL
+- [Lucide](https://lucide.dev/) - 图标库
+
+---
+
+## 📞 联系我们
+
+- 💬 问题反馈: [GitHub Issues](https://github.com/frankfika/AICourse/issues)
+- 📧 邮箱: support@opencsg-ai-academy.com
+- 🌐 官网: https://opencsg-ai-academy-4uj36br7t-franks-projects-a4189b1b.vercel.app
+
+---
+
+<div align="center">
+
+**⭐ 如果这个项目对您有帮助，请给它一个星标！⭐**
+
+Made with ❤️ by OpenCSG AI学院
+
+[![GitHub stars](https://img.shields.io/github/stars/frankfika/AICourse?style=social)](https://github.com/frankfika/AICourse/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/frankfika/AICourse?style=social)](https://github.com/frankfika/AICourse/network/members)
+
+[🏠 返回顶部](#-opencsg-ai学院)
+
+</div>

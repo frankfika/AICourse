@@ -1,11 +1,21 @@
 # 部署指南 - OpenCSG AI学院
 
-## 🚀 已完成的准备工作
+## 🚀 部署概览
 
-1. ✅ 数据库已切换为 PostgreSQL
-2. ✅ Vercel 配置文件已创建
-3. ✅ 项目已推送到 GitHub
-4. ✅ Vercel 项目已创建：`opencsg-ai-academy`
+本项目支持本地开发和Vercel生产环境部署：
+- **本地开发**: SQLite数据库（`file:./prisma/dev.db`）
+- **生产环境**: PostgreSQL数据库（Neon/Vercel Postgres）
+
+## ⚠️ 重要提示
+
+**部署到Vercel前，需要将 `prisma/schema.prisma` 中的数据库provider从 `sqlite` 改为 `postgresql`**
+
+## ✅ 已完成的准备工作
+
+1. ✅ Vercel 配置文件已创建
+2. ✅ 项目已推送到 GitHub
+3. ✅ Vercel 项目已创建：`opencsg-ai-academy`
+4. ✅ 数据库已配置（Neon PostgreSQL）
 
 ## 📝 数据库配置步骤
 
