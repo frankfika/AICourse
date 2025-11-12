@@ -17,8 +17,6 @@ export async function GET(
       )
     }
 
-    const orderNo = orderNo
-
     const order = await prisma.order.findUnique({
       where: { orderNo },
     })

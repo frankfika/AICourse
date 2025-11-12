@@ -88,8 +88,6 @@ export async function DELETE(
       )
     }
 
-    const courseId = courseId
-
     // Delete enrollment
     const enrollment = await prisma.enrollment.deleteMany({
       where: {
