@@ -120,37 +120,37 @@ export default async function CourseDetailPage({
                   {course.category.name}
                 </span>
                 <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
-                  {COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}
+                {COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}
                 </span>
-                {course.featured && (
+              {course.featured && (
                   <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-semibold border border-orange-200">
                     🔥 热门课程
                   </span>
-                )}
-              </div>
+              )}
+            </div>
 
-              {/* Title */}
+            {/* Title */}
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
-                {course.title}
-              </h1>
+              {course.title}
+            </h1>
 
-              {/* Description */}
+            {/* Description */}
               <p className="text-lg text-muted-foreground leading-relaxed">
-                {course.shortDescription}
-              </p>
+              {course.shortDescription}
+            </p>
 
               {/* Instructor & Stats */}
               <div className="flex flex-wrap items-center gap-6 pt-2">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center text-white text-lg font-bold shadow-md">
                     {course.instructor.name.charAt(0)}
-                  </div>
-                  <div>
+              </div>
+              <div>
                     <div className="text-xs text-muted-foreground">授课讲师</div>
                     <div className="font-semibold text-base">{course.instructor.name}</div>
-                  </div>
-                </div>
-                
+              </div>
+            </div>
+
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-primary" />
@@ -164,7 +164,7 @@ export default async function CourseDetailPage({
                     <Users className="w-4 h-4 text-primary" />
                     {course.viewCount.toLocaleString()} 人学习
                   </span>
-                </div>
+              </div>
               </div>
             </div>
 
@@ -186,22 +186,22 @@ export default async function CourseDetailPage({
 
                 {/* Price */}
                 <div className="text-center py-2">
-                  {isFree ? (
+                {isFree ? (
                     <div className="text-2xl font-bold text-primary mb-1">免费课程</div>
-                  ) : (
+                ) : (
                     <div className="flex items-baseline justify-center gap-2 mb-1">
                       <div className="text-4xl font-bold text-foreground">¥{course.price}</div>
-                      {course.originalPrice && course.originalPrice > course.price && (
+                    {course.originalPrice && course.originalPrice > course.price && (
                         <div className="text-lg text-muted-foreground line-through">
-                          ¥{course.originalPrice}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div className="text-sm text-muted-foreground">
-                    {isFree ? '立即开始学习' : '一次购买，终身访问'}
+                        ¥{course.originalPrice}
+                      </div>
+                    )}
                   </div>
+                )}
+                <div className="text-sm text-muted-foreground">
+                  {isFree ? '立即开始学习' : '一次购买，终身访问'}
                 </div>
+              </div>
 
                 {/* Enroll Button */}
                 <EnrollButton

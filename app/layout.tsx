@@ -21,11 +21,11 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className={inter.className}>
         <Providers>
-          <div className="flex min-h-screen flex-col">
-            <Header />
+        <div className="flex min-h-screen flex-col">
+          <Header />
             <main className="flex-1 pt-16">{children}</main>
-            <Footer />
-          </div>
+          <Footer />
+        </div>
         </Providers>
       </body>
     </html>

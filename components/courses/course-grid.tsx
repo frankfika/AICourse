@@ -56,12 +56,12 @@ export function CourseGrid({ courses }: { courses: Course[] }) {
             <div className="relative bg-white rounded-2xl overflow-hidden border border-gray-200 group-hover:border-primary/30 transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-2 h-full">
               {/* 封面图 */}
               <div className="aspect-video relative bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
-                <Image
-                  src={course.coverImage}
-                  alt={course.title}
-                  fill
+              <Image
+                src={course.coverImage}
+                alt={course.title}
+                fill
                   className="object-cover group-hover:scale-110 transition-transform duration-700"
-                />
+              />
                 
                 {/* 即将开始标签 */}
                 {comingSoon && (
@@ -80,29 +80,29 @@ export function CourseGrid({ courses }: { courses: Course[] }) {
                     {formatDuration(course.duration)}
                   </span>
                 </div>
-              </div>
+            </div>
 
               {/* 内容区 */}
               <div className="p-6 space-y-4">
                 {/* 分类和难度 */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-primary px-3 py-1 bg-primary/10 rounded-full border border-primary/20">
-                    {course.category.name}
-                  </span>
+                  {course.category.name}
+                </span>
                   <span className="text-xs text-gray-500 font-medium">
-                    {COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}
-                  </span>
-                </div>
+                  {COURSE_LEVELS[course.level as keyof typeof COURSE_LEVELS]}
+                </span>
+              </div>
 
                 {/* 标题 */}
                 <h3 className="font-bold text-lg group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem] leading-snug">
-                  {course.title}
-                </h3>
+                {course.title}
+              </h3>
 
                 {/* 描述 */}
                 <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                  {course.shortDescription}
-                </p>
+                {course.shortDescription}
+              </p>
 
                 {/* 底部信息 */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
@@ -113,10 +113,10 @@ export function CourseGrid({ courses }: { courses: Course[] }) {
                     <Users className="w-4 h-4" />
                     {course.viewCount.toLocaleString()}
                   </span>
-                </div>
               </div>
             </div>
-          </Link>
+          </div>
+        </Link>
         )
       })}
     </div>

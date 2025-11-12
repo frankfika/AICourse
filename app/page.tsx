@@ -6,21 +6,21 @@ import { ArrowRight, Sparkles, Play, Users, BookOpen, Award } from 'lucide-react
 export default async function HomePage() {
   // Fetch data
   const [featuredCourses, stats] = await Promise.all([
-    prisma.course.findMany({
-      where: { status: 'published', featured: true },
-      include: {
-        category: true,
-        instructor: true,
-      },
-      orderBy: { viewCount: 'desc' },
-      take: 3,
-    }),
-    prisma.$transaction([
-      prisma.course.count({ where: { status: 'published' } }),
+      prisma.course.findMany({
+        where: { status: 'published', featured: true },
+        include: {
+          category: true,
+          instructor: true,
+        },
+        orderBy: { viewCount: 'desc' },
+        take: 3,
+      }),
+      prisma.$transaction([
+        prisma.course.count({ where: { status: 'published' } }),
       prisma.user.count(),
-      prisma.nanoDegree.count({ where: { status: 'published' } }),
-    ]),
-  ])
+        prisma.nanoDegree.count({ where: { status: 'published' } }),
+      ]),
+    ])
 
   const [coursesCount, usersCount, nanoDegreesCount] = stats
 
@@ -42,7 +42,7 @@ export default async function HomePage() {
               <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20">
                 <Sparkles className="w-4 h-4 text-primary" />
                 <span className="text-sm font-bold text-primary">AI 驱动学习</span>
-              </div>
+            </div>
 
               {/* 标题 */}
               <div className="space-y-6">
@@ -50,12 +50,12 @@ export default async function HomePage() {
                   <span className="block text-gray-900">掌握 AI</span>
                   <span className="block bg-gradient-to-r from-primary via-emerald-500 to-green-500 bg-clip-text text-transparent">
                     改变未来
-                  </span>
-                </h1>
-                
+              </span>
+            </h1>
+
                 <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
                   系统化课程体系，顶尖讲师团队，实战项目驱动，助力你成为 AI 领域专家
-                </p>
+            </p>
               </div>
 
               {/* 按钮 */}
@@ -67,7 +67,7 @@ export default async function HomePage() {
                   <Play className="w-5 h-5" fill="white" />
                   <span>开始学习</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
+              </Link>
                 
                 <Link 
                   href="/nano-degrees" 
@@ -75,7 +75,7 @@ export default async function HomePage() {
                 >
                   <Award className="w-5 h-5 text-primary" />
                   <span>认证项目</span>
-                </Link>
+              </Link>
               </div>
             </div>
 
@@ -120,8 +120,8 @@ export default async function HomePage() {
                       <div className="text-5xl font-black text-gray-900 mb-2">100%</div>
                       <div className="text-sm font-semibold text-gray-600 uppercase tracking-wider">实战项目</div>
                     </div>
-                  </div>
-                </div>
+              </div>
+              </div>
               </div>
             </div>
           </div>
@@ -153,11 +153,11 @@ export default async function HomePage() {
               const isComingSoon = course.startDate && new Date(course.startDate) > new Date()
               
               return (
-                <Link
-                  key={course.id}
-                  href={`/courses/${course.slug}`}
+              <Link
+                key={course.id}
+                href={`/courses/${course.slug}`}
                   className="group relative block"
-                >
+              >
                 <div className="relative bg-white rounded-2xl overflow-hidden border-2 border-gray-100 hover:border-primary/30 transition-all hover:shadow-xl">
                   <div className="grid md:grid-cols-5 gap-0">
                     {/* 左侧：文字内容 */}
@@ -206,13 +206,13 @@ export default async function HomePage() {
                     {/* 右侧：封面图 */}
                     <div className="md:col-span-2 relative">
                       <div className="aspect-video md:aspect-auto md:absolute md:inset-0 bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
-                        <Image
-                          src={course.coverImage}
-                          alt={course.title}
-                          fill
+                    <Image
+                      src={course.coverImage}
+                      alt={course.title}
+                      fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                      </div>
+                    </div>
                     </div>
                   </div>
                 </div>
@@ -239,9 +239,9 @@ export default async function HomePage() {
                 立即加入，掌握未来核心技能
               </p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Link 
+                <Link
                 href="/courses" 
                 className="group inline-flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-primary to-emerald-600 text-white text-xl font-bold rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 hover:scale-105"
               >
