@@ -638,7 +638,7 @@ export default function App() {
       <section className="relative py-32 px-6 md:px-12 overflow-hidden bg-white">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-brand-50 to-transparent pointer-events-none"></div>
         <div className="max-w-7xl mx-auto relative z-10 text-center md:text-left">
-          <div className="inline-block mb-4"><Badge>OpenCSG Academy 2.0</Badge></div>
+          <div className="inline-block mb-4"><Badge>OpenCSG Academy</Badge></div>
           <h1 className="text-5xl md:text-7xl font-bold leading-tight text-slate-900 tracking-tight mb-6">
             掌握大模型，<br /><span className="text-brand-600">驾驭 AI 时代</span>。
           </h1>
