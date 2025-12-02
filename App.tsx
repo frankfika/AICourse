@@ -640,10 +640,10 @@ export default function App() {
         <div className="max-w-7xl mx-auto relative z-10 text-center md:text-left">
           <div className="inline-block mb-4"><Badge>OpenCSG Academy 2.0</Badge></div>
           <h1 className="text-5xl md:text-7xl font-bold leading-tight text-slate-900 tracking-tight mb-6">
-            从零开始，<br /><span className="text-brand-600">重塑你的职业未来</span>。
+            掌握大模型，<br /><span className="text-brand-600">驾驭 AI 时代</span>。
           </h1>
           <p className="text-xl text-slate-500 max-w-2xl leading-relaxed mb-10 md:mx-0 mx-auto">
-            不论你是想转行进入科技领域，还是渴望掌握 AI 时代的核心技能。这里没有枯燥的理论，只有动手的项目和贴心的 AI 导师。
+            从 Prompt 工程到 Agent 开发，从模型微调到企业级应用。体系化 AI 课程 + 实战项目 + 智能助教，助你成为 AI 时代的核心人才。
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
             <Button onClick={() => navTo(ViewState.ALL_DEGREES)} className="px-8 py-4 text-base shadow-lg shadow-brand-500/20">探索 Nano Degree</Button>
