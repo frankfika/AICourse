@@ -26,6 +26,8 @@ export function setupConsoleFilters() {
     /web3/i,
     /metamask/i,
     /phantom/i,
+    /Invalid or unexpected token/i,
+    /@vite\/client/
   ]
 
   // 检查是否应该过滤
@@ -100,4 +102,3 @@ export function detectSlowRender(threshold = 16) {
     }
   }
 }
-

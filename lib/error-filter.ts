@@ -15,6 +15,8 @@ const IGNORED_ERROR_PATTERNS = [
   /metamask/i,
   /phantom/i,
   /Cannot destructure property.*of 'undefined'/i,
+  /Invalid or unexpected token/i,
+  /@vite\/client/
 ]
 
 /**
@@ -71,4 +73,3 @@ export function initGlobalErrorHandler() {
     }
   })
 }
-

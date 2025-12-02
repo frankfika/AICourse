@@ -10,7 +10,6 @@ const nextConfig = {
   },
 
   // 生产环境优化
-  swcMinify: true,
   
   // 压缩配置
   compress: true,
