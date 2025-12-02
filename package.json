@@ -1,50 +1,23 @@
 {
-  "name": "courseai",
-  "version": "1.0.0",
+  "name": "nexus-academy",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@prisma/client": "^5.10.0",
-    "bcryptjs": "^2.4.3",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "date-fns": "^3.6.0",
-    "framer-motion": "^12.23.25",
-    "iron-session": "^8.0.1",
-    "lucide-react": "^0.358.0",
-    "next": "^15.5.6",
-    "nextjs-toploader": "^3.9.17",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "react-hook-form": "^7.51.0",
-    "react-quill": "^2.0.0",
-    "sonner": "^2.0.7",
-    "tailwind-merge": "^2.6.0",
-    "zod": "^3.22.0"
+    "react": "^19.2.0",
+    "lucide-react": "^0.555.0",
+    "@google/genai": "^1.30.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20.11.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "autoprefixer": "^10.4.0",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.0",
-    "postcss": "^8.4.0",
-    "prisma": "^5.10.0",
-    "tailwindcss": "^3.4.0",
-    "tsx": "^4.7.0",
-    "typescript": "^5.4.0"
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
   }
 }
