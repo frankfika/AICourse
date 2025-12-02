@@ -5,7 +5,7 @@ import {
   User as UserIcon, Plus, ArrowLeft, Link as LinkIcon, Sparkles, BookOpen, Search,
   Layers, PlayCircle, Lock, Download, FileText, Github, Globe, Settings, Save,
   Heart, CheckCircle2, List, Trash2, Youtube, LogOut, Users, MessageSquare,
-  CheckSquare, Square, Award, Key, Quote, Smile, X, Gift, Star, Edit2, Copy
+  CheckSquare, Square, Award, Key, Quote, Smile, X, Gift, Star, Edit2, Copy, Rocket
 } from 'lucide-react';
 import { Course, NanoDegree, ViewState, CostType, Resource, User } from './types';
 import { Button, Card, Badge } from './components/Components';
@@ -51,6 +51,23 @@ const getEmbedUrl = (url: string) => {
 const isLocalVideo = (url: string) => {
   if (!url) return false;
   return url.startsWith('blob:') || url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg') || url.startsWith('/videos/') || url.startsWith('./');
+};
+
+// 从时长字符串中提取分钟数
+const parseDurationMinutes = (duration: string): number => {
+  if (!duration) return 0;
+  const match = duration.match(/(\d+)/);
+  return match ? parseInt(match[1]) : 0;
+};
+
+// 格式化总时长为"X小时Y分钟"
+const formatTotalDuration = (totalMinutes: number): string => {
+  if (totalMinutes === 0) return '0 分钟';
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes} 分钟`;
+  if (minutes === 0) return `${hours} 小时`;
+  return `${hours} 小时 ${minutes} 分钟`;
 };
 
 // --- MOCK DATA ---
@@ -603,7 +620,7 @@ export default function App() {
                 <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:text-brand-600 transition-colors">{degree.title}</h3>
                 <p className="text-slate-500 mb-8 flex-grow leading-relaxed">{degree.description}</p>
                 <div className="flex justify-between items-center border-t border-slate-100 pt-6 mt-auto">
-                  <div><div className="text-xs text-slate-400 uppercase font-bold mb-1">Total Value</div><span className="text-2xl font-mono text-slate-900 font-bold">${degree.price}</span></div>
+                  <div><div className="text-xs text-slate-400 uppercase font-bold mb-1">Total Value</div><span className="text-2xl font-mono text-slate-900 font-bold">¥{degree.price}</span></div>
                   <Button onClick={(e) => { e.stopPropagation(); handleDegreeClick(degree.id); }} variant="secondary">查看详情</Button>
                 </div>
               </Card>
@@ -663,7 +680,7 @@ export default function App() {
                       {course.costType === 'paid' ? (
                         <div className="flex items-center gap-2">
                           {!currentUser && <Lock className="w-3 h-3 text-slate-400" />}
-                          <span className="text-slate-900 font-mono font-bold">${course.price}</span>
+                          <span className="text-slate-900 font-mono font-bold">¥{course.price}</span>
                         </div>
                       ) : <span className="text-brand-600 text-xs font-bold group-hover:underline">查看大纲 →</span>}
                   </div>
@@ -741,14 +758,19 @@ export default function App() {
         <div className="mb-12"><h1 className="text-4xl font-bold text-slate-900 mb-3">Nano Degree 目录</h1><p className="text-slate-500 text-lg">体系化的学习路径，带你从入门到精通。</p></div>
         <div className="grid md:grid-cols-2 gap-8">
           {degrees.map(degree => (
-            <Card key={degree.id} className="cursor-pointer flex flex-col">
+            <Card key={degree.id} className="cursor-pointer flex flex-col hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all" onClick={() => handleDegreeClick(degree.id)}>
+              {degree.thumbnail && (
+                <div className="h-40 -mx-6 -mt-6 mb-6 overflow-hidden rounded-t-2xl">
+                  <img src={degree.thumbnail} alt={degree.title} className="w-full h-full object-cover" />
+                </div>
+              )}
               <div className="flex justify-between items-start mb-6">
                  <div className="p-3 bg-brand-50 rounded-xl text-brand-600">{ICON_MAP[degree.icon] || ICON_MAP['shield']}</div>
                  <div className="flex flex-col items-end gap-2"><Badge>{degree.courses.length} 门课程</Badge><CostBadge type={degree.costType} /></div>
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:text-brand-600 transition-colors">{degree.title}</h3>
               <p className="text-slate-500 mb-6 flex-grow leading-relaxed">{degree.description}</p>
-              <div className="flex justify-between items-center border-t border-slate-100 pt-6 mt-auto"><span className="text-2xl font-mono text-slate-900 font-bold">${degree.price}</span><Button onClick={() => handleDegreeClick(degree.id)} variant="secondary">查看详情</Button></div>
+              <div className="flex justify-between items-center border-t border-slate-100 pt-6 mt-auto"><span className="text-2xl font-mono text-slate-900 font-bold">¥{degree.price}</span><Button onClick={(e) => { e.stopPropagation(); handleDegreeClick(degree.id); }} variant="secondary">查看详情</Button></div>
             </Card>
           ))}
         </div>
@@ -829,7 +851,7 @@ export default function App() {
                         }}
                         className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all flex items-center justify-center gap-2"
                       >
-                        <span>${course.price}</span>
+                        <span>¥{course.price}</span>
                         <span>·</span>
                         <span>{!currentUser ? '登录购买' : '立即购买'}</span>
                       </button>
@@ -856,6 +878,7 @@ export default function App() {
     const degree = degrees.find(d => d.id === selectedDegreeId);
     if (!degree) return <div>Data Error</div>;
     const degreeCourses = degree.courses.map(id => courses.find(c => c.id === id)).filter(Boolean) as Course[];
+    const totalMinutes = degreeCourses.reduce((sum, c) => sum + parseDurationMinutes(c.duration), 0);
     const scrollToCurriculum = () => { const element = document.getElementById('curriculum-list'); if (element) { element.scrollIntoView({ behavior: 'smooth' }); } };
 
     return (
@@ -871,11 +894,11 @@ export default function App() {
                 <p className="text-slate-500 text-lg leading-relaxed mb-6">{degree.description}</p>
                 <div className="flex flex-wrap gap-6 mb-8 text-sm text-slate-600">
                    <div className="flex items-center gap-2"><BookOpen className="text-brand-600 w-4 h-4" /> {degree.courses.length} 门必修课</div>
+                   <div className="flex items-center gap-2"><Clock className="text-brand-600 w-4 h-4" /> {formatTotalDuration(totalMinutes)}</div>
                    <div className="flex items-center gap-2"><Award className="text-brand-600 w-4 h-4" /> 官方认证证书</div>
-                   <div className="flex items-center gap-2"><Users className="text-brand-600 w-4 h-4" /> 私人助教辅导</div>
                 </div>
                 <Button onClick={() => { if(degree.costType === 'paid' && !currentUser) setIsLoginModalOpen(true); else setShowContactModal(true); }} className="shadow-lg shadow-brand-500/30">
-                  立即加入 - ${degree.price}
+                  立即加入 - ¥{degree.price}
                 </Button>
               </div>
             </div>
@@ -1017,7 +1040,7 @@ export default function App() {
                                    <h3 className="text-xl font-bold text-white mb-2">解锁完整课程</h3>
                                    <p className="text-slate-300 text-sm mb-6">
                                      本课程属于 {degree?.title ? <span className="text-brand-400 font-bold">{degree.title}</span> : '专业版内容'}。
-                                     {course.price > 0 && ` 单购价格: $${course.price}`}
+                                     {course.price > 0 && ` 单购价格: $¥{course.price}`}
                                    </p>
                                    <Button onClick={() => setShowContactModal(true)} className="text-sm">解锁课程</Button>
                                  </>
@@ -1079,7 +1102,7 @@ export default function App() {
                      {!isUnlocked && course.costType === 'paid' && (
                        <div className="bg-gradient-to-br from-brand-600 to-brand-700 text-white rounded-xl p-6 shadow-lg">
                          <div className="text-sm opacity-80 mb-1">课程价格</div>
-                         <div className="text-3xl font-bold mb-4">${course.price}</div>
+                         <div className="text-3xl font-bold mb-4">¥{course.price}</div>
                          <Button onClick={() => !currentUser ? setIsLoginModalOpen(true) : setShowContactModal(true)} className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-slate-900 hover:from-amber-500 hover:to-amber-600 font-bold shadow-lg">
                            {!currentUser ? '登录购买' : '立即购买'}
                          </Button>
@@ -1134,33 +1157,67 @@ export default function App() {
   };
 
   const HackathonPage = () => (
-    <div className="animate-in fade-in duration-500">
-        <div className="relative py-24 px-6 border-b border-slate-200 overflow-hidden bg-slate-900 text-white">
-             <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/hackathon/1600/600')] bg-cover bg-center opacity-20"></div>
-             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
-             <div className="max-w-4xl mx-auto text-center relative z-10">
-                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 text-xs font-bold mb-6">
-                     <Zap size={12} fill="currentColor" /> 正在进行中
-                 </div>
-                 <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">OpenCSG <span className="text-brand-400">HACK 2077</span></h1>
-                 <p className="text-xl text-slate-300 max-w-2xl mx-auto mb-10">48小时。代码、咖啡与荣耀。与全球顶尖极客同台竞技，赢取高达 $10,000 的奖金池。</p>
-                 <div className="flex flex-col sm:flex-row justify-center gap-4"><Button className="px-8 py-4 text-lg">立即报名</Button><Button variant="secondary" className="px-8 py-4 text-lg bg-white/10 border-white/20 text-white hover:bg-white/20 hover:border-white/30">查看规则</Button></div>
-             </div>
+    <div className="max-w-7xl mx-auto px-6 py-12 animate-in fade-in duration-500">
+      {/* Hero Section */}
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-brand-900 p-12 md:p-20 mb-12">
+        {/* 装饰元素 */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-brand-500/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjMwIiBjeT0iMzAiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvZz48L3N2Zz4=')] opacity-40"></div>
+
+        <div className="relative z-10 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/90 text-sm font-medium mb-6 backdrop-blur-sm border border-white/10">
+            <Sparkles size={14} className="text-amber-400" /> 即将推出
+          </div>
+          <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 tracking-tight">
+            Hackathon
+          </h1>
+          <p className="text-xl md:text-2xl text-white/70 max-w-2xl mx-auto leading-relaxed">
+            代码、创意与激情的碰撞<br className="hidden md:block" />
+            一场属于开发者的狂欢即将开启
+          </p>
         </div>
-        <div className="max-w-5xl mx-auto px-6 py-16 grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center shadow-sm">
-                 <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4"><Award /></div>
-                 <div className="text-2xl font-bold text-slate-900 mb-1">$10,000</div><div className="text-slate-500 text-sm">总奖金池</div>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center shadow-sm">
-                 <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><Users /></div>
-                 <div className="text-2xl font-bold text-slate-900 mb-1">500+</div><div className="text-slate-500 text-sm">参赛极客</div>
-            </div>
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center shadow-sm">
-                 <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4"><CalendarIcon /></div>
-                 <div className="text-2xl font-bold text-slate-900 mb-1">Oct 24-26</div><div className="text-slate-500 text-sm">比赛时间</div>
-            </div>
+      </div>
+
+      {/* Info Cards */}
+      <div className="grid md:grid-cols-3 gap-6 mb-12">
+        <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-lg transition-shadow">
+          <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mb-6">
+            <Code2 className="w-7 h-7 text-brand-600" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-3">编程挑战</h3>
+          <p className="text-slate-500 leading-relaxed">限时编程、算法竞赛、项目开发，多种赛道等你来战</p>
         </div>
+        <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-lg transition-shadow">
+          <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center mb-6">
+            <Award className="w-7 h-7 text-purple-600" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-3">丰厚奖励</h3>
+          <p className="text-slate-500 leading-relaxed">现金大奖、实习机会、技术周边，为优秀选手准备</p>
+        </div>
+        <div className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-lg transition-shadow">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-6">
+            <Users className="w-7 h-7 text-blue-600" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-3">团队协作</h3>
+          <p className="text-slate-500 leading-relaxed">组队参赛、认识志同道合的伙伴，拓展你的技术圈子</p>
+        </div>
+      </div>
+
+      {/* Coming Soon Box */}
+      <div className="bg-slate-50 rounded-2xl p-12 text-center border border-slate-100">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-brand-100 mb-6">
+          <Rocket className="w-10 h-10 text-brand-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-3">活动筹备中</h2>
+        <p className="text-slate-500 mb-8 max-w-md mx-auto">
+          我们正在精心筹备，敬请关注后续通知。<br/>
+          有任何问题欢迎联系我们！
+        </p>
+        <Button onClick={() => setShowContactModal(true)}>
+          <MessageSquare size={16} className="mr-2" /> 联系我们
+        </Button>
+      </div>
     </div>
   );
 
@@ -1421,8 +1478,11 @@ export default function App() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">时长</label>
-                  <input value={form.duration || ''} onChange={e => setForm({ ...form, duration: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="45 分钟" />
+                  <label className="block text-xs font-medium text-slate-500 mb-1">时长（分钟）</label>
+                  <div className="flex items-center gap-2">
+                    <input type="number" value={parseInt(form.duration) || ''} onChange={e => setForm({ ...form, duration: e.target.value ? `${e.target.value} 分钟` : '' })} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="45" min="1" />
+                    <span className="text-sm text-slate-500">分钟</span>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">类型</label>
@@ -1434,7 +1494,7 @@ export default function App() {
               </div>
               {form.costType === 'paid' && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">价格 ($)</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">价格 (¥)</label>
                   <input type="number" value={form.price || 0} onChange={e => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
                 </div>
               )}
@@ -1542,7 +1602,7 @@ export default function App() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">价格 ($)</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">价格 (¥)</label>
                   <input type="number" value={form.price || 0} onChange={e => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <div>
@@ -1557,6 +1617,26 @@ export default function App() {
                     <option value="globe">地球</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">封面图片</label>
+                <div className="flex gap-2">
+                  <input value={form.thumbnail || ''} onChange={e => setForm({ ...form, thumbnail: e.target.value })} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="图片URL或上传..." />
+                  <label className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm rounded-lg cursor-pointer transition-colors">
+                    上传
+                    <input type="file" accept="image/*" className="hidden" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setForm({ ...form, thumbnail: event.target?.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </label>
+                </div>
+                {form.thumbnail && <img src={form.thumbnail} alt="预览" className="mt-2 h-20 rounded-lg object-cover" />}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-2">包含课程（点击选择）</label>
@@ -1661,7 +1741,7 @@ export default function App() {
                   </div>
                   <CostBadge type={course.costType} />
                   <div className="w-16 text-right font-mono text-slate-600 text-xs">
-                    {course.costType === 'paid' ? `$${course.price}` : '-'}
+                    {course.costType === 'paid' ? `$¥{course.price}` : '-'}
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => { setEditingCourse(course); setShowCourseModal(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors">
@@ -1702,7 +1782,7 @@ export default function App() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="font-mono font-bold text-slate-900">${degree.price}</span>
+                        <span className="font-mono font-bold text-slate-900">¥{degree.price}</span>
                         <div className="flex gap-1">
                           <button onClick={() => { setEditingDegree(degree); setShowDegreeModal(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors">
                             <Edit2 size={14} />

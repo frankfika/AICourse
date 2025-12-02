@@ -45,6 +45,7 @@ export interface NanoDegree {
   price: number;
   icon: string; // Identifier for icon map (e.g. 'shield', 'sparkles')
   costType: CostType;
+  thumbnail?: string; // Cover image URL or base64
 }
 
 export enum ViewState {
