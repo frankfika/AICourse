@@ -11,9 +11,11 @@ export interface Resource {
 export interface User {
   id: string;
   email: string;
+  password: string;
   name: string;
   role: 'admin' | 'student';
   permissions: string[]; // List of Course IDs that the user has access to
+  degreePermissions?: string[]; // List of Degree IDs that the user has purchased
 }
 
 export interface Course {
@@ -52,5 +54,6 @@ export enum ViewState {
   COURSE_DETAIL = 'COURSE_DETAIL',
   NANO_DEGREE = 'NANO_DEGREE',
   HACKATHON = 'HACKATHON',
-  ADMIN = 'ADMIN'
+  ADMIN = 'ADMIN',
+  PROFILE = 'PROFILE'
 }

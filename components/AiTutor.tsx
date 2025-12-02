@@ -67,7 +67,7 @@ export const AiTutor: React.FC<AiTutorProps> = ({ courseTitle }) => {
           </div>
           <div>
             <div className="font-bold text-slate-800">AI 学习助手</div>
-            <div className="text-xs text-slate-500">Nexus Academy</div>
+            <div className="text-xs text-slate-500">OpenCSG Academy</div>
           </div>
         </div>
         <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1 hover:bg-slate-200 rounded-full">
