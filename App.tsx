@@ -26,13 +26,31 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 
 const getEmbedUrl = (url: string) => {
   if (!url) return '';
+  // YouTube
   if (url.includes('youtube.com/watch?v=')) {
     return url.replace('watch?v=', 'embed/');
   }
   if (url.includes('youtu.be/')) {
     return url.replace('youtu.be/', 'youtube.com/embed/');
   }
+  // Bilibili - 支持多种格式
+  if (url.includes('bilibili.com/video/')) {
+    const bvMatch = url.match(/BV[\w]+/);
+    if (bvMatch) {
+      return `//player.bilibili.com/player.html?bvid=${bvMatch[0]}&high_quality=1`;
+    }
+  }
+  if (url.includes('b23.tv/')) {
+    // 短链接，直接返回，需要用户提供完整embed链接
+    return url;
+  }
   return url;
+};
+
+// 判断是否为本地视频文件（包括上传的blob URL）
+const isLocalVideo = (url: string) => {
+  if (!url) return false;
+  return url.startsWith('blob:') || url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg') || url.startsWith('/videos/') || url.startsWith('./');
 };
 
 // --- MOCK DATA ---
@@ -44,7 +62,7 @@ const INITIAL_COURSES: Course[] = [
     learningPoints: ['理解公钥与私钥加密机制', '掌握密码管理器的使用与双因素认证', '识别网络钓鱼与社会工程学攻击', '基础的网络流量分析与隐私保护'],
     instructor: 'Alice 博士',
     level: 'Beginner',
-    duration: '4 周',
+    duration: '45 分钟',
     videoDuration: 120,
     thumbnail: 'https://picsum.photos/seed/sec/800/400',
     tags: ['安全', '适合所有人'],
@@ -60,7 +78,7 @@ const INITIAL_COURSES: Course[] = [
     learningPoints: ['大型语言模型 (LLM) 的基本原理', '提示词工程 (Prompt Engineering) 入门', 'AI 在创意写作与图像生成中的应用', '人工智能的局限性与偏见'],
     instructor: 'Sarah C.',
     level: 'Beginner',
-    duration: '6 周',
+    duration: '60 分钟',
     videoDuration: 180,
     thumbnail: 'https://picsum.photos/seed/ai-easy/800/400',
     tags: ['AI', '概念', '未来'],
@@ -76,7 +94,7 @@ const INITIAL_COURSES: Course[] = [
     learningPoints: ['HTML5 语义化标签结构', 'CSS3 布局与 Flexbox', '响应式设计基础 (Mobile First)', '使用 Git 进行版本控制与部署'],
     instructor: 'Neo',
     level: 'Beginner',
-    duration: '4 周',
+    duration: '45 分钟',
     videoDuration: 240,
     thumbnail: 'https://picsum.photos/seed/web/800/400',
     tags: ['创意', '设计', 'Web'],
@@ -92,7 +110,7 @@ const INITIAL_COURSES: Course[] = [
     learningPoints: ['Python 基础语法与变量', '控制流：循环与条件判断', '函数式编程初步', '使用第三方库处理文件与网络请求'],
     instructor: 'Guido',
     level: 'Beginner',
-    duration: '8 周',
+    duration: '90 分钟',
     videoDuration: 320,
     thumbnail: 'https://picsum.photos/seed/python/800/400',
     tags: ['编程', 'Python', '逻辑'],
@@ -108,7 +126,7 @@ const INITIAL_COURSES: Course[] = [
     learningPoints: ['Linux 命令行基础', '常见 Web 漏洞 (SQL 注入, XSS)', '网络嗅探与分析', '道德黑客的法律边界'],
     instructor: 'Mr. Robot',
     level: 'Intermediate',
-    duration: '5 周',
+    duration: '55 分钟',
     videoDuration: 200,
     thumbnail: 'https://picsum.photos/seed/hack/800/400',
     tags: ['安全', '防御'],
@@ -124,7 +142,7 @@ const INITIAL_COURSES: Course[] = [
     learningPoints: ['IaaS, PaaS, SaaS 的区别', '虚拟化与容器技术 (Docker 简介)', '无服务器架构 (Serverless)', '云端数据库与存储'],
     instructor: 'Sky Walker',
     level: 'Beginner',
-    duration: '3 周',
+    duration: '30 分钟',
     videoDuration: 90,
     thumbnail: 'https://picsum.photos/seed/cloud/800/400',
     tags: ['基础设施', '概念'],
@@ -952,7 +970,13 @@ export default function App() {
                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                          {isUnlocked && course.videoUrl ? (
                            <div className="aspect-video w-full bg-slate-900 rounded-xl overflow-hidden shadow-lg">
-                             <iframe src={getEmbedUrl(course.videoUrl)} title={course.title} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                             {isLocalVideo(course.videoUrl) ? (
+                               <video src={course.videoUrl} controls className="w-full h-full" controlsList="nodownload">
+                                 您的浏览器不支持视频播放
+                               </video>
+                             ) : (
+                               <iframe src={getEmbedUrl(course.videoUrl)} title={course.title} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                             )}
                            </div>
                          ) : !isUnlocked ? (
                            <div className="aspect-video w-full bg-slate-900 rounded-xl overflow-hidden shadow-lg relative flex items-center justify-center">
@@ -1318,7 +1342,7 @@ export default function App() {
         learningPoints: [''],
         instructor: '',
         level: 'Beginner',
-        duration: '4 周',
+        duration: '45 分钟',
         thumbnail: 'https://picsum.photos/seed/new/800/400',
         tags: [],
         costType: 'free',
@@ -1398,7 +1422,7 @@ export default function App() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">时长</label>
-                  <input value={form.duration || ''} onChange={e => setForm({ ...form, duration: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="4 周" />
+                  <input value={form.duration || ''} onChange={e => setForm({ ...form, duration: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="45 分钟" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-1">类型</label>
@@ -1415,12 +1439,44 @@ export default function App() {
                 </div>
               )}
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">视频URL (YouTube)</label>
-                <input value={form.videoUrl || ''} onChange={e => setForm({ ...form, videoUrl: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://youtube.com/embed/..." />
+                <label className="block text-xs font-medium text-slate-500 mb-1">课程视频</label>
+                <div className="flex gap-2">
+                  <input value={form.videoUrl || ''} onChange={e => setForm({ ...form, videoUrl: e.target.value })} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="YouTube/B站链接 或 上传视频..." />
+                  <label className="px-3 py-2 bg-brand-50 hover:bg-brand-100 text-brand-600 text-sm rounded-lg cursor-pointer transition-colors whitespace-nowrap">
+                    上传视频
+                    <input type="file" accept="video/*" className="hidden" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const objectUrl = URL.createObjectURL(file);
+                        setForm({ ...form, videoUrl: objectUrl });
+                      }
+                    }} />
+                  </label>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">支持上传视频文件，或输入 YouTube、Bilibili 链接</p>
+                {form.videoUrl && (form.videoUrl.startsWith('blob:') || isLocalVideo(form.videoUrl)) && (
+                  <video src={form.videoUrl} controls className="mt-2 w-full max-h-40 rounded-lg bg-slate-900" />
+                )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">封面图片URL</label>
-                <input value={form.thumbnail || ''} onChange={e => setForm({ ...form, thumbnail: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
+                <label className="block text-xs font-medium text-slate-500 mb-1">封面图片</label>
+                <div className="flex gap-2">
+                  <input value={form.thumbnail || ''} onChange={e => setForm({ ...form, thumbnail: e.target.value })} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm" placeholder="图片URL或上传..." />
+                  <label className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm rounded-lg cursor-pointer transition-colors">
+                    上传
+                    <input type="file" accept="image/*" className="hidden" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          setForm({ ...form, thumbnail: event.target?.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }} />
+                  </label>
+                </div>
+                {form.thumbnail && <img src={form.thumbnail} alt="预览" className="mt-2 h-20 rounded-lg object-cover" />}
               </div>
             </div>
             <div className="sticky bottom-0 bg-white px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
