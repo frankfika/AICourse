@@ -5,10 +5,11 @@ import {
   User as UserIcon, Plus, ArrowLeft, Link as LinkIcon, Sparkles, BookOpen, Search,
   Layers, PlayCircle, Lock, Download, FileText, Github, Globe, Settings, Save,
   Heart, CheckCircle2, List, Trash2, Youtube, LogOut, Users, MessageSquare,
-  CheckSquare, Square, Award, Key, Quote, Smile, X, Gift, Star, Edit2, Copy, Rocket
+  CheckSquare, Square, Award, Key, Quote, Smile, X, Gift, Star, Edit2, Copy, Rocket, Loader2
 } from 'lucide-react';
 import { Course, NanoDegree, ViewState, CostType, Resource, User } from './types';
 import { Button, Card, Badge } from './components/Components';
+import * as db from './lib/database';
 // AI 助教功能已禁用（需要 Gemini API Key）
 // import { AiTutor } from './components/AiTutor';
 
@@ -204,40 +205,67 @@ export default function App() {
   const [selectedDegreeId, setSelectedDegreeId] = useState<string | null>(null);
   const [activeDegreeId, setActiveDegreeId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [courses, setCourses] = useState<Course[]>(INITIAL_COURSES);
-  const [degrees, setDegrees] = useState<NanoDegree[]>(INITIAL_DEGREES);
-  // 从 localStorage 恢复数据（带版本检查）
-  const [users, setUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('opencsg_users');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // 检查是否有 password 字段，没有则重置
-      if (parsed.length > 0 && !parsed[0].password) {
-        localStorage.removeItem('opencsg_users');
-        return INITIAL_USERS;
-      }
-      return parsed;
-    }
-    return INITIAL_USERS;
-  });
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [degrees, setDegrees] = useState<NanoDegree[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('opencsg_currentUser');
     if (saved) {
-      const parsed = JSON.parse(saved);
-      // 检查是否有 password 字段，没有则登出
-      if (!parsed.password) {
-        localStorage.removeItem('opencsg_currentUser');
+      try {
+        return JSON.parse(saved);
+      } catch {
         return null;
       }
-      return parsed;
     }
     return null;
   });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 持久化到 localStorage
+  // 从 Supabase 加载数据
   useEffect(() => {
-    localStorage.setItem('opencsg_users', JSON.stringify(users));
-  }, [users]);
+    const loadData = async () => {
+      setIsLoading(true);
+      console.log('[Supabase] 开始加载数据...');
+      try {
+        const [dbCourses, dbDegrees, dbUsers] = await Promise.all([
+          db.getCourses(),
+          db.getNanoDegrees(),
+          db.getUsers()
+        ]);
+        console.log('[Supabase] 加载完成:', {
+          courses: dbCourses.length,
+          degrees: dbDegrees.length,
+          users: dbUsers.length
+        });
+
+        if (dbCourses.length > 0) {
+          console.log('[Supabase] 设置课程:', dbCourses.map(c => c.title));
+          setCourses(dbCourses);
+        }
+        if (dbDegrees.length > 0) {
+          console.log('[Supabase] 设置学位:', dbDegrees.map(d => d.title));
+          setDegrees(dbDegrees);
+        }
+        if (dbUsers.length > 0) {
+          console.log('[Supabase] 设置用户:', dbUsers.map(u => u.email));
+          setUsers(dbUsers);
+        }
+
+        // 如果有登录用户，刷新其数据
+        if (currentUser) {
+          const freshUser = dbUsers.find(u => u.id === currentUser.id);
+          if (freshUser) setCurrentUser(freshUser);
+        }
+      } catch (error) {
+        console.error('[Supabase] 加载失败:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  // 保持当前用户到 localStorage（用于刷新后恢复登录状态）
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('opencsg_currentUser', JSON.stringify(currentUser));
@@ -297,7 +325,7 @@ export default function App() {
   };
 
   // 注册免费课程
-  const enrollFreeCourse = (courseId: string) => {
+  const enrollFreeCourse = async (courseId: string) => {
     if (!currentUser) return;
     if (currentUser.permissions.includes(courseId)) return; // 已注册
     const updatedUser = {
@@ -306,9 +334,23 @@ export default function App() {
     };
     setCurrentUser(updatedUser);
     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+    // 保存到数据库
+    await db.updateUser(updatedUser);
   };
 
-  const handleLogin = (email: string, password: string): string | null => {
+  const handleLogin = async (email: string, password: string): Promise<string | null> => {
+    // 先从数据库查询
+    const dbUser = await db.getUserByEmail(email);
+    if (dbUser) {
+      if (dbUser.password !== password) {
+        return '密码错误';
+      }
+      setCurrentUser(dbUser);
+      setIsLoginModalOpen(false);
+      setLoginEmail('');
+      return null;
+    }
+    // 再从本地状态查询（兼容）
     const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser) {
       if (existingUser.password !== password) {
@@ -322,7 +364,7 @@ export default function App() {
     return '账号不存在';
   };
 
-  const handleRegister = (email: string, password: string, name: string): string | null => {
+  const handleRegister = async (email: string, password: string, name: string): Promise<string | null> => {
     const existingUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existingUser) {
       return '该邮箱已被注册';
@@ -333,10 +375,16 @@ export default function App() {
       password,
       name: name || email.split('@')[0],
       role: 'student',
-      permissions: []
+      permissions: [],
+      degreePermissions: []
     };
-    setUsers(prev => [...prev, newUser]);
-    setCurrentUser(newUser);
+    // 保存到数据库
+    const savedUser = await db.createUser(newUser);
+    if (!savedUser) {
+      return '注册失败，请稍后重试';
+    }
+    setUsers(prev => [...prev, savedUser]);
+    setCurrentUser(savedUser);
     setIsLoginModalOpen(false);
     setLoginEmail('');
     return null;
@@ -1040,7 +1088,7 @@ export default function App() {
                                    <h3 className="text-xl font-bold text-white mb-2">解锁完整课程</h3>
                                    <p className="text-slate-300 text-sm mb-6">
                                      本课程属于 {degree?.title ? <span className="text-brand-400 font-bold">{degree.title}</span> : '专业版内容'}。
-                                     {course.price > 0 && ` 单购价格: $¥{course.price}`}
+                                     {course.price > 0 && ` 单购价格: ¥${course.price}`}
                                    </p>
                                    <Button onClick={() => setShowContactModal(true)} className="text-sm">解锁课程</Button>
                                  </>
@@ -1365,25 +1413,29 @@ export default function App() {
       </div>
     );
 
-    const togglePermission = (userId: string, courseId: string) => {
-      setUsers(users.map(u => {
-        if (u.id === userId) {
-          const hasPerm = u.permissions.includes(courseId);
-          return { ...u, permissions: hasPerm ? u.permissions.filter(p => p !== courseId) : [...u.permissions, courseId] };
-        }
-        return u;
-      }));
+    const togglePermission = async (userId: string, courseId: string) => {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+      const hasPerm = user.permissions.includes(courseId);
+      const updatedUser = {
+        ...user,
+        permissions: hasPerm ? user.permissions.filter(p => p !== courseId) : [...user.permissions, courseId]
+      };
+      setUsers(users.map(u => u.id === userId ? updatedUser : u));
+      await db.updateUser(updatedUser);
     };
 
-    const toggleDegreePermission = (userId: string, degreeId: string) => {
-      setUsers(users.map(u => {
-        if (u.id === userId) {
-          const currentDegrees = u.degreePermissions || [];
-          const hasPerm = currentDegrees.includes(degreeId);
-          return { ...u, degreePermissions: hasPerm ? currentDegrees.filter(p => p !== degreeId) : [...currentDegrees, degreeId] };
-        }
-        return u;
-      }));
+    const toggleDegreePermission = async (userId: string, degreeId: string) => {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+      const currentDegrees = user.degreePermissions || [];
+      const hasPerm = currentDegrees.includes(degreeId);
+      const updatedUser = {
+        ...user,
+        degreePermissions: hasPerm ? currentDegrees.filter(p => p !== degreeId) : [...currentDegrees, degreeId]
+      };
+      setUsers(users.map(u => u.id === userId ? updatedUser : u));
+      await db.updateUser(updatedUser);
     };
 
     const paidCourses = courses.filter(c => c.costType === 'paid');
@@ -1408,12 +1460,23 @@ export default function App() {
         resources: []
       });
 
-      const handleSave = () => {
+      const handleSave = async () => {
         if (!form.title?.trim()) return alert('请输入课程标题');
+        const courseData = form as Course;
         if (isNew) {
-          setCourses([...courses, form as Course]);
+          const saved = await db.createCourse(courseData);
+          if (saved) {
+            setCourses([...courses, saved]);
+          } else {
+            setCourses([...courses, courseData]); // 降级到本地
+          }
         } else {
-          setCourses(courses.map(c => c.id === form.id ? form as Course : c));
+          const saved = await db.updateCourse(courseData);
+          if (saved) {
+            setCourses(courses.map(c => c.id === saved.id ? saved : c));
+          } else {
+            setCourses(courses.map(c => c.id === courseData.id ? courseData : c));
+          }
         }
         setShowCourseModal(false);
         setEditingCourse(null);
@@ -1562,12 +1625,23 @@ export default function App() {
         costType: 'paid'
       });
 
-      const handleSave = () => {
+      const handleSave = async () => {
         if (!form.title?.trim()) return alert('请输入学位标题');
+        const degreeData = form as NanoDegree;
         if (isNew) {
-          setDegrees([...degrees, form as NanoDegree]);
+          const saved = await db.createNanoDegree(degreeData);
+          if (saved) {
+            setDegrees([...degrees, saved]);
+          } else {
+            setDegrees([...degrees, degreeData]);
+          }
         } else {
-          setDegrees(degrees.map(d => d.id === form.id ? form as NanoDegree : d));
+          const saved = await db.updateNanoDegree(degreeData);
+          if (saved) {
+            setDegrees(degrees.map(d => d.id === saved.id ? saved : d));
+          } else {
+            setDegrees(degrees.map(d => d.id === degreeData.id ? degreeData : d));
+          }
         }
         setShowDegreeModal(false);
         setEditingDegree(null);
@@ -1668,20 +1742,30 @@ export default function App() {
       );
     };
 
-    const deleteCourse = (id: string) => {
+    const deleteCourse = async (id: string) => {
       if (!confirm('确定删除此课程？')) return;
+      await db.deleteCourse(id);
       setCourses(courses.filter(c => c.id !== id));
+      // 同时从学位中移除该课程
+      for (const degree of degrees) {
+        if (degree.courses.includes(id)) {
+          const updated = { ...degree, courses: degree.courses.filter(cid => cid !== id) };
+          await db.updateNanoDegree(updated);
+        }
+      }
       setDegrees(degrees.map(d => ({ ...d, courses: d.courses.filter(cid => cid !== id) })));
     };
 
-    const deleteDegree = (id: string) => {
+    const deleteDegree = async (id: string) => {
       if (!confirm('确定删除此学位？')) return;
+      await db.deleteNanoDegree(id);
       setDegrees(degrees.filter(d => d.id !== id));
     };
 
     const deleteUser = (id: string) => {
       if (id === currentUser?.id) return alert('不能删除自己');
       if (!confirm('确定删除此用户？')) return;
+      // 暂不支持从数据库删除用户
       setUsers(users.filter(u => u.id !== id));
     };
 
@@ -1741,7 +1825,7 @@ export default function App() {
                   </div>
                   <CostBadge type={course.costType} />
                   <div className="w-16 text-right font-mono text-slate-600 text-xs">
-                    {course.costType === 'paid' ? `$¥{course.price}` : '-'}
+                    {course.costType === 'paid' ? `¥${course.price}` : '-'}
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => { setEditingCourse(course); setShowCourseModal(true); }} className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors">
@@ -1901,6 +1985,18 @@ export default function App() {
   // Helper Icons for inside components
   const TargetIcon = () => <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
   const CalendarIcon = () => <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
+
+  // 加载状态
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 text-brand-600 animate-spin mx-auto mb-4" />
+          <p className="text-slate-500">加载中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen font-sans bg-slate-50 selection:bg-brand-100 selection:text-brand-900">
