@@ -29,6 +29,13 @@ export async function POST(
       )
     }
 
+    if (course.price && course.price > 0) {
+      return NextResponse.json(
+        { error: '该课程为付费课程，请联系课程小助手开通' },
+        { status: 400 }
+      )
+    }
+
     // Check if already enrolled
     const existingEnrollment = await prisma.enrollment.findUnique({
       where: {

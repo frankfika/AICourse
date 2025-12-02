@@ -18,6 +18,7 @@ export default async function EditCoursePage({
       include: {
         chapters: { orderBy: { order: 'asc' } },
         faqs: { orderBy: { order: 'asc' } },
+        enrollments: { include: { user: true } },
       },
     }),
     prisma.category.findMany({ orderBy: { order: 'asc' } }),
@@ -52,7 +53,33 @@ export default async function EditCoursePage({
         categories={categories}
         instructors={instructors}
       />
+
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold">课程权限管理</h2>
+        <div className="anthropic-card p-4 space-y-3">
+          <form method="POST" action={`/api/admin/courses/${id}/enrollments`} className="flex gap-3">
+            <input
+              type="email"
+              name="email"
+              placeholder="输入学员邮箱"
+              className="flex-1 px-3 py-2 border rounded-md"
+              required
+            />
+            <button className="px-4 py-2 rounded-md bg-primary text-white">开放权限</button>
+          </form>
+          <div className="text-sm text-muted-foreground">已有权限学员（{course.enrollments.length}）</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {course.enrollments.map((en) => (
+              <div key={en.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <div className="font-medium">{en.user.name}</div>
+                  <div className="text-xs text-muted-foreground">{en.user.email}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
-

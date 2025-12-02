@@ -16,7 +16,10 @@ const IGNORED_ERROR_PATTERNS = [
   /phantom/i,
   /Cannot destructure property.*of 'undefined'/i,
   /Invalid or unexpected token/i,
-  /@vite\/client/
+  /@vite\/client/,
+  /net::ERR_ABORTED/i,
+  /AbortError/i,
+  /The operation was aborted/i
 ]
 
 /**
@@ -67,7 +70,12 @@ export function initGlobalErrorHandler() {
 
   // 处理未捕获的Promise rejection
   window.addEventListener('unhandledrejection', (event) => {
-    if (shouldIgnoreError(event.reason?.message || event.reason || '')) {
+    const reason = event.reason
+    const msg = reason?.message || reason || ''
+    if (
+      shouldIgnoreError(msg) ||
+      (reason && typeof reason === 'object' && 'name' in reason && (reason as any).name === 'AbortError')
+    ) {
       event.preventDefault()
       return false
     }

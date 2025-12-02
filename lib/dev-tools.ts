@@ -27,7 +27,10 @@ export function setupConsoleFilters() {
     /metamask/i,
     /phantom/i,
     /Invalid or unexpected token/i,
-    /@vite\/client/
+    /@vite\/client/,
+    /net::ERR_ABORTED/i,
+    /AbortError/i,
+    /The operation was aborted/i
   ]
 
   // 检查是否应该过滤

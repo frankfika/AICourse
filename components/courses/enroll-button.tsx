@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { BookOpen, Check } from 'lucide-react'
+import { BookOpen, Check, Clipboard } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import Image from 'next/image'
 
 interface EnrollButtonProps {
   courseId: string
@@ -19,11 +21,24 @@ export function EnrollButton({ courseId, courseSlug, price, originalPrice }: Enr
   const [checking, setChecking] = useState(true)
 
   const isFree = price === 0
+  const [assistantQrUrl, setAssistantQrUrl] = useState<string | null>(null)
+  const [assistantWechatId, setAssistantWechatId] = useState<string | null>(null)
+  const [showQr, setShowQr] = useState(false)
 
   useEffect(() => {
     checkEnrollment()
+    fetchAssistantInfo()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId])
+
+  const fetchAssistantInfo = async () => {
+    try {
+      const resAll = await fetch(`/api/site-config`)
+      const data = await resAll.json()
+      setAssistantQrUrl(data.assistantQrUrl || null)
+      setAssistantWechatId(data.assistantWechatId || null)
+    } catch (e) {}
+  }
 
   const checkEnrollment = async () => {
     try {
@@ -41,13 +56,14 @@ export function EnrollButton({ courseId, courseSlug, price, originalPrice }: Enr
     setLoading(true)
 
     try {
+      if (!isFree) {
+        setShowQr(true)
+        return
+      }
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itemType: 'course',
-          itemId: courseId,
-        }),
+        body: JSON.stringify({ itemType: 'course', itemId: courseId }),
       })
 
       if (res.status === 401) {
@@ -69,7 +85,6 @@ export function EnrollButton({ courseId, courseSlug, price, originalPrice }: Enr
         return
       }
 
-      // 如果是付费课程，跳转到支付页面
       if (data.order) {
         router.push(`/orders/${data.order.orderNo}`)
       }
@@ -112,20 +127,54 @@ export function EnrollButton({ courseId, courseSlug, price, originalPrice }: Enr
   }
 
   return (
-    <Button
-      size="lg"
-      onClick={handlePurchase}
-      disabled={loading}
-      className="anthropic-button"
-    >
-      {loading ? (
-        '处理中...'
-      ) : (
-        <>
-          <BookOpen className="h-4 w-4 mr-2" />
-          {isFree ? '免费报名' : '立即购买'}
-        </>
-      )}
-    </Button>
+    <>
+      <Button
+        size="lg"
+        onClick={handlePurchase}
+        disabled={loading}
+        className="anthropic-button"
+      >
+        {loading ? (
+          '处理中...'
+        ) : (
+          <>
+            <BookOpen className="h-4 w-4 mr-2" />
+            {isFree ? '免费报名' : '联系小助手开通'}
+          </>
+        )}
+      </Button>
+
+      <Dialog open={showQr} onOpenChange={setShowQr}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>付费课程开通</DialogTitle>
+            <DialogDescription>请扫描二维码联系课程小助手开通权限</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {assistantQrUrl ? (
+              <div className="w-full flex items-center justify-center">
+                <Image src={assistantQrUrl} alt="课程小助手二维码" width={400} height={400} className="rounded-lg object-cover" />
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">管理员未配置二维码</div>
+            )}
+            {assistantWechatId && (
+              <div className="flex items-center justify-between rounded-md border p-3 text-sm">
+                <span>微信号：{assistantWechatId}</span>
+                <Button
+                  size="sm"
+                  onClick={() => navigator.clipboard.writeText(assistantWechatId)}
+                >
+                  <Clipboard className="h-4 w-4 mr-2" />复制
+                </Button>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowQr(false)} variant="outline">关闭</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
