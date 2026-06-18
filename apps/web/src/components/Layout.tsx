@@ -98,6 +98,55 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       <main>{children}</main>
+
+      <footer className="bg-[#171717] text-white py-12 mt-20">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-2 font-bold text-lg mb-4">
+                <GraduationCap className="w-6 h-6" />
+                <span>OpenCSG Academy</span>
+              </div>
+              <p className="text-sm text-gray-400">
+                专注于 AI 和大模型技术培训的在线教育平台
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">学习资源</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><Link to="/courses" className="hover:text-white transition-colors">所有课程</Link></li>
+                <li><Link to="/degrees" className="hover:text-white transition-colors">学位项目</Link></li>
+                <li><Link to="/hackathons" className="hover:text-white transition-colors">黑客松</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">关于我们</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="https://opencsg.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">OpenCSG</a></li>
+                <li><a href="https://github.com/OpenCSGs" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">联系方式</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>邮箱: contact@opencsg.com</li>
+                <li>
+                  <a href="https://github.com/OpenCSGs/AICourse" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    项目开源地址
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+            <p>&copy; {new Date().getFullYear()} OpenCSG Academy. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
