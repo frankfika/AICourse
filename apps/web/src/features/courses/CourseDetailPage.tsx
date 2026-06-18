@@ -1,9 +1,23 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
-import { Clock, User as UserIcon, BookOpen, PlayCircle, FileText, Lock, CheckCircle2, ArrowLeft } from 'lucide-react';
+import {
+  Clock,
+  User as UserIcon,
+  BookOpen,
+  PlayCircle,
+  FileText,
+  Lock,
+  CheckCircle2,
+  Circle,
+  ArrowLeft,
+  Award,
+  Star,
+} from 'lucide-react';
 import api from '../../lib/api';
+import { progressApi } from '../../lib/progressApi';
 import { useAuthStore } from '../../stores/authStore';
+import { ProgressRing } from '../../components/ProgressRing';
 
 interface Course {
   id: string;
@@ -46,11 +60,19 @@ interface Resource {
   isLocked: boolean;
 }
 
+interface Toast {
+  id: number;
+  type: 'points' | 'badge';
+  message: string;
+}
+
 export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'overview' | 'video' | 'resources'>('overview');
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   const { data: course, isLoading } = useQuery({
     queryKey: ['course', id],
@@ -59,6 +81,57 @@ export function CourseDetailPage() {
       return data;
     },
     enabled: !!id,
+  });
+
+  const { data: courseProgress } = useQuery({
+    queryKey: ['course-progress', id],
+    queryFn: () => progressApi.getCourseProgress(id!),
+    enabled: !!id && !!user,
+  });
+
+  const { data: myProgress } = useQuery({
+    queryKey: ['my-progress'],
+    queryFn: () => progressApi.getMyProgress(),
+    enabled: !!user,
+  });
+
+  const completedLessonIds = new Set(
+    (myProgress as any[])
+      ?.filter((p) => p.status === 'completed')
+      .map((p) => p.lessonId) ?? [],
+  );
+
+  const completeLessonMutation = useMutation({
+    mutationFn: (lessonId: string) => progressApi.completeLesson(lessonId),
+    onSuccess: (data, lessonId) => {
+      queryClient.invalidateQueries({ queryKey: ['my-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['course-progress', id] });
+      queryClient.invalidateQueries({ queryKey: ['my-points'] });
+      queryClient.invalidateQueries({ queryKey: ['my-badges'] });
+
+      const newToasts: Toast[] = [];
+      if (data.pointsAwarded > 0) {
+        newToasts.push({
+          id: Date.now(),
+          type: 'points',
+          message: `+${data.pointsAwarded} 积分`,
+        });
+      }
+      data.newlyUnlockedBadges.forEach((badge, idx) => {
+        newToasts.push({
+          id: Date.now() + idx + 1,
+          type: 'badge',
+          message: `解锁徽章「${badge.name}」`,
+        });
+      });
+
+      if (newToasts.length > 0) {
+        setToasts((prev) => [...prev, ...newToasts]);
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => !newToasts.find((nt) => nt.id === t.id)));
+        }, 3000);
+      }
+    },
   });
 
   const isUnlocked = course?.costType === 'free' || course?.costType === 'charity' || !!user;
@@ -75,24 +148,55 @@ export function CourseDetailPage() {
         <ArrowLeft className="w-4 h-4" /> 返回课程列表
       </Link>
 
-      <div className="mb-8">
-        <h1 className="text-3xl md:text-5xl font-bold mb-4">{course.title}</h1>
-        <div className="flex flex-wrap items-center gap-4 text-sm text-[#666666]">
-          <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {course.duration}</span>
-          <span className="flex items-center gap-1"><UserIcon className="w-4 h-4" /> {course.instructor}</span>
-          <span className="px-2.5 py-0.5 rounded border text-xs">
-            {course.level === 'Beginner' ? '入门' : '进阶'}
-          </span>
-          <span className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${
-            course.costType === 'free'
-              ? 'bg-emerald-50 text-emerald-700'
-              : course.costType === 'charity'
-              ? 'bg-amber-50 text-amber-700'
-              : 'bg-[#171717] text-white'
-          }`}>
-            {course.costType === 'free' ? '免费' : course.costType === 'charity' ? '公益' : `¥${course.price}`}
-          </span>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div className="flex-1">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4">{course.title}</h1>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-[#666666]">
+            <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {course.duration}</span>
+            <span className="flex items-center gap-1"><UserIcon className="w-4 h-4" /> {course.instructor}</span>
+            <span className="px-2.5 py-0.5 rounded border text-xs">
+              {course.level === 'Beginner' ? '入门' : '进阶'}
+            </span>
+            <span
+              className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${
+                course.costType === 'free'
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : course.costType === 'charity'
+                  ? 'bg-amber-50 text-amber-700'
+                  : 'bg-[#171717] text-white'
+              }`}
+            >
+              {course.costType === 'free' ? '免费' : course.costType === 'charity' ? '公益' : `¥${course.price}`}
+            </span>
+          </div>
         </div>
+        {user && courseProgress && (
+          <div className="flex items-center gap-4 bg-white border border-[#EEEDE9] rounded-2xl p-4">
+            <ProgressRing percent={courseProgress.percent} size={72} strokeWidth={7} />
+            <div>
+              <div className="text-sm text-[#666666]">课程进度</div>
+              <div className="text-lg font-bold">
+                {courseProgress.completedLessons}/{courseProgress.totalLessons} 课时
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="fixed top-20 right-6 z-50 space-y-2">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg border animate-in fade-in slide-in-from-right duration-300 ${
+              toast.type === 'points'
+                ? 'bg-[#171717] text-white border-[#171717]'
+                : 'bg-white text-[#171717] border-[#EEEDE9]'
+            }`}
+          >
+            {toast.type === 'points' ? <Star className="w-4 h-4" /> : <Award className="w-4 h-4" />}
+            <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        ))}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -164,12 +268,15 @@ export function CourseDetailPage() {
           {activeTab === 'resources' && (
             <div className="space-y-4">
               {!isUnlocked ? (
-                <div className="text-center py-12 text-[#999999]"><Lock className="w-8 h-8 mx-auto mb-3" />资源仅对学员开放</div>
+                <div className="text-center py-12 text-[#999999]">
+                  <Lock className="w-8 h-8 mx-auto mb-3" />资源仅对学员开放
+                </div>
+              ) : course.chapters.flatMap((c) => c.lessons).flatMap((l) => l.resources).length === 0 ? (
+                <div className="text-center py-12 text-[#666666]">暂无附加资源</div>
               ) : (
-                course.chapters.flatMap((c) => c.lessons).flatMap((l) => l.resources).length === 0 ? (
-                  <div className="text-center py-12 text-[#666666]">暂无附加资源</div>
-                ) : (
-                  course.chapters.flatMap((c) => c.lessons).flatMap((l) =>
+                course.chapters
+                  .flatMap((c) => c.lessons)
+                  .flatMap((l) =>
                     l.resources.map((res) => (
                       <a
                         key={res.id}
@@ -186,7 +293,6 @@ export function CourseDetailPage() {
                       </a>
                     ))
                   )
-                )
               )}
             </div>
           )}
@@ -200,27 +306,48 @@ export function CourseDetailPage() {
                 <div key={chapter.id}>
                   <h4 className="text-sm font-bold text-[#666666] mb-2">{chapter.title}</h4>
                   <div className="space-y-1">
-                    {chapter.lessons.map((lesson) => (
-                      <button
-                        key={lesson.id}
-                        onClick={() => {
-                          setActiveLesson(lesson);
-                          setActiveTab('video');
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
-                          activeLesson?.id === lesson.id
-                            ? 'bg-[#171717] text-white'
-                            : 'hover:bg-[#F5F4F0]'
-                        }`}
-                      >
-                        {lesson.isPreview || isUnlocked ? (
-                          <PlayCircle className="w-4 h-4 shrink-0" />
-                        ) : (
-                          <Lock className="w-4 h-4 shrink-0" />
-                        )}
-                        <span className="line-clamp-1">{lesson.title}</span>
-                      </button>
-                    ))}
+                    {chapter.lessons.map((lesson) => {
+                      const isCompleted = completedLessonIds.has(lesson.id);
+                      return (
+                        <div
+                          key={lesson.id}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 ${
+                            activeLesson?.id === lesson.id
+                              ? 'bg-[#171717] text-white'
+                              : 'hover:bg-[#F5F4F0]'
+                          }`}
+                        >
+                          <button
+                            onClick={() => {
+                              setActiveLesson(lesson);
+                              setActiveTab('video');
+                            }}
+                            className="flex items-center gap-2 flex-1 min-w-0"
+                          >
+                            {lesson.isPreview || isUnlocked ? (
+                              <PlayCircle className="w-4 h-4 shrink-0" />
+                            ) : (
+                              <Lock className="w-4 h-4 shrink-0" />
+                            )}
+                            <span className="line-clamp-1">{lesson.title}</span>
+                          </button>
+                          {user && (lesson.isPreview || isUnlocked) && (
+                            <button
+                              onClick={() => completeLessonMutation.mutate(lesson.id)}
+                              disabled={isCompleted || completeLessonMutation.isPending}
+                              className={`shrink-0 p-1 rounded-full transition-colors ${
+                                isCompleted
+                                  ? 'text-emerald-600'
+                                  : 'text-[#999999] hover:text-[#171717] hover:bg-[#F5F4F0]'
+                              }`}
+                              title={isCompleted ? '已完成' : '标记完成'}
+                            >
+                              {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -230,14 +357,25 @@ export function CourseDetailPage() {
           <div className="mt-6 bg-white border border-[#EEEDE9] rounded-2xl p-5">
             <h4 className="font-bold mb-3">课程信息</h4>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-[#666666]">时长</span><span>{course.duration}</span></div>
-              <div className="flex justify-between"><span className="text-[#666666]">难度</span><span>{course.level === 'Beginner' ? '入门' : '进阶'}</span></div>
-              <div className="flex justify-between"><span className="text-[#666666]">讲师</span><span>{course.instructor}</span></div>
+              <div className="flex justify-between">
+                <span className="text-[#666666]">时长</span>
+                <span>{course.duration}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#666666]">难度</span>
+                <span>{course.level === 'Beginner' ? '入门' : '进阶'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#666666]">讲师</span>
+                <span>{course.instructor}</span>
+              </div>
               <div className="pt-2">
                 <span className="text-[#666666] block mb-2">标签</span>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
-                    <span key={tag} className="px-2 py-1 bg-[#F5F4F0] rounded-full text-xs">{tag}</span>
+                    <span key={tag} className="px-2 py-1 bg-[#F5F4F0] rounded-full text-xs">
+                      {tag}
+                    </span>
                   ))}
                 </div>
               </div>

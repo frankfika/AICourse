@@ -17,6 +17,8 @@ interface Course {
   tags: string;
 }
 
+import { TiltCard } from '../../components/TiltCard';
+
 export function CourseListPage() {
   const [search, setSearch] = useState('');
   const { data: courses, isLoading } = useQuery({
@@ -53,39 +55,40 @@ export function CourseListPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered?.map((course) => (
-            <Link
-              key={course.id}
-              to={`/courses/${course.id}`}
-              className="group bg-white rounded-2xl border border-[#EEEDE9] overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              <div className="aspect-[16/9] overflow-hidden">
-                <img
-                  src={course.thumbnail}
-                  alt={course.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`text-xs font-bold px-2 py-1 rounded-full border ${
-                    course.costType === 'free'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : course.costType === 'charity'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-[#171717] text-white border-[#171717]'
-                  }`}>
-                    {course.costType === 'free' ? '免费' : course.costType === 'charity' ? '公益' : '付费'}
-                  </span>
-                  <span className="text-xs text-[#666666] font-medium">{course.level === 'Beginner' ? '入门' : '进阶'}</span>
+            <TiltCard key={course.id} className="h-full">
+              <Link
+                to={`/courses/${course.id}`}
+                className="group block bg-white rounded-2xl border border-[#EEEDE9] overflow-hidden hover:shadow-lg transition-shadow h-full"
+              >
+                <div className="aspect-[16/9] overflow-hidden">
+                  <img
+                    src={course.thumbnail}
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
-                <h3 className="font-bold text-lg mb-2 group-hover:underline">{course.title}</h3>
-                <p className="text-sm text-[#666666] line-clamp-2 mb-4">{course.description}</p>
-                <div className="flex items-center gap-4 text-xs text-[#666666] font-medium">
-                  <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {course.duration}</span>
-                  <span className="flex items-center gap-1"><UserIcon className="w-3.5 h-3.5" /> {course.instructor}</span>
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`text-xs font-bold px-2 py-1 rounded-full border ${
+                      course.costType === 'free'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : course.costType === 'charity'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-[#171717] text-white border-[#171717]'
+                    }`}>
+                      {course.costType === 'free' ? '免费' : course.costType === 'charity' ? '公益' : '付费'}
+                    </span>
+                    <span className="text-xs text-[#666666] font-medium">{course.level === 'Beginner' ? '入门' : '进阶'}</span>
+                  </div>
+                  <h3 className="font-bold text-lg mb-2 group-hover:underline">{course.title}</h3>
+                  <p className="text-sm text-[#666666] line-clamp-2 mb-4">{course.description}</p>
+                  <div className="flex items-center gap-4 text-xs text-[#666666] font-medium">
+                    <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {course.duration}</span>
+                    <span className="flex items-center gap-1"><UserIcon className="w-3.5 h-3.5" /> {course.instructor}</span>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </TiltCard>
           ))}
         </div>
       )}

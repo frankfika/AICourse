@@ -1,10 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgesService } from '../badges/badges.service';
 import { CostType } from '@prisma/client';
 
 @Injectable()
 export class EnrollmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly badgesService: BadgesService,
+  ) {}
 
   async findByUser(userId: string) {
     return this.prisma.enrollment.findMany({
@@ -26,7 +30,7 @@ export class EnrollmentsService {
       throw new BadRequestException('This course is not free');
     }
 
-    return this.prisma.enrollment.upsert({
+    const enrollment = await this.prisma.enrollment.upsert({
       where: {
         userId_courseId: {
           userId,
@@ -40,5 +44,10 @@ export class EnrollmentsService {
         source: 'direct',
       },
     });
+
+    // 异步检查首次报名等徽章（不阻塞报名流程）
+    this.badgesService.checkAndAward(userId).catch(() => undefined);
+
+    return enrollment;
   }
 }

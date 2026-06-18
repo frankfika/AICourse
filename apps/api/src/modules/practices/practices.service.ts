@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgesService } from '../badges/badges.service';
 import { CreatePracticeProjectDto, UpdatePracticeProjectDto, CompletePracticeDto } from './practices.dto';
 
 @Injectable()
 export class PracticesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly badgesService: BadgesService,
+  ) {}
 
   // 获取课程的所有实践项目
   async getProjectsByCourseId(courseId: string) {
@@ -172,7 +176,9 @@ export class PracticesService {
       throw new NotFoundException('Practice completion not found. Please start the project first.');
     }
 
-    return this.prisma.practiceCompletion.update({
+    const wasAlreadyCompleted = completion?.status === 'completed';
+
+    const updated = await this.prisma.practiceCompletion.update({
       where: {
         userId_projectId: {
           userId,
@@ -189,6 +195,12 @@ export class PracticesService {
         project: true,
       },
     });
+
+    if (!wasAlreadyCompleted) {
+      this.badgesService.checkAndAward(userId).catch(() => undefined);
+    }
+
+    return updated;
   }
 
   // 跳过实践项目

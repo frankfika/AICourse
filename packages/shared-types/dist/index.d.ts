@@ -14,6 +14,7 @@ export type SubmissionStatus = 'draft' | 'submitted' | 'under_review' | 'shortli
 export type ProjectDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 export type ProjectType = 'model_deployment' | 'model_training' | 'model_inference' | 'api_integration' | 'notebook' | 'sandbox' | 'repository' | 'csghub_space';
 export type CompletionStatus = 'in_progress' | 'completed' | 'skipped';
+export type BadgeCriteriaType = 'course_completed' | 'lessons_completed' | 'streak_days' | 'first_enrollment' | 'practice_completed' | 'points_reached';
 export interface User {
     id: string;
     email: string;
@@ -136,6 +137,7 @@ export interface Hackathon {
     location?: string | null;
     rules?: string | null;
     prizes?: string | null;
+    organizerId?: string | null;
     createdAt: Date | string;
     updatedAt: Date | string;
 }
@@ -301,6 +303,191 @@ export interface CompletePracticeRequest {
     projectId: string;
     submissionUrl?: string;
     notes?: string;
+}
+export interface Badge {
+    id: string;
+    code: string;
+    name: string;
+    description: string;
+    icon: string;
+    category: string;
+    criteriaType: BadgeCriteriaType;
+    criteriaValue: number;
+    points: number;
+    isActive: boolean;
+    orderIndex: number;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+}
+export interface UserBadge {
+    id: string;
+    userId: string;
+    badgeId: string;
+    unlockedAt: Date | string;
+    badge?: Badge;
+}
+/** 徽章 + 当前用户解锁状态与进度（用于徽章墙展示） */
+export interface BadgeWithStatus extends Badge {
+    unlocked: boolean;
+    unlockedAt?: Date | string | null;
+    progress: number;
+    target: number;
+}
+export interface PointTransaction {
+    id: string;
+    userId: string;
+    amount: number;
+    reason: string;
+    refType?: string | null;
+    refId?: string | null;
+    createdAt: Date | string;
+}
+/** 当前用户积分与等级概要 */
+export interface UserPoints {
+    points: number;
+    level: number;
+    currentLevelPoints: number;
+    nextLevelPoints: number;
+    pointsToNextLevel: number;
+    recentTransactions: PointTransaction[];
+}
+/** 单门课程的学习进度 */
+export interface CourseProgress {
+    courseId: string;
+    totalLessons: number;
+    completedLessons: number;
+    percent: number;
+    isCompleted: boolean;
+}
+/** 个人中心仪表盘统计 */
+export interface LearningStats {
+    totalCompletedLessons: number;
+    weekCompletedLessons: number;
+    streakDays: number;
+    longestStreak: number;
+    /** 按天的活动量，用于热力图 */
+    activity: {
+        date: string;
+        count: number;
+    }[];
+}
+export interface CreateBadgeRequest {
+    code: string;
+    name: string;
+    description: string;
+    icon?: string;
+    category?: string;
+    criteriaType: BadgeCriteriaType;
+    criteriaValue?: number;
+    points?: number;
+    isActive?: boolean;
+    orderIndex?: number;
+}
+export interface UpdateBadgeRequest extends Partial<CreateBadgeRequest> {
+}
+/** 管理员数据看板 */
+export interface AdminGamificationStats {
+    totalUsers: number;
+    activeUsers7d: number;
+    totalLessonsCompleted: number;
+    totalBadgesUnlocked: number;
+    badgeDistribution: {
+        badgeId: string;
+        name: string;
+        icon: string;
+        count: number;
+    }[];
+    leaderboard: {
+        userId: string;
+        name: string;
+        points: number;
+        level: number;
+    }[];
+}
+export interface CreateHackathonRequest {
+    title: string;
+    description: string;
+    bannerUrl?: string;
+    status?: HackathonStatus;
+    startDate: Date | string;
+    endDate: Date | string;
+    registerDeadline?: Date | string | null;
+    minTeamSize?: number;
+    maxTeamSize?: number;
+    location?: string;
+    rules?: string;
+    prizes?: string;
+}
+export interface UpdateHackathonRequest extends Partial<CreateHackathonRequest> {
+}
+export interface CreateTeamRequest {
+    name: string;
+    slogan?: string;
+}
+export interface CreateSubmissionRequest {
+    title: string;
+    description: string;
+    demoUrl?: string;
+    repoUrl?: string;
+    videoUrl?: string;
+    teamId?: string;
+    status?: SubmissionStatus;
+}
+export interface UpdateSubmissionRequest extends Partial<CreateSubmissionRequest> {
+}
+export interface CreateAnnouncementRequest {
+    title: string;
+    content: string;
+    isPinned?: boolean;
+}
+export interface JudgeSubmissionRequest {
+    score: number;
+    feedback?: string;
+    status?: SubmissionStatus;
+}
+export interface HackathonListItem extends Hackathon {
+    _count?: {
+        registrations?: number;
+        teams?: number;
+    };
+    organizer?: {
+        id: string;
+        name: string;
+    } | null;
+    myRegistration?: HackathonRegistration | null;
+}
+export interface HackathonWithDetails extends Hackathon {
+    _count?: {
+        registrations?: number;
+        teams?: number;
+        submissions?: number;
+    };
+    organizer?: {
+        id: string;
+        name: string;
+    } | null;
+    myRegistration?: HackathonRegistration | null;
+    judges?: Judge[];
+    announcements?: Announcement[];
+    teams?: (Team & {
+        members: (TeamMember & {
+            user: {
+                id: string;
+                name: string;
+                avatarUrl?: string | null;
+            };
+        })[];
+    })[];
+    submissions?: (Submission & {
+        user?: {
+            id: string;
+            name: string;
+        } | null;
+        team?: {
+            id: string;
+            name: string;
+        } | null;
+    })[];
 }
 export interface ApiResponse<T = any> {
     data?: T;

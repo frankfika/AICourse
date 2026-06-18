@@ -13,6 +13,9 @@ import { AdminLayout } from './features/admin/AdminLayout';
 import { AdminCoursesPage } from './features/admin/AdminCoursesPage';
 import { AdminDegreesPage } from './features/admin/AdminDegreesPage';
 import { AdminUsersPage } from './features/admin/AdminUsersPage';
+import { AdminBadgesPage } from './features/admin/AdminBadgesPage';
+import { AdminDashboardPage } from './features/admin/AdminDashboardPage';
+import { AdminHackathonsPage } from './features/admin/AdminHackathonsPage';
 import { useAuthStore } from './stores/authStore';
 
 function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
@@ -44,10 +47,13 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         children: [
-          { index: true, element: <Navigate to="courses" replace /> },
+          { index: true, element: <Navigate to="dashboard" replace /> },
+          { path: 'dashboard', element: <AdminDashboardPage /> },
           { path: 'courses', element: <AdminCoursesPage /> },
           { path: 'degrees', element: <AdminDegreesPage /> },
           { path: 'users', element: <AdminUsersPage /> },
+          { path: 'badges', element: <AdminBadgesPage /> },
+          { path: 'hackathons', element: <AdminHackathonsPage /> },
         ],
       },
     ],

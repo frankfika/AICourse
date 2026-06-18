@@ -9,6 +9,10 @@ import { DegreesModule } from './modules/degrees/degrees.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { PracticesModule } from './modules/practices/practices.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { PointsModule } from './modules/points/points.module';
+import { BadgesModule } from './modules/badges/badges.module';
+import { ProgressModule } from './modules/progress/progress.module';
+import { HackathonsModule } from './modules/hackathons/hackathons.module';
 
 @Module({
   imports: [
@@ -24,6 +28,10 @@ import { AuditModule } from './modules/audit/audit.module';
     DegreesModule,
     EnrollmentsModule,
     PracticesModule,
+    PointsModule,
+    BadgesModule,
+    ProgressModule,
+    HackathonsModule,
   ],
   controllers: [AppController],
 })

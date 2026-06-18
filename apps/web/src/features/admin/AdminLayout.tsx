@@ -1,13 +1,15 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { BookOpen, GraduationCap, Users, BarChart3 } from 'lucide-react';
+import { BookOpen, GraduationCap, Users, BarChart3, Award, Rocket } from 'lucide-react';
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navItems = [
+    { path: '/admin/dashboard', label: '数据看板', icon: BarChart3 },
     { path: '/admin/courses', label: '课程管理', icon: BookOpen },
     { path: '/admin/degrees', label: '学位管理', icon: GraduationCap },
     { path: '/admin/users', label: '用户管理', icon: Users },
-    { path: '/admin/analytics', label: '数据统计', icon: BarChart3 },
+    { path: '/admin/badges', label: '徽章管理', icon: Award },
+    { path: '/admin/hackathons', label: '黑客松管理', icon: Rocket },
   ];
 
   return (

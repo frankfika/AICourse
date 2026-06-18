@@ -16,6 +16,8 @@ model User {
   role            UserRole  @default(student)
   avatarUrl       String?   @map("avatar_url")
   passwordResetRequired Boolean @default(false) @map("password_reset_required")
+  points          Int       @default(0)
+  level           Int       @default(1)
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   lastLoginAt     DateTime? @map("last_login_at")
@@ -29,6 +31,9 @@ model User {
   hackathonRegs   HackathonRegistration[]
   submissions     Submission[]
   practiceCompletions PracticeCompletion[]
+  userBadges      UserBadge[]
+  pointTransactions PointTransaction[]
+  organizedHackathons Hackathon[] @relation("OrganizedHackathons")
 
   @@map("users")
 }
@@ -262,6 +267,7 @@ model Hackathon {
   location         String?
   rules            String?         @db.Text
   prizes           String?         @db.Text
+  organizerId      String?         @map("organizer_id")
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 
@@ -270,6 +276,7 @@ model Hackathon {
   judges        Judge[]
   submissions   Submission[]
   announcements Announcement[]
+  organizer     User?           @relation("OrganizedHackathons", fields: [organizerId], references: [id], onDelete: SetNull)
 
   @@map("hackathons")
 }
@@ -505,4 +512,66 @@ enum CompletionStatus {
   completed
   skipped
 }
+
+// ==================== 游戏化：成就徽章 ====================
+model Badge {
+  id            String           @id @default(uuid())
+  code          String           @unique // 程序内唯一标识，如 "first_course"
+  name          String
+  description   String           @db.Text
+  icon          String           @default("award") // lucide 图标名
+  category      String           @default("general") // 分组：learning / streak / milestone ...
+  criteriaType  BadgeCriteriaType @map("criteria_type")
+  criteriaValue Int              @default(1) @map("criteria_value") // 达成阈值
+  points        Int              @default(0) // 解锁奖励积分
+  isActive      Boolean          @default(true) @map("is_active")
+  orderIndex    Int              @default(0) @map("order_index")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+enum BadgeCriteriaType {
+  course_completed     // 完成 N 门课程
+  lessons_completed    // 累计完成 N 个课时
+  streak_days          // 连续学习 N 天
+  first_enrollment     // 首次报名（N=1）
+  practice_completed   // 完成 N 个实践项目
+  points_reached       // 累计积分达到 N
+}
+
+model UserBadge {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  badgeId    String   @map("badge_id")
+  unlockedAt DateTime @default(now()) @map("unlocked_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+// ==================== 游戏化：积分流水 ====================
+model PointTransaction {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  amount    Int // 正数为获得，负数为扣除
+  reason    String // 人类可读原因，如 "完成课时"
+  refType   String?  @map("ref_type") // 关联类型：lesson / practice / badge / enrollment
+  refId     String?  @map("ref_id")   // 关联实体 ID，用于幂等去重
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, refType, refId]) // 同一来源不重复发放
+  @@index([userId, createdAt])
+  @@map("point_transactions")
+}
+
 
