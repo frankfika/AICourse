@@ -38,6 +38,13 @@ const bcrypt = __importStar(require("bcrypt"));
 const prisma = new client_1.PrismaClient();
 async function main() {
     await prisma.$transaction([
+        prisma.submission.deleteMany(),
+        prisma.teamMember.deleteMany(),
+        prisma.team.deleteMany(),
+        prisma.judge.deleteMany(),
+        prisma.announcement.deleteMany(),
+        prisma.hackathonRegistration.deleteMany(),
+        prisma.hackathon.deleteMany(),
         prisma.resource.deleteMany(),
         prisma.lesson.deleteMany(),
         prisma.chapter.deleteMany(),
@@ -70,6 +77,22 @@ async function main() {
             role: client_1.UserRole.student,
         },
     });
+    console.log('Seeding badges...');
+    const badges = [
+        { code: 'first_enrollment', name: '启航者', description: '首次报名课程，开启学习之旅', icon: 'rocket', category: 'milestone', criteriaType: 'first_enrollment', criteriaValue: 1, points: 20, isActive: true, orderIndex: 1 },
+        { code: 'first_lesson', name: '初窥门径', description: '完成第一个课时', icon: 'book-open', category: 'learning', criteriaType: 'lessons_completed', criteriaValue: 1, points: 10, isActive: true, orderIndex: 2 },
+        { code: 'course_master', name: '课程大师', description: '完整完成一门课程的所有课时', icon: 'trophy', category: 'milestone', criteriaType: 'course_completed', criteriaValue: 1, points: 50, isActive: true, orderIndex: 3 },
+        { code: 'knowledge_seeker', name: '求知者', description: '累计完成 10 个课时', icon: 'graduation-cap', category: 'learning', criteriaType: 'lessons_completed', criteriaValue: 10, points: 30, isActive: true, orderIndex: 4 },
+        { code: 'knowledge_veteran', name: '资深学习者', description: '累计完成 50 个课时', icon: 'library', category: 'learning', criteriaType: 'lessons_completed', criteriaValue: 50, points: 100, isActive: true, orderIndex: 5 },
+        { code: 'week_streak', name: '坚持一周', description: '连续 7 天保持学习', icon: 'flame', category: 'streak', criteriaType: 'streak_days', criteriaValue: 7, points: 40, isActive: true, orderIndex: 6 },
+        { code: 'month_streak', name: '学习达人', description: '连续 30 天保持学习', icon: 'zap', category: 'streak', criteriaType: 'streak_days', criteriaValue: 30, points: 150, isActive: true, orderIndex: 7 },
+        { code: 'practice_beginner', name: '动手实践', description: '完成第一个实践项目', icon: 'wrench', category: 'milestone', criteriaType: 'practice_completed', criteriaValue: 1, points: 30, isActive: true, orderIndex: 8 },
+        { code: 'points_100', name: '积分破百', description: '累计获得 100 积分', icon: 'star', category: 'milestone', criteriaType: 'points_reached', criteriaValue: 100, points: 0, isActive: true, orderIndex: 9 },
+        { code: 'points_500', name: '积分达人', description: '累计获得 500 积分', icon: 'crown', category: 'milestone', criteriaType: 'points_reached', criteriaValue: 500, points: 0, isActive: true, orderIndex: 10 },
+    ];
+    for (const badge of badges) {
+        await prisma.badge.upsert({ where: { code: badge.code }, update: badge, create: badge });
+    }
     const courseInputs = [
         {
             title: '数字机密：安全基础',
@@ -214,11 +237,152 @@ async function main() {
             { degreeId: degrees[1].id, courseId: courses[5].id, orderIndex: 2 },
         ],
     });
+    console.log('Seeding hackathons...');
+    const now = new Date();
+    const addDays = (d) => new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+    const addHours = (h) => new Date(now.getTime() + h * 60 * 60 * 1000);
+    const hackathonsData = [
+        {
+            title: 'AI Agent 创意马拉松',
+            description: '在 48 小时内，基于大模型能力构建一个能解决实际问题的 AI Agent。\n\n赛道包括：个人效率助手、企业流程自动化、创意内容生成。',
+            bannerUrl: 'https://picsum.photos/seed/agent-hack/800/400',
+            status: client_1.HackathonStatus.upcoming,
+            startDate: addDays(7),
+            endDate: addDays(9),
+            registerDeadline: addDays(6),
+            minTeamSize: 2,
+            maxTeamSize: 4,
+            location: '线上',
+            rules: '1. 所有代码需在比赛期间编写\n2. 允许使用开源框架与 API\n3. 最终提交需包含 Demo 视频与仓库链接',
+            prizes: '一等奖：¥10,000\n二等奖：¥5,000\n三等奖：¥2,000',
+        },
+        {
+            title: 'LLM 应用开发大赛',
+            description: '从 0 到 1 打造基于大语言模型的创新应用，展示你的工程与产品能力。',
+            bannerUrl: 'https://picsum.photos/seed/llm-app/800/400',
+            status: client_1.HackathonStatus.active,
+            startDate: addDays(-1),
+            endDate: addDays(2),
+            registerDeadline: addHours(-2),
+            minTeamSize: 1,
+            maxTeamSize: 5,
+            location: '北京 + 线上',
+            rules: '1. 必须使用至少一种开源 LLM\n2. 提交需包含可运行的 Demo\n3. 评委由技术与产品专家组成',
+            prizes: '最佳应用：¥15,000\n最佳创意：¥8,000\n最佳技术实现：¥5,000',
+        },
+        {
+            title: '多模态 Hackathon',
+            description: '探索文本、图像、音频与视频的跨模态 AI 能力，创造下一代多模态体验。',
+            bannerUrl: 'https://picsum.photos/seed/multimodal/800/400',
+            status: client_1.HackathonStatus.judging,
+            startDate: addDays(-5),
+            endDate: addDays(-2),
+            registerDeadline: addDays(-6),
+            minTeamSize: 2,
+            maxTeamSize: 3,
+            location: '上海',
+            rules: '1. 作品需体现至少两种模态的融合\n2. 提交 3 分钟演示视频\n3. 允许使用预训练模型',
+            prizes: '金奖：¥12,000\n银奖：¥6,000\n铜奖：¥3,000',
+        },
+        {
+            title: '开源模型微调挑战',
+            description: '使用公开数据集对开源大模型进行微调，在指定评测任务上取得最好效果。',
+            bannerUrl: 'https://picsum.photos/seed/finetune/800/400',
+            status: client_1.HackathonStatus.finished,
+            startDate: addDays(-45),
+            endDate: addDays(-30),
+            registerDeadline: addDays(-46),
+            minTeamSize: 1,
+            maxTeamSize: 3,
+            location: '线上',
+            rules: '1. 模型需基于开源许可\n2. 提交训练代码与模型权重\n3. 在隐藏测试集上自动评分',
+            prizes: '冠军：¥20,000\n亚军：¥10,000\n季军：¥5,000',
+        },
+        {
+            title: 'RAG 系统构建赛',
+            description: '为企业知识库场景构建高效、准确的 RAG（检索增强生成）系统。',
+            bannerUrl: 'https://picsum.photos/seed/rag/800/400',
+            status: client_1.HackathonStatus.upcoming,
+            startDate: addDays(14),
+            endDate: addDays(16),
+            registerDeadline: addDays(13),
+            minTeamSize: 2,
+            maxTeamSize: 5,
+            location: '深圳',
+            rules: '1. 使用指定评测数据集\n2. 允许使用任意向量数据库与重排模型\n3. 需提交技术方案文档',
+            prizes: '一等奖：¥10,000\n二等奖：¥5,000\n三等奖：¥2,000',
+        },
+        {
+            title: 'AI 教育工具创新赛',
+            description: '设计面向 K12 或职场学习的 AI 教育工具，让知识传递更高效。',
+            bannerUrl: 'https://picsum.photos/seed/edu-ai/800/400',
+            status: client_1.HackathonStatus.cancelled,
+            startDate: addDays(21),
+            endDate: addDays(23),
+            registerDeadline: addDays(14),
+            minTeamSize: 1,
+            maxTeamSize: 4,
+            location: '线上',
+            rules: '1. 作品需有明确的教育场景\n2. 提交原型与教学设计说明\n3. 允许组队或 solo',
+            prizes: '最佳教育产品：¥8,000\n最具潜力奖：¥4,000',
+        },
+    ];
+    for (const h of hackathonsData) {
+        const hackathon = await prisma.hackathon.create({
+            data: {
+                ...h,
+                organizerId: admin.id,
+                judges: {
+                    create: [
+                        { name: '李明', title: 'OpenCSG 技术总监', bio: '专注大模型工程化落地 10 年。' },
+                        { name: 'Sarah Chen', title: 'AI 产品经理', bio: '曾主导多款百万用户级 AI 产品。' },
+                    ],
+                },
+                announcements: {
+                    create: [
+                        { title: '比赛正式启动', content: '欢迎大家报名参赛！', isPinned: true },
+                        { title: '常见问题 FAQ', content: '请查看官网 FAQ 页面了解组队、提交等规则。', isPinned: false },
+                    ],
+                },
+            },
+        });
+        if (h.status === client_1.HackathonStatus.active ||
+            h.status === client_1.HackathonStatus.judging ||
+            h.status === client_1.HackathonStatus.finished) {
+            const team = await prisma.team.create({
+                data: {
+                    hackathonId: hackathon.id,
+                    name: `${h.title} 先锋队`,
+                    slogan: '用 AI 改变世界',
+                    captainId: student.id,
+                    members: {
+                        create: [{ userId: student.id, role: client_1.TeamRole.captain }],
+                    },
+                },
+            });
+            await prisma.submission.create({
+                data: {
+                    hackathonId: hackathon.id,
+                    teamId: team.id,
+                    userId: student.id,
+                    title: `${h.title} 作品示例`,
+                    description: '这是一个示例作品，用于展示提交格式。',
+                    demoUrl: 'https://example.com/demo',
+                    repoUrl: 'https://github.com/example/project',
+                    status: h.status === client_1.HackathonStatus.finished ? client_1.SubmissionStatus.winner : client_1.SubmissionStatus.submitted,
+                    submittedAt: h.endDate,
+                    score: h.status === client_1.HackathonStatus.finished ? 92.5 : null,
+                    feedback: h.status === client_1.HackathonStatus.finished ? '创意出色，技术实现完整。' : null,
+                },
+            });
+        }
+    }
     console.log('✅ Seed completed');
     console.log(`Admin: ${admin.email}`);
     console.log(`Student: ${student.email}`);
     console.log(`Courses: ${courses.length}`);
     console.log(`Degrees: ${degrees.length}`);
+    console.log(`Hackathons: ${hackathonsData.length}`);
 }
 main()
     .catch((e) => {

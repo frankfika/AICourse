@@ -25,9 +25,9 @@ export declare class CoursesService {
             } & {
                 id: string;
                 createdAt: Date;
-                title: string;
                 description: string | null;
                 orderIndex: number;
+                title: string;
                 videoUrl: string | null;
                 videoDuration: number | null;
                 isPreview: boolean;
@@ -36,21 +36,21 @@ export declare class CoursesService {
         } & {
             id: string;
             createdAt: Date;
-            title: string;
             description: string | null;
             orderIndex: number;
+            title: string;
             courseId: string;
         })[];
     } & {
         id: string;
+        level: import("@prisma/client").$Enums.CourseLevel;
         createdAt: Date;
         updatedAt: Date;
         instructor: string;
-        title: string;
         description: string;
+        title: string;
         learningPoints: string;
         instructorId: string | null;
-        level: import("@prisma/client").$Enums.CourseLevel;
         duration: string;
         thumbnail: string;
         tags: string;
@@ -73,9 +73,9 @@ export declare class CoursesService {
             } & {
                 id: string;
                 createdAt: Date;
-                title: string;
                 description: string | null;
                 orderIndex: number;
+                title: string;
                 videoUrl: string | null;
                 videoDuration: number | null;
                 isPreview: boolean;
@@ -84,21 +84,21 @@ export declare class CoursesService {
         } & {
             id: string;
             createdAt: Date;
-            title: string;
             description: string | null;
             orderIndex: number;
+            title: string;
             courseId: string;
         })[];
     } & {
         id: string;
+        level: import("@prisma/client").$Enums.CourseLevel;
         createdAt: Date;
         updatedAt: Date;
         instructor: string;
-        title: string;
         description: string;
+        title: string;
         learningPoints: string;
         instructorId: string | null;
-        level: import("@prisma/client").$Enums.CourseLevel;
         duration: string;
         thumbnail: string;
         tags: string;
@@ -121,9 +121,9 @@ export declare class CoursesService {
             } & {
                 id: string;
                 createdAt: Date;
-                title: string;
                 description: string | null;
                 orderIndex: number;
+                title: string;
                 videoUrl: string | null;
                 videoDuration: number | null;
                 isPreview: boolean;
@@ -132,21 +132,21 @@ export declare class CoursesService {
         } & {
             id: string;
             createdAt: Date;
-            title: string;
             description: string | null;
             orderIndex: number;
+            title: string;
             courseId: string;
         })[];
     } & {
         id: string;
+        level: import("@prisma/client").$Enums.CourseLevel;
         createdAt: Date;
         updatedAt: Date;
         instructor: string;
-        title: string;
         description: string;
+        title: string;
         learningPoints: string;
         instructorId: string | null;
-        level: import("@prisma/client").$Enums.CourseLevel;
         duration: string;
         thumbnail: string;
         tags: string;
@@ -169,9 +169,9 @@ export declare class CoursesService {
             } & {
                 id: string;
                 createdAt: Date;
-                title: string;
                 description: string | null;
                 orderIndex: number;
+                title: string;
                 videoUrl: string | null;
                 videoDuration: number | null;
                 isPreview: boolean;
@@ -180,21 +180,21 @@ export declare class CoursesService {
         } & {
             id: string;
             createdAt: Date;
-            title: string;
             description: string | null;
             orderIndex: number;
+            title: string;
             courseId: string;
         })[];
     } & {
         id: string;
+        level: import("@prisma/client").$Enums.CourseLevel;
         createdAt: Date;
         updatedAt: Date;
         instructor: string;
-        title: string;
         description: string;
+        title: string;
         learningPoints: string;
         instructorId: string | null;
-        level: import("@prisma/client").$Enums.CourseLevel;
         duration: string;
         thumbnail: string;
         tags: string;

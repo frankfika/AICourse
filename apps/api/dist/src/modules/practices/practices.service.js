@@ -12,9 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PracticesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const badges_service_1 = require("../badges/badges.service");
 let PracticesService = class PracticesService {
-    constructor(prisma) {
+    constructor(prisma, badgesService) {
         this.prisma = prisma;
+        this.badgesService = badgesService;
     }
     async getProjectsByCourseId(courseId) {
         return this.prisma.practiceProject.findMany({
@@ -145,7 +147,8 @@ let PracticesService = class PracticesService {
         if (!completion) {
             throw new common_1.NotFoundException('Practice completion not found. Please start the project first.');
         }
-        return this.prisma.practiceCompletion.update({
+        const wasAlreadyCompleted = completion?.status === 'completed';
+        const updated = await this.prisma.practiceCompletion.update({
             where: {
                 userId_projectId: {
                     userId,
@@ -162,6 +165,10 @@ let PracticesService = class PracticesService {
                 project: true,
             },
         });
+        if (!wasAlreadyCompleted) {
+            this.badgesService.checkAndAward(userId).catch(() => undefined);
+        }
+        return updated;
     }
     async skipProject(userId, projectId) {
         const completion = await this.prisma.practiceCompletion.findUnique({
@@ -191,6 +198,7 @@ let PracticesService = class PracticesService {
 exports.PracticesService = PracticesService;
 exports.PracticesService = PracticesService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        badges_service_1.BadgesService])
 ], PracticesService);
 //# sourceMappingURL=practices.service.js.map

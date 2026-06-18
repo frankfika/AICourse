@@ -7,10 +7,11 @@ export declare class PracticesController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
         description: string;
-        tags: string | null;
+        isActive: boolean;
         orderIndex: number;
+        title: string;
+        tags: string | null;
         courseId: string;
         projectUrl: string;
         thumbnailUrl: string | null;
@@ -19,7 +20,6 @@ export declare class PracticesController {
         projectType: import("@prisma/client").$Enums.ProjectType;
         requirements: string | null;
         objectives: string | null;
-        isActive: boolean;
     }[]>;
     getProject(id: string): Promise<{
         course: {
@@ -31,10 +31,11 @@ export declare class PracticesController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
         description: string;
-        tags: string | null;
+        isActive: boolean;
         orderIndex: number;
+        title: string;
+        tags: string | null;
         courseId: string;
         projectUrl: string;
         thumbnailUrl: string | null;
@@ -43,16 +44,16 @@ export declare class PracticesController {
         projectType: import("@prisma/client").$Enums.ProjectType;
         requirements: string | null;
         objectives: string | null;
-        isActive: boolean;
     }>;
     createProject(dto: CreatePracticeProjectDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
         description: string;
-        tags: string | null;
+        isActive: boolean;
         orderIndex: number;
+        title: string;
+        tags: string | null;
         courseId: string;
         projectUrl: string;
         thumbnailUrl: string | null;
@@ -61,16 +62,16 @@ export declare class PracticesController {
         projectType: import("@prisma/client").$Enums.ProjectType;
         requirements: string | null;
         objectives: string | null;
-        isActive: boolean;
     }>;
     updateProject(id: string, dto: UpdatePracticeProjectDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        title: string;
         description: string;
-        tags: string | null;
+        isActive: boolean;
         orderIndex: number;
+        title: string;
+        tags: string | null;
         courseId: string;
         projectUrl: string;
         thumbnailUrl: string | null;
@@ -79,7 +80,6 @@ export declare class PracticesController {
         projectType: import("@prisma/client").$Enums.ProjectType;
         requirements: string | null;
         objectives: string | null;
-        isActive: boolean;
     }>;
     deleteProject(id: string): Promise<{
         message: string;
@@ -118,10 +118,11 @@ export declare class PracticesController {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            title: string;
             description: string;
-            tags: string | null;
+            isActive: boolean;
             orderIndex: number;
+            title: string;
+            tags: string | null;
             courseId: string;
             projectUrl: string;
             thumbnailUrl: string | null;
@@ -130,7 +131,6 @@ export declare class PracticesController {
             projectType: import("@prisma/client").$Enums.ProjectType;
             requirements: string | null;
             objectives: string | null;
-            isActive: boolean;
         };
     } & {
         id: string;

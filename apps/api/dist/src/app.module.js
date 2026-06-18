@@ -18,6 +18,10 @@ const degrees_module_1 = require("./modules/degrees/degrees.module");
 const enrollments_module_1 = require("./modules/enrollments/enrollments.module");
 const practices_module_1 = require("./modules/practices/practices.module");
 const audit_module_1 = require("./modules/audit/audit.module");
+const points_module_1 = require("./modules/points/points.module");
+const badges_module_1 = require("./modules/badges/badges.module");
+const progress_module_1 = require("./modules/progress/progress.module");
+const hackathons_module_1 = require("./modules/hackathons/hackathons.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -36,6 +40,10 @@ exports.AppModule = AppModule = __decorate([
             degrees_module_1.DegreesModule,
             enrollments_module_1.EnrollmentsModule,
             practices_module_1.PracticesModule,
+            points_module_1.PointsModule,
+            badges_module_1.BadgesModule,
+            progress_module_1.ProgressModule,
+            hackathons_module_1.HackathonsModule,
         ],
         controllers: [app_controller_1.AppController],
     })

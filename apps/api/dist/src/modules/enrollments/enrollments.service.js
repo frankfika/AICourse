@@ -12,10 +12,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EnrollmentsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const badges_service_1 = require("../badges/badges.service");
 const client_1 = require("@prisma/client");
 let EnrollmentsService = class EnrollmentsService {
-    constructor(prisma) {
+    constructor(prisma, badgesService) {
         this.prisma = prisma;
+        this.badgesService = badgesService;
     }
     async findByUser(userId) {
         return this.prisma.enrollment.findMany({
@@ -33,7 +35,7 @@ let EnrollmentsService = class EnrollmentsService {
         if (course.costType !== client_1.CostType.free && course.costType !== client_1.CostType.charity) {
             throw new common_1.BadRequestException('This course is not free');
         }
-        return this.prisma.enrollment.upsert({
+        const enrollment = await this.prisma.enrollment.upsert({
             where: {
                 userId_courseId: {
                     userId,
@@ -47,11 +49,14 @@ let EnrollmentsService = class EnrollmentsService {
                 source: 'direct',
             },
         });
+        this.badgesService.checkAndAward(userId).catch(() => undefined);
+        return enrollment;
     }
 };
 exports.EnrollmentsService = EnrollmentsService;
 exports.EnrollmentsService = EnrollmentsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        badges_service_1.BadgesService])
 ], EnrollmentsService);
 //# sourceMappingURL=enrollments.service.js.map

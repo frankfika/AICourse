@@ -10,11 +10,14 @@ exports.EnrollmentsModule = void 0;
 const common_1 = require("@nestjs/common");
 const enrollments_controller_1 = require("./enrollments.controller");
 const enrollments_service_1 = require("./enrollments.service");
+const prisma_module_1 = require("../prisma/prisma.module");
+const badges_module_1 = require("../badges/badges.module");
 let EnrollmentsModule = class EnrollmentsModule {
 };
 exports.EnrollmentsModule = EnrollmentsModule;
 exports.EnrollmentsModule = EnrollmentsModule = __decorate([
     (0, common_1.Module)({
+        imports: [prisma_module_1.PrismaModule, badges_module_1.BadgesModule],
         controllers: [enrollments_controller_1.EnrollmentsController],
         providers: [enrollments_service_1.EnrollmentsService],
         exports: [enrollments_service_1.EnrollmentsService],
