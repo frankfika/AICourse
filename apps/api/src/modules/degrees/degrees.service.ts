@@ -13,7 +13,19 @@ export class DegreesService {
 
   private degreeInclude = {
     courses: {
-      include: { course: true },
+      include: {
+        course: {
+          include: {
+            chapters: {
+              select: { id: true },
+              orderBy: { orderIndex: 'asc' as const },
+            },
+            enrollments: {
+              select: { id: true, userId: true },
+            },
+          },
+        },
+      },
       orderBy: { orderIndex: 'asc' as const },
     },
   };
@@ -28,11 +40,12 @@ export class DegreesService {
       ];
     }
 
-    return this.prisma.nanoDegree.findMany({
+    const degrees = await this.prisma.nanoDegree.findMany({
       where,
       include: this.degreeInclude,
       orderBy: { createdAt: 'desc' },
     });
+    return degrees.map((d) => this.shapeDegree(d));
   }
 
   async findOne(id: string) {
@@ -41,7 +54,54 @@ export class DegreesService {
       include: this.degreeInclude,
     });
     if (!degree) throw new NotFoundException('Degree not found');
-    return degree;
+    return this.shapeDegree(degree);
+  }
+
+  /**
+   * 把学位塑造成"学习路径"形状：
+   * - 顶层有 stats（课程数、总章节、估算时长、学员数）
+   * - 课程按 orderIndex 编号，带 chapterCount / duration
+   */
+  private shapeDegree(degree: any) {
+    const courses = (degree.courses ?? []).map((link: any, idx: number) => {
+      const c = link.course;
+      return {
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        thumbnail: c.thumbnail,
+        level: c.level,
+        duration: c.duration,
+        instructor: c.instructor,
+        tags: c.tags,
+        costType: c.costType,
+        price: c.price,
+        orderIndex: link.orderIndex,
+        stepNumber: idx + 1,
+        chapterCount: c.chapters?.length ?? 0,
+        learnerCount: c.enrollments?.length ?? 0,
+      };
+    });
+
+    const totalChapters = courses.reduce(
+      (sum: number, c: any) => sum + c.chapterCount,
+      0,
+    );
+    const totalLearners = courses.reduce(
+      (sum: number, c: any) => sum + c.learnerCount,
+      0,
+    );
+
+    return {
+      ...degree,
+      courses,
+      stats: {
+        courseCount: courses.length,
+        totalChapters,
+        totalLearners,
+        estimatedHours: Math.max(courses.length * 4, 1),
+      },
+    };
   }
 
   async create(dto: CreateDegreeDto) {

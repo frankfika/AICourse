@@ -13,6 +13,7 @@ import { PointsModule } from './modules/points/points.module';
 import { BadgesModule } from './modules/badges/badges.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { HackathonsModule } from './modules/hackathons/hackathons.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { HackathonsModule } from './modules/hackathons/hackathons.module';
     BadgesModule,
     ProgressModule,
     HackathonsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
 })

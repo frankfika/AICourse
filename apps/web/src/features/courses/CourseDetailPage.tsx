@@ -7,17 +7,23 @@ import {
   BookOpen,
   PlayCircle,
   FileText,
+  Code,
+  Link as LinkIcon,
+  Video,
+  Music,
   Lock,
   CheckCircle2,
   Circle,
   ArrowLeft,
   Award,
   Star,
+  CheckCircle2 as CheckIcon,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { progressApi } from '../../lib/progressApi';
 import { useAuthStore } from '../../stores/authStore';
 import { ProgressRing } from '../../components/ProgressRing';
+import { PurchaseModal } from '../degrees/PurchaseModal';
 
 interface Course {
   id: string;
@@ -56,7 +62,7 @@ interface Resource {
   id: string;
   title: string;
   url: string;
-  type: string;
+  type: 'pdf' | 'code' | 'link' | 'video' | 'audio';
   isLocked: boolean;
 }
 
@@ -66,6 +72,25 @@ interface Toast {
   message: string;
 }
 
+function resourceIcon(type: Resource['type']) {
+  switch (type) {
+    case 'pdf':
+      return <FileText className="w-5 h-5" />;
+    case 'code':
+      return <Code className="w-5 h-5" />;
+    case 'link':
+      return <LinkIcon className="w-5 h-5" />;
+    case 'video':
+      return <Video className="w-5 h-5" />;
+    case 'audio':
+      return <Music className="w-5 h-5" />;
+  }
+}
+
+function resourceLabel(type: Resource['type']) {
+  return { pdf: 'PDF', code: '代码', link: '链接', video: '视频', audio: '音频' }[type];
+}
+
 export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
@@ -73,6 +98,7 @@ export function CourseDetailPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'video' | 'resources'>('overview');
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [purchaseOpen, setPurchaseOpen] = useState(false);
 
   const { data: course, isLoading } = useQuery({
     queryKey: ['course', id],
@@ -95,6 +121,15 @@ export function CourseDetailPage() {
     enabled: !!user,
   });
 
+  const { data: myEnrollments } = useQuery({
+    queryKey: ['enrollments', 'me'],
+    queryFn: async () => {
+      const { data } = await api.get('/api/v1/enrollments/me');
+      return data as Array<{ id: string; courseId?: string | null; degreeId?: string | null }>;
+    },
+    enabled: !!user,
+  });
+
   const completedLessonIds = new Set(
     (myProgress as any[])
       ?.filter((p) => p.status === 'completed')
@@ -108,14 +143,11 @@ export function CourseDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['course-progress', id] });
       queryClient.invalidateQueries({ queryKey: ['my-points'] });
       queryClient.invalidateQueries({ queryKey: ['my-badges'] });
+      queryClient.invalidateQueries({ queryKey: ['enrollments', 'me'] });
 
       const newToasts: Toast[] = [];
       if (data.pointsAwarded > 0) {
-        newToasts.push({
-          id: Date.now(),
-          type: 'points',
-          message: `+${data.pointsAwarded} 积分`,
-        });
+        newToasts.push({ id: Date.now(), type: 'points', message: `+${data.pointsAwarded} 积分` });
       }
       data.newlyUnlockedBadges.forEach((badge, idx) => {
         newToasts.push({
@@ -124,7 +156,6 @@ export function CourseDetailPage() {
           message: `解锁徽章「${badge.name}」`,
         });
       });
-
       if (newToasts.length > 0) {
         setToasts((prev) => [...prev, ...newToasts]);
         setTimeout(() => {
@@ -134,13 +165,25 @@ export function CourseDetailPage() {
     },
   });
 
-  const isUnlocked = course?.costType === 'free' || course?.costType === 'charity' || !!user;
+  const enrolled = !!myEnrollments?.some((e) => e.courseId === id);
+  const isUnlocked = course?.costType === 'free' || course?.costType === 'charity' || enrolled;
 
   if (isLoading) return <div className="text-center py-20">加载中...</div>;
   if (!course) return <div className="text-center py-20">课程不存在</div>;
 
   const learningPoints = JSON.parse(course.learningPoints || '[]') as string[];
   const tags = JSON.parse(course.tags || '[]') as string[];
+  const isFree = course.costType === 'free' || course.costType === 'charity';
+
+  // 按 chapter 分组的资源（每节课的资源归属到它的章节）
+  const resourcesByChapter = course.chapters.map((chapter) => ({
+    chapter,
+    lessons: chapter.lessons.filter((l) => l.resources.length > 0),
+  })).filter((x) => x.lessons.length > 0);
+
+  const totalResources = course.chapters
+    .flatMap((c) => c.lessons)
+    .reduce((sum, l) => sum + l.resources.length, 0);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 animate-in fade-in duration-500">
@@ -155,18 +198,14 @@ export function CourseDetailPage() {
             <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {course.duration}</span>
             <span className="flex items-center gap-1"><UserIcon className="w-4 h-4" /> {course.instructor}</span>
             <span className="px-2.5 py-0.5 rounded border text-xs">
-              {course.level === 'Beginner' ? '入门' : '进阶'}
+              {course.level === 'Beginner' ? '入门' : course.level === 'Intermediate' ? '进阶' : '高级'}
             </span>
             <span
-              className={`ml-auto px-3 py-1 rounded-full text-xs font-bold ${
-                course.costType === 'free'
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : course.costType === 'charity'
-                  ? 'bg-amber-50 text-amber-700'
-                  : 'bg-[#171717] text-white'
+              className={`px-3 py-1 rounded-full text-xs font-bold ${
+                isFree ? 'bg-emerald-50 text-emerald-700' : 'bg-[#171717] text-white'
               }`}
             >
-              {course.costType === 'free' ? '免费' : course.costType === 'charity' ? '公益' : `¥${course.price}`}
+              {isFree ? (course.costType === 'free' ? '免费' : '公益') : `¥${course.price}`}
             </span>
           </div>
         </div>
@@ -182,6 +221,42 @@ export function CourseDetailPage() {
           </div>
         )}
       </div>
+
+      {/* 未报名时显示 CTA */}
+      {!enrolled && (
+        <div className="bg-gradient-to-r from-[#171717] to-[#333] text-white rounded-2xl p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="text-2xl font-bold mb-1">
+              {isFree ? '免费报名，开始学习' : `解锁完整课程 ¥${course.price}`}
+            </div>
+            <div className="text-sm text-white/70">
+              {totalResources > 0 ? `包含 ${totalResources} 个学习资源` : '报名后立即开通学习权限'}
+            </div>
+          </div>
+          {user ? (
+            <button
+              onClick={() => setPurchaseOpen(true)}
+              className="px-6 py-3 bg-white text-[#171717] rounded-xl font-bold hover:bg-[#F5F4F0]"
+            >
+              {isFree ? '免费报名' : '立即购买'}
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="px-6 py-3 bg-white text-[#171717] rounded-xl font-bold hover:bg-[#F5F4F0]"
+            >
+              登录后报名
+            </Link>
+          )}
+        </div>
+      )}
+
+      {enrolled && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 mb-8 flex items-center gap-3">
+          <CheckIcon className="w-5 h-5" />
+          <span className="font-bold">已报名，开始学习吧</span>
+        </div>
+      )}
 
       <div className="fixed top-20 right-6 z-50 space-y-2">
         {toasts.map((toast) => (
@@ -205,7 +280,7 @@ export function CourseDetailPage() {
             {[
               { key: 'overview', label: '课程概览', icon: BookOpen },
               { key: 'video', label: '视频课程', icon: PlayCircle },
-              { key: 'resources', label: '学习资源', icon: FileText },
+              { key: 'resources', label: `学习资源 (${totalResources})`, icon: FileText },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -242,10 +317,19 @@ export function CourseDetailPage() {
                 <div className="aspect-video bg-[#171717] rounded-xl flex items-center justify-center text-white">
                   <div className="text-center">
                     <Lock className="w-12 h-12 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold mb-2">登录后解锁课程</h3>
-                    <Link to="/login" className="inline-block mt-4 px-6 py-2 bg-white text-[#171717] rounded-full font-medium">
-                      登录 / 注册
-                    </Link>
+                    <h3 className="text-xl font-bold mb-2">报名后解锁课程</h3>
+                    {user ? (
+                      <button
+                        onClick={() => setPurchaseOpen(true)}
+                        className="inline-block mt-4 px-6 py-2 bg-white text-[#171717] rounded-full font-medium"
+                      >
+                        {isFree ? '免费报名' : '立即购买'}
+                      </button>
+                    ) : (
+                      <Link to="/login" className="inline-block mt-4 px-6 py-2 bg-white text-[#171717] rounded-full font-medium">
+                        登录 / 注册
+                      </Link>
+                    )}
                   </div>
                 </div>
               ) : activeLesson?.videoUrl ? (
@@ -266,33 +350,59 @@ export function CourseDetailPage() {
           )}
 
           {activeTab === 'resources' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {!isUnlocked ? (
-                <div className="text-center py-12 text-[#999999]">
-                  <Lock className="w-8 h-8 mx-auto mb-3" />资源仅对学员开放
+                <div className="text-center py-16 bg-white border border-[#EEEDE9] rounded-2xl">
+                  <Lock className="w-10 h-10 mx-auto mb-3 text-[#999999]" />
+                  <div className="text-[#666666] mb-4">报名后可下载全部学习资源</div>
+                  {user ? (
+                    <button
+                      onClick={() => setPurchaseOpen(true)}
+                      className="px-6 py-2 bg-[#171717] text-white rounded-full font-bold"
+                    >
+                      {isFree ? '免费报名' : '立即购买'}
+                    </button>
+                  ) : (
+                    <Link
+                      to="/login"
+                      className="inline-block px-6 py-2 bg-[#171717] text-white rounded-full font-bold"
+                    >
+                      登录后报名
+                    </Link>
+                  )}
                 </div>
-              ) : course.chapters.flatMap((c) => c.lessons).flatMap((l) => l.resources).length === 0 ? (
+              ) : resourcesByChapter.length === 0 ? (
                 <div className="text-center py-12 text-[#666666]">暂无附加资源</div>
               ) : (
-                course.chapters
-                  .flatMap((c) => c.lessons)
-                  .flatMap((l) =>
-                    l.resources.map((res) => (
-                      <a
-                        key={res.id}
-                        href={res.url}
-                        className="flex items-center gap-4 p-4 bg-white border border-[#EEEDE9] rounded-xl hover:border-[#171717] group"
-                      >
-                        <div className="p-3 bg-[#F5F4F0] rounded-lg">
-                          <FileText size={20} />
-                        </div>
-                        <div className="flex-grow">
-                          <div className="font-bold">{res.title}</div>
-                          <div className="text-xs text-[#666666] uppercase">{res.type}</div>
-                        </div>
-                      </a>
-                    ))
-                  )
+                resourcesByChapter.map(({ chapter, lessons }) => (
+                  <div key={chapter.id}>
+                    <h3 className="font-bold text-lg mb-3">{chapter.title}</h3>
+                    <div className="space-y-2">
+                      {lessons.map((lesson) =>
+                        lesson.resources.map((res) => (
+                          <a
+                            key={res.id}
+                            href={res.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-4 p-4 bg-white border border-[#EEEDE9] rounded-xl hover:border-[#171717] hover:shadow-sm group transition-all"
+                          >
+                            <div className="p-2.5 bg-[#F5F4F0] rounded-lg text-[#171717]">
+                              {resourceIcon(res.type)}
+                            </div>
+                            <div className="flex-grow min-w-0">
+                              <div className="font-bold truncate">{res.title}</div>
+                              <div className="text-xs text-[#666666]">
+                                {lesson.title} · {resourceLabel(res.type)}
+                              </div>
+                            </div>
+                            <span className="text-xs text-[#666666] group-hover:text-[#171717]">查看 →</span>
+                          </a>
+                        )),
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           )}
@@ -308,6 +418,7 @@ export function CourseDetailPage() {
                   <div className="space-y-1">
                     {chapter.lessons.map((lesson) => {
                       const isCompleted = completedLessonIds.has(lesson.id);
+                      const locked = !lesson.isPreview && !isUnlocked;
                       return (
                         <div
                           key={lesson.id}
@@ -322,16 +433,17 @@ export function CourseDetailPage() {
                               setActiveLesson(lesson);
                               setActiveTab('video');
                             }}
-                            className="flex items-center gap-2 flex-1 min-w-0"
+                            disabled={locked}
+                            className="flex items-center gap-2 flex-1 min-w-0 disabled:cursor-not-allowed"
                           >
-                            {lesson.isPreview || isUnlocked ? (
-                              <PlayCircle className="w-4 h-4 shrink-0" />
-                            ) : (
+                            {locked ? (
                               <Lock className="w-4 h-4 shrink-0" />
+                            ) : (
+                              <PlayCircle className="w-4 h-4 shrink-0" />
                             )}
                             <span className="line-clamp-1">{lesson.title}</span>
                           </button>
-                          {user && (lesson.isPreview || isUnlocked) && (
+                          {user && !locked && (
                             <button
                               onClick={() => completeLessonMutation.mutate(lesson.id)}
                               disabled={isCompleted || completeLessonMutation.isPending}
@@ -363,7 +475,9 @@ export function CourseDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-[#666666]">难度</span>
-                <span>{course.level === 'Beginner' ? '入门' : '进阶'}</span>
+                <span>
+                  {course.level === 'Beginner' ? '入门' : course.level === 'Intermediate' ? '进阶' : '高级'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-[#666666]">讲师</span>
@@ -383,6 +497,16 @@ export function CourseDetailPage() {
           </div>
         </div>
       </div>
+
+      <PurchaseModal
+        open={purchaseOpen}
+        onClose={() => setPurchaseOpen(false)}
+        type="course"
+        itemId={course.id}
+        title={course.title}
+        price={course.price}
+        costType={course.costType}
+      />
     </div>
   );
 }

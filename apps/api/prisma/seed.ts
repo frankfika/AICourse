@@ -119,6 +119,69 @@ async function main() {
       costType: CostType.free,
       price: 0,
       status: CourseStatus.published,
+      chapters: {
+        create: [
+          {
+            title: '第 1 章：AI 是什么',
+            description: '从图灵测试到现代大模型',
+            orderIndex: 0,
+            lessons: {
+              create: [
+                {
+                  title: '1.1 智能的定义与图灵测试',
+                  description: '什么是"智能"？',
+                  videoUrl: 'https://www.youtube.com/embed/aircAruvnKk',
+                  videoDuration: 1200,
+                  orderIndex: 0,
+                  isPreview: true,
+                  resources: {
+                    create: [
+                      { title: '推荐阅读：AI 简史', url: 'https://example.com/ai-history.pdf', type: 'pdf' as const },
+                      { title: '相关论文集合', url: 'https://example.com/papers', type: 'link' as const },
+                    ],
+                  },
+                },
+                {
+                  title: '1.2 大语言模型是如何工作的',
+                  description: 'Transformer 与注意力机制',
+                  videoUrl: 'https://www.youtube.com/embed/aircAruvnKk',
+                  videoDuration: 1500,
+                  orderIndex: 1,
+                  isPreview: false,
+                  resources: {
+                    create: [
+                      { title: 'Transformer 架构图解', url: 'https://example.com/transformer.pdf', type: 'pdf' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            title: '第 2 章：动手玩 AI',
+            description: '从提示词开始',
+            orderIndex: 1,
+            lessons: {
+              create: [
+                {
+                  title: '2.1 提示词工程基础',
+                  description: '如何与 AI 对话',
+                  videoUrl: 'https://www.youtube.com/embed/aircAruvnKk',
+                  videoDuration: 1100,
+                  orderIndex: 0,
+                  isPreview: false,
+                  resources: {
+                    create: [
+                      { title: '提示词模板库', url: 'https://example.com/prompts.pdf', type: 'pdf' as const },
+                      { title: '示例代码仓库', url: 'https://github.com/example/ai-prompts', type: 'code' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       title: '构建你的第一个网站',
@@ -132,6 +195,51 @@ async function main() {
       costType: CostType.paid,
       price: 49.99,
       status: CourseStatus.published,
+      chapters: {
+        create: [
+          {
+            title: '第 1 章：HTML 入门',
+            orderIndex: 0,
+            lessons: {
+              create: [
+                {
+                  title: '1.1 你的第一个网页',
+                  description: 'Hello, World!',
+                  videoUrl: 'https://www.youtube.com/embed/HD13eqQW3as',
+                  videoDuration: 900,
+                  orderIndex: 0,
+                  isPreview: true,
+                  resources: {
+                    create: [
+                      { title: 'HTML 速查表', url: 'https://example.com/html-cheatsheet.pdf', type: 'pdf' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            title: '第 2 章：CSS 美化',
+            orderIndex: 1,
+            lessons: {
+              create: [
+                {
+                  title: '2.1 选择器与盒模型',
+                  videoUrl: 'https://www.youtube.com/embed/HD13eqQW3as',
+                  videoDuration: 1300,
+                  orderIndex: 0,
+                  isPreview: false,
+                  resources: {
+                    create: [
+                      { title: '示例 CSS 代码', url: 'https://github.com/example/css-samples', type: 'code' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       title: 'Python：友好的编程语言',
@@ -145,6 +253,63 @@ async function main() {
       costType: CostType.paid,
       price: 59.99,
       status: CourseStatus.published,
+      chapters: {
+        create: [
+          {
+            title: '第 1 章：基础语法',
+            orderIndex: 0,
+            lessons: {
+              create: [
+                {
+                  title: '1.1 变量与数据类型',
+                  videoUrl: 'https://www.youtube.com/embed/r-uOLxNrNk8',
+                  videoDuration: 1500,
+                  orderIndex: 0,
+                  isPreview: true,
+                  resources: {
+                    create: [
+                      { title: 'Python 语法速查', url: 'https://example.com/python-cheatsheet.pdf', type: 'pdf' as const },
+                      { title: '示例代码', url: 'https://github.com/example/python-basics', type: 'code' as const },
+                    ],
+                  },
+                },
+                {
+                  title: '1.2 控制流',
+                  videoUrl: 'https://www.youtube.com/embed/r-uOLxNrNk8',
+                  videoDuration: 1700,
+                  orderIndex: 1,
+                  isPreview: false,
+                  resources: {
+                    create: [
+                      { title: '课后习题', url: 'https://example.com/exercises.pdf', type: 'pdf' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            title: '第 2 章：函数与模块',
+            orderIndex: 1,
+            lessons: {
+              create: [
+                {
+                  title: '2.1 函数基础',
+                  videoUrl: 'https://www.youtube.com/embed/r-uOLxNrNk8',
+                  videoDuration: 1400,
+                  orderIndex: 0,
+                  isPreview: false,
+                  resources: {
+                    create: [
+                      { title: '函数练习集', url: 'https://github.com/example/python-functions', type: 'code' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       title: '白帽黑客：数字防御',
@@ -158,6 +323,51 @@ async function main() {
       costType: CostType.paid,
       price: 79.99,
       status: CourseStatus.published,
+      chapters: {
+        create: [
+          {
+            title: '第 1 章：Linux 命令行',
+            orderIndex: 0,
+            lessons: {
+              create: [
+                {
+                  title: '1.1 终端入门',
+                  videoUrl: 'https://www.youtube.com/embed/IVquJ3NS81Q',
+                  videoDuration: 1300,
+                  orderIndex: 0,
+                  isPreview: true,
+                  resources: {
+                    create: [
+                      { title: '常用命令速查', url: 'https://example.com/linux-commands.pdf', type: 'pdf' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            title: '第 2 章：常见 Web 漏洞',
+            orderIndex: 1,
+            lessons: {
+              create: [
+                {
+                  title: '2.1 SQL 注入与防御',
+                  videoUrl: 'https://www.youtube.com/embed/IVquJ3NS81Q',
+                  videoDuration: 1500,
+                  orderIndex: 0,
+                  isPreview: false,
+                  resources: {
+                    create: [
+                      { title: '漏洞演示代码', url: 'https://github.com/example/sqli-demo', type: 'code' as const },
+                      { title: 'OWASP 漏洞清单', url: 'https://owasp.org/www-project-top-ten/', type: 'link' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       title: '云图：理解云计算',
@@ -171,6 +381,51 @@ async function main() {
       costType: CostType.free,
       price: 0,
       status: CourseStatus.published,
+      chapters: {
+        create: [
+          {
+            title: '第 1 章：云的三种形态',
+            orderIndex: 0,
+            lessons: {
+              create: [
+                {
+                  title: '1.1 IaaS / PaaS / SaaS',
+                  videoUrl: 'https://www.youtube.com/embed/aK4N1-CJkVc',
+                  videoDuration: 900,
+                  orderIndex: 0,
+                  isPreview: true,
+                  resources: {
+                    create: [
+                      { title: '云服务对比表', url: 'https://example.com/cloud-comparison.pdf', type: 'pdf' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            title: '第 2 章：容器与编排',
+            orderIndex: 1,
+            lessons: {
+              create: [
+                {
+                  title: '2.1 Docker 简介',
+                  videoUrl: 'https://www.youtube.com/embed/aK4N1-CJkVc',
+                  videoDuration: 1100,
+                  orderIndex: 0,
+                  isPreview: false,
+                  resources: {
+                    create: [
+                      { title: 'Docker 命令清单', url: 'https://example.com/docker-commands.pdf', type: 'pdf' as const },
+                      { title: '示例 Dockerfile', url: 'https://github.com/example/docker-samples', type: 'code' as const },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
     },
   ];
 

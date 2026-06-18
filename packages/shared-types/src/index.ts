@@ -14,7 +14,7 @@ export type OrderStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'refunded'
 
 export type OrderType = 'course' | 'degree';
 
-export type EnrollmentSource = 'direct' | 'degree' | 'hackathon' | 'promotion';
+export type EnrollmentSource = 'direct' | 'degree' | 'hackathon' | 'promotion' | 'order';
 
 export type ProgressStatus = 'not_started' | 'in_progress' | 'completed';
 
@@ -123,6 +123,70 @@ export interface NanoDegree {
   status: CourseStatus;
   createdAt: Date | string;
   updatedAt: Date | string;
+}
+
+/** 学习路径上的单门课程（带步骤序号、统计） */
+export interface DegreePathCourse {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  level: CourseLevel;
+  duration: string;
+  instructor: string;
+  tags: string;
+  costType: CostType;
+  price: number;
+  orderIndex: number;
+  stepNumber: number;
+  chapterCount: number;
+  learnerCount: number;
+}
+
+/** 学位的学习路径统计 */
+export interface DegreeStats {
+  courseCount: number;
+  totalChapters: number;
+  totalLearners: number;
+  estimatedHours: number;
+}
+
+/** 学位详情（学习路径式） */
+export interface NanoDegreeWithPath extends NanoDegree {
+  courses: DegreePathCourse[];
+  stats: DegreeStats;
+}
+
+/** 订单中关联的课程/学位摘要 */
+export interface OrderItemRef {
+  id: string;
+  title: string;
+  thumbnail?: string | null;
+}
+
+export interface OrderWithItems extends Order {
+  course?: OrderItemRef | null;
+  degree?: OrderItemRef | null;
+}
+
+/** 创建订单请求 */
+export interface CreateOrderRequest {
+  type: OrderType;
+  courseId?: string;
+  degreeId?: string;
+  paymentMethod?: string;
+}
+
+/** Mock 支付请求 */
+export interface MockPayRequest {
+  paymentMethod?: string;
+}
+
+/** 创建订单响应（免费品会直接注册并返回 enrollment） */
+export interface CreateOrderResponse {
+  enrolled: boolean;
+  enrollment?: Enrollment;
+  order?: OrderWithItems;
 }
 
 export interface DegreeCourse {

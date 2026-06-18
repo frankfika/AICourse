@@ -22,6 +22,7 @@ const points_module_1 = require("./modules/points/points.module");
 const badges_module_1 = require("./modules/badges/badges.module");
 const progress_module_1 = require("./modules/progress/progress.module");
 const hackathons_module_1 = require("./modules/hackathons/hackathons.module");
+const orders_module_1 = require("./modules/orders/orders.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -44,6 +45,7 @@ exports.AppModule = AppModule = __decorate([
             badges_module_1.BadgesModule,
             progress_module_1.ProgressModule,
             hackathons_module_1.HackathonsModule,
+            orders_module_1.OrdersModule,
         ],
         controllers: [app_controller_1.AppController],
     })

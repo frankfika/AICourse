@@ -27,9 +27,9 @@ export declare class CoursesService {
                 createdAt: Date;
                 description: string | null;
                 orderIndex: number;
+                videoDuration: number | null;
                 title: string;
                 videoUrl: string | null;
-                videoDuration: number | null;
                 isPreview: boolean;
                 chapterId: string;
             })[];
@@ -75,9 +75,9 @@ export declare class CoursesService {
                 createdAt: Date;
                 description: string | null;
                 orderIndex: number;
+                videoDuration: number | null;
                 title: string;
                 videoUrl: string | null;
-                videoDuration: number | null;
                 isPreview: boolean;
                 chapterId: string;
             })[];
@@ -123,9 +123,9 @@ export declare class CoursesService {
                 createdAt: Date;
                 description: string | null;
                 orderIndex: number;
+                videoDuration: number | null;
                 title: string;
                 videoUrl: string | null;
-                videoDuration: number | null;
                 isPreview: boolean;
                 chapterId: string;
             })[];
@@ -171,9 +171,9 @@ export declare class CoursesService {
                 createdAt: Date;
                 description: string | null;
                 orderIndex: number;
+                videoDuration: number | null;
                 title: string;
                 videoUrl: string | null;
-                videoDuration: number | null;
                 isPreview: boolean;
                 chapterId: string;
             })[];

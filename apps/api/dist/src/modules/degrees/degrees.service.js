@@ -20,7 +20,19 @@ let DegreesService = class DegreesService {
         this.auditLog = auditLog;
         this.degreeInclude = {
             courses: {
-                include: { course: true },
+                include: {
+                    course: {
+                        include: {
+                            chapters: {
+                                select: { id: true },
+                                orderBy: { orderIndex: 'asc' },
+                            },
+                            enrollments: {
+                                select: { id: true, userId: true },
+                            },
+                        },
+                    },
+                },
                 orderBy: { orderIndex: 'asc' },
             },
         };
@@ -35,11 +47,12 @@ let DegreesService = class DegreesService {
                 { description: { contains: params.search } },
             ];
         }
-        return this.prisma.nanoDegree.findMany({
+        const degrees = await this.prisma.nanoDegree.findMany({
             where,
             include: this.degreeInclude,
             orderBy: { createdAt: 'desc' },
         });
+        return degrees.map((d) => this.shapeDegree(d));
     }
     async findOne(id) {
         const degree = await this.prisma.nanoDegree.findUnique({
@@ -48,7 +61,40 @@ let DegreesService = class DegreesService {
         });
         if (!degree)
             throw new common_1.NotFoundException('Degree not found');
-        return degree;
+        return this.shapeDegree(degree);
+    }
+    shapeDegree(degree) {
+        const courses = (degree.courses ?? []).map((link, idx) => {
+            const c = link.course;
+            return {
+                id: c.id,
+                title: c.title,
+                description: c.description,
+                thumbnail: c.thumbnail,
+                level: c.level,
+                duration: c.duration,
+                instructor: c.instructor,
+                tags: c.tags,
+                costType: c.costType,
+                price: c.price,
+                orderIndex: link.orderIndex,
+                stepNumber: idx + 1,
+                chapterCount: c.chapters?.length ?? 0,
+                learnerCount: c.enrollments?.length ?? 0,
+            };
+        });
+        const totalChapters = courses.reduce((sum, c) => sum + c.chapterCount, 0);
+        const totalLearners = courses.reduce((sum, c) => sum + c.learnerCount, 0);
+        return {
+            ...degree,
+            courses,
+            stats: {
+                courseCount: courses.length,
+                totalChapters,
+                totalLearners,
+                estimatedHours: Math.max(courses.length * 4, 1),
+            },
+        };
     }
     async create(dto) {
         const degree = await this.prisma.nanoDegree.create({
