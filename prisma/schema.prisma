@@ -28,6 +28,7 @@ model User {
   teamMembers     TeamMember[]
   hackathonRegs   HackathonRegistration[]
   submissions     Submission[]
+  practiceCompletions PracticeCompletion[]
 
   @@map("users")
 }
@@ -73,6 +74,7 @@ model Course {
   orders      Order[]
   progressRecords ProgressRecord[]
   degreeCourses DegreeCourse[]
+  practiceProjects PracticeProject[]
 
   @@map("courses")
 }
@@ -437,3 +439,70 @@ model AuditLog {
   @@index([action, createdAt])
   @@map("audit_logs")
 }
+
+// ==================== 实践项目 ====================
+model PracticeProject {
+  id            String   @id @default(uuid())
+  courseId      String   @map("course_id")
+  title         String
+  description   String   @db.Text
+  projectUrl    String   @map("project_url")
+  thumbnailUrl  String?  @map("thumbnail_url")
+  difficulty    ProjectDifficulty @default(intermediate)
+  estimatedTime Int      @default(30) @map("estimated_time") // 分钟
+  tags          String?  @db.Text // 逗号分隔
+  projectType   ProjectType @map("project_type")
+  orderIndex    Int      @default(0) @map("order_index")
+  requirements  String?  @db.Text // 前置要求
+  objectives    String?  @db.Text // 学习目标
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  completions PracticeCompletion[]
+
+  @@map("practice_projects")
+}
+
+enum ProjectDifficulty {
+  beginner
+  intermediate
+  advanced
+  expert
+}
+
+enum ProjectType {
+  model_deployment    // 模型部署
+  model_training      // 模型训练
+  model_inference     // 模型推理
+  api_integration     // API集成
+  notebook           // Jupyter Notebook
+  sandbox            // 在线沙箱
+  repository         // 代码仓库
+  csghub_space       // CSGHub Space
+}
+
+model PracticeCompletion {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  projectId   String   @map("project_id")
+  status      CompletionStatus @default(in_progress)
+  startedAt   DateTime @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  submissionUrl String? @map("submission_url") // 用户提交的链接（可选）
+  notes       String?  @db.Text // 学习笔记
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project PracticeProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@map("practice_completions")
+}
+
+enum CompletionStatus {
+  in_progress
+  completed
+  skipped
+}
+

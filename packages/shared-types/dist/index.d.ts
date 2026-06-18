@@ -11,6 +11,9 @@ export type HackathonStatus = 'upcoming' | 'active' | 'judging' | 'finished' | '
 export type RegistrationStatus = 'registered' | 'cancelled' | 'checked_in';
 export type TeamRole = 'captain' | 'member';
 export type SubmissionStatus = 'draft' | 'submitted' | 'under_review' | 'shortlisted' | 'winner' | 'rejected';
+export type ProjectDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+export type ProjectType = 'model_deployment' | 'model_training' | 'model_inference' | 'api_integration' | 'notebook' | 'sandbox' | 'repository' | 'csghub_space';
+export type CompletionStatus = 'in_progress' | 'completed' | 'skipped';
 export interface User {
     id: string;
     email: string;
@@ -203,6 +206,34 @@ export interface AuditLog {
     userAgent?: string | null;
     createdAt: Date | string;
 }
+export interface PracticeProject {
+    id: string;
+    courseId: string;
+    title: string;
+    description: string;
+    projectUrl: string;
+    thumbnailUrl?: string | null;
+    difficulty: ProjectDifficulty;
+    estimatedTime: number;
+    tags?: string | null;
+    projectType: ProjectType;
+    orderIndex: number;
+    requirements?: string | null;
+    objectives?: string | null;
+    isActive: boolean;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+}
+export interface PracticeCompletion {
+    id: string;
+    userId: string;
+    projectId: string;
+    status: CompletionStatus;
+    startedAt: Date | string;
+    completedAt?: Date | string | null;
+    submissionUrl?: string | null;
+    notes?: string | null;
+}
 export interface LoginRequest {
     email: string;
     password: string;
@@ -245,6 +276,31 @@ export interface CreateDegreeRequest {
     status?: CourseStatus;
 }
 export interface UpdateDegreeRequest extends Partial<CreateDegreeRequest> {
+}
+export interface CreatePracticeProjectRequest {
+    courseId: string;
+    title: string;
+    description: string;
+    projectUrl: string;
+    thumbnailUrl?: string;
+    difficulty: ProjectDifficulty;
+    estimatedTime: number;
+    tags?: string;
+    projectType: ProjectType;
+    orderIndex?: number;
+    requirements?: string;
+    objectives?: string;
+    isActive?: boolean;
+}
+export interface UpdatePracticeProjectRequest extends Partial<CreatePracticeProjectRequest> {
+}
+export interface StartPracticeRequest {
+    projectId: string;
+}
+export interface CompletePracticeRequest {
+    projectId: string;
+    submissionUrl?: string;
+    notes?: string;
 }
 export interface ApiResponse<T = any> {
     data?: T;

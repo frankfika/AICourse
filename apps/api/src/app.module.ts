@@ -7,7 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { DegreesModule } from './modules/degrees/degrees.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
-
+import { PracticesModule } from './modules/practices/practices.module';
 import { AuditModule } from './modules/audit/audit.module';
 
 @Module({
@@ -23,6 +23,7 @@ import { AuditModule } from './modules/audit/audit.module';
     CoursesModule,
     DegreesModule,
     EnrollmentsModule,
+    PracticesModule,
   ],
   controllers: [AppController],
 })

@@ -16,6 +16,7 @@ const users_module_1 = require("./modules/users/users.module");
 const courses_module_1 = require("./modules/courses/courses.module");
 const degrees_module_1 = require("./modules/degrees/degrees.module");
 const enrollments_module_1 = require("./modules/enrollments/enrollments.module");
+const practices_module_1 = require("./modules/practices/practices.module");
 const audit_module_1 = require("./modules/audit/audit.module");
 let AppModule = class AppModule {
 };
@@ -34,6 +35,7 @@ exports.AppModule = AppModule = __decorate([
             courses_module_1.CoursesModule,
             degrees_module_1.DegreesModule,
             enrollments_module_1.EnrollmentsModule,
+            practices_module_1.PracticesModule,
         ],
         controllers: [app_controller_1.AppController],
     })
