@@ -39,3 +39,6 @@ prisma/dev.db-journal
 
 # uploads
 public/uploads/
+
+# playwright test cache
+.playwright-mcp/
