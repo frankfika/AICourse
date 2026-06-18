@@ -1,0 +1,439 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 用户与权限 ====================
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  name            String
+  role            UserRole  @default(student)
+  avatarUrl       String?   @map("avatar_url")
+  passwordResetRequired Boolean @default(false) @map("password_reset_required")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  lastLoginAt     DateTime? @map("last_login_at")
+
+  refreshTokens   RefreshToken[]
+  enrollments     Enrollment[]
+  orders          Order[]
+  progressRecords ProgressRecord[]
+  auditLogs       AuditLog[]
+  teamMembers     TeamMember[]
+  hackathonRegs   HackathonRegistration[]
+  submissions     Submission[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  admin
+  student
+  instructor
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ==================== 课程结构 ====================
+model Course {
+  id             String       @id @default(uuid())
+  title          String
+  description    String       @db.Text
+  learningPoints String       @map("learning_points") @db.Text
+  instructor     String
+  instructorId   String?      @map("instructor_id")
+  level          CourseLevel
+  duration       String
+  thumbnail      String
+  tags           String       @db.Text
+  costType       CostType     @map("cost_type")
+  price          Decimal      @default(0) @db.Decimal(10, 2)
+  status         CourseStatus @default(draft)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  chapters    Chapter[]
+  enrollments Enrollment[]
+  orders      Order[]
+  progressRecords ProgressRecord[]
+  degreeCourses DegreeCourse[]
+
+  @@map("courses")
+}
+
+enum CourseLevel {
+  Beginner
+  Intermediate
+  Advanced
+  Expert
+}
+
+enum CostType {
+  free
+  paid
+  charity
+}
+
+enum CourseStatus {
+  draft
+  published
+  archived
+}
+
+model Chapter {
+  id          String   @id @default(uuid())
+  courseId    String   @map("course_id")
+  title       String
+  description String?  @db.Text
+  orderIndex  Int      @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@map("chapters")
+}
+
+model Lesson {
+  id            String   @id @default(uuid())
+  chapterId     String   @map("chapter_id")
+  title         String
+  description   String?  @db.Text
+  videoUrl      String?  @map("video_url")
+  videoDuration Int?     @map("video_duration")
+  orderIndex    Int      @map("order_index")
+  isPreview     Boolean  @default(false) @map("is_preview")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  chapter   Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  resources Resource[]
+  progress  ProgressRecord[]
+
+  @@map("lessons")
+}
+
+model Resource {
+  id        String       @id @default(uuid())
+  lessonId  String       @map("lesson_id")
+  title     String
+  url       String
+  type      ResourceType
+  isLocked  Boolean      @default(true) @map("is_locked")
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("resources")
+}
+
+enum ResourceType {
+  pdf
+  code
+  link
+  video
+  audio
+}
+
+// ==================== 学位 ====================
+model NanoDegree {
+  id             String       @id @default(uuid())
+  title          String
+  description    String       @db.Text
+  learningPoints String       @map("learning_points") @db.Text
+  price          Decimal      @db.Decimal(10, 2)
+  icon           String       @default("sparkles")
+  costType       CostType     @map("cost_type")
+  thumbnail      String?
+  status         CourseStatus @default(draft)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  courses     DegreeCourse[]
+  enrollments Enrollment[]
+  orders      Order[]
+
+  @@map("nano_degrees")
+}
+
+model DegreeCourse {
+  degreeId   String @map("degree_id")
+  courseId   String @map("course_id")
+  orderIndex Int    @default(0) @map("order_index")
+
+  degree NanoDegree @relation(fields: [degreeId], references: [id], onDelete: Cascade)
+  course Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([degreeId, courseId])
+  @@map("degree_courses")
+}
+
+// ==================== 注册与权限 ====================
+model Enrollment {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  courseId   String?  @map("course_id")
+  degreeId   String?  @map("degree_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  expiresAt  DateTime? @map("expires_at")
+  source     EnrollmentSource @default(direct)
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course?     @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  degree NanoDegree? @relation(fields: [degreeId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, courseId])
+  @@unique([userId, degreeId])
+  @@map("enrollments")
+}
+
+enum EnrollmentSource {
+  direct
+  degree
+  hackathon
+  promotion
+}
+
+// ==================== 订单与支付 ====================
+model Order {
+  id            String      @id @default(uuid())
+  userId        String      @map("user_id")
+  type          OrderType
+  courseId      String?     @map("course_id")
+  degreeId      String?     @map("degree_id")
+  amount        Decimal     @db.Decimal(10, 2)
+  currency      String      @default("CNY")
+  status        OrderStatus @default(pending)
+  paymentMethod String?     @map("payment_method")
+  transactionId String?     @map("transaction_id")
+  paidAt        DateTime?   @map("paid_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  degree NanoDegree? @relation(fields: [degreeId], references: [id], onDelete: SetNull)
+
+  @@map("orders")
+}
+
+enum OrderType {
+  course
+  degree
+}
+
+enum OrderStatus {
+  pending
+  paid
+  failed
+  expired
+  refunded
+}
+
+// ==================== 黑客松 ====================
+model Hackathon {
+  id               String          @id @default(uuid())
+  title            String
+  description      String          @db.Text
+  bannerUrl        String?         @map("banner_url")
+  status           HackathonStatus @default(upcoming)
+  startDate        DateTime        @map("start_date")
+  endDate          DateTime        @map("end_date")
+  registerDeadline DateTime?       @map("register_deadline")
+  maxTeamSize      Int             @default(5) @map("max_team_size")
+  minTeamSize      Int             @default(1) @map("min_team_size")
+  location         String?
+  rules            String?         @db.Text
+  prizes           String?         @db.Text
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  registrations HackathonRegistration[]
+  teams         Team[]
+  judges        Judge[]
+  submissions   Submission[]
+  announcements Announcement[]
+
+  @@map("hackathons")
+}
+
+enum HackathonStatus {
+  upcoming
+  active
+  judging
+  finished
+  cancelled
+}
+
+model HackathonRegistration {
+  id           String   @id @default(uuid())
+  hackathonId  String   @map("hackathon_id")
+  userId       String   @map("user_id")
+  status       RegistrationStatus @default(registered)
+  registeredAt DateTime @default(now()) @map("registered_at")
+  checkedInAt  DateTime? @map("checked_in_at")
+
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([hackathonId, userId])
+  @@map("hackathon_registrations")
+}
+
+enum RegistrationStatus {
+  registered
+  cancelled
+  checked_in
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  hackathonId String   @map("hackathon_id")
+  name        String
+  slogan      String?
+  captainId   String   @map("captain_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  hackathon Hackathon     @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  members   TeamMember[]
+  submissions Submission[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id     String   @id @default(uuid())
+  teamId String   @map("team_id")
+  userId String   @map("user_id")
+  role   TeamRole @default(member)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+enum TeamRole {
+  captain
+  member
+}
+
+model Judge {
+  id          String   @id @default(uuid())
+  hackathonId String   @map("hackathon_id")
+  userId      String?  @map("user_id")
+  name        String
+  title       String?
+  avatarUrl   String?  @map("avatar_url")
+  bio         String?  @db.Text
+
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+
+  @@map("judges")
+}
+
+model Submission {
+  id          String   @id @default(uuid())
+  hackathonId String   @map("hackathon_id")
+  teamId      String?  @map("team_id")
+  userId      String?  @map("user_id")
+  title       String
+  description String   @db.Text
+  demoUrl     String?  @map("demo_url")
+  repoUrl     String?  @map("repo_url")
+  videoUrl    String?  @map("video_url")
+  status      SubmissionStatus @default(draft)
+  score       Decimal? @db.Decimal(5, 2)
+  feedback    String?  @db.Text
+  submittedAt DateTime? @map("submitted_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  team      Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("submissions")
+}
+
+enum SubmissionStatus {
+  draft
+  submitted
+  under_review
+  shortlisted
+  winner
+  rejected
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  hackathonId String   @map("hackathon_id")
+  title       String
+  content     String   @db.Text
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+
+  @@map("announcements")
+}
+
+// ==================== 学习进度 ====================
+model ProgressRecord {
+  id           String         @id @default(uuid())
+  userId       String         @map("user_id")
+  courseId     String         @map("course_id")
+  lessonId     String         @map("lesson_id")
+  status       ProgressStatus @default(not_started)
+  completedAt  DateTime?      @map("completed_at")
+  lastPosition Int?           @map("last_position")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("progress_records")
+}
+
+enum ProgressStatus {
+  not_started
+  in_progress
+  completed
+}
+
+// ==================== 系统日志 ====================
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  details   String?  @db.Text
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}

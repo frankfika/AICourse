@@ -1,24 +1,39 @@
 {
-  "name": "nexus-academy",
+  "name": "opencsg-academy",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "OpenCSG Academy - AI and LLM education platform",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@google/genai": "^1.30.0",
-    "@supabase/supabase-js": "^2.78.0",
-    "lucide-react": "^0.555.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "dev": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter @opencsg/academy-web dev",
+    "dev:api": "pnpm --filter @opencsg/academy-api dev",
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter @opencsg/academy-web build",
+    "build:api": "pnpm --filter @opencsg/academy-api build",
+    "start": "pnpm --filter @opencsg/academy-api start",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:migrate": "pnpm --filter @opencsg/academy-api db:migrate",
+    "db:studio": "pnpm --filter @opencsg/academy-api db:studio",
+    "db:seed": "pnpm --filter @opencsg/academy-api db:seed"
   },
   "devDependencies": {
+    "@prisma/client": "6.2.0",
     "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "prisma": "6.2.0",
+    "typescript": "~5.8.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "protobufjs"
+    ]
   }
 }
