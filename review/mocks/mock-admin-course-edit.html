@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>课程编辑 · 用 LangChain 搭建第一个 Agent — OpenCSG Academy Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: { 50:'#E6F5F2', 100:'#BFEAE0', 300:'#66CFB7', 500:'#1D8C80', 700:'#146358', 900:'#0A3A33' }, neutral: { 0:'#FFFFFF', 50:'#FAFAF7', 100:'#F5F4F0', 200:'#E5E3DC', 400:'#A8A6A0', 600:'#6B6963', 800:'#2C2A26', 900:'#1A1916', 950:'#0D0C0A' }, xp: { 500:'#8B5CF6' }, cert: { 500:'#C9A227' }, success:{ 500:'#16A34A' }, warning:{ 500:'#D97706' }, danger:{ 500:'#DC2626' } }, boxShadow: { 'glow': '0 0 0 1px rgb(29 140 128 / 0.2), 0 8px 24px -8px rgb(29 140 128 / 0.3)' } } } }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', 'PingFang SC', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .chip { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+</style>
+</head>
+<body class="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900 transition-colors">
+
+<!-- 顶部 -->
+<header class="bg-neutral-0 dark:bg-neutral-100 border-b border-neutral-200 dark:border-neutral-200 sticky top-0 z-30">
+  <div class="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <a href="/admin/courses" class="text-neutral-600 dark:text-neutral-600 hover:text-brand-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg></a>
+      <span class="text-neutral-300">/</span>
+      <div class="min-w-0">
+        <div class="text-sm font-semibold truncate">用 LangChain 搭建第一个 Agent</div>
+        <div class="text-xs text-neutral-600 dark:text-neutral-600 flex items-center gap-2">
+          <span>课程 ID: <span class="mono">c_01h8f3kq</span></span>
+          <span>·</span>
+          <span class="text-success-500">已发布</span>
+          <span>·</span>
+          <span>最后保存 2 分钟前</span>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="px-3 py-1.5 rounded-md text-sm border border-neutral-200 dark:border-neutral-200 hover:border-brand-500">预览</button>
+      <button class="px-3 py-1.5 rounded-md text-sm border border-neutral-200 dark:border-neutral-200 hover:border-brand-500">保存草稿</button>
+      <button class="px-3 py-1.5 rounded-md bg-brand-500 text-white text-sm font-medium hover:bg-brand-700">发布更新</button>
+      <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')" class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100">
+        <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 20.354 15.354Z"/></svg>
+        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/></svg>
+      </button>
+    </div>
+  </div>
+  <!-- Tabs -->
+  <div class="px-4 sm:px-6 flex gap-6 overflow-x-auto text-sm">
+    <button class="py-3 border-b-2 border-transparent text-neutral-600 dark:text-neutral-600 hover:text-brand-500 whitespace-nowrap">基本信息</button>
+    <button class="py-3 border-b-2 border-brand-500 text-brand-500 font-medium whitespace-nowrap">章节大纲 · 5 章</button>
+    <button class="py-3 border-b-2 border-transparent text-neutral-600 dark:text-neutral-600 hover:text-brand-500 whitespace-nowrap">资源 · 12</button>
+    <button class="py-3 border-b-2 border-transparent text-neutral-600 dark:text-neutral-600 hover:text-brand-500 whitespace-nowrap">价格 / 试看</button>
+    <button class="py-3 border-b-2 border-transparent text-neutral-600 dark:text-neutral-600 hover:text-brand-500 whitespace-nowrap">SEO / 元数据</button>
+    <button class="py-3 border-b-2 border-transparent text-neutral-600 dark:text-neutral-600 hover:text-brand-500 whitespace-nowrap">发布设置</button>
+  </div>
+</header>
+
+<!-- 主体: 左章节树 + 中编辑 + 右字段 -->
+<main class="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] h-[calc(100vh-7rem)]">
+
+  <!-- ===== 左侧: 章节树 ===== -->
+  <aside class="hidden lg:flex flex-col bg-neutral-0 dark:bg-neutral-100 border-r border-neutral-200 dark:border-neutral-200 overflow-hidden">
+    <div class="p-3 border-b border-neutral-200 dark:border-neutral-200 flex items-center justify-between">
+      <h3 class="text-sm font-semibold">章节大纲</h3>
+      <button class="text-xs text-brand-500 hover:underline">+ 新增章节</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-2 space-y-1 text-sm">
+      <!-- Chapter 1 -->
+      <details open class="rounded-md">
+        <summary class="flex items-center gap-2 p-2 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 cursor-pointer">
+          <svg class="w-4 h-4 text-neutral-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+          <span class="w-6 h-6 rounded-full bg-success-500/10 text-success-500 text-xs font-bold flex items-center justify-center">1</span>
+          <span class="flex-1 font-medium">第一章 · Agent 心智模型</span>
+          <span class="text-[10px] text-neutral-400 mono">6 课时</span>
+        </summary>
+        <div class="ml-3 pl-3 border-l border-neutral-200 dark:border-neutral-200 space-y-0.5 mt-1">
+          <a href="#" class="flex items-center gap-2 p-1.5 rounded text-xs hover:bg-neutral-50 dark:hover:bg-neutral-50">
+            <svg class="w-3.5 h-3.5 text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="m4.5 12.75 6 6 9-13.5"/></svg>
+            <span class="flex-1 truncate">1.1 什么是 Agent</span>
+            <span class="text-[10px] chip bg-success-500/10 text-success-500">试看</span>
+          </a>
+          <a href="#" class="flex items-center gap-2 p-1.5 rounded text-xs hover:bg-neutral-50 dark:hover:bg-neutral-50">
+            <svg class="w-3.5 h-3.5 text-success-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="m4.5 12.75 6 6 9-13.5"/></svg>
+            <span class="flex-1 truncate">1.2 LLM 如何"思考"</span>
+            <span class="text-[10px] chip bg-success-500/10 text-success-500">试看</span>
+          </a>
+          <a href="#" class="flex items-center gap-2 p-1.5 rounded text-xs bg-brand-50 text-brand-700 font-medium">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+            <span class="flex-1 truncate">1.3 第一个最小 Agent(命令行版)</span>
+            <span class="text-[10px] mono">8:15</span>
+          </a>
+          <a href="#" class="flex items-center gap-2 p-1.5 rounded text-xs hover:bg-neutral-50 dark:hover:bg-neutral-50">
+            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+            <span class="flex-1 truncate">1.4 ReAct:Reason + Act</span>
+            <span class="text-[10px] mono">22:08</span>
+          </a>
+          <a href="#" class="flex items-center gap-2 p-1.5 rounded text-xs hover:bg-neutral-50 dark:hover:bg-neutral-50">
+            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+            <span class="flex-1 truncate">1.5 调试 Agent</span>
+            <span class="text-[10px] mono">15:30</span>
+          </a>
+          <a href="#" class="flex items-center gap-2 p-1.5 rounded text-xs hover:bg-neutral-50 dark:hover:bg-neutral-50">
+            <svg class="w-3.5 h-3.5 text-xp-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"/></svg>
+            <span class="flex-1 truncate">1.6 章节项目</span>
+            <span class="text-[10px] chip bg-xp-500/10 text-xp-500">项目</span>
+          </a>
+          <button class="w-full text-left p-1.5 text-xs text-neutral-400 hover:text-brand-500">+ 添加课时</button>
+        </div>
+      </details>
+      <!-- Chapter 2 -->
+      <details class="rounded-md">
+        <summary class="flex items-center gap-2 p-2 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 cursor-pointer">
+          <svg class="w-4 h-4 text-neutral-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+          <span class="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-200 text-neutral-600 dark:text-neutral-600 text-xs font-bold flex items-center justify-center">2</span>
+          <span class="flex-1 font-medium">第二章 · Tool Calling</span>
+          <span class="text-[10px] text-neutral-400 mono">7 课时</span>
+        </summary>
+      </details>
+      <details class="rounded-md">
+        <summary class="flex items-center gap-2 p-2 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 cursor-pointer">
+          <svg class="w-4 h-4 text-neutral-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+          <span class="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-200 text-neutral-600 dark:text-neutral-600 text-xs font-bold flex items-center justify-center">3</span>
+          <span class="flex-1 font-medium">第三章 · Memory</span>
+          <span class="text-[10px] text-neutral-400 mono">6 课时</span>
+        </summary>
+      </details>
+      <details class="rounded-md">
+        <summary class="flex items-center gap-2 p-2 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 cursor-pointer">
+          <svg class="w-4 h-4 text-neutral-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+          <span class="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-200 text-neutral-600 dark:text-neutral-600 text-xs font-bold flex items-center justify-center">4</span>
+          <span class="flex-1 font-medium">第四章 · Chain</span>
+          <span class="text-[10px] text-neutral-400 mono">6 课时</span>
+        </summary>
+      </details>
+      <details class="rounded-md">
+        <summary class="flex items-center gap-2 p-2 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 cursor-pointer">
+          <svg class="w-4 h-4 text-neutral-400 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+          <span class="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-200 text-neutral-600 dark:text-neutral-600 text-xs font-bold flex items-center justify-center">5</span>
+          <span class="flex-1 font-medium">第五章 · 期末项目</span>
+          <span class="text-[10px] text-neutral-400 mono">7 课时</span>
+        </summary>
+      </details>
+    </div>
+    <div class="p-3 border-t border-neutral-200 dark:border-neutral-200 text-xs text-neutral-600 dark:text-neutral-600">
+      总时长: <span class="mono text-neutral-900 dark:text-neutral-900">6.5h</span> · 共 32 课时
+    </div>
+  </aside>
+
+  <!-- ===== 中间: 富文本编辑器 ===== -->
+  <main class="flex flex-col overflow-hidden bg-neutral-50 dark:bg-neutral-950">
+    <div class="bg-neutral-0 dark:bg-neutral-100 border-b border-neutral-200 dark:border-neutral-200 px-6 py-4">
+      <div class="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600">
+        <span>第一章</span>
+        <span>/</span>
+        <span>1.3 第一个最小 Agent(命令行版)</span>
+        <span class="ml-auto mono">已自动保存</span>
+      </div>
+      <h2 class="mt-1 text-xl font-bold">1.3 第一个最小 Agent(命令行版)</h2>
+    </div>
+    <!-- 编辑器 toolbar -->
+    <div class="bg-neutral-0 dark:bg-neutral-100 border-b border-neutral-200 dark:border-neutral-200 px-4 py-2 flex items-center gap-1 overflow-x-auto">
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="标题 H1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25"/></svg></button>
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="粗体"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h7a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6Zm0 8h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6Z"/></svg></button>
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="斜体"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 4h4m-4 16h4M14 4 10 20"/></svg></button>
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="链接"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m9.193-9.193a4.5 4.5 0 0 0-6.364 6.364l4.5 4.5a4.5 4.5 0 0 0 6.364-6.364l-1.757-1.757"/></svg></button>
+      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-200 mx-1"></div>
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="代码块"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z"/></svg></button>
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="图片"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/></svg></button>
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="公式"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v16H4z M4 12h16 M12 4v16"/></svg></button>
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="上传附件"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 17.485 6.1L7.05 16.536a1.5 1.5 0 0 1-2.122-2.121L14.263 5.08"/></svg></button>
+      <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-200 mx-1"></div>
+      <button class="p-1.5 rounded hover:bg-neutral-50 dark:hover:bg-neutral-50" title="AI 帮写"><svg class="w-4 h-4 text-xp-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg></button>
+      <div class="ml-auto text-xs text-neutral-600 dark:text-neutral-600 flex items-center gap-2">
+        <span>字数 <span class="mono">2,418</span></span>
+        <span>·</span>
+        <span>预计阅读 12 分钟</span>
+      </div>
+    </div>
+    <!-- 编辑器主体(markdown 风格) -->
+    <div class="flex-1 overflow-y-auto p-8 max-w-3xl mx-auto w-full">
+      <div class="prose-content text-base leading-relaxed space-y-4">
+        <h1 class="text-2xl font-bold">第一个最小 Agent(命令行版)</h1>
+        <p class="text-neutral-600 dark:text-neutral-600">这一节我们写一个能回答本地问题的 Agent,只调一个 tool:查当前时间。整个过程 5 分钟。</p>
+        <h2 class="text-xl font-semibold mt-6">核心代码</h2>
+        <p class="text-neutral-600 dark:text-neutral-600">看下面这 30 行,先别急着理解每一行,我们跑起来再讲。</p>
+        <pre class="p-4 rounded-lg bg-neutral-900 text-neutral-100 text-sm mono overflow-x-auto"><code>from langchain.agents import initialize_agent, Tool
+from langchain.llms import OpenAI
+from datetime import datetime
+
+def get_time(_: str) -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+tools = [Tool(name="GetTime", func=get_time, description="返回当前时间")]
+
+agent = initialize_agent(
+    tools, OpenAI(temperature=0), agent="zero-shot-react-description", verbose=True
+)
+
+print(agent.run("现在几点了?"))
+</code></pre>
+        <h2 class="text-xl font-semibold mt-6">怎么跑</h2>
+        <ol class="list-decimal pl-6 space-y-1 text-neutral-600 dark:text-neutral-600">
+          <li>把上面代码存为 <code class="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-100 text-sm mono">agent.py</code></li>
+          <li>设置 <code class="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-100 text-sm mono">export OPENAI_API_KEY=sk-...</code></li>
+          <li>运行 <code class="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-100 text-sm mono">python agent.py</code></li>
+        </ol>
+        <blockquote class="border-l-4 border-brand-500 pl-4 py-2 text-sm bg-brand-50 dark:bg-brand-50 rounded-r">
+          💡 你应该看到 verbose 模式打印出 "Thought: ... Action: ... Observation: ...",这就是 ReAct 循环的"显式痕迹"。
+        </blockquote>
+        <h2 class="text-xl font-semibold mt-6">接下来</h2>
+        <p>下面两节我们讲 <a class="text-brand-500 underline" href="#">ReAct:Reason + Act 的循环模式</a>,以及 <a class="text-brand-500 underline" href="#">调试 Agent</a> 的关键 trace 字段。</p>
+        <p class="text-neutral-600 dark:text-neutral-600 text-sm italic">📎 本节配套代码: <a class="text-brand-500 underline" href="#">github.com/opencsg-academy/agent-101</a> · commit <span class="mono">a1b2c3d</span></p>
+      </div>
+    </div>
+    <!-- 底部: 视频上传 + 附件 -->
+    <div class="border-t border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 p-4 flex items-center gap-3">
+      <div class="flex-1 p-3 rounded-md border border-dashed border-neutral-200 dark:border-neutral-200 flex items-center gap-3">
+        <svg class="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+        <div class="flex-1 text-sm">
+          <div class="font-medium">lesson-1-3-main.mp4</div>
+          <div class="text-xs text-neutral-600 dark:text-neutral-600">已上传 · 142 MB · 8:15 · 转码中 (60%)</div>
+        </div>
+        <button class="text-xs text-brand-500 hover:underline">替换</button>
+      </div>
+      <button class="text-sm text-neutral-600 dark:text-neutral-600 hover:text-brand-500">+ 附加资源</button>
+    </div>
+  </main>
+
+  <!-- ===== 右侧: 字段面板 ===== -->
+  <aside class="hidden lg:flex flex-col bg-neutral-0 dark:bg-neutral-100 border-l border-neutral-200 dark:border-neutral-200 overflow-y-auto">
+    <div class="p-5 space-y-5">
+      <h3 class="text-sm font-semibold">课时设置</h3>
+      <!-- 标题 -->
+      <div>
+        <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-600 mb-1">课时标题</label>
+        <input type="text" value="第一个最小 Agent(命令行版)" class="w-full px-2.5 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-200 text-sm focus:outline-none focus:border-brand-500" />
+      </div>
+      <!-- 时长 -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-600 mb-1">时长(秒)</label>
+          <input type="number" value="495" class="w-full px-2.5 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-200 text-sm mono" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-600 mb-1">顺序</label>
+          <input type="number" value="3" class="w-full px-2.5 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-200 text-sm mono" />
+        </div>
+      </div>
+      <!-- 视频源 -->
+      <div>
+        <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-600 mb-1">视频源 URL</label>
+        <input type="text" value="https://cdn.opencsg.ai/lessons/1-3-main.mp4" class="w-full px-2.5 py-1.5 rounded-md border border-neutral-200 dark:border-neutral-200 text-xs mono" />
+      </div>
+      <!-- 试看 -->
+      <div class="p-3 rounded-md bg-brand-50 border border-brand-100">
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" />
+          <span>设为试看课时(未报名可看)</span>
+        </label>
+        <p class="mt-1 text-[10px] text-neutral-600 dark:text-neutral-600">勾选后,未报名用户可试看本节</p>
+      </div>
+      <!-- 关键点 -->
+      <div>
+        <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-600 mb-1">关键点(AI 自动提取,可编辑)</label>
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-1 px-2 py-1 rounded bg-xp-500/10 text-xs text-xp-500">
+            <span>ReAct 循环显式痕迹</span>
+            <button class="ml-auto text-neutral-400 hover:text-danger-500">×</button>
+          </div>
+          <div class="flex items-center gap-1 px-2 py-1 rounded bg-xp-500/10 text-xs text-xp-500">
+            <span>tool schema 设计要点</span>
+            <button class="ml-auto text-neutral-400 hover:text-danger-500">×</button>
+          </div>
+          <div class="flex items-center gap-1 px-2 py-1 rounded bg-xp-500/10 text-xs text-xp-500">
+            <span>verbose 模式调试</span>
+            <button class="ml-auto text-neutral-400 hover:text-danger-500">×</button>
+          </div>
+          <input type="text" placeholder="+ 添加关键点" class="w-full px-2 py-1 text-xs border border-dashed border-neutral-200 dark:border-neutral-200 rounded" />
+        </div>
+      </div>
+      <!-- 测验 -->
+      <div>
+        <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-600 mb-1">课后测验</label>
+        <div class="p-3 rounded-md border border-dashed border-neutral-200 dark:border-neutral-200 text-center">
+          <p class="text-xs text-neutral-600 dark:text-neutral-600">3 道题 · 自动评分</p>
+          <button class="mt-2 text-xs text-brand-500 hover:underline">编辑题目</button>
+        </div>
+      </div>
+      <!-- 关联资源 -->
+      <div>
+        <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-600 mb-1">关联资源</label>
+        <div class="space-y-1.5 text-xs">
+          <div class="flex items-center gap-2 p-2 rounded bg-neutral-50 dark:bg-neutral-50">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg>
+            <span class="flex-1 truncate">agent.py</span>
+            <span class="text-neutral-400">2KB</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 rounded bg-neutral-50 dark:bg-neutral-50">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+            <span class="flex-1 truncate">cheatsheet.md</span>
+            <span class="text-neutral-400">8KB</span>
+          </div>
+          <button class="w-full text-xs text-brand-500 hover:underline py-1">+ 添加资源</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- 底部 sticky 工具条 -->
+<footer class="fixed bottom-0 inset-x-0 bg-neutral-0/95 dark:bg-neutral-100/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-200 px-4 sm:px-6 py-3 flex items-center justify-between z-40">
+  <div class="flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-600">
+    <span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-success-500"></span>已自动保存 · 2 分钟前</span>
+    <span class="hidden sm:inline">·</span>
+    <span class="hidden sm:inline">3 个未保存的修改</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <button class="px-3 py-1.5 rounded-md text-sm border border-neutral-200 dark:border-neutral-200 hover:border-brand-500">撤销</button>
+    <button class="px-3 py-1.5 rounded-md text-sm border border-neutral-200 dark:border-neutral-200 hover:border-brand-500">保存草稿</button>
+    <button class="px-4 py-1.5 rounded-md text-sm bg-brand-500 text-white font-medium hover:bg-brand-700 shadow-glow">发布更新</button>
+  </div>
+</footer>
+
+<script>
+  if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+  }
+</script>
+
+</body>
+</html>

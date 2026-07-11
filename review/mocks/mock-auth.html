@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>登录 / 注册 — OpenCSG Academy</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { darkMode: 'class', theme: { extend: { colors: { brand: { 50:'#E6F5F2', 100:'#BFEAE0', 300:'#66CFB7', 500:'#1D8C80', 700:'#146358', 900:'#0A3A33' }, neutral: { 0:'#FFFFFF', 50:'#FAFAF7', 100:'#F5F4F0', 200:'#E5E3DC', 400:'#A8A6A0', 600:'#6B6963', 800:'#2C2A26', 900:'#1A1916', 950:'#0D0C0A' }, xp: { 500:'#8B5CF6' }, cert: { 500:'#C9A227' }, success:{ 500:'#16A34A' }, warning:{ 500:'#D97706' }, danger:{ 500:'#DC2626' } }, boxShadow: { 'glow': '0 0 0 1px rgb(29 140 128 / 0.2), 0 8px 24px -8px rgb(29 140 128 / 0.3)' } } } }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', 'PingFang SC', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .chip { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+  .provider-btn { transition: all 0.15s; }
+  .provider-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px -2px rgba(0,0,0,0.08); }
+</style>
+</head>
+<body class="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900 transition-colors min-h-screen">
+
+<!-- 顶部导航(精简) -->
+<header class="border-b border-neutral-200 dark:border-neutral-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold text-sm">O</div>
+      <span class="font-semibold text-lg">OpenCSG <span class="text-brand-500">Academy</span></span>
+    </a>
+    <div class="flex items-center gap-3">
+      <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')" class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100">
+        <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 20.354 15.354Z"/></svg>
+        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/></svg>
+      </button>
+      <a href="/" class="text-sm text-neutral-600 dark:text-neutral-600 hover:text-brand-500">← 返回首页</a>
+    </div>
+  </div>
+</header>
+
+<!-- 主体: 左右分屏 -->
+<main class="min-h-[calc(100vh-4rem)] grid lg:grid-cols-2">
+
+  <!-- ===== 左侧: 品牌宣言 + 数据 ===== -->
+  <section class="hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-brand-500 via-brand-700 to-brand-900 text-white relative overflow-hidden">
+    <div class="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-xp-500/30 blur-3xl"></div>
+    <div class="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-brand-300/20 blur-3xl"></div>
+
+    <div class="relative">
+      <a href="/" class="inline-flex items-center gap-2 mb-12">
+        <div class="w-10 h-10 rounded-md bg-white flex items-center justify-center text-brand-700 font-bold">O</div>
+        <span class="font-semibold text-lg">OpenCSG Academy</span>
+      </a>
+      <h1 class="text-4xl md:text-display-lg font-bold leading-[1.1]">
+        学完仍然不会做?<br/>
+        <span class="opacity-90">让 AI 时代的能力</span><br/>
+        可被看见。
+      </h1>
+      <p class="mt-6 text-lg opacity-90 max-w-md">12,400 名工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。</p>
+    </div>
+
+    <div class="relative space-y-6">
+      <div class="grid grid-cols-3 gap-6 max-w-md">
+        <div><div class="text-3xl font-bold mono">12.4K</div><div class="text-xs opacity-80 mt-1">在读学员</div></div>
+        <div><div class="text-3xl font-bold mono">86</div><div class="text-xs opacity-80 mt-1">系统化课程</div></div>
+        <div><div class="text-3xl font-bold mono">2.4K</div><div class="text-xs opacity-80 mt-1">完成项目</div></div>
+      </div>
+      <blockquote class="p-5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
+        <p class="text-sm leading-relaxed">"我以为 RAG 就是把文档塞进向量库。学完才发现 prompt 模板、reranking、citation、evaluation 才是真正决定效果的地方。AI 助教在我卡壳时直接引用课里第几节第几分几秒 —— 救了我 3 个通宵。"</p>
+        <div class="mt-3 flex items-center gap-2 text-xs">
+          <div class="w-7 h-7 rounded-full bg-cert-500 text-white flex items-center justify-center font-bold text-xs">K</div>
+          <div>
+            <div class="font-medium">K. Chen</div>
+            <div class="opacity-70">LLM 应用工程师学位 · 已毕业</div>
+          </div>
+        </div>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- ===== 右侧: 登录 / 注册 表单 ===== -->
+  <section class="flex items-center justify-center p-6 sm:p-12">
+    <div class="w-full max-w-md">
+
+      <!-- Tab 切换: 登录 / 注册 -->
+      <div class="flex items-center gap-1 p-1 rounded-lg bg-neutral-100 dark:bg-neutral-100 mb-8">
+        <button class="flex-1 py-2 rounded-md bg-neutral-0 dark:bg-neutral-100 text-sm font-medium shadow-sm">登录</button>
+        <button class="flex-1 py-2 rounded-md text-sm font-medium text-neutral-600 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-neutral-900">注册</button>
+      </div>
+
+      <!-- 标题 -->
+      <h2 class="text-2xl font-bold">欢迎回来</h2>
+      <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-600">继续你的 AI 时代学习路径</p>
+
+      <!-- ============== 第三方登录按钮网格(Frank 硬要求) ============== -->
+      <div class="mt-6">
+        <div class="grid grid-cols-3 gap-3">
+          <!-- Google -->
+          <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 bg-neutral-0 dark:bg-neutral-100">
+            <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.1V7.07H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
+            <span class="text-xs font-medium">Google</span>
+          </button>
+          <!-- GitHub -->
+          <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 bg-neutral-0 dark:bg-neutral-100">
+            <svg class="w-6 h-6" fill="#1A1916" viewBox="0 0 24 24"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.8 1.18 1.82 1.18 3.08 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg>
+            <span class="text-xs font-medium">GitHub</span>
+          </button>
+          <!-- 微信 -->
+          <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 bg-neutral-0 dark:bg-neutral-100">
+            <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#07C160" d="M8.69 4C4.97 4 2 6.5 2 9.6c0 1.74.99 3.3 2.53 4.32-.07.27-.45 1.55-.49 1.74-.06.27.1.27.21.2.09-.06 1.41-.95 1.85-1.25.84.16 1.72.25 2.59.27-.13-.45-.2-.92-.2-1.4 0-2.96 2.85-5.36 6.37-5.36.13 0 .26.01.39.02C14.62 5.5 11.92 4 8.69 4Zm-2.4 2.83a.86.86 0 1 1 0 1.72.86.86 0 0 1 0-1.72Zm5.13 0a.86.86 0 1 1 0 1.72.86.86 0 0 1 0-1.72Z"/><path fill="#07C160" d="M22 14.34c0-2.6-2.6-4.71-5.8-4.71s-5.81 2.11-5.81 4.71c0 2.61 2.6 4.72 5.81 4.72.71 0 1.39-.11 2.03-.31.18.1 1.18.71 1.27.78.13.08.28.04.24-.14-.03-.13-.34-1.18-.4-1.43 1.59-.81 2.66-2.2 2.66-3.62Zm-7.6-1.1a.71.71 0 1 1 0-1.42.71.71 0 0 1 0 1.42Zm3.6 0a.71.71 0 1 1 0-1.42.71.71 0 0 1 0 1.42Z"/></svg>
+            <span class="text-xs font-medium">微信</span>
+          </button>
+          <!-- 企业微信 -->
+          <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 bg-neutral-0 dark:bg-neutral-100">
+            <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#1A8C80" d="M5.5 2C3 2 1 4 1 6.5S3 11 5.5 11c.5 0 1-.07 1.5-.2-.4-.7-.6-1.5-.6-2.3 0-1 .3-1.9.8-2.7C6.6 4.6 5.5 4 5.5 4Zm13 0C16 2 14 4 14 6.5S16 11 18.5 11c.5 0 1-.07 1.5-.2-.4-.7-.6-1.5-.6-2.3 0-1 .3-1.9.8-2.7C19.6 4.6 18.5 4 18.5 4Z"/><path fill="#1A8C80" d="M18.5 8c-3 0-5.5 2-5.5 4.5S15.5 17 18.5 17c.4 0 .8-.04 1.2-.12l1.4.62-.4-1.32c.4-.55.8-1.18.8-1.68 0-2.5-2.5-4.5-5.5-4.5Z"/></svg>
+            <span class="text-xs font-medium">企业微信</span>
+          </button>
+          <!-- 飞书 -->
+          <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 bg-neutral-0 dark:bg-neutral-100">
+            <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#00D6B9" d="M5.5 2C3 2 1 4 1 6.5v.5l11.5 8v6c0 .5.5 1 1 1h.5c.5 0 1-.5 1-1v-6l8-5.5V6.5C23 4 21 2 18.5 2h-13Z"/></svg>
+            <span class="text-xs font-medium">飞书</span>
+          </button>
+          <!-- Apple -->
+          <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 bg-neutral-0 dark:bg-neutral-100">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z"/></svg>
+            <span class="text-xs font-medium">Apple</span>
+          </button>
+        </div>
+        <p class="mt-2 text-[10px] text-center text-neutral-400">已登录过 OpenCSG?系统会自动合并到你的账号</p>
+      </div>
+
+      <!-- 分隔线 -->
+      <div class="my-6 flex items-center gap-3 text-xs text-neutral-400">
+        <div class="flex-1 h-px bg-neutral-200 dark:bg-neutral-200"></div>
+        <span>或使用邮箱</span>
+        <div class="flex-1 h-px bg-neutral-200 dark:bg-neutral-200"></div>
+      </div>
+
+      <!-- 邮箱密码表单 -->
+      <form class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">邮箱</label>
+          <input type="email" placeholder="you@company.com" class="w-full px-3 py-2.5 rounded-md bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-sm font-medium">密码</label>
+            <a href="/auth/forgot" class="text-xs text-brand-500 hover:underline">忘记密码?</a>
+          </div>
+          <input type="password" placeholder="••••••••" class="w-full px-3 py-2.5 rounded-md bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
+        </div>
+        <label class="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600">
+          <input type="checkbox" class="rounded"> 7 天内自动登录(仅本设备)
+        </label>
+        <button type="submit" class="w-full py-2.5 rounded-md bg-brand-500 text-white font-medium hover:bg-brand-700 transition shadow-glow">登录</button>
+      </form>
+
+      <!-- 切换链接 -->
+      <p class="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-600">
+        还没有账号? <a href="/auth/register" class="text-brand-500 font-medium hover:underline">免费注册 →</a>
+      </p>
+
+      <!-- 法律 -->
+      <p class="mt-4 text-center text-[10px] text-neutral-400">
+        继续即表示你同意我们的 <a href="/terms" class="underline">服务条款</a> 和 <a href="/privacy" class="underline">隐私政策</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+<!-- =================== 分割页:账号绑定 / 解绑管理 =================== -->
+<section class="bg-neutral-0 dark:bg-neutral-100 border-t border-neutral-200 dark:border-neutral-200">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="text-center mb-10">
+      <span class="chip bg-xp-500/10 text-xp-500">已登录用户 · 账号绑定管理</span>
+      <h2 class="mt-3 text-3xl font-bold">绑定第三方账号,登录更便捷</h2>
+      <p class="mt-2 text-neutral-600 dark:text-neutral-600">设置页路径:<code class="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-100 mono text-xs">/dashboard/settings/bindings</code></p>
+    </div>
+
+    <!-- 已绑定的 provider 列表 -->
+    <div class="rounded-xl border border-neutral-200 dark:border-neutral-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-neutral-200 dark:border-neutral-200 bg-neutral-50 dark:bg-neutral-50 flex items-center justify-between">
+        <h3 class="font-semibold text-sm">已绑定的登录方式</h3>
+        <span class="text-xs text-neutral-600 dark:text-neutral-600">2 种 · 至少保留 1 种</span>
+      </div>
+      <!-- Local 已绑 -->
+      <div class="px-6 py-4 flex items-center gap-4 border-b border-neutral-200 dark:border-neutral-200">
+        <div class="w-10 h-10 rounded-lg bg-brand-500 text-white flex items-center justify-center font-bold">@</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <div class="font-medium text-sm">本地账号(邮箱 + 密码)</div>
+            <span class="chip bg-success-500/10 text-success-500">主登录</span>
+          </div>
+          <div class="text-xs text-neutral-600 dark:text-neutral-600 mt-0.5">k.chen@opencsg.ai</div>
+        </div>
+        <div class="text-xs text-neutral-400 mono">绑定于 2025.08.14</div>
+        <span class="text-xs text-neutral-400">无法解绑</span>
+      </div>
+      <!-- Google 已绑 -->
+      <div class="px-6 py-4 flex items-center gap-4 border-b border-neutral-200 dark:border-neutral-200">
+        <div class="w-10 h-10 rounded-lg border border-neutral-200 dark:border-neutral-200 flex items-center justify-center">
+          <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.1V7.07H2.18A11 11 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
+        </div>
+        <div class="flex-1">
+          <div class="font-medium text-sm">Google · k.chen@gmail.com</div>
+          <div class="text-xs text-neutral-600 dark:text-neutral-600 mt-0.5">上次使用 2 天前 · 北京 · Chrome</div>
+        </div>
+        <div class="text-xs text-neutral-400 mono">绑定于 2025.11.02</div>
+        <button class="text-xs text-danger-500 hover:underline" onclick="if(confirm('解绑 Google 后,你将无法再用此账号登录。确定?')) this.closest('div').remove()">解绑</button>
+      </div>
+      <!-- GitHub 已绑 -->
+      <div class="px-6 py-4 flex items-center gap-4">
+        <div class="w-10 h-10 rounded-lg border border-neutral-200 dark:border-neutral-200 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.8 1.18 1.82 1.18 3.08 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg>
+        </div>
+        <div class="flex-1">
+          <div class="font-medium text-sm">GitHub · kchen-dev</div>
+          <div class="text-xs text-neutral-600 dark:text-neutral-600 mt-0.5">上次使用 1 周前</div>
+        </div>
+        <div class="text-xs text-neutral-400 mono">绑定于 2026.01.10</div>
+        <button class="text-xs text-danger-500 hover:underline" onclick="if(confirm('解绑 GitHub 后,你将无法再用此账号登录。确定?')) this.closest('div').remove()">解绑</button>
+      </div>
+    </div>
+
+    <!-- 添加新 provider -->
+    <div class="mt-8">
+      <h3 class="text-sm font-semibold mb-3">添加新的登录方式</h3>
+      <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+        <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:bg-neutral-50 dark:hover:bg-neutral-50">
+          <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/></svg>
+          <span class="text-xs font-medium">Google</span>
+          <span class="text-[10px] text-success-500">已绑定</span>
+        </button>
+        <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:bg-neutral-50 dark:hover:bg-neutral-50">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.18-3.08-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.8 1.18 1.82 1.18 3.08 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg>
+          <span class="text-xs font-medium">GitHub</span>
+          <span class="text-[10px] text-success-500">已绑定</span>
+        </button>
+        <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:bg-neutral-50 dark:hover:bg-neutral-50">
+          <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#07C160" d="M8.69 4C4.97 4 2 6.5 2 9.6c0 1.74.99 3.3 2.53 4.32-.07.27-.45 1.55-.49 1.74-.06.27.1.27.21.2.09-.06 1.41-.95 1.85-1.25.84.16 1.72.25 2.59.27-.13-.45-.2-.92-.2-1.4 0-2.96 2.85-5.36 6.37-5.36.13 0 .26.01.39.02C14.62 5.5 11.92 4 8.69 4Z"/></svg>
+          <span class="text-xs font-medium">微信</span>
+          <span class="text-[10px] text-brand-500">+ 绑定</span>
+        </button>
+        <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:bg-neutral-50 dark:hover:bg-neutral-50">
+          <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#1A8C80" d="M5.5 2C3 2 1 4 1 6.5S3 11 5.5 11c.5 0 1-.07 1.5-.2-.4-.7-.6-1.5-.6-2.3 0-1 .3-1.9.8-2.7C6.6 4.6 5.5 4 5.5 4Z"/></svg>
+          <span class="text-xs font-medium">企业微信</span>
+          <span class="text-[10px] text-brand-500">+ 绑定</span>
+        </button>
+        <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:bg-neutral-50 dark:hover:bg-neutral-50">
+          <svg class="w-6 h-6" viewBox="0 0 24 24"><path fill="#00D6B9" d="M5.5 2C3 2 1 4 1 6.5v.5l11.5 8v6c0 .5.5 1 1 1h.5c.5 0 1-.5 1-1v-6l8-5.5V6.5C23 4 21 2 18.5 2h-13Z"/></svg>
+          <span class="text-xs font-medium">飞书</span>
+          <span class="text-[10px] text-brand-500">+ 绑定</span>
+        </button>
+        <button class="provider-btn flex flex-col items-center gap-1.5 p-3 rounded-lg border border-dashed border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:bg-neutral-50 dark:hover:bg-neutral-50 opacity-40">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09Z"/></svg>
+          <span class="text-xs font-medium">Apple</span>
+          <span class="text-[10px] text-neutral-400">已停用</span>
+        </button>
+      </div>
+      <p class="mt-3 text-[10px] text-neutral-400">📎 启用 / 停用某个 provider,改 <code class="px-1 mono">AUTH_PROVIDERS</code> 环境变量即可,无需改代码 · 详细架构见 redesign-spec.md §9</p>
+    </div>
+
+    <!-- 安全提示 -->
+    <div class="mt-8 p-4 rounded-lg bg-warning-500/5 border border-warning-500/20 flex gap-3">
+      <svg class="w-5 h-5 text-warning-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+      <div>
+        <p class="text-sm font-medium">安全提醒</p>
+        <p class="mt-1 text-xs text-neutral-600 dark:text-neutral-600">解绑会立即吊销对应 provider 的 refresh token。如发现异常登录,前往 <a href="/dashboard/settings/security" class="text-brand-500 underline">安全设置</a> 撤销所有设备。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+  }
+</script>
+
+</body>
+</html>

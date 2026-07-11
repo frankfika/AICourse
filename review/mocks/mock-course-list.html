@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>课程大厅 — OpenCSG Academy</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: { colors: { brand: { 50:'#E6F5F2', 100:'#BFEAE0', 300:'#66CFB7', 500:'#1D8C80', 700:'#146358', 900:'#0A3A33' }, neutral: { 0:'#FFFFFF', 50:'#FAFAF7', 100:'#F5F4F0', 200:'#E5E3DC', 400:'#A8A6A0', 600:'#6B6963', 800:'#2C2A26', 900:'#1A1916', 950:'#0D0C0A' }, xp: { 500:'#8B5CF6' }, cert: { 500:'#C9A227' }, success:{ 500:'#16A34A' }, warning:{ 500:'#D97706' }, danger:{ 500:'#DC2626' } }, boxShadow: { 'glow': '0 0 0 1px rgb(29 140 128 / 0.2), 0 8px 24px -8px rgb(29 140 128 / 0.3)' } } }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', 'PingFang SC', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .chip { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+</style>
+</head>
+<body class="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900 transition-colors">
+
+<!-- 顶部导航(简化,共组件) -->
+<header class="sticky top-0 z-50 backdrop-blur-md bg-neutral-50/80 dark:bg-neutral-950/80 border-b border-neutral-200 dark:border-neutral-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold text-sm">O</div>
+      <span class="font-semibold text-lg">OpenCSG <span class="text-brand-500">Academy</span></span>
+    </a>
+    <nav class="hidden md:flex items-center gap-6 text-sm">
+      <a href="/courses" class="text-brand-500 font-medium">课程</a>
+      <a href="/degrees" class="hover:text-brand-500">学位</a>
+      <a href="/hackathons" class="hover:text-brand-500">黑客松</a>
+      <a href="/practices" class="hover:text-brand-500">实践</a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')" class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100" aria-label="切换主题">
+        <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 20.354 15.354Z"/></svg>
+        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/></svg>
+      </button>
+      <a href="/auth/login" class="text-sm hover:text-brand-500">登录</a>
+      <a href="/auth/register" class="px-4 py-1.5 rounded-md bg-brand-500 text-white text-sm font-medium hover:bg-brand-700 transition">注册</a>
+    </div>
+  </div>
+</header>
+
+<!-- 搜索 + 热门关键词 -->
+<section class="bg-neutral-0 dark:bg-neutral-100 border-b border-neutral-200 dark:border-neutral-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <h1 class="text-3xl md:text-display-md font-bold">课程大厅</h1>
+    <p class="mt-2 text-neutral-600 dark:text-neutral-600">从 86 门系统化课程中找到你的下一步</p>
+    <div class="mt-6 flex items-center gap-2 px-4 py-3 rounded-lg bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 dark:border-neutral-200 focus-within:border-brand-500 transition max-w-2xl">
+      <svg class="w-5 h-5 text-neutral-600 dark:text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.3-4.3M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/></svg>
+      <input type="text" placeholder="搜索课程 / 讲师 / 技能,如 LangChain / RAG / Agent" class="flex-1 bg-transparent outline-none text-sm" />
+      <kbd class="text-xs px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-200 font-mono">⌘K</kbd>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-neutral-600 dark:text-neutral-600">热门:</span>
+      <a href="#" class="chip bg-neutral-100 dark:bg-neutral-100 hover:bg-brand-100">LangChain</a>
+      <a href="#" class="chip bg-neutral-100 dark:bg-neutral-100 hover:bg-brand-100">RAG</a>
+      <a href="#" class="chip bg-neutral-100 dark:bg-neutral-100 hover:bg-brand-100">Agent</a>
+      <a href="#" class="chip bg-neutral-100 dark:bg-neutral-100 hover:bg-brand-100">Prompt 工程</a>
+      <a href="#" class="chip bg-neutral-100 dark:bg-neutral-100 hover:bg-brand-100">vLLM</a>
+      <a href="#" class="chip bg-neutral-100 dark:bg-neutral-100 hover:bg-brand-100">Fine-tuning</a>
+    </div>
+  </div>
+</section>
+
+<!-- 主体: 左筛选 + 右列表 -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+  <div class="grid lg:grid-cols-[280px_1fr] gap-8">
+
+    <!-- ===== 左侧筛选 ===== -->
+    <aside class="space-y-6 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+      <!-- 分类 -->
+      <div>
+        <h3 class="text-sm font-semibold mb-3">分类</h3>
+        <div class="space-y-2">
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded" checked> LLM 应用 <span class="ml-auto text-xs text-neutral-400">28</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> RAG / 检索 <span class="ml-auto text-xs text-neutral-400">14</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> Agent <span class="ml-auto text-xs text-neutral-400">12</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> MLOps / 部署 <span class="ml-auto text-xs text-neutral-400">10</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> 基础理论 <span class="ml-auto text-xs text-neutral-400">16</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> AI 产品 <span class="ml-auto text-xs text-neutral-400">6</span></label>
+        </div>
+      </div>
+      <hr class="border-neutral-200 dark:border-neutral-200" />
+      <!-- 难度 -->
+      <div>
+        <h3 class="text-sm font-semibold mb-3">难度</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <button class="px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-xs hover:bg-brand-100">Beginner</button>
+          <button class="px-3 py-1.5 rounded-md bg-brand-500 text-white text-xs">Intermediate</button>
+          <button class="px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-xs hover:bg-brand-100">Advanced</button>
+          <button class="px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-xs hover:bg-brand-100">Expert</button>
+        </div>
+      </div>
+      <hr class="border-neutral-200 dark:border-neutral-200" />
+      <!-- 时长 -->
+      <div>
+        <h3 class="text-sm font-semibold mb-3">时长</h3>
+        <div class="space-y-2">
+          <label class="flex items-center gap-2 text-sm"><input type="radio" name="duration"> <span>4 小时以内</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="radio" name="duration" checked> <span>4-8 小时</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="radio" name="duration"> <span>8-12 小时</span></label>
+          <label class="flex items-center gap-2 text-sm"><input type="radio" name="duration"> <span>12 小时以上</span></label>
+        </div>
+      </div>
+      <hr class="border-neutral-200 dark:border-neutral-200" />
+      <!-- 收费 -->
+      <div>
+        <h3 class="text-sm font-semibold mb-3">收费</h3>
+        <div class="space-y-2">
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded" checked> 免费</label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded" checked> 付费</label>
+          <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="rounded"> 公益</label>
+        </div>
+      </div>
+      <hr class="border-neutral-200 dark:border-neutral-200" />
+      <!-- 评分 -->
+      <div>
+        <h3 class="text-sm font-semibold mb-3">评分</h3>
+        <div class="space-y-2">
+          <label class="flex items-center gap-2 text-sm"><input type="radio" name="rating"> <span class="text-warning-500">★</span><span class="text-warning-500">★</span><span class="text-warning-500">★</span><span class="text-warning-500">★</span><span class="text-warning-500">★</span> 5.0</label>
+          <label class="flex items-center gap-2 text-sm"><input type="radio" name="rating" checked> <span class="text-warning-500">★</span><span class="text-warning-500">★</span><span class="text-warning-500">★</span><span class="text-warning-500">★</span> 4.0+</label>
+          <label class="flex items-center gap-2 text-sm"><input type="radio" name="rating"> <span class="text-warning-500">★</span><span class="text-warning-500">★</span><span class="text-warning-500">★</span> 3.0+</label>
+        </div>
+      </div>
+      <hr class="border-neutral-200 dark:border-neutral-200" />
+      <button class="w-full px-3 py-2 rounded-md text-sm border border-neutral-200 dark:border-neutral-200 hover:border-brand-500">清除全部筛选</button>
+    </aside>
+
+    <!-- ===== 右侧列表 ===== -->
+    <div>
+      <!-- 顶部排序条 + 计数 -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div class="text-sm text-neutral-600 dark:text-neutral-600">共找到 <span class="font-mono font-medium text-neutral-900 dark:text-neutral-900">14</span> 门课程</div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-neutral-600 dark:text-neutral-600">排序:</span>
+          <button class="px-3 py-1.5 rounded-md bg-brand-500 text-white text-xs">最热门</button>
+          <button class="px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-xs hover:bg-brand-100">最新</button>
+          <button class="px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-xs hover:bg-brand-100">评分</button>
+          <button class="px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-xs hover:bg-brand-100">价格</button>
+        </div>
+      </div>
+
+      <!-- 课程卡网格 2 列 -->
+      <div class="grid sm:grid-cols-2 gap-5">
+        <!-- 卡片 -->
+        <a href="/courses/1" class="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden flex flex-col">
+          <div class="aspect-video bg-gradient-to-br from-brand-500 to-brand-700 relative">
+            <span class="absolute top-3 left-3 chip bg-neutral-0/90 dark:bg-neutral-0/90">LLM 应用</span>
+            <span class="absolute top-3 right-3 chip bg-cert-500 text-white">Beginner</span>
+            <span class="absolute bottom-3 right-3 chip bg-success-500 text-white">免费</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-semibold text-base group-hover:text-brand-500 transition">用 LangChain 搭建第一个 Agent</h3>
+            <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">从零开始,5 个章节学会 prompt、tool、memory、chain 的核心抽象。</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">LangChain</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">Python</span>
+            </div>
+            <div class="mt-auto pt-3 flex items-center justify-between text-xs border-t border-neutral-200 dark:border-neutral-200">
+              <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+                <div class="w-5 h-5 rounded-full bg-brand-500"></div>
+                <span>杨一帆</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-mono">6.5h</span>
+                <span class="text-warning-500">★ <span class="font-mono">4.8</span></span>
+              </div>
+            </div>
+          </div>
+        </a>
+        <a href="/courses/2" class="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden flex flex-col">
+          <div class="aspect-video bg-gradient-to-br from-xp-500 to-brand-500 relative">
+            <span class="absolute top-3 left-3 chip bg-neutral-0/90 dark:bg-neutral-0/90">RAG</span>
+            <span class="absolute top-3 right-3 chip bg-cert-500 text-white">Intermediate</span>
+            <span class="absolute bottom-3 right-3 chip bg-xp-500 text-white font-mono">¥ 299</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-semibold text-base group-hover:text-brand-500 transition">RAG 检索增强生成实战</h3>
+            <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">从 embedding、向量库到 reranking,做出企业可用的知识库问答系统。</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">Embedding</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">向量库</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">Rerank</span>
+            </div>
+            <div class="mt-auto pt-3 flex items-center justify-between text-xs border-t border-neutral-200 dark:border-neutral-200">
+              <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+                <div class="w-5 h-5 rounded-full bg-xp-500"></div>
+                <span>李珩</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-mono">8.0h</span>
+                <span class="text-warning-500">★ <span class="font-mono">4.9</span></span>
+              </div>
+            </div>
+          </div>
+        </a>
+        <a href="/courses/3" class="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden flex flex-col">
+          <div class="aspect-video bg-gradient-to-br from-info-500 to-xp-500 relative">
+            <span class="absolute top-3 left-3 chip bg-neutral-0/90 dark:bg-neutral-0/90">MLOps</span>
+            <span class="absolute top-3 right-3 chip bg-cert-500 text-white">Advanced</span>
+            <span class="absolute bottom-3 right-3 chip bg-xp-500 text-white font-mono">¥ 599</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-semibold text-base group-hover:text-brand-500 transition">模型评估与生产部署</h3>
+            <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">从离线评测、A/B 实验到 vLLM 部署,构建可监控的 LLM 服务。</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">vLLM</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">A/B Test</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">监控</span>
+            </div>
+            <div class="mt-auto pt-3 flex items-center justify-between text-xs border-t border-neutral-200 dark:border-neutral-200">
+              <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+                <div class="w-5 h-5 rounded-full bg-info-500"></div>
+                <span>周阳</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-mono">12.0h</span>
+                <span class="text-warning-500">★ <span class="font-mono">4.7</span></span>
+              </div>
+            </div>
+          </div>
+        </a>
+        <a href="/courses/4" class="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden flex flex-col">
+          <div class="aspect-video bg-gradient-to-br from-cert-500 to-danger-500 relative">
+            <span class="absolute top-3 left-3 chip bg-neutral-0/90 dark:bg-neutral-0/90">Agent</span>
+            <span class="absolute top-3 right-3 chip bg-cert-500 text-white">Expert</span>
+            <span class="absolute bottom-3 right-3 chip bg-xp-500 text-white font-mono">¥ 899</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-semibold text-base group-hover:text-brand-500 transition">多 Agent 协作系统设计</h3>
+            <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">AutoGen + CrewAI 实战,设计可扩展的多 Agent 协作架构。</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">AutoGen</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">CrewAI</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">架构</span>
+            </div>
+            <div class="mt-auto pt-3 flex items-center justify-between text-xs border-t border-neutral-200 dark:border-neutral-200">
+              <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+                <div class="w-5 h-5 rounded-full bg-cert-500"></div>
+                <span>陈昕</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-mono">15.0h</span>
+                <span class="text-warning-500">★ <span class="font-mono">4.9</span></span>
+              </div>
+            </div>
+          </div>
+        </a>
+        <a href="/courses/5" class="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden flex flex-col">
+          <div class="aspect-video bg-gradient-to-br from-brand-700 to-info-500 relative">
+            <span class="absolute top-3 left-3 chip bg-neutral-0/90 dark:bg-neutral-0/90">基础</span>
+            <span class="absolute top-3 right-3 chip bg-cert-500 text-white">Beginner</span>
+            <span class="absolute bottom-3 right-3 chip bg-success-500 text-white">免费</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-semibold text-base group-hover:text-brand-500 transition">Python 数据处理速成</h3>
+            <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">Pandas / NumPy 核心 API,2 周搞定真实数据集清洗与分析。</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">Pandas</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">NumPy</span>
+            </div>
+            <div class="mt-auto pt-3 flex items-center justify-between text-xs border-t border-neutral-200 dark:border-neutral-200">
+              <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+                <div class="w-5 h-5 rounded-full bg-brand-700"></div>
+                <span>杨一帆</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-mono">4.0h</span>
+                <span class="text-warning-500">★ <span class="font-mono">4.6</span></span>
+              </div>
+            </div>
+          </div>
+        </a>
+        <a href="/courses/6" class="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden flex flex-col">
+          <div class="aspect-video bg-gradient-to-br from-xp-500 to-cert-500 relative">
+            <span class="absolute top-3 left-3 chip bg-neutral-0/90 dark:bg-neutral-0/90">AI 产品</span>
+            <span class="absolute top-3 right-3 chip bg-cert-500 text-white">Intermediate</span>
+            <span class="absolute bottom-3 right-3 chip bg-xp-500 text-white font-mono">¥ 399</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-semibold text-base group-hover:text-brand-500 transition">AI 产品方法论:从 0 到 1</h3>
+            <p class="mt-1.5 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">需求挖掘、PRD、评测指标、增长循环 —— AI 创业者的 6 周工作坊。</p>
+            <div class="mt-3 flex flex-wrap gap-1.5">
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">PRD</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">评测</span>
+              <span class="chip bg-neutral-100 dark:bg-neutral-100">增长</span>
+            </div>
+            <div class="mt-auto pt-3 flex items-center justify-between text-xs border-t border-neutral-200 dark:border-neutral-200">
+              <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+                <div class="w-5 h-5 rounded-full bg-xp-500"></div>
+                <span>陈昕</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="font-mono">10.0h</span>
+                <span class="text-warning-500">★ <span class="font-mono">4.8</span></span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <!-- 分页 -->
+      <div class="mt-10 flex items-center justify-center gap-2">
+        <button class="px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-sm" disabled>← 上一页</button>
+        <button class="w-8 h-8 rounded-md bg-brand-500 text-white text-sm">1</button>
+        <button class="w-8 h-8 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 text-sm">2</button>
+        <button class="w-8 h-8 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 text-sm">3</button>
+        <span class="text-sm text-neutral-400">...</span>
+        <button class="w-8 h-8 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 text-sm">14</button>
+        <button class="px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-sm">下一页 →</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+  }
+</script>
+
+</body>
+</html>

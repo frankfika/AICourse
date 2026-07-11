@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OpenCSG Academy — 系统化 AI 学习平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          brand:   { 50:'#E6F5F2', 100:'#BFEAE0', 300:'#66CFB7', 500:'#1D8C80', 700:'#146358', 900:'#0A3A33' },
+          neutral: { 0:'#FFFFFF', 50:'#FAFAF7', 100:'#F5F4F0', 200:'#E5E3DC', 400:'#A8A6A0', 600:'#6B6963', 800:'#2C2A26', 900:'#1A1916', 950:'#0D0C0A' },
+          success:{ 500:'#16A34A' }, warning:{ 500:'#D97706' }, danger:{ 500:'#DC2626' }, info:{ 500:'#2563EB' },
+          xp:     { 500:'#8B5CF6' }, cert: { 500:'#C9A227' },
+        },
+        fontFamily: { sans: ['Inter', 'PingFang SC', 'Microsoft YaHei', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'ui-monospace', 'monospace'] },
+        boxShadow: { 'glow': '0 0 0 1px rgb(29 140 128 / 0.2), 0 8px 24px -8px rgb(29 140 128 / 0.3)' }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .gradient-hero { background: radial-gradient(ellipse at top, rgba(29,140,128,0.12), transparent 60%), radial-gradient(ellipse at bottom right, rgba(139,92,246,0.08), transparent 50%); }
+  .gradient-card { background: linear-gradient(135deg, rgba(29,140,128,0.04), rgba(139,92,246,0.04)); }
+  .scroll-x::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body class="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900 transition-colors">
+
+<!-- ========== 顶部导航 ========== -->
+<header class="sticky top-0 z-50 backdrop-blur-md bg-neutral-50/80 dark:bg-neutral-950/80 border-b border-neutral-200 dark:border-neutral-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <a href="/" class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold text-sm">O</div>
+        <span class="font-semibold text-lg">OpenCSG <span class="text-brand-500">Academy</span></span>
+      </a>
+      <nav class="hidden md:flex items-center gap-6 text-sm">
+        <a href="/courses" class="hover:text-brand-500 transition">课程</a>
+        <a href="/degrees" class="hover:text-brand-500 transition">学位</a>
+        <a href="/hackathons" class="hover:text-brand-500 transition">黑客松</a>
+        <a href="/practices" class="hover:text-brand-500 transition">实践</a>
+        <a href="/instructors" class="hover:text-brand-500 transition">讲师</a>
+      </nav>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 text-sm w-64">
+        <svg class="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.3-4.3M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"/></svg>
+        <span class="text-neutral-600">搜索课程 / 讲师 / 章节</span>
+        <kbd class="ml-auto text-xs px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-200 font-mono">⌘K</kbd>
+      </div>
+      <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')" class="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100" aria-label="切换主题">
+        <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 20.354 15.354Z"/></svg>
+        <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/></svg>
+      </button>
+      <a href="/auth/login" class="hidden sm:inline-block text-sm hover:text-brand-500">登录</a>
+      <a href="/auth/register" class="px-4 py-1.5 rounded-md bg-brand-500 text-white text-sm font-medium hover:bg-brand-700 transition shadow-glow">免费注册</a>
+    </div>
+  </div>
+</header>
+
+<!-- ========== Hero ========== -->
+<section class="gradient-hero">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-xs font-medium mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+          2026 春季 · 第 14 期 · 现已开放报名
+        </div>
+        <h1 class="text-4xl md:text-display-lg font-bold tracking-tight leading-[1.1]">
+          学完仍然不会做?<br/>
+          <span class="text-brand-500">让 AI 时代的能力</span><br/>
+          可被看见。
+        </h1>
+        <p class="mt-6 text-lg text-neutral-600 dark:text-neutral-600 max-w-xl">
+          课程 + 学位 + 实践项目 + 黑客松 + AI 助教 —— 一条连续的学习回路,不是又一个视频站。
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a href="/courses" class="px-6 py-3 rounded-md bg-brand-500 text-white font-medium hover:bg-brand-700 transition shadow-glow">浏览全部课程</a>
+          <a href="/degrees" class="px-6 py-3 rounded-md bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 dark:border-neutral-200 font-medium hover:border-brand-500 transition">了解学位路径</a>
+        </div>
+        <div class="mt-12 grid grid-cols-3 gap-6 max-w-md">
+          <div><div class="text-2xl md:text-3xl font-bold font-mono">12.4K</div><div class="text-xs text-neutral-600 dark:text-neutral-600 mt-1">在读学员</div></div>
+          <div><div class="text-2xl md:text-3xl font-bold font-mono">86</div><div class="text-xs text-neutral-600 dark:text-neutral-600 mt-1">系统化课程</div></div>
+          <div><div class="text-2xl md:text-3xl font-bold font-mono">2,400+</div><div class="text-xs text-neutral-600 dark:text-neutral-600 mt-1">已完成项目</div></div>
+        </div>
+      </div>
+      <!-- 右侧: 课程插画位 / 渐变卡 -->
+      <div class="relative">
+        <div class="absolute inset-0 gradient-card rounded-2xl blur-2xl"></div>
+        <div class="relative bg-neutral-0 dark:bg-neutral-100 rounded-2xl shadow-lg p-6 border border-neutral-200 dark:border-neutral-200">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-danger-500"></div>
+              <div class="w-2 h-2 rounded-full bg-warning-500"></div>
+              <div class="w-2 h-2 rounded-full bg-success-500"></div>
+              <span class="ml-2 text-xs text-neutral-600 dark:text-neutral-600 font-mono">academy.opencsg / learn</span>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div class="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-50">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-brand-500 font-medium">CHAPTER 03 · LESSONS 04 / 12</div>
+                  <div class="mt-1 font-medium">用 LangChain 搭建第一个 Agent</div>
+                </div>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-success-500/10 text-success-500">已完成</span>
+              </div>
+              <div class="mt-2 h-1 rounded-full bg-neutral-200 dark:bg-neutral-200 overflow-hidden">
+                <div class="h-full w-2/3 bg-brand-500"></div>
+              </div>
+            </div>
+            <div class="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-50 border-2 border-brand-500">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-brand-500 font-medium">CHAPTER 04 · LESSONS 01 / 08</div>
+                  <div class="mt-1 font-medium">RAG 检索增强生成实战</div>
+                </div>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-500">进行中</span>
+              </div>
+              <div class="mt-2 h-1 rounded-full bg-neutral-200 dark:bg-neutral-200 overflow-hidden">
+                <div class="h-full w-1/4 bg-brand-500 animate-pulse"></div>
+              </div>
+            </div>
+            <div class="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-50 opacity-60">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs text-neutral-600 dark:text-neutral-600 font-medium">CHAPTER 05 · LOCKED</div>
+                  <div class="mt-1 font-medium">Function Calling 与工具集成</div>
+                </div>
+                <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2Zm10-10V7a4 4 0 0 0-8 0v4h8Z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 p-3 rounded-lg bg-brand-50 dark:bg-brand-50 border border-brand-100">
+            <div class="flex items-start gap-2">
+              <div class="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">AI</div>
+              <div class="text-sm">
+                <div class="text-neutral-600 dark:text-neutral-600 text-xs mb-1">AI 助教 · 2 分钟前</div>
+                你在 Lesson 4 卡了 12 秒,要先回顾下向量数据库的余弦相似度吗?
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 课程卡片网格 ========== -->
+<section class="py-20 md:py-24 bg-neutral-0 dark:bg-neutral-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-end justify-between mb-10">
+      <div>
+        <h2 class="text-3xl md:text-display-md font-bold">热门课程</h2>
+        <p class="mt-2 text-neutral-600 dark:text-neutral-600">每门课 4-8 周,学完一个可被验证的能力</p>
+      </div>
+      <a href="/courses" class="text-sm text-brand-500 hover:text-brand-700 font-medium hidden sm:inline">浏览全部 86 门 →</a>
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- 课程卡 1 -->
+      <a href="/courses/1" class="group block rounded-xl bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden">
+        <div class="aspect-video bg-gradient-to-br from-brand-500 to-brand-700 relative flex items-end p-4">
+          <span class="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium">LLM 应用</span>
+          <span class="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full bg-cert-500 text-white">Beginner</span>
+        </div>
+        <div class="p-5">
+          <h3 class="font-semibold text-lg group-hover:text-brand-500 transition">用 LangChain 搭建第一个 Agent</h3>
+          <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">从零开始,5 个章节学会 prompt、tool、memory、chain 的核心抽象。</p>
+          <div class="mt-4 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+              <span>👤 杨一帆</span>
+              <span>·</span>
+              <span class="font-mono">6.5h</span>
+            </div>
+            <div class="flex items-center gap-1 text-warning-500">
+              <span>★</span><span class="font-mono">4.8</span><span class="text-neutral-400">(1.2k)</span>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-xs text-success-500 font-medium">免费</span>
+            <span class="text-xs text-brand-500 font-medium">→ 立即试看</span>
+          </div>
+        </div>
+      </a>
+      <!-- 课程卡 2 -->
+      <a href="/courses/2" class="group block rounded-xl bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden">
+        <div class="aspect-video bg-gradient-to-br from-xp-500 to-brand-500 relative flex items-end p-4">
+          <span class="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium">RAG</span>
+          <span class="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full bg-cert-500 text-white">Intermediate</span>
+        </div>
+        <div class="p-5">
+          <h3 class="font-semibold text-lg group-hover:text-brand-500 transition">RAG 检索增强生成实战</h3>
+          <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">从 embedding、向量库到 reranking,做出企业可用的知识库问答系统。</p>
+          <div class="mt-4 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+              <span>👤 李珩</span>
+              <span>·</span>
+              <span class="font-mono">8.0h</span>
+            </div>
+            <div class="flex items-center gap-1 text-warning-500">
+              <span>★</span><span class="font-mono">4.9</span><span class="text-neutral-400">(842)</span>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-sm font-mono font-medium">¥ 299</span>
+            <span class="text-xs text-brand-500 font-medium">→ 查看详情</span>
+          </div>
+        </div>
+      </a>
+      <!-- 课程卡 3 -->
+      <a href="/courses/3" class="group block rounded-xl bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 dark:border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden">
+        <div class="aspect-video bg-gradient-to-br from-info-500 to-xp-500 relative flex items-end p-4">
+          <span class="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium">MLOps</span>
+          <span class="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full bg-cert-500 text-white">Advanced</span>
+        </div>
+        <div class="p-5">
+          <h3 class="font-semibold text-lg group-hover:text-brand-500 transition">模型评估与生产部署</h3>
+          <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">从离线评测、A/B 实验到 vLLM 部署,构建可监控的 LLM 服务。</p>
+          <div class="mt-4 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2 text-neutral-600 dark:text-neutral-600">
+              <span>👤 周阳</span>
+              <span>·</span>
+              <span class="font-mono">12.0h</span>
+            </div>
+            <div class="flex items-center gap-1 text-warning-500">
+              <span>★</span><span class="font-mono">4.7</span><span class="text-neutral-400">(506)</span>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-sm font-mono font-medium">¥ 599</span>
+            <span class="text-xs text-brand-500 font-medium">→ 查看详情</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 学位路径 ========== -->
+<section class="py-20 md:py-24">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-10">
+      <h2 class="text-3xl md:text-display-md font-bold">学位路径</h2>
+      <p class="mt-2 text-neutral-600 dark:text-neutral-600">不是又一张证书,是可被验证的能力图谱</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-xl border border-neutral-200 dark:border-neutral-200 p-6 hover:border-brand-500 transition">
+        <div class="w-12 h-12 rounded-lg bg-brand-100 text-brand-700 flex items-center justify-center text-2xl font-bold font-mono">01</div>
+        <h3 class="mt-4 text-xl font-semibold">AI 工程师基础</h3>
+        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-600">3 门核心课 + 2 个实践项目</p>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>Python 数据处理</li>
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>机器学习基础</li>
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>深度学习入门</li>
+          <li class="flex items-center gap-2 text-neutral-400"><span class="w-1.5 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-200"></span>...</li>
+        </ul>
+        <div class="mt-6 flex items-center justify-between">
+          <span class="text-xs text-neutral-600 dark:text-neutral-600">3-4 个月 · 自学</span>
+          <a href="/degrees/1" class="text-sm text-brand-500 font-medium">了解 →</a>
+        </div>
+      </div>
+      <div class="rounded-xl border-2 border-brand-500 p-6 shadow-glow">
+        <div class="flex items-center justify-between">
+          <div class="w-12 h-12 rounded-lg bg-xp-500 text-white flex items-center justify-center text-2xl font-bold font-mono">02</div>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-brand-500 text-white font-medium">最热门</span>
+        </div>
+        <h3 class="mt-4 text-xl font-semibold">LLM 应用工程师</h3>
+        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-600">5 门核心课 + 3 个项目 + 1 个黑客松</p>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>Prompt 工程</li>
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>LangChain / LlamaIndex</li>
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>RAG / Agent 实战</li>
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>评估与生产部署</li>
+        </ul>
+        <div class="mt-6 flex items-center justify-between">
+          <span class="text-xs text-neutral-600 dark:text-neutral-600">5-6 个月 · 直播 + 录播</span>
+          <a href="/degrees/2" class="text-sm text-brand-500 font-medium">了解 →</a>
+        </div>
+      </div>
+      <div class="rounded-xl border border-neutral-200 dark:border-neutral-200 p-6 hover:border-brand-500 transition">
+        <div class="w-12 h-12 rounded-lg bg-cert-100 text-cert-500 flex items-center justify-center text-2xl font-bold font-mono">03</div>
+        <h3 class="mt-4 text-xl font-semibold">AI 创业者学位</h3>
+        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-600">技术 + 商业 + 投资人路演</p>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-cert-500"></span>AI 产品方法论</li>
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-cert-500"></span>技术选型与成本</li>
+          <li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-cert-500"></span>GTM 与增长</li>
+          <li class="flex items-center gap-2 text-neutral-400"><span class="w-1.5 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-200"></span>...</li>
+        </ul>
+        <div class="mt-6 flex items-center justify-between">
+          <span class="text-xs text-neutral-600 dark:text-neutral-600">6 个月 · 含 1v1 导师</span>
+          <a href="/degrees/3" class="text-sm text-brand-500 font-medium">了解 →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 黑客松进行中 ========== -->
+<section class="py-20 md:py-24 bg-neutral-0 dark:bg-neutral-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-end justify-between mb-10">
+      <div>
+        <h2 class="text-3xl md:text-display-md font-bold">黑客松进行中</h2>
+        <p class="mt-2 text-neutral-600 dark:text-neutral-600">社区、竞赛、激励 —— 让你的能力被看见</p>
+      </div>
+      <a href="/hackathons" class="text-sm text-brand-500 hover:text-brand-700 font-medium hidden sm:inline">全部赛事 →</a>
+    </div>
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 rounded-xl border border-neutral-200 dark:border-neutral-200 overflow-hidden">
+        <div class="aspect-[2/1] bg-gradient-to-br from-danger-500 via-xp-500 to-brand-500 p-8 flex flex-col justify-end text-white">
+          <span class="text-xs font-medium opacity-80">🔴 LIVE · 距截止 04 天 12 小时</span>
+          <h3 class="mt-2 text-2xl md:text-3xl font-bold">Spring 2026 Agent Builders Hackathon</h3>
+          <p class="mt-2 opacity-90">用 OpenCSG AgentHub 搭建一个能完成真实任务的 Agent。¥ 50,000 奖金池 + 投资人直通车。</p>
+        </div>
+        <div class="p-5 flex items-center justify-between bg-neutral-50 dark:bg-neutral-50">
+          <div class="flex -space-x-2">
+            <div class="w-8 h-8 rounded-full bg-brand-500 border-2 border-neutral-0 dark:border-neutral-0"></div>
+            <div class="w-8 h-8 rounded-full bg-xp-500 border-2 border-neutral-0 dark:border-neutral-0"></div>
+            <div class="w-8 h-8 rounded-full bg-cert-500 border-2 border-neutral-0 dark:border-neutral-0"></div>
+            <div class="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-200 border-2 border-neutral-0 dark:border-neutral-0 flex items-center justify-center text-xs text-neutral-600 dark:text-neutral-600">+312</div>
+          </div>
+          <a href="/hackathons/1" class="text-sm px-4 py-2 rounded-md bg-brand-500 text-white font-medium hover:bg-brand-700 transition">立即报名</a>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div class="rounded-xl border border-neutral-200 dark:border-neutral-200 p-5">
+          <span class="text-xs text-neutral-600 dark:text-neutral-600 font-mono">UPCOMING · 06.15</span>
+          <h3 class="mt-1 font-semibold">RAG 检索评测挑战赛</h3>
+          <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-600">¥ 20,000 · 2 周</p>
+        </div>
+        <div class="rounded-xl border border-neutral-200 dark:border-neutral-200 p-5">
+          <span class="text-xs text-neutral-600 dark:text-neutral-600 font-mono">UPCOMING · 07.01</span>
+          <h3 class="mt-1 font-semibold">开源模型微调黑客松</h3>
+          <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-600">¥ 80,000 · 1 个月</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== AI 助教 CTA ========== -->
+<section class="py-20 md:py-24">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="rounded-2xl bg-gradient-to-br from-brand-500 to-brand-900 p-8 md:p-16 text-white relative overflow-hidden">
+      <div class="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-xp-500/30 blur-3xl"></div>
+      <div class="relative grid md:grid-cols-2 gap-8 items-center">
+        <div>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-white/20 text-white font-medium">贯穿全程</span>
+          <h2 class="mt-4 text-3xl md:text-display-md font-bold">AI 助教,不在抽屉里</h2>
+          <p class="mt-4 opacity-90">每节课、每个项目、每个问题旁边都有它 —— 知道你在学什么,能引用你学过的内容,会用苏格拉底式反问而不只是给答案。</p>
+          <a href="/dashboard/learning" class="mt-6 inline-block px-6 py-3 rounded-md bg-white text-brand-700 font-medium hover:bg-neutral-100 dark:hover:bg-neutral-100 transition">体验 AI 助教</a>
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
+          <div class="text-xs opacity-70 font-mono mb-2">LESSON · 用 LangChain 搭建第一个 Agent</div>
+          <div class="space-y-3">
+            <div class="flex gap-2 items-start">
+              <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold flex-shrink-0">我</div>
+              <div class="text-sm bg-white/10 rounded-lg p-3">ReAct 和 Tool Use 到底有什么区别?</div>
+            </div>
+            <div class="flex gap-2 items-start">
+              <div class="w-7 h-7 rounded-full bg-cert-500 flex items-center justify-center text-xs font-bold flex-shrink-0">AI</div>
+              <div class="text-sm bg-white/10 rounded-lg p-3">
+                <p>ReAct 是"推理-行动"循环的模式,Tool Use 是其中"行动"环节的具体实现。类比:ReAct 像算法,Tool Use 像函数调用。</p>
+                <p class="mt-2 opacity-70 text-xs">📎 引用:Lesson 2.3 · 00:04:12</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 讲师墙 ========== -->
+<section class="py-20 md:py-24 bg-neutral-0 dark:bg-neutral-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="mb-10">
+      <h2 class="text-3xl md:text-display-md font-bold">来自一线的讲师</h2>
+      <p class="mt-2 text-neutral-600 dark:text-neutral-600">不是 PPT 复读机,是正在写代码、正在做产品的人</p>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <a href="/instructors/1" class="text-center group">
+        <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-brand-500 to-xp-500 flex items-center justify-center text-white text-2xl font-bold">杨</div>
+        <h3 class="mt-3 font-semibold group-hover:text-brand-500 transition">杨一帆</h3>
+        <p class="text-xs text-neutral-600 dark:text-neutral-600">前 Anthropic · Agent</p>
+      </a>
+      <a href="/instructors/2" class="text-center group">
+        <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-xp-500 to-cert-500 flex items-center justify-center text-white text-2xl font-bold">李</div>
+        <h3 class="mt-3 font-semibold group-hover:text-brand-500 transition">李珩</h3>
+        <p class="text-xs text-neutral-600 dark:text-neutral-600">OpenCSG CTO · RAG</p>
+      </a>
+      <a href="/instructors/3" class="text-center group">
+        <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-info-500 to-brand-500 flex items-center justify-center text-white text-2xl font-bold">周</div>
+        <h3 class="mt-3 font-semibold group-hover:text-brand-500 transition">周阳</h3>
+        <p class="text-xs text-neutral-600 dark:text-neutral-600">前 Databricks · MLOps</p>
+      </a>
+      <a href="/instructors/4" class="text-center group">
+        <div class="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-cert-500 to-danger-500 flex items-center justify-center text-white text-2xl font-bold">陈</div>
+        <h3 class="mt-3 font-semibold group-hover:text-brand-500 transition">陈昕</h3>
+        <p class="text-xs text-neutral-600 dark:text-neutral-600">连续创业者 · AI 产品</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== Footer ========== -->
+<footer class="py-12 border-t border-neutral-200 dark:border-neutral-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-8">
+      <div class="col-span-2">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold text-sm">O</div>
+          <span class="font-semibold">OpenCSG Academy</span>
+        </div>
+        <p class="text-sm text-neutral-600 dark:text-neutral-600 max-w-xs">学完仍然不会做?让 AI 时代的能力可被看见。</p>
+      </div>
+      <div>
+        <h4 class="text-sm font-semibold mb-3">学习</h4>
+        <ul class="space-y-2 text-sm text-neutral-600 dark:text-neutral-600">
+          <li><a href="/courses" class="hover:text-brand-500">课程</a></li>
+          <li><a href="/degrees" class="hover:text-brand-500">学位</a></li>
+          <li><a href="/practices" class="hover:text-brand-500">实践</a></li>
+          <li><a href="/hackathons" class="hover:text-brand-500">黑客松</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-sm font-semibold mb-3">公司</h4>
+        <ul class="space-y-2 text-sm text-neutral-600 dark:text-neutral-600">
+          <li><a href="/about" class="hover:text-brand-500">关于我们</a></li>
+          <li><a href="/enterprise" class="hover:text-brand-500">企业培训</a></li>
+          <li><a href="/pricing" class="hover:text-brand-500">价格</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-sm font-semibold mb-3">法律</h4>
+        <ul class="space-y-2 text-sm text-neutral-600 dark:text-neutral-600">
+          <li><a href="/terms" class="hover:text-brand-500">服务条款</a></li>
+          <li><a href="/privacy" class="hover:text-brand-500">隐私政策</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-8 pt-8 border-t border-neutral-200 dark:border-neutral-200 text-xs text-neutral-600 dark:text-neutral-600 flex flex-wrap items-center justify-between gap-4">
+      <span>© 2026 OpenCSG · 备案号 京 ICP 备 2026000000 号</span>
+      <span class="font-mono">v0.5.0 · built for AI era</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ========== AI 助教 FAB ========== -->
+<button class="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-brand-500 text-white shadow-glow hover:bg-brand-700 transition flex items-center justify-center z-40" aria-label="打开 AI 助教">
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>
+</button>
+
+<!-- ========== 移动 bottom tab ========== -->
+<nav class="fixed bottom-0 inset-x-0 z-50 md:hidden bg-neutral-0/95 dark:bg-neutral-100/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-200">
+  <div class="grid grid-cols-5 py-2">
+    <a href="/" class="flex flex-col items-center gap-0.5 text-brand-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg><span class="text-[10px]">首页</span></a>
+    <a href="/courses" class="flex flex-col items-center gap-0.5 text-neutral-600 dark:text-neutral-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg><span class="text-[10px]">课程</span></a>
+    <a href="/hackathons" class="flex flex-col items-center gap-0.5 text-neutral-600 dark:text-neutral-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-4.5A3.375 3.375 0 0 0 16.125 10.875H7.875A3.375 3.375 0 0 0 4.5 14.25V18.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg><span class="text-[10px]">黑客松</span></a>
+    <a href="/dashboard" class="flex flex-col items-center gap-0.5 text-neutral-600 dark:text-neutral-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg><span class="text-[10px]">学习</span></a>
+    <a href="/dashboard/settings/profile" class="flex flex-col items-center gap-0.5 text-neutral-600 dark:text-neutral-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg><span class="text-[10px]">我的</span></a>
+  </div>
+</nav>
+
+<script>
+  // 初始化主题
+  if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+  }
+</script>
+
+</body>
+</html>
