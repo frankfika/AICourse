@@ -85,7 +85,8 @@ export declare class OrdersService {
         currency: string;
         transactionId: string | null;
         paidAt: Date | null;
-    }>;
+    } | null>;
+    private randomTransactionId;
     cancel(userId: string, orderId: string): Promise<{
         id: string;
         createdAt: Date;
@@ -102,4 +103,5 @@ export declare class OrdersService {
         paidAt: Date | null;
     }>;
     private enrollAllDegreeCourses;
+    private enrollAllDegreeCoursesTx;
 }

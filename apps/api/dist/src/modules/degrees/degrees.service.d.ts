@@ -11,7 +11,7 @@ export declare class DegreesService {
         status?: CourseStatus;
         search?: string;
     }): Promise<any[]>;
-    findOne(id: string): Promise<any>;
+    findOne(id: string, includeDraft?: boolean): Promise<any>;
     private shapeDegree;
     create(dto: CreateDegreeDto): Promise<{
         courses: ({
@@ -39,6 +39,8 @@ export declare class DegreesService {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                sourceVideoUrl: string | null;
+                sourcePlatform: string | null;
             };
         } & {
             orderIndex: number;
@@ -84,6 +86,8 @@ export declare class DegreesService {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                sourceVideoUrl: string | null;
+                sourcePlatform: string | null;
             };
         } & {
             orderIndex: number;
@@ -132,6 +136,8 @@ export declare class DegreesService {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                sourceVideoUrl: string | null;
+                sourcePlatform: string | null;
             };
         } & {
             orderIndex: number;

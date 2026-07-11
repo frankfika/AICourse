@@ -14,6 +14,28 @@ const passport_1 = require("@nestjs/passport");
 const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
 const jwt_strategy_1 = require("./jwt.strategy");
+function assertStrongJwtSecret(secret) {
+    const value = secret?.trim();
+    if (!value) {
+        throw new Error('JWT_SECRET is required');
+    }
+    if (value.length < 32) {
+        throw new Error('JWT_SECRET must be at least 32 characters long');
+    }
+    const PLACEHOLDERS = [
+        'change-this',
+        'changeme',
+        'placeholder',
+        'your-secret',
+        'example',
+        'test-secret',
+    ];
+    const lower = value.toLowerCase();
+    if (PLACEHOLDERS.some((p) => lower.includes(p))) {
+        throw new Error('JWT_SECRET looks like a placeholder. Generate one with `openssl rand -hex 32`.');
+    }
+    return value;
+}
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -23,12 +45,16 @@ exports.AuthModule = AuthModule = __decorate([
             passport_1.PassportModule.register({ defaultStrategy: 'jwt' }),
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: (configService) => ({
-                    secret: configService.getOrThrow('JWT_SECRET'),
-                    signOptions: {
-                        expiresIn: (configService.get('JWT_ACCESS_EXPIRATION') ?? '15m'),
-                    },
-                }),
+                useFactory: (configService) => {
+                    const secret = assertStrongJwtSecret(configService.get('JWT_SECRET'));
+                    new common_1.Logger('AuthModule').log('JWT secret validated');
+                    return {
+                        secret,
+                        signOptions: {
+                            expiresIn: (configService.get('JWT_ACCESS_EXPIRATION') ?? '15m'),
+                        },
+                    };
+                },
                 inject: [config_1.ConfigService],
             }),
         ],

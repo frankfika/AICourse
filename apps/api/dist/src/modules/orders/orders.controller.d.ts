@@ -97,7 +97,7 @@ export declare class OrdersController {
         currency: string;
         transactionId: string | null;
         paidAt: Date | null;
-    }>;
+    } | null>;
     cancel(req: {
         user: {
             userId: string;

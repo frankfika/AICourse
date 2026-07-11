@@ -97,52 +97,63 @@ let OrdersService = class OrdersService {
         return { enrolled: false, order };
     }
     async mockPay(userId, orderId, paymentMethod) {
-        const order = await this.prisma.order.findUnique({ where: { id: orderId } });
-        if (!order)
+        const existing = await this.prisma.order.findUnique({ where: { id: orderId } });
+        if (!existing)
             throw new common_1.NotFoundException('Order not found');
-        if (order.userId !== userId)
+        if (existing.userId !== userId)
             throw new common_1.BadRequestException('Not your order');
-        if (order.status === client_1.OrderStatus.paid) {
+        if (existing.status === client_1.OrderStatus.paid) {
             throw new common_1.ConflictException('Order already paid');
         }
-        if (order.status === client_1.OrderStatus.expired || order.status === client_1.OrderStatus.refunded) {
+        if (existing.status === client_1.OrderStatus.expired || existing.status === client_1.OrderStatus.refunded) {
             throw new common_1.BadRequestException('Order is no longer payable');
         }
-        const paidOrder = await this.prisma.order.update({
-            where: { id: orderId },
-            data: {
-                status: client_1.OrderStatus.paid,
-                paidAt: new Date(),
-                paymentMethod: paymentMethod ?? order.paymentMethod ?? 'mock',
-                transactionId: `mock_${Date.now()}`,
-            },
+        const transactionId = `mock_${this.randomTransactionId()}`;
+        const paidOrder = await this.prisma.$transaction(async (tx) => {
+            const updateResult = await tx.order.updateMany({
+                where: { id: orderId, status: client_1.OrderStatus.pending },
+                data: {
+                    status: client_1.OrderStatus.paid,
+                    paidAt: new Date(),
+                    paymentMethod: paymentMethod ?? existing.paymentMethod ?? 'mock',
+                    transactionId,
+                },
+            });
+            if (updateResult.count === 0) {
+                throw new common_1.ConflictException('Order already processed');
+            }
+            if (existing.type === client_1.OrderType.course && existing.courseId) {
+                await tx.enrollment.upsert({
+                    where: {
+                        userId_courseId: {
+                            userId,
+                            courseId: existing.courseId,
+                        },
+                    },
+                    update: {},
+                    create: { userId, courseId: existing.courseId, source: 'order' },
+                });
+            }
+            else if (existing.type === client_1.OrderType.degree && existing.degreeId) {
+                await tx.enrollment.upsert({
+                    where: {
+                        userId_degreeId: {
+                            userId,
+                            degreeId: existing.degreeId,
+                        },
+                    },
+                    update: {},
+                    create: { userId, degreeId: existing.degreeId, source: 'order' },
+                });
+                await this.enrollAllDegreeCoursesTx(tx, userId, existing.degreeId);
+            }
+            return tx.order.findUnique({ where: { id: orderId } });
         });
-        if (order.type === client_1.OrderType.course && order.courseId) {
-            await this.prisma.enrollment.upsert({
-                where: {
-                    userId_courseId: {
-                        userId,
-                        courseId: order.courseId,
-                    },
-                },
-                update: {},
-                create: { userId, courseId: order.courseId, source: 'order' },
-            });
-        }
-        else if (order.type === client_1.OrderType.degree && order.degreeId) {
-            await this.prisma.enrollment.upsert({
-                where: {
-                    userId_degreeId: {
-                        userId,
-                        degreeId: order.degreeId,
-                    },
-                },
-                update: {},
-                create: { userId, degreeId: order.degreeId, source: 'order' },
-            });
-            await this.enrollAllDegreeCourses(userId, order.degreeId);
-        }
         return paidOrder;
+    }
+    randomTransactionId() {
+        const { randomBytes } = require('crypto');
+        return randomBytes(8).toString('hex');
     }
     async cancel(userId, orderId) {
         const order = await this.prisma.order.findUnique({ where: { id: orderId } });
@@ -165,6 +176,21 @@ let OrdersService = class OrdersService {
         });
         for (const link of links) {
             await this.prisma.enrollment.upsert({
+                where: {
+                    userId_courseId: { userId, courseId: link.courseId },
+                },
+                update: {},
+                create: { userId, courseId: link.courseId, source: 'order' },
+            });
+        }
+    }
+    async enrollAllDegreeCoursesTx(tx, userId, degreeId) {
+        const links = await tx.degreeCourse.findMany({
+            where: { degreeId },
+            select: { courseId: true },
+        });
+        for (const link of links) {
+            await tx.enrollment.upsert({
                 where: {
                     userId_courseId: { userId, courseId: link.courseId },
                 },

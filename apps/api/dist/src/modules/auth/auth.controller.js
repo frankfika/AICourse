@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const auth_service_1 = require("./auth.service");
 const auth_dto_1 = require("./auth.dto");
 let AuthController = class AuthController {
@@ -29,12 +30,13 @@ let AuthController = class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
+            path: '/api/v1/auth',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         return { accessToken: result.accessToken, user: result.user };
     }
-    async refresh(res, bodyToken) {
-        const token = bodyToken;
+    async refresh(req, res) {
+        const token = req.cookies?.['refresh_token'];
         if (!token) {
             throw new common_1.UnauthorizedException('No refresh token');
         }
@@ -43,17 +45,19 @@ let AuthController = class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
+            path: '/api/v1/auth',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         return { accessToken: result.accessToken, user: result.user };
     }
     async logout(res) {
-        res.clearCookie('refresh_token');
+        res.clearCookie('refresh_token', { path: '/api/v1/auth' });
         return { message: 'Logged out' };
     }
 };
 exports.AuthController = AuthController;
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60000 } }),
     (0, common_1.Post)('register'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -61,6 +65,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "register", null);
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60000 } }),
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
@@ -72,10 +77,10 @@ __decorate([
 __decorate([
     (0, common_1.Post)('refresh'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Res)({ passthrough: true })),
-    __param(1, (0, common_1.Body)('refreshToken')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refresh", null);
 __decorate([

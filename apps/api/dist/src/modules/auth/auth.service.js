@@ -46,6 +46,7 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcrypt"));
+const crypto_1 = require("crypto");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 let AuthService = class AuthService {
@@ -100,13 +101,15 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('No refresh token');
         }
         const stored = await this.prisma.refreshToken.findUnique({
-            where: { token },
+            where: { token: this.hashToken(token) },
             include: { user: true },
         });
         if (!stored || stored.expiresAt < new Date()) {
             throw new common_1.UnauthorizedException('Invalid refresh token');
         }
-        await this.prisma.refreshToken.delete({ where: { token } });
+        await this.prisma.$transaction([
+            this.prisma.refreshToken.delete({ where: { token: this.hashToken(token) } }),
+        ]);
         return this.generateTokens(stored.user);
     }
     generateTokens(user) {
@@ -117,7 +120,7 @@ let AuthService = class AuthService {
         refreshExpires.setDate(refreshExpires.getDate() + 7);
         this.prisma.refreshToken.create({
             data: {
-                token: refreshToken,
+                token: this.hashToken(refreshToken),
                 userId: user.id,
                 expiresAt: refreshExpires,
             },
@@ -134,7 +137,10 @@ let AuthService = class AuthService {
         };
     }
     randomToken() {
-        return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+        return (0, crypto_1.randomBytes)(32).toString('hex');
+    }
+    hashToken(token) {
+        return (0, crypto_1.createHash)('sha256').update(token).digest('hex');
     }
 };
 exports.AuthService = AuthService;

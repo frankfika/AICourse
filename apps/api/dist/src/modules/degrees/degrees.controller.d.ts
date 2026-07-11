@@ -1,11 +1,15 @@
 import { DegreesService } from './degrees.service';
-import { CourseStatus } from '@prisma/client';
+import { UserRole, CourseStatus } from '@prisma/client';
 import { CreateDegreeDto, UpdateDegreeDto, LinkCoursesDto } from './degrees.dto';
 export declare class DegreesController {
     private readonly degreesService;
     constructor(degreesService: DegreesService);
     findAll(status?: CourseStatus, search?: string): Promise<any[]>;
-    findOne(id: string): Promise<any>;
+    findOne(id: string, req: {
+        user?: {
+            role?: UserRole;
+        };
+    }): Promise<any>;
     create(dto: CreateDegreeDto): Promise<{
         courses: ({
             course: {
@@ -32,6 +36,8 @@ export declare class DegreesController {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                sourceVideoUrl: string | null;
+                sourcePlatform: string | null;
             };
         } & {
             orderIndex: number;
@@ -77,6 +83,8 @@ export declare class DegreesController {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                sourceVideoUrl: string | null;
+                sourcePlatform: string | null;
             };
         } & {
             orderIndex: number;
@@ -125,6 +133,8 @@ export declare class DegreesController {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                sourceVideoUrl: string | null;
+                sourcePlatform: string | null;
             };
         } & {
             orderIndex: number;

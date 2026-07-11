@@ -16,6 +16,7 @@ exports.CoursesController = void 0;
 const common_1 = require("@nestjs/common");
 const courses_service_1 = require("./courses.service");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
+const optional_jwt_auth_guard_1 = require("../../common/guards/optional-jwt-auth.guard");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const roles_guard_1 = require("../../common/guards/roles.guard");
 const client_1 = require("@prisma/client");
@@ -27,8 +28,9 @@ let CoursesController = class CoursesController {
     async findAll(status, search) {
         return this.coursesService.findAll({ status, search });
     }
-    async findOne(id) {
-        return this.coursesService.findOne(id);
+    async findOne(id, req) {
+        const includeDraft = req.user?.role === client_1.UserRole.admin;
+        return this.coursesService.findOne(id, includeDraft);
     }
     async create(dto) {
         return this.coursesService.create(dto);
@@ -51,9 +53,11 @@ __decorate([
 ], CoursesController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, common_1.UseGuards)(optional_jwt_auth_guard_1.OptionalJwtAuthGuard),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "findOne", null);
 __decorate([

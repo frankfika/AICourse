@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './auth.dto';
 export declare class AuthController {
@@ -22,7 +22,7 @@ export declare class AuthController {
             role: import("@prisma/client").$Enums.UserRole;
         };
     }>;
-    refresh(res: Response, bodyToken?: string): Promise<{
+    refresh(req: Request, res: Response): Promise<{
         accessToken: string;
         user: {
             id: string;

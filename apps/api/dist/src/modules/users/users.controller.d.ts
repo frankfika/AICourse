@@ -33,6 +33,8 @@ export declare class UsersController {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                sourceVideoUrl: string | null;
+                sourcePlatform: string | null;
             } | null;
             degree: {
                 id: string;
@@ -96,6 +98,8 @@ export declare class UsersController {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                sourceVideoUrl: string | null;
+                sourcePlatform: string | null;
             } | null;
             degree: {
                 id: string;

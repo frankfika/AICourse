@@ -34,6 +34,8 @@ export declare class CreateCourseDto {
     costType: CostType;
     price: number;
     status?: CourseStatus;
+    sourceVideoUrl?: string;
+    sourcePlatform?: string;
     chapters?: CreateChapterDto[];
 }
 export declare class UpdateCourseDto extends CreateCourseDto {

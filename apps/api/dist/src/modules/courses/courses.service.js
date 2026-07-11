@@ -47,9 +47,12 @@ let CoursesService = class CoursesService {
             orderBy: { createdAt: 'desc' },
         });
     }
-    async findOne(id) {
-        const course = await this.prisma.course.findUnique({
-            where: { id },
+    async findOne(id, includeDraft = false) {
+        const course = await this.prisma.course.findFirst({
+            where: {
+                id,
+                ...(includeDraft ? {} : { status: 'published' }),
+            },
             include: this.courseInclude,
         });
         if (!course)
@@ -57,10 +60,12 @@ let CoursesService = class CoursesService {
         return course;
     }
     async create(dto) {
-        const { chapters, ...courseData } = dto;
+        const { chapters, sourceVideoUrl, sourcePlatform, ...courseData } = dto;
         const course = await this.prisma.course.create({
             data: {
                 ...courseData,
+                ...(sourceVideoUrl ? { sourceVideoUrl } : {}),
+                ...(sourcePlatform ? { sourcePlatform } : {}),
                 status: courseData.status ?? client_1.CourseStatus.draft,
                 chapters: chapters
                     ? {

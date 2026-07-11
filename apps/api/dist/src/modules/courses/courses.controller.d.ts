@@ -1,5 +1,5 @@
 import { CoursesService } from './courses.service';
-import { CourseStatus } from '@prisma/client';
+import { UserRole, CourseStatus } from '@prisma/client';
 import { CreateCourseDto, UpdateCourseDto } from './courses.dto';
 export declare class CoursesController {
     private readonly coursesService;
@@ -51,8 +51,14 @@ export declare class CoursesController {
         costType: import("@prisma/client").$Enums.CostType;
         price: import("@prisma/client/runtime/library").Decimal;
         status: import("@prisma/client").$Enums.CourseStatus;
+        sourceVideoUrl: string | null;
+        sourcePlatform: string | null;
     })[]>;
-    findOne(id: string): Promise<{
+    findOne(id: string, req: {
+        user?: {
+            role?: UserRole;
+        };
+    }): Promise<{
         chapters: ({
             lessons: ({
                 resources: {
@@ -99,6 +105,8 @@ export declare class CoursesController {
         costType: import("@prisma/client").$Enums.CostType;
         price: import("@prisma/client/runtime/library").Decimal;
         status: import("@prisma/client").$Enums.CourseStatus;
+        sourceVideoUrl: string | null;
+        sourcePlatform: string | null;
     }>;
     create(dto: CreateCourseDto): Promise<{
         chapters: ({
@@ -147,6 +155,8 @@ export declare class CoursesController {
         costType: import("@prisma/client").$Enums.CostType;
         price: import("@prisma/client/runtime/library").Decimal;
         status: import("@prisma/client").$Enums.CourseStatus;
+        sourceVideoUrl: string | null;
+        sourcePlatform: string | null;
     }>;
     update(id: string, dto: UpdateCourseDto): Promise<{
         chapters: ({
@@ -195,6 +205,8 @@ export declare class CoursesController {
         costType: import("@prisma/client").$Enums.CostType;
         price: import("@prisma/client/runtime/library").Decimal;
         status: import("@prisma/client").$Enums.CourseStatus;
+        sourceVideoUrl: string | null;
+        sourcePlatform: string | null;
     }>;
     delete(id: string): Promise<{
         message: string;

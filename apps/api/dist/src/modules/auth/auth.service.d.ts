@@ -36,4 +36,5 @@ export declare class AuthService {
     }>;
     private generateTokens;
     private randomToken;
+    private hashToken;
 }
