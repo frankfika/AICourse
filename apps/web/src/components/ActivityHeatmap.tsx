@@ -3,6 +3,7 @@ interface ActivityHeatmapProps {
 }
 
 export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
+  const safeData = data ?? [];
   // 补齐到 52 周（364 天），从周日开始
   const today = new Date();
   const endOfWeek = new Date(today);
@@ -13,11 +14,11 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
     const d = new Date(endOfWeek);
     d.setDate(endOfWeek.getDate() - i);
     const date = d.toISOString().slice(0, 10);
-    const found = data.find((item) => item.date === date);
+    const found = safeData.find((item) => item.date === date);
     cells.push({ date, count: found?.count ?? 0 });
   }
 
-  const maxCount = Math.max(1, ...data.map((d) => d.count));
+  const maxCount = Math.max(1, ...safeData.map((d) => d.count));
 
   const getLevel = (count: number) => {
     if (count === 0) return 'bg-[#EEEDE9]';

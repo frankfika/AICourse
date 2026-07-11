@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsNumber,
   IsUUID,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -108,6 +109,16 @@ export class CreateCourseDto {
   @IsOptional()
   @IsEnum(CourseStatus)
   status?: CourseStatus;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  sourceVideoUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  sourcePlatform?: string;
 
   @IsOptional()
   @ValidateNested({ each: true })

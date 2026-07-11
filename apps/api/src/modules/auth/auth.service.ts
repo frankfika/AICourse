@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, LoginDto } from './auth.dto';
 import { User, UserRole } from '@prisma/client';
@@ -66,8 +67,10 @@ export class AuthService {
       throw new UnauthorizedException('No refresh token');
     }
 
+    // Security: only the SHA-256 hash of the refresh token is stored in DB.
+    // Compare by hashing the incoming token before lookup.
     const stored = await this.prisma.refreshToken.findUnique({
-      where: { token },
+      where: { token: this.hashToken(token) },
       include: { user: true },
     });
 
@@ -75,7 +78,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    await this.prisma.refreshToken.delete({ where: { token } });
+    // Rotate: invalidate the old token and issue a new one atomically.
+    await this.prisma.$transaction([
+      this.prisma.refreshToken.delete({ where: { token: this.hashToken(token) } }),
+    ]);
     return this.generateTokens(stored.user);
   }
 
@@ -87,9 +93,10 @@ export class AuthService {
     const refreshExpires = new Date();
     refreshExpires.setDate(refreshExpires.getDate() + 7);
 
+    // Security: store only the hash, never the raw token.
     this.prisma.refreshToken.create({
       data: {
-        token: refreshToken,
+        token: this.hashToken(refreshToken),
         userId: user.id,
         expiresAt: refreshExpires,
       },
@@ -107,7 +114,13 @@ export class AuthService {
     };
   }
 
+  // Security: refresh tokens must come from a CSPRNG, never Math.random().
   private randomToken(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+    return randomBytes(32).toString('hex');
+  }
+
+  // Security: only the SHA-256 hash of the refresh token is persisted.
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 }

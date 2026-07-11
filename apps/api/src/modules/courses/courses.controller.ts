@@ -7,10 +7,12 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole, CourseStatus } from '@prisma/client';
@@ -28,9 +30,16 @@ export class CoursesController {
     return this.coursesService.findAll({ status, search });
   }
 
+  // Security: only admins can fetch draft/archived courses by id. Public
+  // visitors always get the published version (or 404 if not published).
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.coursesService.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  async findOne(
+    @Param('id') id: string,
+    @Req() req: { user?: { role?: UserRole } },
+  ) {
+    const includeDraft = req.user?.role === UserRole.admin;
+    return this.coursesService.findOne(id, includeDraft);
   }
 
   @Post()

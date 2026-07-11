@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { setAccessToken } from '../lib/api';
 
 export interface AuthUser {
   id: string;
@@ -10,27 +11,28 @@ export interface AuthUser {
 
 interface AuthState {
   user: AuthUser | null;
-  accessToken: string | null;
-  setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
+  setAuth: (user: AuthUser, accessToken: string) => void;
   clearAuth: () => void;
 }
 
-export const useAuthStore = create(
-  persist<AuthState>(
+// Security: only persist non-secret user info. Tokens live in memory
+// (access) and httpOnly cookies (refresh), never localStorage.
+export const useAuthStore = create<AuthState>()(
+  persist(
     (set) => ({
       user: null,
-      accessToken: null,
-      setAuth: (user, accessToken, refreshToken) => {
-        localStorage.setItem('access_token', accessToken);
-        localStorage.setItem('refresh_token', refreshToken);
-        set({ user, accessToken });
+      setAuth: (user, accessToken) => {
+        setAccessToken(accessToken);
+        set({ user });
       },
       clearAuth: () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        set({ user: null, accessToken: null });
+        setAccessToken(null);
+        set({ user: null });
       },
     }),
-    { name: 'auth-storage' },
+    {
+      name: 'auth-user',
+      partialize: (state) => ({ user: state.user }),
+    },
   ),
 );

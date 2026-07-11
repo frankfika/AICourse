@@ -373,3 +373,114 @@ MIT
 **Q: 前端无法调用 API？**
 - 检查 CORS 配置：`.env` 中的 `CORS_ORIGIN`
 - 检查前端 API 地址：`.env` 中的 `VITE_API_BASE_URL`
+
+---
+
+## 🔐 生产环境安全配置（重要）
+
+**所有 secret 在每个环境必须独立生成，绝对不能复用开发环境的值。**
+
+### 生成强随机密钥
+
+```bash
+# JWT 签名密钥（≥ 32 字符，必填）
+openssl rand -hex 32
+
+# 数据库密码
+openssl rand -hex 16
+
+# MinIO / S3 access key
+openssl rand -hex 16
+
+# MinIO / S3 secret key
+openssl rand -hex 32
+```
+
+### 启动前必填的 `.env` 项
+
+| 变量 | 要求 | 失败后果 |
+|------|------|----------|
+| `JWT_SECRET` | 必填 ≥ 32 字符，不能是 placeholder | 启动直接拒绝 |
+| `DATABASE_URL` | 生产 MySQL 连接串 | 连接失败 |
+| `GEMINI_API_KEY` | 仅服务端，**绝对不能放到前端** | AI 功能失效 |
+| `STRIPE_SECRET_KEY` | Stripe 真实生产 key（可选） | 支付失效 |
+| `CORS_ORIGIN` | 显式列出所有允许的前端域名（逗号分隔） | 跨域被拒 |
+| `NODE_ENV` | 必须设为 `production` | Swagger 文档会泄露 |
+
+### 校验清单
+
+- [ ] `JWT_SECRET` 是新生成的，未与开发/测试环境共用
+- [ ] 数据库账号密码是最小权限（仅 schema 操作 + 读写业务表）
+- [ ] Redis 仅暴露在 127.0.0.1（如果同机部署）或内网
+- [ ] MinIO bucket 设置了私有 ACL + 预签名 URL（不要公开读）
+- [ ] Nginx / 反向代理已配置 TLS（`Strict-Transport-Security` 头）
+- [ ] 已配置日志聚合 + `pm2`/`systemd` 持久化（API 自带 stdout 日志）
+- [ ] `pnpm audit` 0 个高危漏洞（CI 必须跑）
+- [ ] 启用每日 MySQL 备份 + 异地存储
+
+### 安全响应头（已内置 helmet）
+
+应用启动后默认带：
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Strict-Transport-Security: max-age=15552000; includeSubDomains`
+- `Referrer-Policy: no-referrer`
+- `Content-Security-Policy: default-src 'self'; ...`
+
+### 速率限制
+
+全局：`60 req/min/IP`（[main.ts](apps/api/src/main.ts) 通过 `@nestjs/throttler`）。
+重点收紧：
+- `POST /auth/login` / `register`：5 次/分钟
+- `POST /enterprise/inquiries`：3 次/分钟
+- `POST /courses/import-from-url`：10 次/分钟
+- `POST /courses/import-batch-from-urls`：5 次/分钟
+
+详细审查报告：[security_best_practices_report.md](./security_best_practices_report.md)
+
+---
+
+## 🌐 从 URL 导入课程（管理员）
+
+管理员可在 `Admin → Courses → 从 URL 导入` 中粘贴 YouTube / Bilibili 公开视频链接，
+系统自动抓取元数据并通过 Gemini AI 生成完整课程元数据，作为草稿保存，需审核后手动发布。
+
+### 支持的 URL 形式
+
+| 平台 | 示例 |
+|------|------|
+| YouTube | `https://www.youtube.com/watch?v=xxx` / `https://youtu.be/xxx` / `https://www.youtube.com/shorts/xxx` |
+| Bilibili | `https://www.bilibili.com/video/BVxxxxxxxxxx` / `https://www.bilibili.com/video/avxxxxxx` |
+
+### 行为
+
+- ✅ 自动抓取：标题、作者、封面（YouTube/Bilibili 官方资源）
+- ✅ AI 补齐：描述、学习要点、难度、时长、标签、价格
+- ✅ 自动去重：同一视频二次导入会提示「该视频已导入过」
+- ✅ Bilibili 封面自动去除 B 站水印（去掉 `x-oss-process` 参数）
+- ✅ 抓取失败自动重试 1 次
+- ✅ 草稿状态：`status=draft`，不会出现在前台
+
+### 批量导入
+
+「批量抓取」面板一次最多 20 条 URL（每行一条）。返回结果分类：
+- `created`：新草稿已创建
+- `duplicate`：已导入过
+- `failed`：抓取失败（含原因）
+
+### SSRF 防护
+
+后端不会直接转发用户提交的 URL，而是：
+1. 只解析已知平台的 host（`youtube.com` / `youtu.be` / `bilibili.com` / `b23.tv`）
+2. 只调用硬编码的上游 API（`www.youtube.com/oembed`、`api.bilibili.com`）
+3. 每次请求 8 秒超时
+
+### 数据库迁移
+
+新增字段 `Course.sourceVideoUrl`（unique）+ `Course.sourcePlatform`，通过 Prisma migration：
+
+```bash
+pnpm --filter @opencsg/academy-api db:migrate
+```
+
+迁移文件：`prisma/migrations/20260629010000_add_course_source_video/migration.sql`

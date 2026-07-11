@@ -102,52 +102,73 @@ export class OrdersService {
    * 真实接入时改为异步回调。
    */
   async mockPay(userId: string, orderId: string, paymentMethod?: string) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) throw new NotFoundException('Order not found');
-    if (order.userId !== userId) throw new BadRequestException('Not your order');
-    if (order.status === OrderStatus.paid) {
+    // Security: lock the order row first to fail fast on auth/status checks
+    // without entering a transaction. The real write below is conditional
+    // and atomic (updateMany with status guard + transaction).
+    const existing = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!existing) throw new NotFoundException('Order not found');
+    if (existing.userId !== userId) throw new BadRequestException('Not your order');
+    if (existing.status === OrderStatus.paid) {
       throw new ConflictException('Order already paid');
     }
-    if (order.status === OrderStatus.expired || order.status === OrderStatus.refunded) {
+    if (existing.status === OrderStatus.expired || existing.status === OrderStatus.refunded) {
       throw new BadRequestException('Order is no longer payable');
     }
 
-    const paidOrder = await this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: OrderStatus.paid,
-        paidAt: new Date(),
-        paymentMethod: paymentMethod ?? order.paymentMethod ?? 'mock',
-        transactionId: `mock_${Date.now()}`,
-      },
+    const transactionId = `mock_${this.randomTransactionId()}`;
+
+    const paidOrder = await this.prisma.$transaction(async (tx) => {
+      // Atomic conditional update: only flip from pending → paid. Two
+      // concurrent pay requests cannot both succeed.
+      const updateResult = await tx.order.updateMany({
+        where: { id: orderId, status: OrderStatus.pending },
+        data: {
+          status: OrderStatus.paid,
+          paidAt: new Date(),
+          paymentMethod: paymentMethod ?? existing.paymentMethod ?? 'mock',
+          transactionId,
+        },
+      });
+      if (updateResult.count === 0) {
+        throw new ConflictException('Order already processed');
+      }
+
+      if (existing.type === OrderType.course && existing.courseId) {
+        await tx.enrollment.upsert({
+          where: {
+            userId_courseId: {
+              userId,
+              courseId: existing.courseId,
+            },
+          },
+          update: {},
+          create: { userId, courseId: existing.courseId, source: 'order' },
+        });
+      } else if (existing.type === OrderType.degree && existing.degreeId) {
+        await tx.enrollment.upsert({
+          where: {
+            userId_degreeId: {
+              userId,
+              degreeId: existing.degreeId,
+            },
+          },
+          update: {},
+          create: { userId, degreeId: existing.degreeId, source: 'order' },
+        });
+        await this.enrollAllDegreeCoursesTx(tx, userId, existing.degreeId);
+      }
+
+      return tx.order.findUnique({ where: { id: orderId } });
     });
 
-    if (order.type === OrderType.course && order.courseId) {
-      await this.prisma.enrollment.upsert({
-        where: {
-          userId_courseId: {
-            userId,
-            courseId: order.courseId,
-          },
-        },
-        update: {},
-        create: { userId, courseId: order.courseId, source: 'order' },
-      });
-    } else if (order.type === OrderType.degree && order.degreeId) {
-      await this.prisma.enrollment.upsert({
-        where: {
-          userId_degreeId: {
-            userId,
-            degreeId: order.degreeId,
-          },
-        },
-        update: {},
-        create: { userId, degreeId: order.degreeId, source: 'order' },
-      });
-      await this.enrollAllDegreeCourses(userId, order.degreeId);
-    }
-
     return paidOrder;
+  }
+
+  private randomTransactionId(): string {
+    // Security: replace Date.now() in transaction IDs with a random component
+    // so they cannot be guessed / replayed.
+    const { randomBytes } = require('crypto') as typeof import('crypto');
+    return randomBytes(8).toString('hex');
   }
 
   async cancel(userId: string, orderId: string) {
@@ -170,6 +191,27 @@ export class OrdersService {
     });
     for (const link of links) {
       await this.prisma.enrollment.upsert({
+        where: {
+          userId_courseId: { userId, courseId: link.courseId },
+        },
+        update: {},
+        create: { userId, courseId: link.courseId, source: 'order' },
+      });
+    }
+  }
+
+  // Transaction-bound variant of enrollAllDegreeCourses for atomic pay flow.
+  private async enrollAllDegreeCoursesTx(
+    tx: Parameters<Parameters<PrismaService['$transaction']>[0]>[0],
+    userId: string,
+    degreeId: string,
+  ) {
+    const links = await tx.degreeCourse.findMany({
+      where: { degreeId },
+      select: { courseId: true },
+    });
+    for (const link of links) {
+      await tx.enrollment.upsert({
         where: {
           userId_courseId: { userId, courseId: link.courseId },
         },

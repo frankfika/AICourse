@@ -48,9 +48,12 @@ export class DegreesService {
     return degrees.map((d) => this.shapeDegree(d));
   }
 
-  async findOne(id: string) {
-    const degree = await this.prisma.nanoDegree.findUnique({
-      where: { id },
+  async findOne(id: string, includeDraft = false) {
+    const degree = await this.prisma.nanoDegree.findFirst({
+      where: {
+        id,
+        ...(includeDraft ? {} : { status: 'published' }),
+      },
       include: this.degreeInclude,
     });
     if (!degree) throw new NotFoundException('Degree not found');

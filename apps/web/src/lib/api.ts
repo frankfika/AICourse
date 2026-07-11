@@ -6,10 +6,22 @@ export const api = axios.create({
   withCredentials: true,
 });
 
+// Security: keep access_token in memory (module-level variable) instead of
+// localStorage so it cannot be exfiltrated via XSS. The refresh token lives
+// in an httpOnly cookie managed by the backend.
+let accessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
   }
   return config;
 });
@@ -21,21 +33,18 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true;
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
+        // Security: refresh token is in httpOnly cookie. Just hit the endpoint
+        // with credentials so the browser sends the cookie automatically.
         const { data } = await axios.post(
           `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'}/api/v1/auth/refresh`,
-          { refreshToken },
+          {},
           { withCredentials: true },
         );
-        localStorage.setItem('access_token', data.accessToken);
-        if (data.refreshToken) {
-          localStorage.setItem('refresh_token', data.refreshToken);
-        }
+        accessToken = data.accessToken;
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(original);
       } catch {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        accessToken = null;
         window.location.href = '/login';
       }
     }

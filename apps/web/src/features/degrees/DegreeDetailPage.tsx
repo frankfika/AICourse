@@ -10,6 +10,7 @@ import {
   Sparkles,
   Play,
   Trophy,
+  ArrowUpRight,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useAuthStore } from '../../stores/authStore';
@@ -31,7 +32,6 @@ export function DegreeDetailPage() {
     enabled: !!id,
   });
 
-  // 是否已报名
   const { data: myEnrollments } = useQuery({
     queryKey: ['enrollments', 'me'],
     queryFn: async () => {
@@ -41,8 +41,8 @@ export function DegreeDetailPage() {
     enabled: !!user,
   });
 
-  if (isLoading) return <div className="text-center py-20">加载中...</div>;
-  if (!degree) return <div className="text-center py-20">学位不存在</div>;
+  if (isLoading) return <div className="text-center py-32 text-[#666666]">加载中...</div>;
+  if (!degree) return <div className="text-center py-32">学位不存在</div>;
 
   const enrolled = !!myEnrollments?.some((e) => e.degreeId === id);
   const isFree = degree.costType === 'free' || degree.costType === 'charity';
@@ -56,174 +56,210 @@ export function DegreeDetailPage() {
   })();
 
   return (
-    <div className="bg-[#FAFAF8] min-h-screen animate-in fade-in duration-500">
-      {/* Hero */}
-      <section className="bg-white border-b border-[#EEEDE9]">
-        <div className="max-w-5xl mx-auto px-6 py-10">
+    <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
+      {/* Top action bar */}
+      <section className="border-b border-[#171717] bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <Link
             to="/degrees"
-            className="inline-flex items-center gap-1 text-sm text-[#666666] hover:text-[#171717] mb-6"
+            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#666666] hover:text-[#171717]"
           >
-            <ArrowLeft className="w-4 h-4" /> 返回学位列表
+            <ArrowLeft className="w-3.5 h-3.5" /> Back To Degrees
           </Link>
+        </div>
+      </section>
 
-          <div className="flex items-start gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-purple-600 mt-1" />
-            <span className="text-sm font-bold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-3 py-1">
-              OpenCSG Nano Degree
+      {/* Hero */}
+      <section className="border-b border-[#171717] bg-[#171717] text-white">
+        <div className="max-w-7xl mx-auto px-6 py-16 md:py-24">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-white/30 text-white text-[10px] font-black uppercase tracking-widest">
+              <Sparkles className="w-3 h-3" /> Nano Degree
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
+              / Path
             </span>
           </div>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tighter uppercase leading-[0.95] mb-6 max-w-5xl">
+            {degree.title}
+          </h1>
+          <p className="text-white/60 text-lg leading-relaxed mb-12 max-w-3xl">
+            {degree.description}
+          </p>
 
-          <h1 className="text-3xl md:text-5xl font-bold mb-4">{degree.title}</h1>
-          <p className="text-lg text-[#666666] mb-8 max-w-3xl">{degree.description}</p>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={<BookOpen className="w-5 h-5" />} label="课程" value={`${degree.stats.courseCount} 门`} />
-            <StatCard icon={<GraduationCap className="w-5 h-5" />} label="章节" value={`${degree.stats.totalChapters} 章`} />
-            <StatCard icon={<Clock className="w-5 h-5" />} label="预计学习" value={`${degree.stats.estimatedHours} 小时`} />
-            <StatCard icon={<Users className="w-5 h-5" />} label="累计学员" value={`${degree.stats.totalLearners}`} />
-          </div>
-
-          {/* CTA */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-[#171717] text-white rounded-2xl p-6">
-            <div>
-              <div className="text-sm text-white/60 mb-1">
-                {isFree ? '免费学位' : '体系化学习路径'}
-              </div>
-              <div className="text-3xl font-bold">
-                {isFree ? '免费' : `¥${Number(degree.price).toFixed(2)}`}
-              </div>
-            </div>
-            {enrolled ? (
-              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white font-bold">
-                <CheckCircle2 className="w-5 h-5" /> 已报名，去学习
-              </div>
-            ) : user ? (
-              <button
-                onClick={() => setPurchaseOpen(true)}
-                className="px-8 py-3 rounded-xl bg-white text-[#171717] font-bold hover:bg-[#F5F4F0]"
+          {/* Stats row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 border border-white/20">
+            {[
+              { icon: BookOpen, label: 'Courses', value: `${degree.stats.courseCount}` },
+              { icon: GraduationCap, label: 'Chapters', value: `${degree.stats.totalChapters}` },
+              { icon: Clock, label: 'Hours', value: `${degree.stats.estimatedHours}` },
+              { icon: Users, label: 'Learners', value: `${degree.stats.totalLearners}` },
+            ].map(({ icon: Icon, label, value }, i) => (
+              <div
+                key={label}
+                className={`p-6 ${i < 3 ? 'border-r border-white/20' : ''} ${i < 2 ? 'border-b md:border-b-0 border-white/20' : ''}`}
               >
-                {isFree ? '免费报名' : '立即购买'}
-              </button>
-            ) : (
-              <Link
-                to="/login"
-                className="px-8 py-3 rounded-xl bg-white text-[#171717] font-bold hover:bg-[#F5F4F0] text-center"
-              >
-                登录后报名
-              </Link>
-            )}
+                <Icon className="w-5 h-5 mb-3 text-white/60" />
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">
+                  {label}
+                </div>
+                <div className="text-3xl font-black tracking-tighter">{value}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 学习成果 */}
+      {/* CTA bar */}
+      <section className="border-b border-[#171717] bg-white">
+        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#666666] mb-1">
+              {isFree ? 'Free Program' : 'Tuition'}
+            </div>
+            <div className="text-4xl md:text-5xl font-black tracking-tighter">
+              {isFree ? '免费' : `¥${Number(degree.price).toFixed(2)}`}
+            </div>
+          </div>
+          {enrolled ? (
+            <div className="inline-flex items-center gap-2 bg-[#171717] text-white px-8 py-4 font-black uppercase tracking-wider text-sm">
+              <CheckCircle2 className="w-5 h-5" /> 已报名，去学习
+            </div>
+          ) : user ? (
+            <button
+              onClick={() => setPurchaseOpen(true)}
+              className="inline-flex items-center justify-center gap-3 bg-[#171717] text-white px-8 py-4 font-black uppercase tracking-wider text-sm hover:bg-[#262626] transition-colors"
+            >
+              {isFree ? '免费报名' : '立即购买'} <ArrowUpRight className="w-5 h-5" />
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center gap-3 bg-[#171717] text-white px-8 py-4 font-black uppercase tracking-wider text-sm hover:bg-[#262626] transition-colors"
+            >
+              登录后报名 <ArrowUpRight className="w-5 h-5" />
+            </Link>
+          )}
+        </div>
+      </section>
+
+      {/* Learning outcomes */}
       {learningPoints.length > 0 && (
-        <section className="max-w-5xl mx-auto px-6 py-12">
-          <h2 className="text-2xl font-bold mb-6">学完你能</h2>
-          <div className="grid md:grid-cols-2 gap-3">
-            {learningPoints.map((p, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 bg-white rounded-xl border border-[#EEEDE9] p-4"
-              >
-                <div className="shrink-0 w-7 h-7 rounded-full bg-[#171717] text-white text-sm font-bold flex items-center justify-center mt-0.5">
-                  {i + 1}
+        <section className="border-b border-[#171717]">
+          <div className="max-w-7xl mx-auto px-6 py-16">
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
+              / 01 Outcomes
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none mb-10">
+              学完<br />你能
+            </h2>
+            <div className="grid md:grid-cols-2 gap-0 border-t border-l border-[#171717]">
+              {learningPoints.map((p, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-4 p-6 border-b border-r border-[#171717] hover:bg-[#EEEDE9] transition-colors"
+                >
+                  <div className="shrink-0 w-10 h-10 bg-[#171717] text-white text-sm font-black flex items-center justify-center">
+                    {String(i + 1).padStart(2, '0')}
+                  </div>
+                  <span className="text-base font-medium leading-relaxed pt-1.5">{p}</span>
                 </div>
-                <span className="text-sm md:text-base">{p}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
       )}
 
-      {/* 学习路径 */}
-      <section className="max-w-5xl mx-auto px-6 pb-16">
-        <div className="flex items-end justify-between mb-6">
-          <h2 className="text-2xl font-bold">学习路径</h2>
-          <span className="text-sm text-[#666666]">
-            共 {degree.stats.courseCount} 门课程
-          </span>
-        </div>
+      {/* Learning path */}
+      <section className="border-b border-[#171717]">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
+                / 02 Curriculum
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase leading-none">
+                学习路径
+              </h2>
+            </div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+              {degree.courses.length} Courses
+            </div>
+          </div>
 
-        <div className="relative">
-          {/* 时间轴 */}
-          <div className="absolute left-[26px] top-4 bottom-4 w-px bg-[#EEEDE9]" />
-
-          <div className="space-y-4">
-            {degree.courses.map((course) => (
+          <div className="border-t border-[#171717]">
+            {degree.courses.map((course, i) => (
               <div
                 key={course.id}
-                className="relative flex items-stretch gap-4 bg-white rounded-2xl border border-[#EEEDE9] p-5 hover:shadow-md transition-shadow"
+                className="grid grid-cols-12 border-b border-[#171717] hover:bg-[#EEEDE9] transition-colors"
               >
-                {/* 步骤序号 */}
-                <div className="relative shrink-0">
-                  <div className="w-14 h-14 rounded-2xl bg-[#171717] text-white flex flex-col items-center justify-center">
-                    <span className="text-[10px] text-white/60 uppercase">step</span>
-                    <span className="text-xl font-bold leading-none">
+                {/* Step number */}
+                <div className="col-span-2 md:col-span-1 p-6 border-r border-[#171717] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-[#666666]">
+                      Step
+                    </div>
+                    <div className="text-2xl font-black tracking-tighter">
                       {String(course.stepNumber).padStart(2, '0')}
-                    </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* 内容 */}
-                <div className="flex-1 min-w-0">
+                {/* Content */}
+                <div className="col-span-10 md:col-span-8 p-6 border-r border-[#171717]">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#F5F4F0] text-[#171717]">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-[#171717] text-white">
                       {course.level}
                     </span>
-                    <span className="text-xs text-[#666666] flex items-center gap-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] flex items-center gap-1">
                       <Clock className="w-3 h-3" /> {course.duration}
                     </span>
-                    <span className="text-xs text-[#666666] flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" /> {course.chapterCount} 章
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] flex items-center gap-1">
+                      <BookOpen className="w-3 h-3" /> {course.chapterCount} Ch
                     </span>
-                    <span className="text-xs text-[#666666] flex items-center gap-1">
-                      <Users className="w-3 h-3" /> {course.learnerCount} 人在学
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] flex items-center gap-1">
+                      <Users className="w-3 h-3" /> {course.learnerCount}
                     </span>
                   </div>
-
-                  <h3 className="text-lg md:text-xl font-bold mb-1">{course.title}</h3>
-                  <p className="text-sm text-[#666666] line-clamp-2 mb-3">
+                  <h3 className="text-lg md:text-xl font-black tracking-tight leading-tight mb-1">
+                    {course.title}
+                  </h3>
+                  <p className="text-sm text-[#666666] line-clamp-2 leading-relaxed">
                     {course.description}
                   </p>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#666666]">
-                      讲师：{course.instructor}
-                    </span>
-                    {enrolled ? (
-                      <Link
-                        to={`/courses/${course.id}`}
-                        className="inline-flex items-center gap-1 text-sm font-bold text-[#171717] hover:underline"
-                      >
-                        开始学习 <Play className="w-3.5 h-3.5" />
-                      </Link>
-                    ) : (
-                      <Link
-                        to={`/courses/${course.id}`}
-                        className="text-sm text-[#666666] hover:text-[#171717]"
-                      >
-                        查看课程详情 →
-                      </Link>
-                    )}
+                  <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-2">
+                    讲师 / {course.instructor}
                   </div>
+                </div>
+
+                {/* Action */}
+                <div className="col-span-12 md:col-span-3 p-6 flex md:items-center md:justify-end">
+                  <Link
+                    to={`/courses/${course.id}`}
+                    className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[#171717] hover:underline"
+                  >
+                    {enrolled ? '开始学习' : '查看详情'} <Play className="w-4 h-4" />
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* 学完获得 */}
-        <div className="mt-10 bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 rounded-2xl p-6 md:p-8">
-          <div className="flex items-center gap-3 mb-3">
-            <Trophy className="w-6 h-6 text-purple-700" />
-            <h3 className="text-xl font-bold">学完获得</h3>
+          {/* Certificate footer */}
+          <div className="mt-10 border border-[#171717] bg-white p-8 flex flex-col md:flex-row items-start md:items-center gap-6 justify-between">
+            <div className="flex items-center gap-4">
+              <Trophy className="w-8 h-8 shrink-0" />
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#666666] mb-1">
+                  Completion Reward
+                </div>
+                <div className="text-xl font-black tracking-tight">
+                  完成所有课程后将获得 OpenCSG Nano Degree 认证证书
+                </div>
+              </div>
+            </div>
+            <ArrowUpRight className="w-6 h-6 shrink-0" />
           </div>
-          <p className="text-sm text-[#666666]">
-            完成所有课程后将获得 OpenCSG Nano Degree 认证证书，可解锁相应徽章与积分。
-          </p>
         </div>
       </section>
 
@@ -236,26 +272,6 @@ export function DegreeDetailPage() {
         price={Number(degree.price)}
         costType={degree.costType}
       />
-    </div>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="bg-[#F5F4F0] rounded-xl p-4">
-      <div className="flex items-center gap-2 text-[#666666] mb-2">
-        {icon}
-        <span className="text-xs font-medium">{label}</span>
-      </div>
-      <div className="text-xl font-bold">{value}</div>
     </div>
   );
 }

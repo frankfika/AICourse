@@ -1,19 +1,16 @@
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
+// Security: GEMINI_API_KEY must NEVER be injected into the client bundle.
+// Any Gemini call goes through the backend (apps/api) — see ai.service.ts.
+export default defineConfig(() => {
     return {
       server: {
-        port: 3000,
+        port: 5500,
         host: '0.0.0.0',
       },
       plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
-      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

@@ -51,7 +51,6 @@ export function PurchaseModal({
   const handleConfirm = async () => {
     const res = await createMutation.mutateAsync();
     if (res.enrolled) {
-      // 免费直接注册成功
       setStep('success');
       qc.invalidateQueries({ queryKey: ['enrollments', 'me'] });
       return;
@@ -80,38 +79,43 @@ export function PurchaseModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
-      <div className="bg-white rounded-2xl max-w-md w-full p-6 md:p-8 relative animate-in zoom-in-95">
+      <div className="bg-white border-2 border-[#171717] max-w-md w-full p-6 md:p-8 relative animate-in zoom-in-95">
         <button
           onClick={close}
-          className="absolute top-4 right-4 p-2 hover:bg-[#F5F4F0] rounded-lg"
+          className="absolute top-3 right-3 p-2 hover:bg-[#EEEDE9]"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         {step === 'confirm' && (
           <>
-            <h2 className="text-2xl font-bold mb-2">
+            <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+              / {isFree ? 'Enroll' : 'Checkout'}
+            </div>
+            <h2 className="text-2xl font-black tracking-tight mb-2">
               {isFree ? '确认报名' : '确认下单'}
             </h2>
             <p className="text-sm text-[#666666] mb-6">
               {isFree ? '该内容免费，注册后即可开始学习' : '请确认订单信息，支付后立即开通学习权限'}
             </p>
 
-            <div className="bg-[#F5F4F0] rounded-xl p-5 mb-6">
-              <div className="text-xs text-[#666666] mb-1">
-                {type === 'course' ? '课程' : '学位'}
+            <div className="border-2 border-[#171717] p-5 mb-6">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">
+                / {type === 'course' ? 'Course' : 'Degree'}
               </div>
-              <div className="font-bold text-lg mb-4">{title}</div>
-              <div className="flex items-center justify-between pt-4 border-t border-[#EEEDE9]">
-                <span className="text-sm text-[#666666]">应付金额</span>
-                <span className="text-2xl font-bold">
+              <div className="font-black text-lg mb-4 tracking-tight">{title}</div>
+              <div className="flex items-center justify-between pt-4 border-t border-[#171717]">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+                  {isFree ? 'Free' : 'Total'}
+                </span>
+                <span className="text-2xl font-black tracking-tighter">
                   {isFree ? '免费' : `¥${Number(price).toFixed(2)}`}
                 </span>
               </div>
             </div>
 
             {!user && (
-              <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+              <div className="text-sm font-medium border-2 border-[#171717] px-3 py-2 mb-4 bg-[#F5F4F0]">
                 请先登录后再购买
               </div>
             )}
@@ -119,17 +123,17 @@ export function PurchaseModal({
             <div className="flex gap-3">
               <button
                 onClick={close}
-                className="flex-1 py-3 rounded-xl border border-[#EEEDE9] font-bold text-[#666666] hover:bg-[#F5F4F0]"
+                className="flex-1 py-3 border-2 border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={!user || createMutation.isPending}
-                className="flex-1 py-3 rounded-xl bg-[#171717] text-white font-bold hover:bg-[#333] disabled:opacity-50"
+                className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
               >
                 {createMutation.isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
                 ) : isFree ? (
                   '立即报名'
                 ) : (
@@ -148,16 +152,20 @@ export function PurchaseModal({
 
         {step === 'paying' && (
           <div className="text-center py-8">
-            <Loader2 className="w-12 h-12 animate-spin mx-auto text-[#171717] mb-4" />
-            <div className="font-bold text-lg">支付中…</div>
-            <div className="text-sm text-[#666666] mt-2">Mock 支付，实际未发生扣款</div>
+            <Loader2 className="w-10 h-10 animate-spin mx-auto text-[#171717] mb-4" />
+            <div className="font-black text-lg tracking-tight">支付中…</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-2">
+              Mock Pay · 实际未发生扣款
+            </div>
           </div>
         )}
 
         {step === 'success' && (
           <div className="text-center py-6">
-            <CheckCircle2 className="w-16 h-16 mx-auto text-green-600 mb-4" />
-            <h2 className="text-2xl font-bold mb-2">
+            <div className="w-16 h-16 mx-auto bg-[#171717] text-white flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-8 h-8" strokeWidth={3} />
+            </div>
+            <h2 className="text-2xl font-black tracking-tighter mb-2">
               {isFree ? '报名成功' : '支付成功'}
             </h2>
             <p className="text-sm text-[#666666] mb-6">
@@ -168,13 +176,13 @@ export function PurchaseModal({
             <div className="flex gap-3">
               <button
                 onClick={close}
-                className="flex-1 py-3 rounded-xl border border-[#EEEDE9] font-bold text-[#666666] hover:bg-[#F5F4F0]"
+                className="flex-1 py-3 border-2 border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
               >
                 稍后
               </button>
               <button
                 onClick={goLearn}
-                className="flex-1 py-3 rounded-xl bg-[#171717] text-white font-bold hover:bg-[#333]"
+                className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
               >
                 开始学习
               </button>

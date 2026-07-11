@@ -61,12 +61,15 @@ export function TeamPanel({ hackathonId, maxTeamSize, isRegistered }: TeamPanelP
     createMutation.mutate();
   };
 
-  if (isLoading) return <div className="text-center py-8 text-[#666666]">加载中...</div>;
+  if (isLoading) return <div className="text-center py-12 text-[#666666]">加载中...</div>;
 
   return (
     <div className="space-y-6">
       {!isRegistered && (
-        <div className="text-sm text-[#666666] bg-[#F5F4F0] rounded-xl p-4">
+        <div className="border-2 border-[#171717] bg-[#F5F4F0] p-5 text-sm font-medium text-[#171717]">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] mr-2">
+            / Notice
+          </span>
           报名后即可创建或加入队伍。
         </div>
       )}
@@ -74,39 +77,42 @@ export function TeamPanel({ hackathonId, maxTeamSize, isRegistered }: TeamPanelP
       {isRegistered && !myTeamId && !showCreate && (
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#171717] text-white rounded-full text-sm font-bold hover:bg-[#333333]"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
         >
           <Plus className="w-4 h-4" /> 创建队伍
         </button>
       )}
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="bg-white border border-[#EEEDE9] rounded-2xl p-5 space-y-4">
+        <form onSubmit={handleCreate} className="border-2 border-[#171717] bg-white p-6 space-y-4">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+            / New Team
+          </div>
           <input
             placeholder="队伍名称"
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
-            className="w-full px-4 py-2 border border-[#EEEDE9] rounded-lg focus:outline-none focus:border-[#171717]"
+            className="w-full px-4 py-3 border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
             required
           />
           <input
             placeholder="队伍口号（可选）"
             value={teamSlogan}
             onChange={(e) => setTeamSlogan(e.target.value)}
-            className="w-full px-4 py-2 border border-[#EEEDE9] rounded-lg focus:outline-none focus:border-[#171717]"
+            className="w-full px-4 py-3 border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
           />
           <div className="flex gap-2">
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="px-5 py-2 bg-[#171717] text-white rounded-full text-sm font-bold disabled:opacity-50"
+              className="px-6 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
             >
               创建
             </button>
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-5 py-2 border border-[#EEEDE9] rounded-full text-sm font-bold"
+              className="px-6 py-3 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
             >
               取消
             </button>
@@ -114,51 +120,60 @@ export function TeamPanel({ hackathonId, maxTeamSize, isRegistered }: TeamPanelP
         </form>
       )}
 
-      <div className="grid md:grid-cols-2 gap-4">
-        {teams?.map((team) => {
+      <div className="grid md:grid-cols-2 gap-0 border-t border-l border-[#171717]">
+        {teams?.map((team, i) => {
           const isMember = team.members.some((m) => m.user.id === user?.id);
           const isFull = team.members.length >= maxTeamSize;
           return (
-            <div key={team.id} className="bg-white border border-[#EEEDE9] rounded-2xl p-5">
-              <div className="flex items-start justify-between mb-3">
+            <div
+              key={team.id}
+              className={`p-5 border-b border-r border-[#171717] hover:bg-[#F5F4F0] transition-colors ${
+                isMember ? 'bg-[#F5F4F0]' : ''
+              }`}
+            >
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h4 className="font-bold text-lg">{team.name}</h4>
-                  {team.slogan && <p className="text-sm text-[#666666]">{team.slogan}</p>}
+                  <h4 className="text-lg font-black tracking-tight">{team.name}</h4>
+                  {team.slogan && <p className="text-sm text-[#666666] mt-1">{team.slogan}</p>}
                 </div>
-                <span className="text-xs font-bold px-2 py-1 rounded-full bg-[#F5F4F0] text-[#666666]">
+                <span className="inline-flex items-center px-2 py-0.5 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest">
                   {team.members.length}/{maxTeamSize}
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex flex-wrap gap-1.5 mb-4">
                 {team.members.map((m) => (
                   <span
                     key={m.id}
-                    className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-[#F5F4F0] text-[#171717]"
+                    className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 ${
+                      m.role === 'captain'
+                        ? 'bg-[#171717] text-white'
+                        : 'border border-[#171717] text-[#171717]'
+                    }`}
                   >
-                    {m.role === 'captain' && <Crown className="w-3 h-3 text-amber-600" />}
+                    {m.role === 'captain' && <Crown className="w-3 h-3" />}
                     {m.user.name}
                   </span>
                 ))}
               </div>
 
               {isRegistered && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-4 border-t border-[#EEEDE9]">
                   {isMember ? (
                     <button
                       onClick={() => leaveMutation.mutate(team.id)}
                       disabled={leaveMutation.isPending}
-                      className="flex items-center gap-1 px-4 py-2 border border-[#EEEDE9] rounded-full text-sm font-bold text-[#666666] hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-50"
                     >
-                      <LogOut className="w-3.5 h-3.5" /> 退出
+                      <LogOut className="w-3 h-3" /> 退出
                     </button>
                   ) : !myTeamId && !isFull ? (
                     <button
                       onClick={() => joinMutation.mutate(team.id)}
                       disabled={joinMutation.isPending}
-                      className="flex items-center gap-1 px-4 py-2 bg-[#171717] text-white rounded-full text-sm font-bold disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-[#171717] text-white hover:bg-[#262626] transition-colors disabled:opacity-50"
                     >
-                      <UserPlus className="w-3.5 h-3.5" /> 加入
+                      <UserPlus className="w-3 h-3" /> 加入
                     </button>
                   ) : null}
                 </div>
@@ -169,9 +184,9 @@ export function TeamPanel({ hackathonId, maxTeamSize, isRegistered }: TeamPanelP
       </div>
 
       {!teams?.length && isRegistered && !showCreate && (
-        <div className="text-center py-12 text-[#666666]">
-          <Users className="w-12 h-12 mx-auto text-[#999999] mb-3" />
-          还没有队伍，快来创建第一支队伍吧！
+        <div className="border-2 border-[#171717] bg-white text-center py-16">
+          <Users className="w-8 h-8 mx-auto mb-3 text-[#A3A3A3]" />
+          <p className="text-sm text-[#666666]">还没有队伍，快来创建第一支队伍吧！</p>
         </div>
       )}
     </div>

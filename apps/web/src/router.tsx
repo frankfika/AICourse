@@ -16,6 +16,9 @@ import { AdminUsersPage } from './features/admin/AdminUsersPage';
 import { AdminBadgesPage } from './features/admin/AdminBadgesPage';
 import { AdminDashboardPage } from './features/admin/AdminDashboardPage';
 import { AdminHackathonsPage } from './features/admin/AdminHackathonsPage';
+import { AdminEnterprisePage } from './features/admin/AdminEnterprisePage';
+import { EnterprisePage } from './features/enterprise/EnterprisePage';
+import { NotFoundPage } from './features/misc/NotFoundPage';
 import { useAuthStore } from './stores/authStore';
 
 function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
@@ -37,8 +40,8 @@ export const router = createBrowserRouter([
       { path: 'degrees/:id', element: <DegreeDetailPage /> },
       { path: 'hackathons', element: <HackathonListPage /> },
       { path: 'hackathons/:id', element: <HackathonDetailPage /> },
+      { path: 'enterprise', element: <EnterprisePage /> },
       { path: 'profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
-      { path: 'login', element: <LoginPage /> },
       {
         path: 'admin',
         element: (
@@ -54,8 +57,11 @@ export const router = createBrowserRouter([
           { path: 'users', element: <AdminUsersPage /> },
           { path: 'badges', element: <AdminBadgesPage /> },
           { path: 'hackathons', element: <AdminHackathonsPage /> },
+          { path: 'enterprise', element: <AdminEnterprisePage /> },
         ],
       },
     ],
   },
+  { path: '/login', element: <LoginPage /> },
+  { path: '*', element: <NotFoundPage /> },
 ]);

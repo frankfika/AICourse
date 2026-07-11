@@ -41,9 +41,12 @@ export class CoursesService {
     });
   }
 
-  async findOne(id: string) {
-    const course = await this.prisma.course.findUnique({
-      where: { id },
+  async findOne(id: string, includeDraft = false) {
+    const course = await this.prisma.course.findFirst({
+      where: {
+        id,
+        ...(includeDraft ? {} : { status: 'published' }),
+      },
       include: this.courseInclude,
     });
     if (!course) throw new NotFoundException('Course not found');
@@ -51,10 +54,15 @@ export class CoursesService {
   }
 
   async create(dto: CreateCourseDto) {
-    const { chapters, ...courseData } = dto;
+    const { chapters, sourceVideoUrl, sourcePlatform, ...courseData } = dto as CreateCourseDto & {
+      sourceVideoUrl?: string;
+      sourcePlatform?: string;
+    };
     const course = await this.prisma.course.create({
       data: {
         ...courseData,
+        ...(sourceVideoUrl ? { sourceVideoUrl } : {}),
+        ...(sourcePlatform ? { sourcePlatform } : {}),
         status: courseData.status ?? CourseStatus.draft,
         chapters: chapters
           ? {

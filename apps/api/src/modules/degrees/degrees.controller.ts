@@ -7,10 +7,12 @@ import {
   Body,
   Param,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { DegreesService } from './degrees.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole, CourseStatus } from '@prisma/client';
@@ -28,9 +30,15 @@ export class DegreesController {
     return this.degreesService.findAll({ status, search });
   }
 
+  // Security: same draft-filter pattern as courses/:id.
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.degreesService.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  async findOne(
+    @Param('id') id: string,
+    @Req() req: { user?: { role?: UserRole } },
+  ) {
+    const includeDraft = req.user?.role === UserRole.admin;
+    return this.degreesService.findOne(id, includeDraft);
   }
 
   @Post()

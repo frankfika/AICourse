@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -14,6 +16,10 @@ import { BadgesModule } from './modules/badges/badges.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { HackathonsModule } from './modules/hackathons/hackathons.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { AiModule } from './modules/ai/ai.module';
+import { EnterpriseModule } from './modules/enterprise/enterprise.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { UrlImportModule } from './modules/url-import/url-import.module';
 
 @Module({
   imports: [
@@ -21,6 +27,11 @@ import { OrdersModule } from './modules/orders/orders.module';
       isGlobal: true,
       envFilePath: ['../../.env', '.env'],
     }),
+    // Security: global rate limiting (H-01). Defaults to 60 req/min per IP.
+    ThrottlerModule.forRoot([
+      { name: 'short', ttl: 1000, limit: 5 },
+      { name: 'medium', ttl: 60000, limit: 60 },
+    ]),
     PrismaModule,
     AuditModule,
     AuthModule,
@@ -34,7 +45,14 @@ import { OrdersModule } from './modules/orders/orders.module';
     ProgressModule,
     HackathonsModule,
     OrdersModule,
+    AiModule,
+    EnterpriseModule,
+    NotificationModule,
+    UrlImportModule,
   ],
   controllers: [AppController],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

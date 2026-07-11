@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, User as UserIcon, BookOpen, Flame, Award, Settings } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import {
+  LogOut,
+  User as UserIcon,
+  BookOpen,
+  Flame,
+  Award,
+  Settings,
+  ArrowUpRight,
+} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { progressApi } from '../../lib/progressApi';
 import { pointsApi } from '../../lib/pointsApi';
@@ -75,135 +83,202 @@ export function ProfilePage() {
     (enrollments ?? []).filter((e) => e.course).map((e) => [e.courseId, e.course.title]),
   );
 
+  const unlockedBadges = (badges ?? []).filter((b) => b.unlocked).length;
+  const totalBadges = (badges ?? []).length;
+
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10 animate-in fade-in duration-500">
-      <div className="bg-white border border-[#EEEDE9] rounded-2xl p-6 mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-[#171717] rounded-full flex items-center justify-center text-white text-2xl font-bold">
-            {user?.name.charAt(0).toUpperCase()}
+    <div className="bg-[#F5F4F0] text-[#171717]">
+      {/* Hero — black banner */}
+      <section className="border-b border-[#171717] bg-[#171717] text-white">
+        <div className="max-w-7xl mx-auto px-6 py-12 md:py-16">
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-4">
+            / Profile
           </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold">{user?.name}</h1>
-            <p className="text-[#666666] text-sm">{user?.email}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs px-2.5 py-1 rounded font-bold bg-[#F5F4F0]">
-                {user?.role === 'admin' ? '管理员' : '学员'}
-              </span>
-              {points && (
-                <span className="text-xs px-2.5 py-1 rounded font-bold bg-[#171717] text-white">
-                  Lv.{points.level}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {user?.role === 'admin' && (
-              <button
-                onClick={() => navigate('/admin')}
-                className="flex items-center gap-1 px-4 py-2 border border-[#EEEDE9] rounded-full text-sm font-medium hover:bg-[#F5F4F0]"
-              >
-                <Settings className="w-4 h-4" /> 后台
-              </button>
-            )}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1 px-4 py-2 border border-[#EEEDE9] rounded-full text-sm font-medium hover:bg-[#F5F4F0]"
-            >
-              <LogOut className="w-4 h-4" /> 退出
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {points && (
-        <LevelBadge
-          level={points.level}
-          points={points.points}
-          currentLevelPoints={points.currentLevelPoints}
-          nextLevelPoints={points.nextLevelPoints}
-          pointsToNextLevel={points.pointsToNextLevel}
-        />
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
-        <div className="bg-white border border-[#EEEDE9] rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-[#F5F4F0] rounded-lg">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <span className="text-sm text-[#666666]">完成课时</span>
-          </div>
-          <div className="text-2xl font-bold">{stats?.totalCompletedLessons ?? 0}</div>
-        </div>
-
-        <div className="bg-white border border-[#EEEDE9] rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-[#F5F4F0] rounded-lg">
-              <Flame className="w-5 h-5" />
-            </div>
-            <span className="text-sm text-[#666666]">连续学习</span>
-          </div>
-          <div className="text-2xl font-bold">{stats?.streakDays ?? 0} 天</div>
-        </div>
-
-        <div className="bg-white border border-[#EEEDE9] rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-[#F5F4F0] rounded-lg">
-              <Award className="w-5 h-5" />
-            </div>
-            <span className="text-sm text-[#666666]">已解锁徽章</span>
-          </div>
-          <div className="text-2xl font-bold">
-            {(badges ?? []).filter((b) => b.unlocked).length} / {(badges ?? []).length}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-[#EEEDE9] rounded-2xl p-6 mb-8">
-        <h2 className="text-lg font-bold mb-4">学习活动</h2>
-        {stats ? <ActivityHeatmap data={stats.activity} /> : <div className="text-[#666666]">加载中...</div>}
-      </div>
-
-      <div className="bg-white border border-[#EEEDE9] rounded-2xl p-6 mb-8">
-        <h2 className="text-lg font-bold mb-4">徽章墙</h2>
-        {badges && badges.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {badges.map((badge) => (
-              <BadgeCard key={badge.id} badge={badge} size="md" />
-            ))}
-          </div>
-        ) : (
-          <p className="text-[#666666]">还没有徽章，继续学习解锁吧！</p>
-        )}
-      </div>
-
-      <div className="bg-white border border-[#EEEDE9] rounded-2xl p-6 mb-8">
-        <h2 className="text-lg font-bold mb-4">我的课程进度</h2>
-        {courseProgressList.length > 0 ? (
-          <div className="space-y-4">
-            {courseProgressList.map((cp) => (
-              <div
-                key={cp.courseId}
-                className="flex items-center gap-4 p-4 border border-[#EEEDE9] rounded-xl hover:border-[#171717] transition-colors"
-              >
-                <ProgressRing percent={cp.percent} size={56} strokeWidth={5} />
-                <div className="flex-1">
-                  <div className="font-bold">{courseTitleMap.get(cp.courseId) || '课程'}</div>
-                  <div className="text-sm text-[#666666]">
-                    {cp.completedLessons}/{cp.totalLessons} 课时
-                  </div>
-                </div>
-                {cp.isCompleted && (
-                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full">
-                    已完成
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 md:w-24 md:h-24 bg-white text-[#171717] text-3xl md:text-4xl font-black flex items-center justify-center shrink-0">
+                {user?.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase leading-none">
+                  {user?.name}
+                </h1>
+                <p className="text-white/60 text-sm mt-2">{user?.email}</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="inline-flex items-center px-2 py-0.5 border border-white/30 text-white text-[10px] font-black uppercase tracking-widest">
+                    {user?.role === 'admin' ? 'Admin' : 'Student'}
                   </span>
+                  {points && (
+                    <span className="inline-flex items-center px-2 py-0.5 bg-white text-[#171717] text-[10px] font-black uppercase tracking-widest">
+                      Lv.{points.level}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {user?.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="inline-flex items-center gap-2 border border-white/30 px-4 py-2.5 text-xs font-black uppercase tracking-widest hover:bg-white hover:text-[#171717] transition-colors"
+                >
+                  <Settings className="w-3.5 h-3.5" /> Admin
+                </Link>
+              )}
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 bg-white text-[#171717] px-4 py-2.5 text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats row */}
+      <section className="border-b border-[#171717] bg-white">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4">
+          {[
+            { icon: BookOpen, label: 'Completed Lessons', value: stats?.totalCompletedLessons ?? 0 },
+            { icon: Flame, label: 'Streak Days', value: `${stats?.streakDays ?? 0}d` },
+            { icon: Award, label: 'Badges', value: `${unlockedBadges}/${totalBadges}` },
+            { icon: UserIcon, label: 'Points', value: points?.points ?? 0 },
+          ].map(({ icon: Icon, label, value }, i, arr) => (
+            <div
+              key={label}
+              className={`p-6 md:p-8 ${
+                i < arr.length - 1 ? 'border-r border-[#171717]' : ''
+              } ${i < 2 ? 'border-b md:border-b-0 border-[#171717]' : ''}`}
+            >
+              <Icon className="w-5 h-5 mb-3 text-[#666666]" />
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">
+                {label}
+              </div>
+              <div className="text-3xl md:text-4xl font-black tracking-tighter">{value}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left column */}
+          <div className="lg:col-span-2 space-y-6">
+            {points && (
+              <LevelBadge
+                level={points.level}
+                points={points.points}
+                currentLevelPoints={points.currentLevelPoints ?? 0}
+                nextLevelPoints={points.nextLevelPoints ?? 100}
+                pointsToNextLevel={points.pointsToNextLevel ?? 100}
+              />
+            )}
+
+            <div className="border border-[#171717] bg-white">
+              <div className="p-5 border-b border-[#171717] flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+                    / 01 Activity
+                  </div>
+                  <h2 className="text-xl font-black tracking-tight mt-1">学习活动</h2>
+                </div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#A3A3A3]">
+                  Last 52 Weeks
+                </div>
+              </div>
+              <div className="p-5">
+                {stats ? <ActivityHeatmap data={stats.activity ?? []} /> : <div className="text-[#666666]">加载中...</div>}
+              </div>
+            </div>
+
+            <div className="border border-[#171717] bg-white">
+              <div className="p-5 border-b border-[#171717] flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+                    / 02 Progress
+                  </div>
+                  <h2 className="text-xl font-black tracking-tight mt-1">我的课程进度</h2>
+                </div>
+                <Link
+                  to="/courses"
+                  className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#171717] hover:underline"
+                >
+                  More <ArrowUpRight className="w-3 h-3" />
+                </Link>
+              </div>
+              <div>
+                {courseProgressList.length > 0 ? (
+                  courseProgressList.map((cp, i) => (
+                    <Link
+                      key={cp.courseId}
+                      to={`/courses/${cp.courseId}`}
+                      className={`flex items-center gap-4 p-5 hover:bg-[#F5F4F0] transition-colors ${
+                        i < courseProgressList.length - 1 ? 'border-b border-[#EEEDE9]' : ''
+                      }`}
+                    >
+                      <ProgressRing percent={cp.percent} size={56} strokeWidth={5} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-black tracking-tight truncate">
+                          {courseTitleMap.get(cp.courseId) || '课程'}
+                        </div>
+                        <div className="text-xs text-[#666666] font-medium mt-0.5">
+                          {cp.completedLessons}/{cp.totalLessons} Lessons
+                        </div>
+                      </div>
+                      {cp.isCompleted ? (
+                        <span className="inline-flex items-center px-2 py-0.5 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest">
+                          Done
+                        </span>
+                      ) : (
+                        <ArrowUpRight className="w-4 h-4 text-[#666666]" />
+                      )}
+                    </Link>
+                  ))
+                ) : (
+                  <div className="p-12 text-center">
+                    <div className="text-[#666666] text-sm mb-4">还没有注册任何课程</div>
+                    <Link
+                      to="/courses"
+                      className="inline-flex items-center gap-2 bg-[#171717] text-white px-4 py-2 text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
+                    >
+                      浏览课程 <ArrowUpRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
                 )}
               </div>
-            ))}
+            </div>
           </div>
-        ) : (
-          <p className="text-[#666666]">还没有注册任何课程。</p>
-        )}
+
+          {/* Right column: Badges */}
+          <div className="lg:col-span-1">
+            <div className="border border-[#171717] bg-white">
+              <div className="p-5 border-b border-[#171717]">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+                  / 03 Badges
+                </div>
+                <div className="flex items-end justify-between mt-1">
+                  <h2 className="text-xl font-black tracking-tight">徽章墙</h2>
+                  <div className="text-2xl font-black tracking-tighter">
+                    {unlockedBadges}
+                    <span className="text-sm text-[#A3A3A3] ml-1">/{totalBadges}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-5">
+                {badges && badges.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {badges.map((badge) => (
+                      <BadgeCard key={badge.id} badge={badge} size="sm" />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[#666666] text-center py-6">还没有徽章，继续学习解锁吧！</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

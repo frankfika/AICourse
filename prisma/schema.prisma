@@ -68,17 +68,19 @@ model Course {
   duration       String
   thumbnail      String
   tags           String       @db.Text
-  costType       CostType     @map("cost_type")
-  price          Decimal      @default(0) @db.Decimal(10, 2)
-  status         CourseStatus @default(draft)
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
+  costType        CostType     @map("cost_type")
+  price           Decimal      @default(0) @db.Decimal(10, 2)
+  status          CourseStatus @default(draft)
+  sourceVideoUrl  String?      @unique @map("source_video_url")
+  sourcePlatform  String?      @map("source_platform")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
 
-  chapters    Chapter[]
-  enrollments Enrollment[]
-  orders      Order[]
-  progressRecords ProgressRecord[]
-  degreeCourses DegreeCourse[]
+  chapters         Chapter[]
+  enrollments      Enrollment[]
+  orders           Order[]
+  progressRecords  ProgressRecord[]
+  degreeCourses    DegreeCourse[]
   practiceProjects PracticeProject[]
 
   @@map("courses")
@@ -556,6 +558,31 @@ model UserBadge {
   @@unique([userId, badgeId])
   @@index([userId])
   @@map("user_badges")
+}
+
+// ==================== 企业培训咨询 ====================
+model EnterpriseInquiry {
+  id          String        @id @default(uuid())
+  name        String
+  email       String
+  company     String
+  teamSize    String        @map("team_size")
+  phone       String?
+  topic       String
+  description String?       @db.Text
+  status      InquiryStatus @default(pending)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("enterprise_inquiries")
+}
+
+enum InquiryStatus {
+  pending
+  contacted
+  qualified
+  closed
+  archived
 }
 
 // ==================== 游戏化：积分流水 ====================

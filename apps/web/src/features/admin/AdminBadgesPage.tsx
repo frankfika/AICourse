@@ -102,107 +102,112 @@ export function AdminBadgesPage() {
   };
 
   return (
-    <div className="bg-white border border-[#EEEDE9] rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">徽章管理</h2>
+    <div>
+      <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
+        <div>
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-2">
+            / Admin · Badges
+          </div>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">徽章管理</h2>
+        </div>
         <button
           onClick={() => {
             resetForm();
             setIsCreating(true);
           }}
-          className="flex items-center gap-1 px-4 py-2 bg-[#171717] text-white rounded-full text-sm font-medium"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
         >
           <Plus className="w-4 h-4" /> 新增徽章
         </button>
       </div>
 
       {isCreating && (
-        <form onSubmit={handleSubmit} className="mb-8 space-y-4 border-b border-[#EEEDE9] pb-6">
+        <form
+          onSubmit={handleSubmit}
+          className="border-2 border-[#171717] bg-white p-6 mb-8"
+        >
+          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-4">
+            {editingId ? `/ Edit Badge · ${form.code}` : '/ New Badge'}
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4">
-            <input
-              placeholder="唯一标识 code"
+            <BrutalField
+              label="唯一标识 Code"
               value={form.code}
-              onChange={(e) => setForm({ ...form, code: e.target.value })}
-              className="px-4 py-2 border border-[#EEEDE9] rounded-lg"
+              onChange={(v) => setForm({ ...form, code: v })}
               required
               disabled={!!editingId}
             />
-            <input
-              placeholder="徽章名称"
+            <BrutalField
+              label="徽章名称"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="px-4 py-2 border border-[#EEEDE9] rounded-lg"
+              onChange={(v) => setForm({ ...form, name: v })}
               required
             />
-            <input
-              placeholder="图标名（如 award）"
+            <BrutalField
+              label="图标名（如 award）"
               value={form.icon}
-              onChange={(e) => setForm({ ...form, icon: e.target.value })}
-              className="px-4 py-2 border border-[#EEEDE9] rounded-lg"
+              onChange={(v) => setForm({ ...form, icon: v })}
             />
-            <input
-              placeholder="分组 category"
+            <BrutalField
+              label="分组 Category"
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="px-4 py-2 border border-[#EEEDE9] rounded-lg"
+              onChange={(v) => setForm({ ...form, category: v })}
             />
-            <select
+            <BrutalSelect
+              label="达成条件类型"
               value={form.criteriaType}
-              onChange={(e) => setForm({ ...form, criteriaType: e.target.value as BadgeCriteriaType })}
-              className="px-4 py-2 border border-[#EEEDE9] rounded-lg"
-            >
-              {criteriaTypeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <input
-              type="number"
-              placeholder="达成阈值"
-              value={form.criteriaValue}
-              onChange={(e) => setForm({ ...form, criteriaValue: Number(e.target.value) })}
-              className="px-4 py-2 border border-[#EEEDE9] rounded-lg"
-              min={1}
+              onChange={(v) => setForm({ ...form, criteriaType: v as BadgeCriteriaType })}
+              options={criteriaTypeOptions.map((o) => ({ value: o.value, label: o.label }))}
             />
-            <input
+            <BrutalField
+              label="达成阈值"
               type="number"
-              placeholder="解锁奖励积分"
-              value={form.points}
-              onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
-              className="px-4 py-2 border border-[#EEEDE9] rounded-lg"
-              min={0}
+              value={String(form.criteriaValue)}
+              onChange={(v) => setForm({ ...form, criteriaValue: Number(v) })}
             />
-            <input
+            <BrutalField
+              label="解锁奖励积分"
               type="number"
-              placeholder="排序"
-              value={form.orderIndex}
-              onChange={(e) => setForm({ ...form, orderIndex: Number(e.target.value) })}
-              className="px-4 py-2 border border-[#EEEDE9] rounded-lg"
+              value={String(form.points)}
+              onChange={(v) => setForm({ ...form, points: Number(v) })}
+            />
+            <BrutalField
+              label="排序"
+              type="number"
+              value={String(form.orderIndex)}
+              onChange={(v) => setForm({ ...form, orderIndex: Number(v) })}
             />
           </div>
-          <textarea
-            placeholder="徽章描述 / 解锁条件说明"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="w-full px-4 py-2 border border-[#EEEDE9] rounded-lg"
-            rows={3}
-            required
-          />
-          <label className="flex items-center gap-2 text-sm">
+          <div className="mt-4">
+            <BrutalField
+              label="描述 / 解锁条件"
+              value={form.description}
+              onChange={(v) => setForm({ ...form, description: v })}
+              required
+              multiline
+            />
+          </div>
+          <label className="mt-4 flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+              className="w-4 h-4 border-2 border-[#171717] accent-[#171717]"
             />
-            启用
+            <span className="font-black uppercase tracking-widest text-[10px]">启用</span>
           </label>
-          <div className="flex gap-2">
-            <button type="submit" className="px-6 py-2 bg-[#171717] text-white rounded-full text-sm font-medium">
+          <div className="flex gap-2 mt-6 pt-4 border-t border-[#EEEDE9]">
+            <button
+              type="submit"
+              className="px-6 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
+            >
               {editingId ? '更新' : '保存'}
             </button>
             <button
               type="button"
               onClick={resetForm}
-              className="px-6 py-2 border border-[#EEEDE9] rounded-full text-sm font-medium"
+              className="px-6 py-3 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
             >
               取消
             </button>
@@ -210,62 +215,150 @@ export function AdminBadgesPage() {
         </form>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[#EEEDE9]">
-              <th className="text-left py-3 px-2">徽章</th>
-              <th className="text-left py-3 px-2">类型</th>
-              <th className="text-left py-3 px-2">条件</th>
-              <th className="text-left py-3 px-2">奖励积分</th>
-              <th className="text-left py-3 px-2">状态</th>
-              <th className="text-right py-3 px-2">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {badges?.map((badge) => (
-              <tr key={badge.id} className="border-b border-[#F5F4F0]">
-                <td className="py-3 px-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#F5F4F0] rounded-lg flex items-center justify-center">
-                      <Award className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{badge.name}</div>
-                      <div className="text-xs text-[#666666]">{badge.code}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3 px-2 text-[#666666]">{badge.category}</td>
-                <td className="py-3 px-2">
-                  {criteriaTypeOptions.find((o) => o.value === badge.criteriaType)?.label} ≥ {badge.criteriaValue}
-                </td>
-                <td className="py-3 px-2">{badge.points}</td>
-                <td className="py-3 px-2">
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      badge.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {badge.isActive ? '启用' : '禁用'}
-                  </span>
-                </td>
-                <td className="py-3 px-2 text-right">
-                  <button onClick={() => startEdit(badge)} className="p-1 hover:bg-[#F5F4F0] rounded">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => deleteMutation.mutate(badge.id)}
-                    className="p-1 hover:bg-red-50 text-red-600 rounded ml-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="border-2 border-[#171717] bg-white">
+        <div className="grid grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+          <div className="col-span-1">#</div>
+          <div className="col-span-4">Badge</div>
+          <div className="col-span-2">Condition</div>
+          <div className="col-span-1">Pts</div>
+          <div className="col-span-2">Status</div>
+          <div className="col-span-2 text-right">Action</div>
+        </div>
+        {badges?.map((badge, i) => (
+          <div
+            key={badge.id}
+            className={`grid grid-cols-12 gap-4 p-4 items-center text-sm ${
+              i < (badges?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
+            } hover:bg-[#F5F4F0] transition-colors`}
+          >
+            <div className="col-span-1 text-[10px] font-black text-[#A3A3A3]">
+              {String(i + 1).padStart(2, '0')}
+            </div>
+            <div className="col-span-4 flex items-center gap-3 min-w-0">
+              <div className="shrink-0 w-9 h-9 bg-[#171717] text-white flex items-center justify-center">
+                <Award className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-black tracking-tight truncate">{badge.name}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+                  {badge.code}
+                </div>
+              </div>
+            </div>
+            <div className="col-span-2 text-xs">
+              {criteriaTypeOptions.find((o) => o.value === badge.criteriaType)?.label} ≥ {badge.criteriaValue}
+            </div>
+            <div className="col-span-1 font-black tracking-tighter text-sm">{badge.points}</div>
+            <div className="col-span-2">
+              <span
+                className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${
+                  badge.isActive
+                    ? 'bg-[#171717] text-white'
+                    : 'border border-[#171717] text-[#171717]'
+                }`}
+              >
+                {badge.isActive ? 'Active' : 'Disabled'}
+              </span>
+            </div>
+            <div className="col-span-2 flex items-center justify-end gap-1">
+              <button
+                onClick={() => startEdit(badge)}
+                className="p-2 hover:bg-[#171717] hover:text-white transition-colors"
+                title="编辑"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(badge.id)}
+                className="p-2 hover:bg-[#171717] hover:text-white transition-colors"
+                title="删除"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
+        {(!badges || badges.length === 0) && (
+          <div className="p-16 text-center text-sm text-[#666666]">暂无徽章</div>
+        )}
       </div>
+    </div>
+  );
+}
+
+function BrutalField({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  required,
+  multiline,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  required?: boolean;
+  multiline?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <div>
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 flex items-center gap-1">
+        {label}
+        {required && <span className="text-red-600">*</span>}
+      </label>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          required={required}
+          disabled={disabled}
+          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none disabled:opacity-50"
+        />
+      ) : (
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          disabled={disabled}
+          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors disabled:opacity-50"
+        />
+      )}
+    </div>
+  );
+}
+
+function BrutalSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <div>
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 block">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
