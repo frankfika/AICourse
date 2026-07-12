@@ -23,6 +23,7 @@ model User {
   lastLoginAt     DateTime? @map("last_login_at")
 
   refreshTokens   RefreshToken[]
+  providerAccounts UserProviderAccount[]
   enrollments     Enrollment[]
   orders          Order[]
   progressRecords ProgressRecord[]
@@ -54,6 +55,29 @@ model RefreshToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
+}
+
+// ==================== Auth 抽象层 - 多 Provider 绑定 ====================
+// 一个 user 可绑定多个 provider 账号（email/password + google + 企业 SSO ...）
+// 设计目标：可插拔 + 配置驱动 + 不重复造轮子
+model UserProviderAccount {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  // provider 标识,如 "email_password" / "oauth.google" / "sso.saml"
+  // 用 String 而非 enum,新增 provider 不需要改 schema + 不需要 migration
+  provider        String
+  // 该 provider 内部的 user id（email / oauth sub / saml NameID）
+  providerUserId  String   @map("provider_user_id")
+  // 原始 profile / claims JSON,留作 audit + 后续扩展
+  profile         Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("user_provider_accounts")
 }
 
 // ==================== 课程结构 ====================

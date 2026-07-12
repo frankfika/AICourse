@@ -3,8 +3,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthService, AUTH_PROVIDERS } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { AuthProvider } from './providers/auth-provider.types';
+import { EmailPasswordProvider } from './providers/email-password.provider';
+import { OAuthProvider } from './providers/oauth.provider';
+import { SsoProvider } from './providers/sso.provider';
+import { loadAuthConfig } from './config/auth.config';
+import { PrismaService } from '../prisma/prisma.service';
 
 // Security: refuse to boot with a weak or placeholder JWT secret.
 function assertStrongJwtSecret(secret: string | undefined): string {
@@ -30,6 +36,14 @@ function assertStrongJwtSecret(secret: string | undefined): string {
   return value;
 }
 
+/**
+ * AuthModule
+ *
+ * Frank 的硬要求：可插拔 + 配置驱动 + 不 hardcode
+ * - 启动时读 env,按 AUTH_PROVIDERS 列表动态构造 provider 实例
+ * - 新增 provider：写 class + 在 providers 工厂加一行 + .env 启用
+ * - 没启用的 provider 不会注入,不会出现在 listProviders
+ */
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -49,7 +63,69 @@ function assertStrongJwtSecret(secret: string | undefined): string {
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    PrismaService,
+    {
+      // 动态 provider 工厂：按 AUTH_PROVIDERS env 列表构造具体实例
+      provide: AUTH_PROVIDERS,
+      useFactory: (prisma: PrismaService) => {
+        const config = loadAuthConfig();
+        const logger = new Logger('AuthProviders');
+
+        const built: AuthProvider[] = [];
+
+        for (const id of config.enabledProviders) {
+          const cfg = config.providers[id];
+
+          if (id === 'email_password') {
+            built.push(
+              new EmailPasswordProvider(
+                prisma,
+                (cfg.bcryptRounds as number) ?? 12,
+              ),
+            );
+            continue;
+          }
+
+          if (id.startsWith('oauth.')) {
+            built.push(
+              new OAuthProvider(
+                id,
+                {
+                  clientId: cfg.clientId as string,
+                  clientSecret: cfg.clientSecret as string,
+                  redirectUri: cfg.redirectUri as string,
+                  scopes: (cfg.scopes as string[]) ?? [],
+                },
+                prisma,
+              ),
+            );
+            continue;
+          }
+
+          if (id === 'sso.saml') {
+            built.push(
+              new SsoProvider({
+                entryPoint: cfg.entryPoint as string,
+                issuer: cfg.issuer as string,
+                callbackUrl: cfg.callbackUrl as string,
+                cert: cfg.cert as string,
+              }),
+            );
+            continue;
+          }
+
+          logger.warn(`No factory branch for provider "${id}", skipping`);
+        }
+
+        logger.log(`Loaded ${built.length} auth provider(s): ${built.map((p) => p.id).join(', ')}`);
+        return built;
+      },
+      inject: [PrismaService],
+    },
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}
