@@ -4,7 +4,8 @@ import { RouterProvider } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { router } from './src/router';
 import { queryClient } from './src/lib/queryClient';
-import { AuthProvider } from './src/providers/AuthProvider';
+import { AuthProvider } from './src/lib/auth/AuthProvider';
+import { ToastProvider } from './src/components/auth/Toast';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -16,7 +17,9 @@ root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>,

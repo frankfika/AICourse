@@ -9,6 +9,9 @@ import { HackathonListPage } from './features/hackathons/HackathonListPage';
 import { HackathonDetailPage } from './features/hackathons/HackathonDetailPage';
 import { ProfilePage } from './features/profile/ProfilePage';
 import { LoginPage } from './features/auth/LoginPage';
+import { RegisterPage } from './features/auth/RegisterPage';
+import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
+import { BindingsPage } from './features/auth/BindingsPage';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { AdminCoursesPage } from './features/admin/AdminCoursesPage';
 import { AdminDegreesPage } from './features/admin/AdminDegreesPage';
@@ -64,6 +67,13 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '/login', element: <LoginPage /> },
+  // ===== P0-2 / P0-3 新增路由 — 公开 + 登录态 sub-page =====
+  { path: '/auth/login', element: <LoginPage /> },
+  { path: '/auth/register', element: <RegisterPage /> },
+  { path: '/auth/forgot', element: <ForgotPasswordPage /> },
+  // 注:BindingsPage 内部自己处理"未登录" EmptyState,这样 demo 模式 ?demo=with-google
+  //     可以绕过登录态渲染示例视图(给截图用)
+  { path: '/dashboard/settings/bindings', element: <BindingsPage /> },
   // P0-4 设计系统演示页 — 临时挂载,后续 worktree 跑完移除
   { path: '/__design-system', element: <DesignSystemPage /> },
   { path: '*', element: <NotFoundPage /> },

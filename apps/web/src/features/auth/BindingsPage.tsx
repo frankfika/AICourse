@@ -1,0 +1,338 @@
+/**
+ * BindingsPage — 账号绑定 sub-page (P0-3)
+ *
+ * 路径: /dashboard/settings/bindings
+ *
+ * 来自 mock-auth.html 底部 "账号绑定 / 解绑管理" 段:
+ *   - 顶部:已绑定的 Identity 列表(provider 图标 + 邮箱 + 绑于 + 解除按钮)
+ *   - 中部:未绑定的 provider 6 宫格
+ *     **Phase 1 灰度:全部 disabled,tooltip "即将推出, 灰度开放中"**
+ *   - 底部:"至少保留一种登录方式" 提示
+ *
+ * API 端点(spec §9.3):
+ *   - GET    /api/v1/auth/identities
+ *   - DELETE /api/v1/auth/identities/:id
+ *
+ * Phase 1 状态: 后端 P0-1 未实现 identities 端点
+ *   - LocalAuthAdapter.listMyIdentities() 兜底返回 [local]
+ *   - unbindProvider() 抛 "后端 P2 实现待定"
+ *   见 LocalAuthAdapter 的 TODO
+ *
+ * Demo 模式:支持 ?demo=with-google 强制渲染带 Google 绑定的视图(给截图用)
+ * 不依赖真实 session,便于离线截图验证
+ */
+import { useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import {
+  Mail,
+  Lock,
+  Trash2,
+  ShieldCheck,
+  AlertTriangle,
+  RefreshCw,
+} from 'lucide-react';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { ProviderButtons } from '../../components/auth/ProviderButtons';
+import { useToast } from '../../components/auth/Toast';
+import { useAuth } from '../../lib/auth/AuthProvider';
+import { ApiError } from '../../lib/apiError';
+import type { Identity } from '../../lib/auth/types';
+
+/**
+ * Provider 视觉元数据
+ * (id → 名称 / logo / 主色)
+ * 跟 ProviderButtons 保持一致
+ */
+const PROVIDER_META: Record<
+  string,
+  { label: string; icon: React.ReactNode; isPrimary?: boolean }
+> = {
+  local: {
+    label: '本地账号(邮箱 + 密码)',
+    icon: <Mail className="h-5 w-5" />,
+    isPrimary: true,
+  },
+  google: { label: 'Google', icon: <span className="font-bold text-sm">G</span> },
+  github: { label: 'GitHub', icon: <span className="font-bold text-sm">GH</span> },
+  wechat: { label: '微信', icon: <span className="font-bold text-sm">微</span> },
+  wecom: { label: '企业微信', icon: <span className="font-bold text-sm">企</span> },
+  feishu: { label: '飞书', icon: <span className="font-bold text-sm">飞</span> },
+  apple: { label: 'Apple', icon: <span className="font-bold text-sm"></span> },
+};
+
+/** ISO 时间 → "2025.08.14" 形式(跟 mock 一致) */
+function formatDate(iso: string | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}.${m}.${day}`;
+}
+
+export function BindingsPage() {
+  const { user, identities, isAuthenticating, unbindProvider } = useAuth();
+  const { showToast } = useToast();
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [params] = useSearchParams();
+  // Demo 模式:有 ?demo=with-google 时,即使没真实 session 也渲染带 Google 的视图
+  // 用于离线截图 / 视觉验证
+  const demoMode = params.get('demo');
+  const showWithGoogleDemo = demoMode === 'with-google';
+
+  // 演示模式:在 identities 末尾追加一个 Google identity
+  const displayedIdentities: Identity[] = useMemo(() => {
+    if (showWithGoogleDemo) {
+      return [
+        ...identities,
+        {
+          id: 'demo-google-1',
+          provider: 'google',
+          providerUserId: 'demo-google-uid',
+          email: user?.email ?? 'demo@gmail.com',
+          displayName: 'demo@gmail.com',
+          linkedAt: '2025-11-02T00:00:00Z',
+          lastUsedAt: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
+        },
+      ];
+    }
+    return identities;
+  }, [showWithGoogleDemo, identities, user?.email]);
+
+  if (isAuthenticating) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <Skeleton variant="text" className="h-8 w-64" />
+          <Skeleton variant="rectangle" className="h-32 w-full rounded-lg" />
+          <Skeleton variant="rectangle" className="h-32 w-full rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+
+  // demo 模式:不强制要求 user,渲染示例视图
+  if (!user && !showWithGoogleDemo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 p-6">
+        <EmptyState
+          icon={<ShieldCheck className="h-6 w-6" />}
+          title="请先登录"
+          description="登录后可管理账号绑定"
+          action={
+            <Link to="/auth/login">
+              <Button variant="primary">去登录</Button>
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  const handleUnbind = async (id: Identity) => {
+    const meta = PROVIDER_META[id.provider];
+    if (id.provider === 'local') {
+      showToast('本地账号是主登录,无法解绑', 'warning');
+      return;
+    }
+    if (!window.confirm(`解绑 ${meta?.label ?? id.provider} 后,你将无法再用此账号登录。确定?`)) {
+      return;
+    }
+    setBusyId(id.id);
+    try {
+      await unbindProvider(id.id);
+      showToast('已解绑', 'success');
+    } catch (err) {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : '解绑失败';
+      showToast(msg, 'error', 4000);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleBindClick = (_providerId: string, label: string) => {
+    showToast(`${label} 绑定即将推出, 灰度开放中`, 'info', 2500);
+  };
+
+  const nonPrimaryCount = displayedIdentities.filter(
+    (i) => !i.isPrimary,
+  ).length;
+  const totalCount = displayedIdentities.length;
+  // demo 模式下:用 demo email 代替真实 user.email
+  const displayUser = user ?? {
+    id: 'demo-user',
+    email: 'k.chen@opencsg.ai',
+    name: 'K. Chen',
+    role: 'student' as const,
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <header className="text-center mb-10">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-xp-100 text-xp-500">
+            已登录用户 · 账号绑定管理
+          </span>
+          <h1 className="mt-3 text-3xl font-bold text-neutral-900 dark:text-neutral-900">
+            绑定第三方账号,登录更便捷
+          </h1>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-600">
+            设置页路径:
+            <code className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-100 font-mono text-xs mx-1">
+              /dashboard/settings/bindings
+            </code>
+          </p>
+        </header>
+
+        {/* 已绑定列表 */}
+        <Card variant="outlined" padding="none" className="overflow-hidden">
+          <div className="px-6 py-4 border-b border-neutral-200 bg-neutral-50 dark:bg-neutral-50 flex items-center justify-between">
+            <h2 className="font-semibold text-sm text-neutral-900 dark:text-neutral-900">
+              已绑定的登录方式
+            </h2>
+            <span className="text-xs text-neutral-600 dark:text-neutral-600">
+              {totalCount} 种 · 至少保留 1 种
+            </span>
+          </div>
+
+          {displayedIdentities.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                icon={<ShieldCheck className="h-6 w-6" />}
+                title="还没有绑定任何登录方式"
+                description={`${displayUser.email} 还没有绑定任何第三方登录方式`}
+              />
+            </div>
+          ) : (
+            <ul role="list" className="divide-y divide-neutral-200">
+              {displayedIdentities.map((id) => {
+                const meta = PROVIDER_META[id.provider] ?? {
+                  label: id.provider,
+                  icon: <Lock className="h-5 w-5" />,
+                };
+                const isPrimary = !!id.isPrimary;
+                return (
+                  <li
+                    key={id.id}
+                    className="px-6 py-4 flex items-center gap-4"
+                  >
+                    <div
+                      className={
+                        isPrimary
+                          ? 'w-10 h-10 rounded-lg bg-brand-500 text-neutral-0 flex items-center justify-center'
+                          : 'w-10 h-10 rounded-lg border border-neutral-200 flex items-center justify-center text-neutral-600'
+                      }
+                    >
+                      {meta.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-neutral-900 dark:text-neutral-900 truncate">
+                          {isPrimary
+                            ? meta.label
+                            : `${meta.label} · ${id.displayName ?? id.email ?? id.providerUserId ?? id.id}`}
+                        </span>
+                        {isPrimary && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-success-100 text-success-500">
+                            主登录
+                          </span>
+                        )}
+                      </div>
+                      {id.lastUsedAt && (
+                        <div className="text-xs text-neutral-600 dark:text-neutral-600 mt-0.5">
+                          上次使用 {formatDate(id.lastUsedAt)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-xs text-neutral-400 font-mono hidden sm:block">
+                      绑定于 {formatDate(id.linkedAt)}
+                    </div>
+                    {isPrimary ? (
+                      <span className="text-xs text-neutral-400 hidden sm:inline">
+                        无法解绑
+                      </span>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUnbind(id)}
+                        isLoading={busyId === id.id}
+                        leftIcon={<Trash2 className="h-3.5 w-3.5" />}
+                        className="text-danger-500 hover:bg-danger-100"
+                      >
+                        解绑
+                      </Button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+
+        {/* 添加新 provider 6 宫格(灰度) */}
+        <section className="mt-8">
+          <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-900 mb-3">
+            添加新的登录方式
+          </h2>
+          <ProviderButtons
+            grayscale
+            onProviderClick={handleBindClick}
+          />
+          <p className="mt-3 text-[10px] text-neutral-400">
+            启用 / 停用某个 provider,改{' '}
+            <code className="px-1 font-mono">AUTH_PROVIDERS</code> 环境变量即可,无需改代码 ·
+            详细架构见 redesign-spec.md §9
+          </p>
+        </section>
+
+        {/* 安全提示 */}
+        <div className="mt-8 p-4 rounded-lg bg-warning-100 border border-warning-500/20 flex gap-3">
+          <AlertTriangle
+            className="w-5 h-5 text-warning-500 flex-shrink-0 mt-0.5"
+            aria-hidden="true"
+          />
+          <div>
+            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-900">
+              {nonPrimaryCount === 0
+                ? '至少保留一种登录方式'
+                : '安全提醒'}
+            </p>
+            <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-600">
+              解绑会立即吊销对应 provider 的 refresh token。如发现异常登录,前往{' '}
+              <a
+                href="/dashboard/settings/security"
+                className="text-brand-500 underline"
+              >
+                安全设置
+              </a>{' '}
+              撤销所有设备。
+            </p>
+          </div>
+        </div>
+
+        {/* Refresh 按钮 — 让用户能拉最新 identities */}
+        <div className="mt-6 flex justify-end">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => window.location.reload()}
+            leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+          >
+            刷新
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
