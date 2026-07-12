@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, ArrowUpRight, Mail, Lock, User as UserIcon } from 'lucide-react';
-import api from '../../lib/api';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuth } from '../../providers/AuthProvider';
 
 export function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -12,20 +11,18 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const { login, register: doRegister, providers, providersLoaded } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const endpoint = isRegister ? '/api/v1/auth/register' : '/api/v1/auth/login';
-      const payload = isRegister ? { email, password, name } : { email, password };
-      const { data } = await api.post(endpoint, payload);
       if (isRegister) {
+        await doRegister(email, password, name);
         setIsRegister(false);
       } else {
-        setAuth(data.user, data.accessToken);
+        await login(email, password);
         navigate('/');
       }
     } catch (err: any) {
@@ -169,6 +166,31 @@ export function LoginPage() {
             <span>Or</span>
             <span className="flex-1 h-px bg-[#EEEDE9]" />
           </div>
+
+          {/* 动态 OAuth / SSO 按钮 - 从后端拉启用列表,不 hardcode */}
+          {providersLoaded && providers.filter((p) => p.type !== 'email_password').length > 0 && (
+            <div className="space-y-2 mb-6">
+              {providers
+                .filter((p) => p.type !== 'email_password')
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      // OAuth/SSO provider 走标准 authorize 跳转流程
+                      // 这里只是入口示意 - 完整 redirect_uri + state 流程在 IdP 接入时实现
+                      alert(
+                        `${p.label} 登录待 OAuth authorize 流程接入。\nProvider: ${p.id}`,
+                      );
+                    }}
+                    className="w-full inline-flex items-center justify-between gap-3 bg-white border-2 border-[#171717] text-[#171717] px-6 py-3.5 font-black uppercase tracking-widest text-sm hover:bg-[#171717] hover:text-white transition-colors"
+                  >
+                    <span>用 {p.label} 登录</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </button>
+                ))}
+            </div>
+          )}
 
           <p className="text-center text-sm text-[#666666]">
             {isRegister ? '已有账号？' : '还没有账号？'}

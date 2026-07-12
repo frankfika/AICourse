@@ -1,12 +1,32 @@
-import { Controller, Post, Body, Req, Res, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, Get, HttpCode, HttpStatus, UnauthorizedException, Param, BadRequestException } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './auth.dto';
+import { LoginDto, RegisterDto } from './auth.dto';
 
+/**
+ * AuthController - 重构后
+ *
+ * 端点分层：
+ * - 旧端点（保留兼容）: /auth/register /auth/login /auth/refresh /auth/logout
+ * - 新端点（抽象层）:    /auth/providers /auth/:providerId /auth/:providerId/callback
+ *
+ * 旧端点内部走 email_password provider（保留 Frank 安全加固 commit 的逻辑）
+ * 新端点通用：传 providerId + credentials
+ */
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  // ============ 新端点：列出可用 provider ============
+
+  /** 前端 LoginPage 用：列出可用的 provider 渲染按钮（OAuth / SSO 入口） */
+  @Get('providers')
+  listProviders() {
+    return { providers: this.authService.listProviders() };
+  }
+
+  // ============ 旧端点：email/password 兼容 ============
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
@@ -22,19 +42,11 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.login(dto);
-    res.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/api/v1/auth',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
   }
 
-  // Security: refresh reads the refresh token from the httpOnly cookie only,
-  // not from the request body. This prevents the token from being logged in
-  // access logs or captured by malicious browser extensions.
+  // Security: refresh 走 httpOnly cookie,不在 body 取（防 log 泄露 + 防恶意扩展）
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
@@ -46,13 +58,7 @@ export class AuthController {
       throw new UnauthorizedException('No refresh token');
     }
     const result = await this.authService.refresh(token);
-    res.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/api/v1/auth',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
   }
 
@@ -61,5 +67,41 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token', { path: '/api/v1/auth' });
     return { message: 'Logged out' };
+  }
+
+  // ============ 新端点：通用 provider 入口 ============
+
+  /**
+   * 通用 provider authenticate 入口
+   * - email_password: body = { email, password, mode: 'login' | 'register' }
+   * - oauth.google / oauth.github: body = { code }
+   * - sso.saml: body = { samlResponse }
+   *
+   * 返回结构跟 /auth/login 一致（access + refresh + user）
+   */
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post(':providerId')
+  @HttpCode(HttpStatus.OK)
+  async authenticate(
+    @Param('providerId') providerId: string,
+    @Body() body: Record<string, unknown>,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (!body || Object.keys(body).length === 0) {
+      throw new BadRequestException('Missing credentials');
+    }
+    const result = await this.authService.authenticate(providerId, body);
+    this.setRefreshCookie(res, result.refreshToken);
+    return { accessToken: result.accessToken, user: result.user };
+  }
+
+  private setRefreshCookie(res: Response, refreshToken: string) {
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/v1/auth',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
   }
 }
