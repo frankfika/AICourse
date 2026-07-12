@@ -191,10 +191,10 @@ export function DegreeDetailPage() {
             {degree.courses.map((course, i) => (
               <div
                 key={course.id}
-                className="grid grid-cols-12 border-b border-[#171717] hover:bg-[#EEEDE9] transition-colors"
+                className="grid grid-cols-1 md:grid-cols-12 border-b border-[#171717] hover:bg-[#EEEDE9] transition-colors"
               >
                 {/* Step number */}
-                <div className="col-span-2 md:col-span-1 p-6 border-r border-[#171717] flex items-center justify-center">
+                <div className="col-span-12 md:col-span-1 p-4 md:p-6 border-b md:border-b-0 md:border-r border-[#171717] flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-[9px] font-black uppercase tracking-widest text-[#666666]">
                       Step
@@ -206,7 +206,7 @@ export function DegreeDetailPage() {
                 </div>
 
                 {/* Content */}
-                <div className="col-span-10 md:col-span-8 p-6 border-r border-[#171717]">
+                <div className="col-span-12 md:col-span-8 p-4 md:p-6 border-b md:border-b-0 md:border-r border-[#171717]">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-[#171717] text-white">
                       {course.level}
@@ -233,7 +233,7 @@ export function DegreeDetailPage() {
                 </div>
 
                 {/* Action */}
-                <div className="col-span-12 md:col-span-3 p-6 flex md:items-center md:justify-end">
+                <div className="col-span-12 md:col-span-3 p-4 md:p-6 flex md:items-center md:justify-end">
                   <Link
                     to={`/courses/${course.id}`}
                     className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[#171717] hover:underline"

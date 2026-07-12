@@ -25,8 +25,8 @@ let CoursesController = class CoursesController {
     constructor(coursesService) {
         this.coursesService = coursesService;
     }
-    async findAll(status, search) {
-        return this.coursesService.findAll({ status, search });
+    async findAll(status, courseType, search) {
+        return this.coursesService.findAll({ status, courseType, search });
     }
     async findOne(id, req) {
         const includeDraft = req.user?.role === client_1.UserRole.admin;
@@ -46,9 +46,10 @@ exports.CoursesController = CoursesController;
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('status')),
-    __param(1, (0, common_1.Query)('search')),
+    __param(1, (0, common_1.Query)('courseType')),
+    __param(2, (0, common_1.Query)('search')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "findAll", null);
 __decorate([

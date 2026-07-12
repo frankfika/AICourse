@@ -17,6 +17,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      screens: {
+        xs: '475px',
+      },
       colors: {
         brand:   { 50:'rgb(var(--brand-50-rgb) / <alpha-value>)', 100:'rgb(var(--brand-100-rgb) / <alpha-value>)', 300:'rgb(var(--brand-300-rgb) / <alpha-value>)', 500:'rgb(var(--brand-500-rgb) / <alpha-value>)', 700:'rgb(var(--brand-700-rgb) / <alpha-value>)', 900:'rgb(var(--brand-900-rgb) / <alpha-value>)' },
         neutral: { 0:'rgb(var(--neutral-0-rgb) / <alpha-value>)', 50:'rgb(var(--neutral-50-rgb) / <alpha-value>)', 100:'rgb(var(--neutral-100-rgb) / <alpha-value>)', 200:'rgb(var(--neutral-200-rgb) / <alpha-value>)', 400:'rgb(var(--neutral-400-rgb) / <alpha-value>)', 600:'rgb(var(--neutral-600-rgb) / <alpha-value>)', 800:'rgb(var(--neutral-800-rgb) / <alpha-value>)', 900:'rgb(var(--neutral-900-rgb) / <alpha-value>)', 950:'rgb(var(--neutral-950-rgb) / <alpha-value>)' },

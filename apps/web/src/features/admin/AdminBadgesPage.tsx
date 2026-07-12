@@ -216,25 +216,25 @@ export function AdminBadgesPage() {
       )}
 
       <div className="border-2 border-[#171717] bg-white">
-        <div className="grid grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
-          <div className="col-span-1">#</div>
-          <div className="col-span-4">Badge</div>
-          <div className="col-span-2">Condition</div>
-          <div className="col-span-1">Pts</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-2 text-right">Action</div>
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+          <div className="col-span-12 md:col-span-1">#</div>
+          <div className="col-span-12 md:col-span-4">Badge</div>
+          <div className="col-span-12 md:col-span-2">Condition</div>
+          <div className="col-span-12 md:col-span-1">Pts</div>
+          <div className="col-span-12 md:col-span-2">Status</div>
+          <div className="col-span-12 md:col-span-2 text-right">Action</div>
         </div>
         {badges?.map((badge, i) => (
           <div
             key={badge.id}
-            className={`grid grid-cols-12 gap-4 p-4 items-center text-sm ${
+            className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
               i < (badges?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
             } hover:bg-[#F5F4F0] transition-colors`}
           >
-            <div className="col-span-1 text-[10px] font-black text-[#A3A3A3]">
+            <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
               {String(i + 1).padStart(2, '0')}
             </div>
-            <div className="col-span-4 flex items-center gap-3 min-w-0">
+            <div className="col-span-12 md:col-span-4 flex items-center gap-3 min-w-0">
               <div className="shrink-0 w-9 h-9 bg-[#171717] text-white flex items-center justify-center">
                 <Award className="w-4 h-4" />
               </div>
@@ -245,11 +245,11 @@ export function AdminBadgesPage() {
                 </div>
               </div>
             </div>
-            <div className="col-span-2 text-xs">
+            <div className="col-span-12 md:col-span-2 text-xs">
               {criteriaTypeOptions.find((o) => o.value === badge.criteriaType)?.label} ≥ {badge.criteriaValue}
             </div>
-            <div className="col-span-1 font-black tracking-tighter text-sm">{badge.points}</div>
-            <div className="col-span-2">
+            <div className="col-span-12 md:col-span-1 font-black tracking-tighter text-sm">{badge.points}</div>
+            <div className="col-span-12 md:col-span-2">
               <span
                 className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${
                   badge.isActive
@@ -260,7 +260,7 @@ export function AdminBadgesPage() {
                 {badge.isActive ? 'Active' : 'Disabled'}
               </span>
             </div>
-            <div className="col-span-2 flex items-center justify-end gap-1">
+            <div className="col-span-12 md:col-span-2 flex items-center justify-end gap-1">
               <button
                 onClick={() => startEdit(badge)}
                 className="p-2 hover:bg-[#171717] hover:text-white transition-colors"

@@ -1,10 +1,10 @@
 import { CoursesService } from './courses.service';
-import { UserRole, CourseStatus } from '@prisma/client';
+import { UserRole, CourseStatus, CourseType } from '@prisma/client';
 import { CreateCourseDto, UpdateCourseDto } from './courses.dto';
 export declare class CoursesController {
     private readonly coursesService;
     constructor(coursesService: CoursesService);
-    findAll(status?: CourseStatus, search?: string): Promise<({
+    findAll(status?: CourseStatus, courseType?: CourseType, search?: string): Promise<({
         chapters: ({
             lessons: ({
                 resources: {
@@ -51,6 +51,8 @@ export declare class CoursesController {
         costType: import("@prisma/client").$Enums.CostType;
         price: import("@prisma/client/runtime/library").Decimal;
         status: import("@prisma/client").$Enums.CourseStatus;
+        courseType: import("@prisma/client").$Enums.CourseType;
+        externalUrl: string | null;
         sourceVideoUrl: string | null;
         sourcePlatform: string | null;
     })[]>;
@@ -105,6 +107,8 @@ export declare class CoursesController {
         costType: import("@prisma/client").$Enums.CostType;
         price: import("@prisma/client/runtime/library").Decimal;
         status: import("@prisma/client").$Enums.CourseStatus;
+        courseType: import("@prisma/client").$Enums.CourseType;
+        externalUrl: string | null;
         sourceVideoUrl: string | null;
         sourcePlatform: string | null;
     }>;
@@ -155,6 +159,8 @@ export declare class CoursesController {
         costType: import("@prisma/client").$Enums.CostType;
         price: import("@prisma/client/runtime/library").Decimal;
         status: import("@prisma/client").$Enums.CourseStatus;
+        courseType: import("@prisma/client").$Enums.CourseType;
+        externalUrl: string | null;
         sourceVideoUrl: string | null;
         sourcePlatform: string | null;
     }>;
@@ -205,6 +211,8 @@ export declare class CoursesController {
         costType: import("@prisma/client").$Enums.CostType;
         price: import("@prisma/client/runtime/library").Decimal;
         status: import("@prisma/client").$Enums.CourseStatus;
+        courseType: import("@prisma/client").$Enums.CourseType;
+        externalUrl: string | null;
         sourceVideoUrl: string | null;
         sourcePlatform: string | null;
     }>;

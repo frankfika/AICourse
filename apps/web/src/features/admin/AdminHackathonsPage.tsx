@@ -273,13 +273,13 @@ export function AdminHackathonsPage() {
       )}
 
       <div className="border-2 border-[#171717] bg-white">
-        <div className="grid grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
-          <div className="col-span-1">#</div>
-          <div className="col-span-4">Title</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-2">Time</div>
-          <div className="col-span-2">Team</div>
-          <div className="col-span-1 text-right">Action</div>
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+          <div className="col-span-12 md:col-span-1">#</div>
+          <div className="col-span-12 md:col-span-4">Title</div>
+          <div className="col-span-12 md:col-span-2">Status</div>
+          <div className="col-span-12 md:col-span-2">Time</div>
+          <div className="col-span-12 md:col-span-2">Team</div>
+          <div className="col-span-12 md:col-span-1 text-right">Action</div>
         </div>
         {isLoading ? (
           <div className="p-12 text-center text-sm text-[#666666]">加载中...</div>
@@ -287,26 +287,26 @@ export function AdminHackathonsPage() {
           hackathons?.map((h, i) => (
             <div
               key={h.id}
-              className={`grid grid-cols-12 gap-4 p-4 items-center text-sm ${
+              className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
                 i < (hackathons?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
               } hover:bg-[#F5F4F0] transition-colors`}
             >
-              <div className="col-span-1 text-[10px] font-black text-[#A3A3A3]">
+              <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
                 {String(i + 1).padStart(2, '0')}
               </div>
-              <div className="col-span-4 font-black tracking-tight truncate">{h.title}</div>
-              <div className="col-span-2">
+              <div className="col-span-12 md:col-span-4 font-black tracking-tight truncate">{h.title}</div>
+              <div className="col-span-12 md:col-span-2">
                 <HackathonStatusBadge status={h.status} />
               </div>
-              <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
+              <div className="col-span-12 md:col-span-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
                 {new Date(h.startDate).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                 {' - '}
                 {new Date(h.endDate).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
               </div>
-              <div className="col-span-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
+              <div className="col-span-12 md:col-span-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
                 {h.minTeamSize}-{h.maxTeamSize} 人
               </div>
-              <div className="col-span-1 flex items-center justify-end gap-1">
+              <div className="col-span-12 md:col-span-1 flex items-center justify-end gap-1">
                 <button
                   onClick={() => startEdit(h)}
                   className="p-2 hover:bg-[#171717] hover:text-white transition-colors"

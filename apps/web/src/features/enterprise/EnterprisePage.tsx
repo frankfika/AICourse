@@ -273,7 +273,7 @@ export function EnterprisePage() {
                 <div className="w-16 h-16 bg-[#171717] text-white flex items-center justify-center mb-6">
                   <Check className="w-8 h-8" strokeWidth={3} />
                 </div>
-                <h3 className="text-3xl font-black tracking-tighter mb-3">收到！</h3>
+                <h3 className="text-3xl font-black tracking-tighter mb-3 break-words">收到！</h3>
                 <p className="text-[#666666] mb-8 max-w-md">
                   我们的解决方案顾问会在 1 个工作日内通过邮件或电话联系你。
                 </p>
@@ -289,7 +289,7 @@ export function EnterprisePage() {
                 <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-6">
                   / 03 Inquiry
                 </div>
-                <h3 className="text-3xl font-black tracking-tighter mb-8">告诉我们你的需求</h3>
+                <h3 className="text-3xl font-black tracking-tighter mb-8 break-words">告诉我们你的需求</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field

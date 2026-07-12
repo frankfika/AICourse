@@ -47,7 +47,7 @@ export function LoginPage() {
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-4">
             / 2026 · Open
           </div>
-          <h1 className="text-5xl xl:text-7xl font-black tracking-tighter uppercase leading-[0.95] mb-6">
+          <h1 className="text-5xl xl:text-7xl font-black tracking-tighter uppercase leading-[0.95] mb-6 break-words">
             Master<br />AI.<br />Own The<br />Future.
           </h1>
           <p className="text-white/60 text-base leading-relaxed max-w-md">

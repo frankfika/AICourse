@@ -71,14 +71,14 @@ export function AdminEnterprisePage() {
       </div>
 
       <div className="border-2 border-[#171717] bg-white">
-        <div className="grid grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
-          <div className="col-span-1">#</div>
-          <div className="col-span-3">Company</div>
-          <div className="col-span-2">Contact</div>
-          <div className="col-span-2">Topic</div>
-          <div className="col-span-1">Team</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-1 text-right">Action</div>
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+          <div className="col-span-12 md:col-span-1">#</div>
+          <div className="col-span-12 md:col-span-3">Company</div>
+          <div className="col-span-12 md:col-span-2">Contact</div>
+          <div className="col-span-12 md:col-span-2">Topic</div>
+          <div className="col-span-12 md:col-span-1">Team</div>
+          <div className="col-span-12 md:col-span-2">Status</div>
+          <div className="col-span-12 md:col-span-1 text-right">Action</div>
         </div>
         {filtered?.map((inq, i) => (
           <div
@@ -88,24 +88,24 @@ export function AdminEnterprisePage() {
             } transition-colors`}
           >
             <div
-              className="grid grid-cols-12 gap-4 p-4 items-center text-sm cursor-pointer"
+              className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm cursor-pointer"
               onClick={() => setExpanded(expanded === inq.id ? null : inq.id)}
             >
-              <div className="col-span-1 text-[10px] font-black text-[#A3A3A3]">
+              <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
                 {String(i + 1).padStart(2, '0')}
               </div>
-              <div className="col-span-3 font-black tracking-tight truncate flex items-center gap-2">
+              <div className="col-span-12 md:col-span-3 font-black tracking-tight truncate flex items-center gap-2">
                 <Building2 className="w-3.5 h-3.5 shrink-0" /> {inq.company}
               </div>
-              <div className="col-span-2 text-xs">
+              <div className="col-span-12 md:col-span-2 text-xs">
                 <div className="font-bold">{inq.name}</div>
                 <div className="text-[#666666]">{inq.email}</div>
               </div>
-              <div className="col-span-2 text-xs text-[#666666] truncate">{inq.topic}</div>
-              <div className="col-span-1 text-[10px] font-black uppercase tracking-widest">
+              <div className="col-span-12 md:col-span-2 text-xs text-[#666666] truncate">{inq.topic}</div>
+              <div className="col-span-12 md:col-span-1 text-[10px] font-black uppercase tracking-widest">
                 {inq.teamSize}
               </div>
-              <div className="col-span-2" onClick={(e) => e.stopPropagation()}>
+              <div className="col-span-12 md:col-span-2" onClick={(e) => e.stopPropagation()}>
                 <select
                   value={inq.status}
                   onChange={(e) =>
@@ -122,7 +122,7 @@ export function AdminEnterprisePage() {
                   ))}
                 </select>
               </div>
-              <div className="col-span-1 flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+              <div className="col-span-12 md:col-span-1 flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() => deleteMutation.mutate(inq.id)}
                   className="p-2 hover:bg-[#171717] hover:text-white transition-colors"

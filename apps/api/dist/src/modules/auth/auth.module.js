@@ -14,6 +14,11 @@ const passport_1 = require("@nestjs/passport");
 const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
 const jwt_strategy_1 = require("./jwt.strategy");
+const email_password_provider_1 = require("./providers/email-password.provider");
+const oauth_provider_1 = require("./providers/oauth.provider");
+const sso_provider_1 = require("./providers/sso.provider");
+const auth_config_1 = require("./config/auth.config");
+const prisma_service_1 = require("../prisma/prisma.service");
 function assertStrongJwtSecret(secret) {
     const value = secret?.trim();
     if (!value) {
@@ -59,7 +64,48 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy],
+        providers: [
+            auth_service_1.AuthService,
+            jwt_strategy_1.JwtStrategy,
+            prisma_service_1.PrismaService,
+            {
+                provide: auth_service_1.AUTH_PROVIDERS,
+                useFactory: (prisma) => {
+                    const config = (0, auth_config_1.loadAuthConfig)();
+                    const logger = new common_1.Logger('AuthProviders');
+                    const built = [];
+                    for (const id of config.enabledProviders) {
+                        const cfg = config.providers[id];
+                        if (id === 'email_password') {
+                            built.push(new email_password_provider_1.EmailPasswordProvider(prisma, cfg.bcryptRounds ?? 12));
+                            continue;
+                        }
+                        if (id.startsWith('oauth.')) {
+                            built.push(new oauth_provider_1.OAuthProvider(id, {
+                                clientId: cfg.clientId,
+                                clientSecret: cfg.clientSecret,
+                                redirectUri: cfg.redirectUri,
+                                scopes: cfg.scopes ?? [],
+                            }, prisma));
+                            continue;
+                        }
+                        if (id === 'sso.saml') {
+                            built.push(new sso_provider_1.SsoProvider({
+                                entryPoint: cfg.entryPoint,
+                                issuer: cfg.issuer,
+                                callbackUrl: cfg.callbackUrl,
+                                cert: cfg.cert,
+                            }));
+                            continue;
+                        }
+                        logger.warn(`No factory branch for provider "${id}", skipping`);
+                    }
+                    logger.log(`Loaded ${built.length} auth provider(s): ${built.map((p) => p.id).join(', ')}`);
+                    return built;
+                },
+                inject: [prisma_service_1.PrismaService],
+            },
+        ],
         exports: [auth_service_1.AuthService],
     })
 ], AuthModule);

@@ -1,4 +1,4 @@
-import { CourseLevel, CostType, CourseStatus } from '@prisma/client';
+import { CourseLevel, CostType, CourseStatus, CourseType } from '@prisma/client';
 import { ResourceType } from '@prisma/client';
 declare class CreateResourceDto {
     title: string;
@@ -34,6 +34,8 @@ export declare class CreateCourseDto {
     costType: CostType;
     price: number;
     status?: CourseStatus;
+    courseType?: CourseType;
+    externalUrl?: string;
     sourceVideoUrl?: string;
     sourcePlatform?: string;
     chapters?: CreateChapterDto[];

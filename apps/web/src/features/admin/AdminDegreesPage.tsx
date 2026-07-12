@@ -179,26 +179,26 @@ export function AdminDegreesPage() {
 
       {/* Degree list */}
       <div className="border-2 border-[#171717] bg-white">
-        <div className="grid grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
-          <div className="col-span-1">#</div>
-          <div className="col-span-6">Title</div>
-          <div className="col-span-2">Type</div>
-          <div className="col-span-1">Price</div>
-          <div className="col-span-1">Courses</div>
-          <div className="col-span-1 text-right">Action</div>
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+          <div className="col-span-12 md:col-span-1">#</div>
+          <div className="col-span-12 md:col-span-6">Title</div>
+          <div className="col-span-12 md:col-span-2">Type</div>
+          <div className="col-span-12 md:col-span-1">Price</div>
+          <div className="col-span-12 md:col-span-1">Courses</div>
+          <div className="col-span-12 md:col-span-1 text-right">Action</div>
         </div>
         {degrees?.map((degree, i) => (
           <div
             key={degree.id}
-            className={`grid grid-cols-12 gap-4 p-4 items-center text-sm ${
+            className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
               i < (degrees?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
             } hover:bg-[#F5F4F0] transition-colors`}
           >
-            <div className="col-span-1 text-[10px] font-black text-[#A3A3A3]">
+            <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
               {String(i + 1).padStart(2, '0')}
             </div>
-            <div className="col-span-6 font-black tracking-tight truncate">{degree.title}</div>
-            <div className="col-span-2 text-xs">
+            <div className="col-span-12 md:col-span-6 font-black tracking-tight truncate">{degree.title}</div>
+            <div className="col-span-12 md:col-span-2 text-xs">
               <span
                 className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${
                   degree.costType === 'free'
@@ -209,11 +209,11 @@ export function AdminDegreesPage() {
                 {degree.costType}
               </span>
             </div>
-            <div className="col-span-1 font-bold text-sm">
+            <div className="col-span-12 md:col-span-1 font-bold text-sm">
               {degree.costType === 'free' ? '—' : `¥${degree.price}`}
             </div>
-            <div className="col-span-1 font-bold text-sm">{degree.courses.length}</div>
-            <div className="col-span-1 flex items-center justify-end gap-1">
+            <div className="col-span-12 md:col-span-1 font-bold text-sm">{degree.courses.length}</div>
+            <div className="col-span-12 md:col-span-1 flex items-center justify-end gap-1">
               <button
                 onClick={() => deleteMutation.mutate(degree.id)}
                 className="p-2 hover:bg-[#171717] hover:text-white transition-colors"

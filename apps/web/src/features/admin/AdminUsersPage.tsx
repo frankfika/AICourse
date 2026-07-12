@@ -107,31 +107,31 @@ export function AdminUsersPage() {
       )}
 
       <div className="border-2 border-[#171717] bg-white">
-        <div className="grid grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
-          <div className="col-span-1">#</div>
-          <div className="col-span-4">User</div>
-          <div className="col-span-4">Email</div>
-          <div className="col-span-2">Role</div>
-          <div className="col-span-1 text-right">Action</div>
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+          <div className="md:col-span-1">#</div>
+          <div className="md:col-span-4">User</div>
+          <div className="md:col-span-4">Email</div>
+          <div className="md:col-span-2">Role</div>
+          <div className="md:col-span-1 text-right">Action</div>
         </div>
         {users?.map((user, i) => (
           <div
             key={user.id}
-            className={`grid grid-cols-12 gap-4 p-4 items-center text-sm ${
+            className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
               i < (users?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
             } hover:bg-[#F5F4F0] transition-colors`}
           >
-            <div className="col-span-1 text-[10px] font-black text-[#A3A3A3]">
+            <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
               {String(i + 1).padStart(2, '0')}
             </div>
-            <div className="col-span-4 flex items-center gap-3 min-w-0">
+            <div className="col-span-12 md:col-span-4 flex items-center gap-3 min-w-0">
               <div className="w-8 h-8 bg-[#171717] text-white text-sm font-black flex items-center justify-center shrink-0">
                 {user.name.charAt(0).toUpperCase()}
               </div>
               <span className="font-black tracking-tight truncate">{user.name}</span>
             </div>
-            <div className="col-span-4 text-xs text-[#666666] truncate">{user.email}</div>
-            <div className="col-span-2">
+            <div className="col-span-12 md:col-span-4 text-xs text-[#666666] truncate">{user.email}</div>
+            <div className="col-span-12 md:col-span-2">
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${
                   user.role === 'admin'
@@ -143,7 +143,7 @@ export function AdminUsersPage() {
                 {user.role}
               </span>
             </div>
-            <div className="col-span-1 text-right">
+            <div className="col-span-12 md:col-span-1 text-right">
               <button
                 onClick={() => setSelectedUser(user)}
                 className="px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white transition-colors"

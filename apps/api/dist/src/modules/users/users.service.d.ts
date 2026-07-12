@@ -51,6 +51,8 @@ export declare class UsersService {
                 costType: import("@prisma/client").$Enums.CostType;
                 price: import("@prisma/client/runtime/library").Decimal;
                 status: import("@prisma/client").$Enums.CourseStatus;
+                courseType: import("@prisma/client").$Enums.CourseType;
+                externalUrl: string | null;
                 sourceVideoUrl: string | null;
                 sourcePlatform: string | null;
             } | null;

@@ -21,18 +21,15 @@ let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
     }
+    listProviders() {
+        return { providers: this.authService.listProviders() };
+    }
     async register(dto) {
         return this.authService.register(dto);
     }
     async login(dto, res) {
         const result = await this.authService.login(dto);
-        res.cookie('refresh_token', result.refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/api/v1/auth',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        this.setRefreshCookie(res, result.refreshToken);
         return { accessToken: result.accessToken, user: result.user };
     }
     async refresh(req, res) {
@@ -41,21 +38,38 @@ let AuthController = class AuthController {
             throw new common_1.UnauthorizedException('No refresh token');
         }
         const result = await this.authService.refresh(token);
-        res.cookie('refresh_token', result.refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            path: '/api/v1/auth',
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        this.setRefreshCookie(res, result.refreshToken);
         return { accessToken: result.accessToken, user: result.user };
     }
     async logout(res) {
         res.clearCookie('refresh_token', { path: '/api/v1/auth' });
         return { message: 'Logged out' };
     }
+    async authenticate(providerId, body, res) {
+        if (!body || Object.keys(body).length === 0) {
+            throw new common_1.BadRequestException('Missing credentials');
+        }
+        const result = await this.authService.authenticate(providerId, body);
+        this.setRefreshCookie(res, result.refreshToken);
+        return { accessToken: result.accessToken, user: result.user };
+    }
+    setRefreshCookie(res, refreshToken) {
+        res.cookie('refresh_token', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/api/v1/auth',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+    }
 };
 exports.AuthController = AuthController;
+__decorate([
+    (0, common_1.Get)('providers'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "listProviders", null);
 __decorate([
     (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60000 } }),
     (0, common_1.Post)('register'),
@@ -91,6 +105,17 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "logout", null);
+__decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 10, ttl: 60000 } }),
+    (0, common_1.Post)(':providerId'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('providerId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "authenticate", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

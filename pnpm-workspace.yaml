@@ -1,3 +1,25 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+allowBuilds:
+  '@prisma/client': false
+  '@prisma/engines': false
+  '@scarf/scarf': false
+  bcrypt: false
+  prisma: false
+
+onlyBuiltDependencies:
+  - bcrypt
+  - prisma
+  - '@prisma/client'
+  - '@prisma/engines'
+  - esbuild
+  - protobufjs
+
+overrides:
+  tar: '>=7.5.11'
+  js-yaml: '>=4.2.0'
+  multer: '>=2.2.0'
+  vite: '>=6.4.3'
+  vitest: '>=3.2.6'
