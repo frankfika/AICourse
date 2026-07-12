@@ -5,6 +5,10 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { router } from './src/router';
 import { queryClient } from './src/lib/queryClient';
 import { AuthProvider } from './src/providers/AuthProvider';
+import { initThemeFromStorage } from './src/components/Layout';
+
+// 启动时同步 theme 到 <html class="dark">,避免首屏闪烁
+initThemeFromStorage();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
