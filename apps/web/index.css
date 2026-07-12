@@ -1,24 +1,37 @@
+/**
+ * Apps/web 全局样式入口
+ *
+ * 顺序:
+ *   1. tokens.css — CSS variables(:root + .dark)
+ *   2. fonts — Google Fonts
+ *   3. Tailwind base/components/utilities
+ *   4. base 层 — body 默认(用 token)
+ */
+
+@import './src/styles/tokens.css';
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --color-bg: #F5F4F0;
-  --color-surface: #FFFFFF;
-  --color-border: #EEEDE9;
-  --color-text-1: #171717;
-  --color-text-2: #666666;
-  --color-text-3: #999999;
-}
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-body {
-  background-color: var(--color-bg);
-  color: var(--color-text-1);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  body {
+    background-color: var(--neutral-50);
+    color: var(--neutral-900);
+    font-family: var(--font-sans);
+  }
+
+  .dark body {
+    background-color: var(--neutral-950);
+    color: var(--neutral-900);
+  }
 }
 
 /* Minimalist Scrollbar */
@@ -30,11 +43,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #E5E5E5;
+  background: var(--neutral-200);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #CCCCCC;
+  background: var(--neutral-400);
 }
 
 .scrollbar-hide::-webkit-scrollbar {

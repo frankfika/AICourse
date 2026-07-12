@@ -42,3 +42,6 @@ public/uploads/
 
 # playwright test cache
 .playwright-mcp/
+
+# dev-only screenshots (P0-4 验证用,不进版本控制)
+apps/web/.screenshots/
