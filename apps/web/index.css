@@ -26,6 +26,15 @@
     background-color: var(--neutral-50);
     color: var(--neutral-900);
     font-family: var(--font-sans);
+    /* P0-5:mobile bottom tab 让出 64px 位置(< md) */
+    padding-bottom: 64px;
+  }
+
+  /* md+ 不需要留 bottom tab 空间 */
+  @media (min-width: 768px) {
+    body {
+      padding-bottom: 0;
+    }
   }
 
   .dark body {
