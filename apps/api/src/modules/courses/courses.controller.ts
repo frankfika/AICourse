@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { UserRole, CourseStatus } from '@prisma/client';
+import { UserRole, CourseStatus, CourseType } from '@prisma/client';
 import { CreateCourseDto, UpdateCourseDto } from './courses.dto';
 
 @Controller('courses')
@@ -25,9 +25,10 @@ export class CoursesController {
   @Get()
   async findAll(
     @Query('status') status?: CourseStatus,
+    @Query('courseType') courseType?: CourseType,
     @Query('search') search?: string,
   ) {
-    return this.coursesService.findAll({ status, search });
+    return this.coursesService.findAll({ status, courseType, search });
   }
 
   // Security: only admins can fetch draft/archived courses by id. Public

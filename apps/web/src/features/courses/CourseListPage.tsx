@@ -13,6 +13,8 @@ interface Course {
   instructor: string;
   level: string;
   costType: 'free' | 'paid' | 'charity';
+  courseType: 'own' | 'partner' | 'public' | 'third_party';
+  externalUrl?: string;
   price: number;
   tags: string;
 }
@@ -20,11 +22,14 @@ interface Course {
 export function CourseListPage() {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'paid' | 'charity'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'own' | 'partner' | 'public' | 'third_party'>('all');
 
   const { data: courses, isLoading } = useQuery({
-    queryKey: ['courses'],
+    queryKey: ['courses', typeFilter],
     queryFn: async () => {
-      const { data } = await api.get<Course[]>('/api/v1/courses');
+      const params = new URLSearchParams();
+      if (typeFilter !== 'all') params.set('courseType', typeFilter);
+      const { data } = await api.get<Course[]>(`/api/v1/courses?${params.toString()}`);
       return data;
     },
   });
@@ -43,6 +48,23 @@ export function CourseListPage() {
     { key: 'paid', label: '付费' },
     { key: 'charity', label: '公益' },
   ] as const;
+
+  const typeFilters = [
+    { key: 'all', label: '全部来源' },
+    { key: 'own', label: '自有' },
+    { key: 'partner', label: '合作' },
+    { key: 'public', label: '公开' },
+    { key: 'third_party', label: '第三方' },
+  ] as const;
+
+  const courseTypeLabel = (t: Course['courseType']) => {
+    switch (t) {
+      case 'own': return '自有';
+      case 'partner': return '合作';
+      case 'public': return '公开';
+      case 'third_party': return '第三方';
+    }
+  };
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
@@ -63,7 +85,8 @@ export function CourseListPage() {
 
       {/* Toolbar */}
       <section className="border-b border-[#171717] bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
           <div className="flex flex-wrap items-stretch border border-[#171717]">
             {filters.map((f, i) => (
               <button
@@ -90,6 +113,24 @@ export function CourseListPage() {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
             />
           </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">来源</span>
+            {typeFilters.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setTypeFilter(f.key)}
+                className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-colors border ${
+                  typeFilter === f.key
+                    ? 'bg-[#171717] text-white border-[#171717]'
+                    : 'bg-white text-[#171717] border-[#171717] hover:bg-[#EEEDE9]'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -104,7 +145,9 @@ export function CourseListPage() {
             {filtered.map((course, i) => (
               <Link
                 key={course.id}
-                to={`/courses/${course.id}`}
+                to={course.externalUrl && course.courseType === 'third_party' ? course.externalUrl : `/courses/${course.id}`}
+                target={course.externalUrl && course.courseType === 'third_party' ? '_blank' : undefined}
+                rel={course.externalUrl && course.courseType === 'third_party' ? 'noopener noreferrer' : undefined}
                 className={`group block hover:bg-[#EEEDE9] transition-colors ${
                   i % 3 !== 2 ? 'lg:border-r border-[#171717]' : ''
                 } ${i % 2 !== 1 ? 'md:border-r lg:border-r-0 border-[#171717]' : ''} ${
@@ -119,7 +162,7 @@ export function CourseListPage() {
                   />
                 </div>
                 <div className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
                     {course.costType === 'free' ? (
                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest">
                         <Sparkles className="w-3 h-3" /> Free
@@ -136,6 +179,22 @@ export function CourseListPage() {
                     <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
                       {course.level}
                     </span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 ${
+                      course.courseType === 'own'
+                        ? 'bg-[#171717] text-white'
+                        : course.courseType === 'partner'
+                        ? 'bg-[#4B5563] text-white'
+                        : course.courseType === 'public'
+                        ? 'border border-[#171717] text-[#171717]'
+                        : 'bg-[#EEEDE9] text-[#171717] border border-[#171717]'
+                    }`}>
+                      {courseTypeLabel(course.courseType)}
+                    </span>
+                    {course.externalUrl && course.courseType === 'third_party' && (
+                      <span className="text-[10px] font-black uppercase tracking-widest text-[#999999]">
+                        外部链接 →
+                      </span>
+                    )}
                   </div>
                   <h3 className="font-black text-lg leading-tight mb-3 line-clamp-2 tracking-tight">
                     {course.title}

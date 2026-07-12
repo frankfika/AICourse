@@ -8,7 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CourseLevel, CostType, CourseStatus } from '@prisma/client';
+import { CourseLevel, CostType, CourseStatus, CourseType } from '@prisma/client';
 
 import { ResourceType } from '@prisma/client';
 
@@ -109,6 +109,15 @@ export class CreateCourseDto {
   @IsOptional()
   @IsEnum(CourseStatus)
   status?: CourseStatus;
+
+  @IsOptional()
+  @IsEnum(CourseType)
+  courseType?: CourseType;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  externalUrl?: string;
 
   @IsOptional()
   @IsString()

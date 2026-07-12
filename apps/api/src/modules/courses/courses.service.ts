@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import { CreateCourseDto, UpdateCourseDto } from './courses.dto';
-import { CourseStatus } from '@prisma/client';
+import { CourseStatus, CourseType } from '@prisma/client';
 
 @Injectable()
 export class CoursesService {
@@ -23,9 +23,10 @@ export class CoursesService {
     },
   };
 
-  async findAll(params: { status?: CourseStatus; search?: string }) {
+  async findAll(params: { status?: CourseStatus; courseType?: CourseType; search?: string }) {
     const where: any = {};
     if (params.status) where.status = params.status;
+    if (params.courseType) where.courseType = params.courseType;
     if (params.search) {
       where.OR = [
         { title: { contains: params.search } },
@@ -54,15 +55,19 @@ export class CoursesService {
   }
 
   async create(dto: CreateCourseDto) {
-    const { chapters, sourceVideoUrl, sourcePlatform, ...courseData } = dto as CreateCourseDto & {
+    const { chapters, sourceVideoUrl, sourcePlatform, externalUrl, courseType, ...courseData } = dto as CreateCourseDto & {
       sourceVideoUrl?: string;
       sourcePlatform?: string;
+      externalUrl?: string;
+      courseType?: CourseType;
     };
     const course = await this.prisma.course.create({
       data: {
         ...courseData,
         ...(sourceVideoUrl ? { sourceVideoUrl } : {}),
         ...(sourcePlatform ? { sourcePlatform } : {}),
+        ...(externalUrl ? { externalUrl } : {}),
+        ...(courseType ? { courseType } : {}),
         status: courseData.status ?? CourseStatus.draft,
         chapters: chapters
           ? {

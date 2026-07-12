@@ -71,6 +71,8 @@ model Course {
   costType        CostType     @map("cost_type")
   price           Decimal      @default(0) @db.Decimal(10, 2)
   status          CourseStatus @default(draft)
+  courseType      CourseType   @default(own) @map("course_type")
+  externalUrl     String?      @map("external_url")
   sourceVideoUrl  String?      @unique @map("source_video_url")
   sourcePlatform  String?      @map("source_platform")
   createdAt       DateTime     @default(now()) @map("created_at")
@@ -103,6 +105,13 @@ enum CourseStatus {
   draft
   published
   archived
+}
+
+enum CourseType {
+  own          // 自有课程
+  partner      // 合作课程
+  public       // 公开课程
+  third_party  // 第三方课程
 }
 
 model Chapter {

@@ -345,7 +345,7 @@ vercel --prod
 
 ## 📄 License
 
-MIT
+本项目为专有软件（Proprietary Software），版权归 OpenCSG 所有。未经授权，禁止复制、分发、修改或反向工程。详见 [LICENSE](./LICENSE)。
 
 ---
 

@@ -10,6 +10,7 @@ interface Course {
   title: string;
   instructor: string;
   costType: string;
+  courseType: string;
   price: number;
   status: string;
 }
@@ -30,6 +31,8 @@ export function AdminCoursesPage() {
     thumbnail: '',
     tags: '',
     costType: 'free',
+    courseType: 'own',
+    externalUrl: '',
     price: 0,
   });
 
@@ -57,6 +60,8 @@ export function AdminCoursesPage() {
         thumbnail: '',
         tags: '',
         costType: 'free',
+        courseType: 'own',
+        externalUrl: '',
         price: 0,
       });
     },
@@ -141,6 +146,26 @@ export function AdminCoursesPage() {
       return;
     }
     batchImportMutation.mutate(urls);
+  };
+
+  const courseTypeLabel = (t: string) => {
+    switch (t) {
+      case 'own': return '自有';
+      case 'partner': return '合作';
+      case 'public': return '公开';
+      case 'third_party': return '第三方';
+      default: return t;
+    }
+  };
+
+  const courseTypeBadgeClass = (t: string) => {
+    switch (t) {
+      case 'own': return 'bg-[#171717] text-white';
+      case 'partner': return 'bg-[#4B5563] text-white';
+      case 'public': return 'border border-[#171717] text-[#171717]';
+      case 'third_party': return 'bg-[#EEEDE9] text-[#171717] border border-[#171717]';
+      default: return 'border border-[#171717]';
+    }
   };
 
   return (
@@ -271,6 +296,8 @@ export function AdminCoursesPage() {
                 thumbnail: draft.thumbnail ?? '',
                 tags: draft.tags ?? '',
                 costType: draft.costType ?? 'free',
+                courseType: draft.courseType ?? 'own',
+                externalUrl: draft.externalUrl ?? '',
                 price: draft.price ?? 0,
               });
             }}
@@ -294,7 +321,7 @@ export function AdminCoursesPage() {
             </div>
             <Field label="时长（如：45 分钟）" required value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} />
             <div>
-              <Label>类型</Label>
+              <Label>付费类型</Label>
               <select
                 value={form.costType}
                 onChange={(e) => setForm({ ...form, costType: e.target.value })}
@@ -305,11 +332,29 @@ export function AdminCoursesPage() {
                 <option value="charity">公益</option>
               </select>
             </div>
+            <div>
+              <Label>课程来源</Label>
+              <select
+                value={form.courseType}
+                onChange={(e) => setForm({ ...form, courseType: e.target.value })}
+                className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9]"
+              >
+                <option value="own">自有课程</option>
+                <option value="partner">合作课程</option>
+                <option value="public">公开课程</option>
+                <option value="third_party">第三方课程</option>
+              </select>
+            </div>
             <Field
               label="价格"
               type="number"
               value={String(form.price)}
               onChange={(v) => setForm({ ...form, price: Number(v) })}
+            />
+            <Field
+              label="外部链接（第三方课程必填）"
+              value={form.externalUrl}
+              onChange={(v) => setForm({ ...form, externalUrl: v })}
             />
           </div>
           <div className="mt-4">
@@ -365,27 +410,28 @@ export function AdminCoursesPage() {
 
       {/* Course list */}
       <div className="border-2 border-[#171717] bg-white">
-        <div className="grid grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
-          <div className="col-span-1">#</div>
-          <div className="col-span-5">Title</div>
-          <div className="col-span-2">Instructor</div>
-          <div className="col-span-2">Type</div>
-          <div className="col-span-1">Price</div>
-          <div className="col-span-1 text-right">Action</div>
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+          <div className="col-span-12 md:col-span-1">#</div>
+          <div className="col-span-12 md:col-span-4">Title</div>
+          <div className="col-span-12 md:col-span-2">Instructor</div>
+          <div className="col-span-12 md:col-span-1">Cost</div>
+          <div className="col-span-12 md:col-span-1">Price</div>
+          <div className="col-span-12 md:col-span-2">Source</div>
+          <div className="col-span-12 md:col-span-1 text-right">Action</div>
         </div>
         {courses?.map((course, i) => (
           <div
             key={course.id}
-            className={`grid grid-cols-12 gap-4 p-4 items-center text-sm ${
+            className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
               i < (courses?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
             } hover:bg-[#F5F4F0] transition-colors`}
           >
-            <div className="col-span-1 text-[10px] font-black text-[#A3A3A3]">
+            <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
               {String(i + 1).padStart(2, '0')}
             </div>
-            <div className="col-span-5 font-black tracking-tight truncate">{course.title}</div>
-            <div className="col-span-2 text-[#666666] text-xs">{course.instructor}</div>
-            <div className="col-span-2 text-xs">
+            <div className="col-span-12 md:col-span-4 font-black tracking-tight truncate">{course.title}</div>
+            <div className="col-span-12 md:col-span-2 text-[#666666] text-xs">{course.instructor}</div>
+            <div className="col-span-12 md:col-span-1 text-xs">
               <span
                 className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${
                   course.costType === 'free'
@@ -398,10 +444,15 @@ export function AdminCoursesPage() {
                 {course.costType}
               </span>
             </div>
-            <div className="col-span-1 font-bold text-sm">
+            <div className="col-span-12 md:col-span-1 font-bold text-sm">
               {course.costType === 'free' ? '—' : `¥${course.price}`}
             </div>
-            <div className="col-span-1 flex items-center justify-end gap-1">
+            <div className="col-span-12 md:col-span-2 text-xs">
+              <span className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${courseTypeBadgeClass(course.courseType)}`}>
+                {courseTypeLabel(course.courseType)}
+              </span>
+            </div>
+            <div className="col-span-12 md:col-span-1 flex items-center justify-start md:justify-end gap-1">
               <button
                 onClick={() => deleteMutation.mutate(course.id)}
                 className="p-2 hover:bg-[#171717] hover:text-white transition-colors"

@@ -37,6 +37,8 @@ interface Course {
   thumbnail: string;
   tags: string;
   costType: 'free' | 'paid' | 'charity';
+  courseType: 'own' | 'partner' | 'public' | 'third_party';
+  externalUrl?: string;
   price: number;
   chapters: Chapter[];
 }
@@ -91,6 +93,24 @@ function resourceIcon(type: Resource['type']) {
 function resourceLabel(type: Resource['type']) {
   return { pdf: 'PDF', code: '代码', link: '链接', video: '视频', audio: '音频' }[type];
 }
+
+const courseTypeLabel = (t: Course['courseType']) => {
+  switch (t) {
+    case 'own': return '自有课程';
+    case 'partner': return '合作课程';
+    case 'public': return '公开课程';
+    case 'third_party': return '第三方课程';
+  }
+};
+
+const courseTypeBadgeClass = (t: Course['courseType']) => {
+  switch (t) {
+    case 'own': return 'bg-[#171717] text-white';
+    case 'partner': return 'bg-[#4B5563] text-white';
+    case 'public': return 'border border-[#171717] text-[#171717]';
+    case 'third_party': return 'bg-[#EEEDE9] text-[#171717] border border-[#171717]';
+  }
+};
 
 export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -220,8 +240,11 @@ export function CourseDetailPage() {
                   ¥{course.price}
                 </span>
               )}
+              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${courseTypeBadgeClass(course.courseType)}`}>
+                {courseTypeLabel(course.courseType)}
+              </span>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[0.95] mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[0.95] mb-6 break-words">
               {course.title}
             </h1>
             <p className="text-[#666666] text-lg leading-relaxed mb-8 max-w-2xl">
@@ -270,6 +293,16 @@ export function CourseDetailPage() {
                 <div className="inline-flex items-center justify-between gap-3 border border-white px-6 py-4 font-black uppercase tracking-widest text-sm">
                   <CheckIcon className="w-4 h-4" /> 已报名，立即学习
                 </div>
+              ) : course.courseType === 'third_party' && course.externalUrl ? (
+                <a
+                  href={course.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-between gap-3 bg-white text-[#171717] px-6 py-4 font-black uppercase tracking-widest text-sm hover:bg-[#EEEDE9] transition-colors"
+                >
+                  <span>前往学习 →</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </a>
               ) : user ? (
                 <button
                   onClick={() => setPurchaseOpen(true)}
@@ -298,7 +331,7 @@ export function CourseDetailPage() {
 
       {/* Tabs bar */}
       <section className="border-b border-[#171717] bg-white sticky top-16 z-40">
-        <div className="max-w-7xl mx-auto px-6 flex">
+        <div className="max-w-7xl mx-auto px-6 flex overflow-x-auto scrollbar-hide">
           {[
             { key: 'overview', label: '课程概览', icon: BookOpen },
             { key: 'video', label: '视频课程', icon: PlayCircle },
@@ -577,7 +610,7 @@ export function CourseDetailPage() {
       )}
 
       {/* Toasts */}
-      <div className="fixed top-24 right-6 z-50 space-y-2">
+      <div className="fixed top-24 right-6 z-50 space-y-2 max-w-xs w-full">
         {toasts.map((toast) => (
           <div
             key={toast.id}
