@@ -1,3 +1,9 @@
+/**
+ * AdminLayout — admin 侧栏导航
+ *
+ * P0-7 调整:nav 顺序按 mock 调整(看板 / 课程 / 学位 / 用户 / 黑客松 / 企业),
+ * 保留 徽章管理,新增 审计日志 / 系统设置 2 个 placeholder "即将推出"。
+ */
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   BookOpen,
@@ -7,45 +13,72 @@ import {
   Award,
   Rocket,
   Building2,
+  ScrollText,
+  Settings,
+  Sparkles,
 } from 'lucide-react';
+
+interface NavItem {
+  path: string;
+  label: string;
+  icon: typeof BarChart3;
+  /** true 表示功能尚未实装,点击不跳转 */
+  comingSoon?: boolean;
+}
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const navItems = [
+  const navItems: NavItem[] = [
     { path: '/admin/dashboard', label: '数据看板', icon: BarChart3 },
     { path: '/admin/courses', label: '课程管理', icon: BookOpen },
     { path: '/admin/degrees', label: '学位管理', icon: GraduationCap },
-    { path: '/admin/enterprise', label: '企业咨询', icon: Building2 },
     { path: '/admin/users', label: '用户管理', icon: Users },
-    { path: '/admin/badges', label: '徽章管理', icon: Award },
     { path: '/admin/hackathons', label: '黑客松管理', icon: Rocket },
+    { path: '/admin/enterprise', label: '企业咨询', icon: Building2 },
+    { path: '/admin/badges', label: '徽章管理', icon: Award },
+    // 占位:P0-7 设计稿提到但后端 module 暂未提供 read API
+    { path: '/admin/audit', label: '审计日志', icon: ScrollText, comingSoon: true },
+    { path: '/admin/system', label: '系统设置', icon: Settings, comingSoon: true },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300">
+    <div className="max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300 text-neutral-900 dark:bg-neutral-950 rounded-xl">
       <div className="mb-8">
-        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-2">
+        <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 mb-2">
           / Admin Console
         </div>
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">管理后台</h1>
+        <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase text-neutral-900">管理后台</h1>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
-        <aside className="w-full md:w-56 shrink-0">
-          <nav className="border-2 border-[#171717] bg-white">
-            {navItems.map(({ path, label, icon: Icon }, i) => {
-              const active = location.pathname.startsWith(path);
+        <aside className="hidden md:block w-full md:w-56 shrink-0">
+          <nav className="border-2 border-neutral-900 bg-neutral-0 dark:bg-neutral-100">
+            {navItems.map(({ path, label, icon: Icon, comingSoon }, i) => {
+              const active = !comingSoon && location.pathname.startsWith(path);
               return (
                 <Link
                   key={path}
                   to={path}
                   className={`flex items-center gap-3 px-4 py-3 text-xs font-black uppercase tracking-widest transition-colors ${
                     active
-                      ? 'bg-[#171717] text-white'
-                      : 'text-[#666666] hover:bg-[#EEEDE9] hover:text-[#171717]'
-                  } ${i < navItems.length - 1 ? 'border-b border-[#EEEDE9]' : ''}`}
+                      ? 'bg-neutral-900 text-neutral-0'
+                      : comingSoon
+                        ? 'text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-50 cursor-not-allowed'
+                        : 'text-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-50 hover:text-neutral-900'
+                  } ${i < navItems.length - 1 ? 'border-b border-neutral-200' : ''}`}
+                  onClick={(e) => {
+                    if (comingSoon) {
+                      e.preventDefault();
+                    }
+                  }}
+                  aria-disabled={comingSoon}
                 >
                   <Icon className="w-4 h-4" /> {label}
+                  {comingSoon && (
+                    <span className="ml-auto text-[9px] font-bold text-warning-500 bg-warning-500/10 px-1.5 py-0.5 rounded-full normal-case">
+                      即将推出
+                    </span>
+                  )}
                 </Link>
               );
             })}
