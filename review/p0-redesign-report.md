@@ -1,8 +1,9 @@
-# P0 重设计落地报告 (2026-07-13)
+# P0 重设计落地报告 (2026-07-13 ~ 07-14)
 
 > 范围: review/redesign-spec.md §7.1 P0 (8 个 plan, 19 人天)
-> 实施: 1 个串行 (P0-4) + 3 个并行 worktree (P0-2/3, P0-5, P0-7/8), 4 个 sub-agent + owner verify
-> 状态: P0-2/3/4/5/7/8 合并到 main ✓ | P0-6 排队 (依赖 P0-5 完成) | 端到端 verify 未跑 (等 Frank review)
+> 实施: 1 个串行 (P0-4) + 4 个并行 (P0-2/3, P0-5, P0-6, P0-7/8), 5 个 sub-agent + owner 端到端 verify
+> 状态: **P0 全部 6 plan (2/3/4/5/6/7/8) 合并到 main ✓ + 端到端验证 PASS ✓ + 2 关键 bug 修复 ✓**
+> main build 0 错误, 50KB CSS + 774KB JS (gzip 215KB), 35 张截图 (light/dark/mobile/tablet)
 
 ## 1. Commit log (main 上 4 个新 commit)
 
@@ -11,11 +12,40 @@
 8fed8e1 feat(auth): P0-2/3 auth 登录/注册/绑定 UI + 6 宫格第三方按钮 (灰度 disabled) + AuthProvider 抽象层
 bb442fe merge: P0-5 新首页 + mobile bottom tab + FAB
 8fed8e1 feat(web): P0-5 新首页 + mobile bottom tab + AI 助教 FAB + 主题切换
-bf365a0 merge: P0-7+8 后台总览 + 课程编辑
+bf365a0 merge: P0-7/8 后台总览 + 课程编辑
 cbad224 feat(admin): P0-7+8 后台总览看板 + 课程编辑 5 tab + 章节树 CRUD
 2a7cfe5 merge: P0-4 设计系统 + 5 个基础组件
 6e8d7bf feat(web): P0-4 设计系统 tokens + 5 个基础组件 (Button/Input/Card/EmptyState/Skeleton)
 ```
+
+## 1.1 端到端验证 PASS ✓ (2026-07-14 00:50 完成)
+
+跑完整 e2e (e2e-verify-2.mjs + e2e-verify-3.mjs, 0 错误, 9 + 6 步骤):
+
+| 流程 | 状态 | 说明 |
+|---|---|---|
+| 真注册 | ✓ 201 | POST /api/v1/auth/register |
+| 真登录 (form submit) | ✓ 200 | accessToken 拿到, zustand store user 写入 |
+| /dashboard 三栏布局 | ✓ | 1174 行 + 真后端数据 (课程 / 章节 / 进度) |
+| /dashboard 暗色 | ✓ | 走 token 全站翻转 |
+| /dashboard 768 tablet | ✓ | 2 栏 + AI 抽屉 FAB |
+| /dashboard 375 mobile | ✓ | 1 栏 + 顶部 3 tab 切 (大纲/视频/AI 助教) |
+| /dashboard/settings/bindings | ✓ | 6 宫格灰度 (Google/GitHub/微信/企业微信/飞书/Apple) |
+| /profile → /dashboard | ✓ | Navigate 重定向生效 |
+| 登录后 home | ✓ | 顶部 nav 显用户头像 + 退出按钮 + 主题 toggle |
+
+**修 2 关键 bug**:
+- commit d64df90: 5:00 AM 那次 merge 只把 backend api/dist + page 微调带进来, P0-2/3 的 features/auth + lib/auth + components/auth 全漏了 → 手动 checkout 16 文件 + 删旧 providers/AuthProvider.tsx
+- commit 9ba913b: ProtectedRoute + AuthProvider user 状态不同步 (ProtectedRoute 读 zustand, AuthProvider 启动 refresh 401 调 clearAuth 把 user 清空, 导致登录用户被踢出) → 修 AuthProvider refresh 失败时仅在 store 无 user 时调 clearAuth, 保留已登录 user
+
+## 1.2 工作量 (实际)
+- P0-4 串行: 14 分钟 (1 worktree)
+- P0-2/3 + P0-5 + P0-7/8 并行 3 worktree: 30-60 分钟
+- P0-6 dashboard 并行 worktree: 25 分钟
+- owner 端到端验证: 30 分钟 (启动 docker + mysql/redis + nest + vite + 跑 2 轮 e2e 截图)
+- 修 2 关键 bug: 15 分钟
+- 写报告: 10 分钟
+- **总耗时: 约 2 小时** (5:00 - 7:00 / 实际跨 0:24-0:55)
 
 ## 2. P0-4 设计系统 (commit 2a7cfe5) ✓
 
