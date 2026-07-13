@@ -20,6 +20,8 @@ import { AdminEnterprisePage } from './features/admin/AdminEnterprisePage';
 import { EnterprisePage } from './features/enterprise/EnterprisePage';
 import { NotFoundPage } from './features/misc/NotFoundPage';
 import { useAuthStore } from './stores/authStore';
+import { DashboardLayout } from './features/dashboard/DashboardLayout';
+import { DashboardPage } from './features/dashboard/DashboardPage';
 import DesignSystemPage from './routes/design-system';
 
 function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
@@ -64,6 +66,19 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '/login', element: <LoginPage /> },
+  // P0-6: dashboard 顶层路由(不嵌在 Layout 下,full-screen 体验,自带 DashboardLayout)
+  {
+    path: '/dashboard',
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <DashboardPage /> },
+      { path: 'learning', element: <DashboardPage /> },
+    ],
+  },
   // P0-4 设计系统演示页 — 临时挂载,后续 worktree 跑完移除
   { path: '/__design-system', element: <DesignSystemPage /> },
   { path: '*', element: <NotFoundPage /> },
