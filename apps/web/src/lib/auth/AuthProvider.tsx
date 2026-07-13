@@ -118,7 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const idents = await adapter.listMyIdentities();
           if (!cancelled) setIdentities(idents);
         } else {
-          clearAuth();
+          // refresh 失败 (401 = 未登录) — 但如果 store 已经有 user (上次登录遗留),
+          // 保留 user, 仅清 identities (避免每次 mount 把已登录用户踢出)
+          // 这样 ProtectedRoute 不会误判, Layout 头像也不会消失
+          // 真正的 logout 由 clearAuth() 主动调 (退出按钮)
+          if (!useAuthStore.getState().user) {
+            clearAuth();
+          }
           setIdentities([]);
         }
         setProviders(providerList);

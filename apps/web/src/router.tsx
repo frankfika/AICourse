@@ -22,15 +22,18 @@ import { AdminHackathonsPage } from './features/admin/AdminHackathonsPage';
 import { AdminEnterprisePage } from './features/admin/AdminEnterprisePage';
 import { EnterprisePage } from './features/enterprise/EnterprisePage';
 import { NotFoundPage } from './features/misc/NotFoundPage';
+import { useAuth } from './lib/auth/AuthProvider';
 import { useAuthStore } from './stores/authStore';
 import { DashboardLayout } from './features/dashboard/DashboardLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import DesignSystemPage from './routes/design-system';
 
 function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
+  // user 真正存在的地方是 zustand store (AuthProvider 也读这里)
+  // 直接订阅 zustand 避免 React Context 异步 hydration 时机问题
   const user = useAuthStore((s) => s.user);
-  if (!user) return <Navigate to="/login" replace />;
-  if (requireAdmin && user.role !== 'admin') return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/auth/login" replace />;
+  if (requireAdmin && user.role !== 'admin' && user.role !== 'super_admin') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
