@@ -1,0 +1,128 @@
+/**
+ * DashboardLayout — P0-6 学习中心布局
+ *
+ * 顶部 nav:在 P0-5 Layout 基础上裁剪,只保留:
+ *   - 返回课程列表(左)
+ *   - 课程名 + 进度条(中,flex-1,sm+ 才显示进度条)
+ *   - 主题切换(右,所有断点)
+ *
+ * 故意**不**包含:
+ *   - 主导航链接(课程/学位/黑客松/企业) — dashboard 是 full-screen 沉浸式
+ *   - mobile bottom tab — dashboard 是全屏学习体验,不适合弹 tab
+ *   - FAB — 桌面 layout 的 FAB 是用来跳 /dashboard/learning 的;在 dashboard 内
+ *     自身有 AI 助教右栏,不再需要 FAB
+ *
+ * 响应式:
+ *   - < sm: 顶栏简化(只返回 + 课程名 + 主题)
+ *   - sm+: 加进度条 + 学员信息(积分/等级)
+ */
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
+import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+type Theme = 'light' | 'dark';
+
+// useTheme 复刻 P0-5 Layout 里的同款 hook(不导出,所以这里 inline 一份)。
+// 这样 DashboardLayout 不需要 import Layout.tsx 任何符号,Layout.tsx 文件 0 改动。
+function useDashboardTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof document === 'undefined') return 'light';
+    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('theme', theme);
+    } catch {
+      /* localStorage 不可用时忽略 */
+    }
+  }, [theme]);
+
+  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  return [theme, toggle];
+}
+
+export function DashboardLayout() {
+  const [theme, toggleTheme] = useDashboardTheme();
+  const location = useLocation();
+  const params = useParams<{ courseId?: string }>();
+
+  // 当前激活的路径(`/dashboard` 还是 `/dashboard/learning` 等),用于面包屑逻辑
+  const onLearning = location.pathname.includes('/learning');
+
+  return (
+    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans dark:bg-neutral-950 dark:text-neutral-900 flex flex-col">
+      {/* ============================================================
+       * 顶部 nav(全屏,sticky)
+       * ============================================================ */}
+      <header className="sticky top-0 z-50 bg-neutral-0/95 backdrop-blur-md border-b border-neutral-200 dark:bg-neutral-100/95 dark:border-neutral-200">
+        <div className="px-4 sm:px-6 h-14 flex items-center gap-4">
+          {/* 返回按钮 */}
+          <Link
+            to="/courses"
+            className="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-brand-500 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">返回课程</span>
+          </Link>
+
+          {/* 中:课程名 + 进度条 */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 truncate">
+              <GraduationCap className="w-3.5 h-3.5 shrink-0 text-brand-500" />
+              <span className="truncate font-medium">
+                {onLearning ? '我的学习 · 继续上次' : '用 LangChain 搭建第一个 Agent'}
+              </span>
+            </div>
+            {/* 进度条只在 sm+ 显示 */}
+            <div className="hidden sm:block mt-1 h-1 rounded-full bg-neutral-200 dark:bg-neutral-200 overflow-hidden">
+              <div
+                className="h-full bg-brand-500 transition-all"
+                style={{ width: `${params.courseId ? 32 : 32}%` }}
+              />
+            </div>
+          </div>
+
+          {/* 右:学员信息 + 主题切换 */}
+          <div className="hidden md:flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1 text-xp-500">
+              <span>⚡</span>
+              <span className="font-mono font-medium">2,840</span>
+              <span className="text-neutral-400">积分</span>
+            </div>
+            <div className="flex items-center gap-1 text-cert-500">
+              <span>🏆</span>
+              <span className="font-mono font-medium">LV 4</span>
+            </div>
+            <div className="flex items-center gap-1 text-brand-500">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="text-neutral-600 dark:text-neutral-600">AI 助教</span>
+            </div>
+          </div>
+
+          {/* 主题切换 */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+            aria-label={theme === 'dark' ? '切换为亮色' : '切换为暗色'}
+            title={theme === 'dark' ? '切换为亮色' : '切换为暗色'}
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+        </div>
+      </header>
+
+      {/* ============================================================
+       * 主区域 — 渲染子路由(<Outlet />)
+       * dashboard 页面会用 calc(100vh - 3.5rem) 控制三栏 fill 高度
+       * ============================================================ */}
+      <Outlet />
+    </div>
+  );
+}

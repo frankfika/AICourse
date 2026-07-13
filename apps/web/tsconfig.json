@@ -25,5 +25,10 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "exclude": [
+    "vitest.config.ts",
+    "dist",
+    "node_modules"
+  ]
 }
