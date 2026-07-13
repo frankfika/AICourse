@@ -30,7 +30,9 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config;
-    if (err.response?.status === 401 && !original._retry) {
+    // 不要在 refresh 请求本身失败时递归 / 跳 login(否则 AuthProvider 启动会死循环)
+    const isRefreshCall = original?.url?.includes('/auth/refresh');
+    if (err.response?.status === 401 && !original._retry && !isRefreshCall) {
       original._retry = true;
       try {
         // Security: refresh token is in httpOnly cookie. Just hit the endpoint
@@ -45,7 +47,11 @@ api.interceptors.response.use(
         return api(original);
       } catch {
         accessToken = null;
-        window.location.href = '/login';
+        // 已经在 auth 页面就不跳了(避免 redirect loop)
+        const onAuthPage = window.location.pathname.startsWith('/auth/');
+        if (!onAuthPage) {
+          window.location.href = '/auth/login?from=' + encodeURIComponent(window.location.pathname);
+        }
       }
     }
     return Promise.reject(err);

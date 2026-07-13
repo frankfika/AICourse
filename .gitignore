@@ -45,3 +45,16 @@ public/uploads/
 
 # dev-only screenshots (P0-4 验证用,不进版本控制)
 apps/web/.screenshots/
+
+# build artifacts (nest + vite) — 历来 tracked 但 dev 时污染, 改为 untracked
+apps/api/dist/
+apps/web/dist/
+
+# worktree + dev sandbox (不进版本控制)
+.worktrees/
+.mavis/
+.trae-scratch/
+
+# root 文件 (本地 dev artifact, 跟代码无关)
+openhackathon-external-ai-plan.md
+responsive-audit-report.md
