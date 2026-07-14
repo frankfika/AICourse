@@ -225,6 +225,55 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <main>{children}</main>
 
       {/* ============================================================
+       * 公共 footer (P1 统一: 从 HomePage SiteFooter 提升, 所有页共享)
+       * ============================================================ */}
+      <footer className="py-12 border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+            <div className="col-span-2">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold text-sm">
+                  O
+                </div>
+                <span className="font-semibold text-neutral-900">OpenCSG Academy</span>
+              </div>
+              <p className="text-sm text-neutral-600 max-w-xs">
+                学完仍然不会做?让 AI 时代的能力可被看见。
+              </p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-3 text-neutral-900">学习</h4>
+              <ul className="space-y-2 text-sm text-neutral-600">
+                <li><Link to="/courses" className="hover:text-brand-500 transition">课程</Link></li>
+                <li><Link to="/degrees" className="hover:text-brand-500 transition">学位</Link></li>
+                <li><Link to="/hackathons" className="hover:text-brand-500 transition">黑客松</Link></li>
+                <li><Link to="/enterprise" className="hover:text-brand-500 transition">企业培训</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-3 text-neutral-900">公司</h4>
+              <ul className="space-y-2 text-sm text-neutral-600">
+                <li><a href="https://opencsg.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-500 transition">关于我们</a></li>
+                <li><Link to="/enterprise" className="hover:text-brand-500 transition">企业培训</Link></li>
+                <li><Link to="/courses" className="hover:text-brand-500 transition">价格</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-3 text-neutral-900">法律</h4>
+              <ul className="space-y-2 text-sm text-neutral-600">
+                <li><a href="#" className="hover:text-brand-500 transition">服务条款</a></li>
+                <li><a href="#" className="hover:text-brand-500 transition">隐私政策</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-neutral-200 text-xs text-neutral-600 flex flex-wrap items-center justify-between gap-4">
+            <span>© 2026 OpenCSG · 备案号 京 ICP 备 2026000000 号</span>
+            <span className="font-mono">v0.5.0 · built for AI era</span>
+          </div>
+        </div>
+      </footer>
+
+      {/* ============================================================
        * AI 助教 FAB(P0-5 placeholder → 跳 /dashboard/learning)
        * fixed 右下角,所有断点都显
        * mobile:bottom-20(在 bottom tab 之上)

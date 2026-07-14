@@ -278,18 +278,47 @@ const MOCK_INSTRUCTORS: Instructor[] = [
 ];
 
 // =============================================================
-// 倒计时 hook
+// 倒计时 hook (两态: 距开始 / 距截止)
 // =============================================================
-function useCountdown(target: string | Date) {
+interface CountdownState {
+  days: number;
+  hours: number;
+  minutes: number;
+  phase: 'upcoming' | 'active' | 'ended';
+  label: string;  // 中文 label: '距开始' / '距截止' / '已结束'
+}
+
+function useCountdown(
+  startDate: string | Date,
+  endDate?: string | Date,
+): CountdownState {
   return useMemo(() => {
-    const t = new Date(target).getTime();
+    const start = new Date(startDate).getTime();
+    const end = endDate ? new Date(endDate).getTime() : start + 7 * 24 * 3600 * 1000;
     const now = Date.now();
-    const diff = Math.max(0, t - now);
+
+    let target: number;
+    let phase: 'upcoming' | 'active' | 'ended';
+    let label: string;
+    if (now < start) {
+      target = start;
+      phase = 'upcoming';
+      label = '距开始';
+    } else if (now < end) {
+      target = end;
+      phase = 'active';
+      label = '距截止';
+    } else {
+      target = now;
+      phase = 'ended';
+      label = '已结束';
+    }
+    const diff = Math.max(0, target - now);
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
     const minutes = Math.floor((diff / (1000 * 60)) % 60);
-    return { days, hours, minutes };
-  }, [target]);
+    return { days, hours, minutes, phase, label };
+  }, [startDate, endDate]);
 }
 
 // =============================================================
@@ -597,7 +626,7 @@ function DegreesSection() {
 // 6 段:黑客松
 // =============================================================
 function HackathonCard({ h }: { h: Hackathon }) {
-  const countdown = useCountdown(h.startDate);
+  const countdown = useCountdown(h.startDate, h.endDate);
   const startDate = new Date(h.startDate);
   const isActive = h.status === 'active';
   const dateLabel = startDate.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
@@ -620,10 +649,13 @@ function HackathonCard({ h }: { h: Hackathon }) {
         <h3 className="mt-2 text-lg md:text-xl font-bold leading-tight line-clamp-2">
           {h.title}
         </h3>
-        {isActive && (
+        {countdown.phase !== 'ended' && (
           <p className="mt-1 text-xs font-mono opacity-90">
-            距截止 {countdown.days} 天 {countdown.hours} 小时
+            {countdown.label} {countdown.days} 天 {countdown.hours} 小时
           </p>
+        )}
+        {countdown.phase === 'ended' && (
+          <p className="mt-1 text-xs font-mono opacity-90">已结束</p>
         )}
       </div>
       <div className="p-4 bg-neutral-50">
@@ -664,7 +696,10 @@ function HackathonsSection() {
 
   const main = hackathons[0];
   const small = hackathons.slice(1, 3);
-  const mainCountdown = useCountdown(main?.startDate ?? new Date());
+  const mainCountdown = useCountdown(
+    main?.startDate ?? new Date(),
+    main?.endDate,
+  );
 
   return (
     <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">
@@ -714,7 +749,11 @@ function HackathonsSection() {
             >
               <div className="aspect-[2/1] bg-gradient-to-br from-danger-500 via-xp-500 to-brand-500 p-6 md:p-8 flex flex-col justify-end text-white">
                 <span className="text-xs font-medium opacity-80">
-                  🔴 LIVE · 距截止 {mainCountdown.days} 天 {mainCountdown.hours} 小时 {mainCountdown.minutes} 分
+                  {mainCountdown.phase === 'upcoming' && '⏰ '}
+                  {mainCountdown.phase === 'active' && '🔴 LIVE · '}
+                  {mainCountdown.phase === 'ended' && '已结束'}
+                  {mainCountdown.phase !== 'ended' &&
+                    `${mainCountdown.label} ${mainCountdown.days} 天 ${mainCountdown.hours} 小时 ${mainCountdown.minutes} 分`}
                 </span>
                 <h3 className="mt-2 text-2xl md:text-3xl font-bold leading-tight">
                   {main.title}
@@ -878,60 +917,9 @@ function InstructorsSection() {
 // =============================================================
 // 9 段:Footer
 // =============================================================
-function SiteFooter() {
-  return (
-    <footer className="py-12 border-t border-neutral-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-          {/* 品牌 + slogan */}
-          <div className="col-span-2">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold text-sm">
-                O
-              </div>
-              <span className="font-semibold text-neutral-900">OpenCSG Academy</span>
-            </div>
-            <p className="text-sm text-neutral-600 max-w-xs">
-              学完仍然不会做?让 AI 时代的能力可被看见。
-            </p>
-          </div>
-          {/* 学习 */}
-          <div>
-            <h4 className="text-sm font-semibold mb-3 text-neutral-900">学习</h4>
-            <ul className="space-y-2 text-sm text-neutral-600">
-              <li><Link to="/courses" className="hover:text-brand-500 transition">课程</Link></li>
-              <li><Link to="/degrees" className="hover:text-brand-500 transition">学位</Link></li>
-              <li><Link to="/hackathons" className="hover:text-brand-500 transition">黑客松</Link></li>
-              <li><Link to="/enterprise" className="hover:text-brand-500 transition">企业培训</Link></li>
-            </ul>
-          </div>
-          {/* 公司 */}
-          <div>
-            <h4 className="text-sm font-semibold mb-3 text-neutral-900">公司</h4>
-            <ul className="space-y-2 text-sm text-neutral-600">
-              <li><a href="https://opencsg.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-500 transition">关于我们</a></li>
-              <li><Link to="/enterprise" className="hover:text-brand-500 transition">企业培训</Link></li>
-              <li><Link to="/courses" className="hover:text-brand-500 transition">价格</Link></li>
-            </ul>
-          </div>
-          {/* 法律 */}
-          <div>
-            <h4 className="text-sm font-semibold mb-3 text-neutral-900">法律</h4>
-            <ul className="space-y-2 text-sm text-neutral-600">
-              <li><a href="#" className="hover:text-brand-500 transition">服务条款</a></li>
-              <li><a href="#" className="hover:text-brand-500 transition">隐私政策</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-8 pt-8 border-t border-neutral-200 text-xs text-neutral-600 flex flex-wrap items-center justify-between gap-4">
-          <span>© 2026 OpenCSG · 备案号 京 ICP 备 2026000000 号</span>
-          <span className="font-mono">v0.5.0 · built for AI era</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
+// =============================================================
+// 注:SiteFooter 已提升到 main Layout (components/Layout.tsx),
+//     所有页共享同一个 footer, 不再在 HomePage 单独渲染。
 // =============================================================
 // 主页面
 // =============================================================
@@ -1086,7 +1074,7 @@ export function HomePage() {
       <HackathonsSection />
       <AiTutorSection />
       <InstructorsSection />
-      <SiteFooter />
+      {/* footer 提升到 main Layout, 见 components/Layout.tsx */}
     </div>
   );
 }
