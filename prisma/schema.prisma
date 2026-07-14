@@ -37,12 +37,51 @@ model User {
   organizedHackathons Hackathon[] @relation("OrganizedHackathons")
   reviews         Review[]
   notifications Notification[]
+  // P1-8: 证书（学位 / 课程 / 黑客松完成时签发）
+  certificates   Certificate[]
   // P2: 新增关联 (chat / learning events / AI usage)
   chatSessions    ChatSession[]
   learningEvents  LearningEvent[]
   aiUsage         AiUsage[]
 
   @@map("users")
+}
+
+// ==================== 证书（P1-8）====================
+// 三类签发:course(单课程) / degree(学位) / hackathon(黑客松获奖)
+// serial 格式: OCSG-{YEAR}-{TYPE}-{4位序号}, 全表 unique
+// revokedAt 非空表示已撤销(管理员操作), 公开 verify 接口会查
+// metadata 装 JSON(评分 / 排名 / 备注等扩展信息)
+model Certificate {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  // 'course' | 'degree' | 'hackathon'
+  type         String
+  // 关联的 course / degree / hackathon id
+  refId        String   @map("ref_id")
+  title        String
+  description  String?  @db.Text
+  // 证书编号 (e.g. "OCSG-2026-COURSE-0001")
+  serialNumber String   @unique @map("serial_number")
+  issuedAt     DateTime @default(now()) @map("issued_at")
+  // 课程 / 学位 / 黑客松完成时间
+  completedAt  DateTime @map("completed_at")
+  // 证书图片 URL (mock: 静态占位)
+  imageUrl     String?  @map("image_url")
+  // 公开可验证 URL
+  verifyUrl    String?  @map("verify_url")
+  // 元数据: 评分 / 排名 / 备注
+  metadata     Json?
+  revokedAt    DateTime? @map("revoked_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([refId, type])
+  @@index([serialNumber])
+  @@map("certificates")
 }
 
 enum UserRole {

@@ -162,6 +162,10 @@ export interface OrderItemRef {
   id: string;
   title: string;
   thumbnail?: string | null;
+  // P1-8 起包含更多字段(便于订单页直接展示)
+  level?: CourseLevel;
+  costType?: CostType;
+  price?: number;
 }
 
 export interface OrderWithItems extends Order {
@@ -180,6 +184,11 @@ export interface CreateOrderRequest {
 /** Mock 支付请求 */
 export interface MockPayRequest {
   paymentMethod?: string;
+}
+
+/** 退款请求 (P1-8 新增) */
+export interface RefundOrderRequest {
+  reason?: string;
 }
 
 /** 创建订单响应（免费品会直接注册并返回 enrollment） */
@@ -618,4 +627,50 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   limit: number;
+}
+
+// ==================== P1-8 证书 ====================
+
+export type CertificateType = 'course' | 'degree' | 'hackathon';
+
+export interface Certificate {
+  id: string;
+  userId: string;
+  type: CertificateType | string;
+  refId: string;
+  title: string;
+  description?: string | null;
+  /** 证书编号 (e.g. "OCSG-2026-COURSE-0001") */
+  serialNumber: string;
+  issuedAt: Date | string;
+  completedAt: Date | string;
+  imageUrl?: string | null;
+  verifyUrl?: string | null;
+  /** JSON 字符串 (mock) */
+  metadata?: Record<string, unknown> | null;
+  revokedAt?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  /** P1-8: 后端附带的 holderName (避免前端 join) */
+  holderName?: string | null;
+  /** P1-8: 后端附带的 valid 字段 (false = 已撤销) */
+  valid?: boolean;
+}
+
+export interface VerifyCertificateResult {
+  valid: boolean;
+  reason?: 'not_found' | 'revoked';
+  certificate?: {
+    id?: string;
+    serialNumber: string;
+    title?: string;
+    type?: string;
+    description?: string | null;
+    issuedAt?: Date | string;
+    completedAt?: Date | string;
+    verifyUrl?: string | null;
+    imageUrl?: string | null;
+    holderName?: string;
+    revokedAt?: Date | string;
+  };
 }

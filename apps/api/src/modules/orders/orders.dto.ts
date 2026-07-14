@@ -23,3 +23,10 @@ export class MockPayDto {
   @IsString()
   paymentMethod?: string;
 }
+
+export class RefundOrderDto {
+  // mock: 当前无字段, 占位方便后续扩展 reason
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}

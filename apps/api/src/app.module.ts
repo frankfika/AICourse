@@ -20,6 +20,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { EnterpriseModule } from './modules/enterprise/enterprise.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { UrlImportModule } from './modules/url-import/url-import.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
 
 @Module({
   imports: [
@@ -28,9 +29,19 @@ import { UrlImportModule } from './modules/url-import/url-import.module';
       envFilePath: ['../../.env', '.env'],
     }),
     // Security: global rate limiting (H-01). Defaults to 60 req/min per IP.
+    // Security: global rate limiting (H-01). Defaults to 60 req/min per IP.
+    // 走 env 覆盖, 默认安全值; screenshot / 测试场景可调大.
     ThrottlerModule.forRoot([
-      { name: 'short', ttl: 1000, limit: 5 },
-      { name: 'medium', ttl: 60000, limit: 60 },
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: Number(process.env.THROTTLE_SHORT) || 5,
+      },
+      {
+        name: 'medium',
+        ttl: 60000,
+        limit: Number(process.env.THROTTLE_MEDIUM) || 60,
+      },
     ]),
     PrismaModule,
     AuditModule,
@@ -49,6 +60,7 @@ import { UrlImportModule } from './modules/url-import/url-import.module';
     EnterpriseModule,
     NotificationModule,
     UrlImportModule,
+    CertificatesModule,
   ],
   controllers: [AppController],
   providers: [

@@ -17,7 +17,7 @@
  *   - sm+: 加进度条 + 学员信息(积分/等级)
  */
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon, Bell, ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark';
@@ -105,6 +105,24 @@ export function DashboardLayout() {
               <span className="text-neutral-600 dark:text-neutral-600">AI 助教</span>
             </div>
           </div>
+
+          {/* P1-8: Bell (通知) + Order (订单) 入口 (顶栏右侧) */}
+          <Link
+            to="/dashboard/notifications"
+            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+            aria-label="通知中心"
+            title="通知中心"
+          >
+            <Bell className="w-5 h-5" />
+          </Link>
+          <Link
+            to="/dashboard/orders"
+            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+            aria-label="我的订单"
+            title="我的订单"
+          >
+            <ShoppingBag className="w-5 h-5" />
+          </Link>
 
           {/* 主题切换 */}
           <button

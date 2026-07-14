@@ -184,15 +184,15 @@ export class AuthService {
     refreshExpires.setDate(refreshExpires.getDate() + 7);
 
     // Security: 只存 hash
-    this.prisma.refreshToken.create({
+    // Bug fix: 之前没 await, 导致 refresh token 可能还没入库就被 verify,
+    // 表现为 "Invalid refresh token" 401. 这里 await 保证 db 写入完成.
+    return this.prisma.refreshToken.create({
       data: {
         token: this.hashToken(refreshToken),
         userId: user.id,
         expiresAt: refreshExpires,
       },
-    });
-
-    return {
+    }).then(() => ({
       accessToken,
       refreshToken,
       user: {
@@ -201,7 +201,7 @@ export class AuthService {
         name: (user as any).name,
         role: user.role,
       },
-    };
+    }));
   }
 
   // Security: CSPRNG,never Math.random()
