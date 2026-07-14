@@ -694,7 +694,8 @@ model Review {
   @@index([courseId, createdAt])
   @@index([courseId, helpful])
   @@map("reviews")
-=======
+}
+
 // ==================== 通知中心（P1-7）====================
 // 站内通知：评论 / 报名 / 黑客松 / 系统 等
 // 4 类:type = 'announcement' | 'comment' | 'hackathon' | 'order'
@@ -719,10 +720,7 @@ model Notification {
   @@index([userId, isRead, createdAt])
   @@index([userId, deletedAt, createdAt])
   @@map("notifications")
-
 }
-
-
 
 // ==================== P2: AI 助教 / 学情事件 ====================
 // 详见 review/redesign-spec.md §6.1
@@ -800,19 +798,7 @@ model AiUsage {
   @@map("ai_usage")
 }
 
-// ==================== 课程评价 (P1 spec §6.1, schema 漂移修复) ====================
-// 实际 dev DB 里已存在空 reviews 表(历史 drift),把 model 加回来保持 schema ↔ DB 对齐
-// controller 暂不实现,等 P1 业务
-model Review {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  courseId  String   @map("course_id")
-  rating    Int
-  content   String   @db.Text
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+// 注: Review model 已在 P1-3 评价系统 (line 700 附近) 完整定义, 这里不重复.
+// 之前 dev DB 的 reviews 表跟 schema 重复, 但 prisma migrate deploy 会处理 (用 P1-3 那一份).
 
-  @@unique([userId, courseId])
-  @@index([courseId, rating])
-  @@map("reviews")
-}
+// ==================== P1-3 评价: 完整 Review model 已合并, 这里是 P2 chat/learning event 附加 ====================

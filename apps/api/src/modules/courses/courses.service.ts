@@ -1,9 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { ReviewsService, type RatingDistribution } from '../reviews/reviews.service';
 import { CreateCourseDto, UpdateCourseDto } from './courses.dto';
 import { CourseStatus, CourseType } from '@prisma/client';
+
+export interface RatingDistribution {
+  avg: number;
+  count: number;
+  distribution: { 1: number; 2: number; 3: number; 4: number; 5: number };
+}
 
 export interface CourseWithRating {
   id: string;
@@ -17,7 +22,6 @@ export class CoursesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
-    private readonly reviewsService: ReviewsService,
   ) {}
 
   private courseInclude = {

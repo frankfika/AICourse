@@ -12,6 +12,7 @@ import { LoginPage } from './features/auth/LoginPage';
 import { RegisterPage } from './features/auth/RegisterPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
 import { BindingsPage } from './features/auth/BindingsPage';
+import { NotificationsPage } from './features/dashboard/notifications/NotificationsPage';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { AdminCoursesPage } from './features/admin/AdminCoursesPage';
 import { AdminDegreesPage } from './features/admin/AdminDegreesPage';
@@ -82,6 +83,7 @@ export const router = createBrowserRouter([
   // 注:BindingsPage 内部自己处理"未登录" EmptyState,这样 demo 模式 ?demo=with-google
   //     可以绕过登录态渲染示例视图(给截图用)
   { path: '/dashboard/settings/bindings', element: <BindingsPage /> },
+  { path: '/dashboard/notifications', element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> },
   // P0-6: dashboard 顶层路由 (不嵌在 / Layout 下, full-screen 体验, 自带 DashboardLayout)
   {
     path: '/dashboard',
