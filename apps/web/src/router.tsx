@@ -13,6 +13,11 @@ import { RegisterPage } from './features/auth/RegisterPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
 import { BindingsPage } from './features/auth/BindingsPage';
 import { NotificationsPage } from './features/dashboard/notifications/NotificationsPage';
+import { OrdersPage } from './features/dashboard/orders/OrdersPage';
+import { OrderDetailPage } from './features/dashboard/orders/OrderDetailPage';
+import { CertificatesPage } from './features/dashboard/certificates/CertificatesPage';
+import { CertificateDetailPage } from './features/dashboard/certificates/CertificateDetailPage';
+import { VerifyCertificatePage } from './features/dashboard/certificates/VerifyCertificatePage';
 import { AdminLayout } from './features/admin/AdminLayout';
 import { AdminCoursesPage } from './features/admin/AdminCoursesPage';
 import { AdminDegreesPage } from './features/admin/AdminDegreesPage';
@@ -84,6 +89,15 @@ export const router = createBrowserRouter([
   //     可以绕过登录态渲染示例视图(给截图用)
   { path: '/dashboard/settings/bindings', element: <BindingsPage /> },
   { path: '/dashboard/notifications', element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> },
+  // P1-8: 订单 / 证书(用 dashboard 自身 layout, 不嵌到 /dashboard/children 树里,
+  // 这样 OrdersPage / CertificatesPage 自己的 padding/max-w 跟 Layout 独立,
+  // 跟 notifications 保持一致风格)
+  { path: '/dashboard/orders', element: <ProtectedRoute><OrdersPage /></ProtectedRoute> },
+  { path: '/dashboard/orders/:id', element: <ProtectedRoute><OrderDetailPage /></ProtectedRoute> },
+  { path: '/dashboard/certificates', element: <ProtectedRoute><CertificatesPage /></ProtectedRoute> },
+  { path: '/dashboard/certificates/:id', element: <ProtectedRoute><CertificateDetailPage /></ProtectedRoute> },
+  // P1-8: 公开证书验证(匿名可访问, 不走 ProtectedRoute)
+  { path: '/verify/:serial', element: <VerifyCertificatePage /> },
   // P0-6: dashboard 顶层路由 (不嵌在 / Layout 下, full-screen 体验, 自带 DashboardLayout)
   {
     path: '/dashboard',

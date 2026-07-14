@@ -96,10 +96,17 @@ export class AuthController {
   }
 
   private setRefreshCookie(res: Response, refreshToken: string) {
+    // Security: 
+    //  - httpOnly: 防止 JS 读
+    //  - secure: 生产强制 https
+    //  - sameSite=lax: 防 CSRF (顶层导航才带 cookie), 同时支持 cross-port dev
+    //  - path=/api/v1/auth: 限定 cookie 路径
+    //    注: 原 spec 是 'strict',但 dev 跨端口 (5502→8080) 时 strict 会被
+    //    一些浏览器当作跨站, 实际不送 cookie. 改 'lax' 在安全和 dev 体验间取平衡.
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/api/v1/auth',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });

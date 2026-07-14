@@ -1,0 +1,235 @@
+/**
+ * CertificateDetailPage — P1-8 证书详情
+ *
+ * 设计:
+ *   - 大证书视图(mock 证书样式, 渐变背景 + 装饰 + OpenCSG logo + 标题 + holder + serial + 颁发日期)
+ *   - dark mode: 渐变用 brand-700 / cert-500
+ *   - 底部操作: 下载(mock) + 验证(跳 /verify/:serial) + 返回
+ *   - 公开页面(任何人都能看), 响应式
+ */
+import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Award,
+  ArrowLeft,
+  Download,
+  ShieldCheck,
+  GraduationCap,
+  Code2,
+  Trophy,
+} from 'lucide-react';
+import type { Certificate, CertificateType } from '@opencsg/shared-types';
+import { certificatesApi } from '../../../lib/certificatesApi';
+import { useToast } from '../../../components/auth/Toast';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import { Card } from '../../../components/ui/Card';
+import { cn } from '../../../lib/cn';
+
+const TYPE_LABEL: Record<CertificateType, string> = {
+  course: '课程完成证书',
+  degree: '学位证书',
+  hackathon: '参赛证书',
+};
+
+const TYPE_ICON: Record<CertificateType, React.ReactNode> = {
+  course: <GraduationCap className="w-5 h-5" />,
+  degree: <Code2 className="w-5 h-5" />,
+  hackathon: <Trophy className="w-5 h-5" />,
+};
+
+const TYPE_GRADIENT: Record<CertificateType, string> = {
+  course:
+    'from-brand-500 via-brand-700 to-brand-900 dark:from-brand-700 dark:via-brand-900 dark:to-brand-900',
+  degree:
+    'from-cert-500 via-brand-500 to-brand-700 dark:from-cert-500/80 dark:via-brand-700 dark:to-brand-900',
+  hackathon:
+    'from-warning-500 via-danger-500 to-brand-700 dark:from-warning-500/80 dark:via-danger-500/80 dark:to-brand-700',
+};
+
+export function CertificateDetailPage() {
+  const { id = '' } = useParams<{ id: string }>();
+  const { showToast } = useToast();
+
+  const { data: cert, isLoading } = useQuery({
+    queryKey: ['certificates', id],
+    queryFn: () => certificatesApi.getCertificate(id),
+    enabled: !!id,
+  });
+
+  const handleDownload = () => {
+    showToast('证书已发送到你的邮箱 (mock)', 'info');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 p-6">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <Skeleton variant="text" className="h-8 w-1/3" />
+          <Skeleton variant="rectangle" className="h-80 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!cert) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 p-6">
+        <div className="max-w-4xl mx-auto text-center py-20">
+          <p className="text-neutral-600 dark:text-neutral-600 mb-4">证书不存在</p>
+          <Link
+            to="/dashboard/certificates"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            返回证书列表
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const typeKey = (cert.type as CertificateType) ?? 'course';
+  const issuedDate = new Date(cert.issuedAt).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const completedDate = new Date(cert.completedAt).toLocaleDateString('zh-CN');
+
+  return (
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* 顶部 */}
+        <div className="flex items-center gap-3 mb-6">
+          <Link
+            to="/dashboard/certificates"
+            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+            aria-label="返回证书列表"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-cert-500" />
+            <h1 className="text-2xl font-bold">证书详情</h1>
+          </div>
+        </div>
+
+        {/* 大证书视图 */}
+        <Card padding="none" variant="elevated" className="overflow-hidden">
+          <div
+            className={cn(
+              'relative aspect-[16/10] sm:aspect-[16/9] bg-gradient-to-br text-white p-8 sm:p-12 flex flex-col items-center justify-center text-center',
+              TYPE_GRADIENT[typeKey],
+            )}
+          >
+            {/* 装饰 */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-4 left-4 w-16 h-16 border-2 border-white rounded-full" />
+              <div className="absolute top-4 right-4 w-16 h-16 border-2 border-white rounded-full" />
+              <div className="absolute bottom-4 left-4 w-16 h-16 border-2 border-white rounded-full" />
+              <div className="absolute bottom-4 right-4 w-16 h-16 border-2 border-white rounded-full" />
+              <div className="absolute inset-8 border-2 border-white rounded-md" />
+            </div>
+
+            <div className="relative">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-md flex items-center justify-center">
+                  <Award className="w-6 h-6" />
+                </div>
+                <span className="text-sm font-mono tracking-[0.2em] uppercase">
+                  OpenCSG Academy
+                </span>
+              </div>
+
+              <div className="text-xs uppercase tracking-[0.3em] opacity-80 mb-3 inline-flex items-center gap-1.5">
+                {TYPE_ICON[typeKey]}
+                {TYPE_LABEL[typeKey]}
+              </div>
+
+              <h2 className="text-2xl sm:text-4xl font-bold mb-2 leading-tight">
+                {cert.title}
+              </h2>
+
+              {cert.holderName && (
+                <div className="text-base sm:text-lg opacity-90 mb-4">
+                  特授予 <span className="font-bold">{cert.holderName}</span> 同学
+                </div>
+              )}
+
+              {cert.description && (
+                <p className="text-sm sm:text-base opacity-80 max-w-lg mx-auto leading-relaxed">
+                  {cert.description}
+                </p>
+              )}
+
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs">
+                <div>
+                  <div className="opacity-60 uppercase tracking-wider mb-1">证书编号</div>
+                  <div className="font-mono font-bold tracking-wider">{cert.serialNumber}</div>
+                </div>
+                <div>
+                  <div className="opacity-60 uppercase tracking-wider mb-1">颁发日期</div>
+                  <div className="font-bold">{issuedDate}</div>
+                </div>
+                <div>
+                  <div className="opacity-60 uppercase tracking-wider mb-1">完成日期</div>
+                  <div className="font-bold">{completedDate}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 元数据 + 操作 */}
+          <div className="p-6 space-y-4">
+            {cert.metadata && Object.keys(cert.metadata).length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2">证书元数据</h3>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  {Object.entries(cert.metadata).map(([k, v]) => (
+                    <div key={k} className="flex items-start gap-2">
+                      <dt className="text-neutral-600 dark:text-neutral-600 capitalize">
+                        {k}:
+                      </dt>
+                      <dd className="font-mono text-xs">
+                        {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+
+            {cert.revokedAt && (
+              <div className="rounded-md border border-danger-500/30 bg-danger-100 dark:bg-danger-500/20 p-3 text-sm text-danger-500">
+                ⚠️ 此证书已被撤销 ({new Date(cert.revokedAt).toLocaleString('zh-CN')})
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              <button
+                onClick={handleDownload}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 text-sm font-medium transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                下载证书
+              </button>
+              <Link
+                to={`/verify/${cert.serialNumber}`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-info-100 text-info-500 rounded-md hover:bg-info-500/20 text-sm font-medium transition-colors"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                公开验证
+              </Link>
+              <Link
+                to="/dashboard/certificates"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 rounded-md hover:bg-neutral-200 text-sm font-medium transition-colors"
+              >
+                返回列表
+              </Link>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
