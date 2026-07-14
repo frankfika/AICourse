@@ -1,14 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
+import { ReviewsService, type RatingDistribution } from '../reviews/reviews.service';
 import { CreateCourseDto, UpdateCourseDto } from './courses.dto';
 import { CourseStatus, CourseType } from '@prisma/client';
+
+export interface CourseWithRating {
+  id: string;
+  title: string;
+  // ... 课程全字段
+  rating: RatingDistribution;
+}
 
 @Injectable()
 export class CoursesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
+    private readonly reviewsService: ReviewsService,
   ) {}
 
   private courseInclude = {

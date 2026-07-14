@@ -35,6 +35,7 @@ model User {
   userBadges      UserBadge[]
   pointTransactions PointTransaction[]
   organizedHackathons Hackathon[] @relation("OrganizedHackathons")
+  reviews         Review[]
 
   @@map("users")
 }
@@ -108,6 +109,7 @@ model Course {
   progressRecords  ProgressRecord[]
   degreeCourses    DegreeCourse[]
   practiceProjects PracticeProject[]
+  reviews          Review[]
 
   @@map("courses")
 }
@@ -633,6 +635,28 @@ model PointTransaction {
   @@unique([userId, refType, refId]) // 同一来源不重复发放
   @@index([userId, createdAt])
   @@map("point_transactions")
+}
+
+// ==================== 课程评价（P1-3）====================
+// 一个 user 对一门课只允许一条评价（@@unique 强制）
+// rating: 1-5 整数；helpful: 累计被点赞数（append-only counter）
+model Review {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  courseId  String   @map("course_id")
+  rating    Int      // 1-5
+  content   String   @db.Text
+  helpful   Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId, createdAt])
+  @@index([courseId, helpful])
+  @@map("reviews")
 }
 
 
