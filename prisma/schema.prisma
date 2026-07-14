@@ -35,6 +35,7 @@ model User {
   userBadges      UserBadge[]
   pointTransactions PointTransaction[]
   organizedHackathons Hackathon[] @relation("OrganizedHackathons")
+  notifications Notification[]
 
   @@map("users")
 }
@@ -633,6 +634,32 @@ model PointTransaction {
   @@unique([userId, refType, refId]) // 同一来源不重复发放
   @@index([userId, createdAt])
   @@map("point_transactions")
+}
+
+// ==================== 通知中心（P1-7）====================
+// 站内通知：评论 / 报名 / 黑客松 / 系统 等
+// 4 类:type = 'announcement' | 'comment' | 'hackathon' | 'order'
+//   - announcement: 系统公告 / 课程更新
+//   - comment:      评论 @ 提及 / 讲师回复
+//   - hackathon:    黑客松截止提醒 / 评审结果
+//   - order:        订单支付成功 / 退款
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  type      String    // 4 类之一 (后续如扩展 → enum)
+  title     String
+  body      String    @db.Text
+  linkUrl   String?   @map("link_url")
+  isRead    Boolean   @default(false) @map("is_read")
+  readAt    DateTime? @map("read_at")
+  deletedAt DateTime? @map("deleted_at") // 软删
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@index([userId, deletedAt, createdAt])
+  @@map("notifications")
 }
 
 
