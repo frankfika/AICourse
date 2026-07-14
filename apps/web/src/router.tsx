@@ -27,6 +27,7 @@ import { useAuthStore } from './stores/authStore';
 import { DashboardLayout } from './features/dashboard/DashboardLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import DesignSystemPage from './routes/design-system';
+import { SearchPage } from './routes/SearchPage';
 
 function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
   // user 真正存在的地方是 zustand store (AuthProvider 也读这里)
@@ -50,6 +51,8 @@ export const router = createBrowserRouter([
       { path: 'hackathons', element: <HackathonListPage /> },
       { path: 'hackathons/:id', element: <HackathonDetailPage /> },
       { path: 'enterprise', element: <EnterprisePage /> },
+      // P1-2: 全站搜索结果页(公开,带 ?q=)
+      { path: 'search', element: <SearchPage /> },
       { path: 'profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
       {
         path: 'admin',

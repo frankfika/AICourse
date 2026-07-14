@@ -6,7 +6,8 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'student' | 'instructor';
+  // 与 backend UserRole 对齐(P1-2 之前 router.tsx 漏 'super_admin',lint 失败)
+  role: 'admin' | 'super_admin' | 'student' | 'instructor';
 }
 
 interface AuthState {
