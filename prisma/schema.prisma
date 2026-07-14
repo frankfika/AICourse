@@ -35,6 +35,10 @@ model User {
   userBadges      UserBadge[]
   pointTransactions PointTransaction[]
   organizedHackathons Hackathon[] @relation("OrganizedHackathons")
+  // P2: 新增关联 (chat / learning events / AI usage)
+  chatSessions    ChatSession[]
+  learningEvents  LearningEvent[]
+  aiUsage         AiUsage[]
 
   @@map("users")
 }
@@ -60,6 +64,10 @@ model RefreshToken {
 // ==================== Auth 抽象层 - 多 Provider 绑定 ====================
 // 一个 user 可绑定多个 provider 账号（email/password + google + 企业 SSO ...）
 // 设计目标：可插拔 + 配置驱动 + 不重复造轮子
+//
+// P2 扩展：显式字段（email / displayName / isPrimary / linkedAt / lastUsedAt / deletedAt）
+// 原本只在 profile JSON 里有,前端 BindingsPage / admin / 风控都需要显式列
+// → 加列, 旧数据由 migration 回填 (从 profile JSON 解析 + createdAt → linkedAt, updatedAt → lastUsedAt)
 model UserProviderAccount {
   id              String   @id @default(uuid())
   userId          String   @map("user_id")
@@ -68,6 +76,21 @@ model UserProviderAccount {
   provider        String
   // 该 provider 内部的 user id（email / oauth sub / saml NameID）
   providerUserId  String   @map("provider_user_id")
+
+  // ---- P2 新增显式字段 ----
+  // 第三方 profile 拉到的 email（即使本表 user.email 不一致,也保留第三方侧的）
+  email           String?
+  // 第三方 profile 拉到的显示名
+  displayName     String?  @map("display_name")
+  // 是否为该 user 的主登录方式（解绑时不允许删主身份）
+  isPrimary       Boolean  @default(false) @map("is_primary")
+  // 绑定时间（原 createdAt 的语义迁移,数据回填用）
+  linkedAt        DateTime @default(now()) @map("linked_at")
+  // 最后使用时间（原 updatedAt 的语义迁移）
+  lastUsedAt      DateTime @default(now()) @map("last_used_at")
+  // 软删时间（P2：解绑走软删,保留审计可追溯）
+  deletedAt       DateTime? @map("deleted_at")
+
   // 原始 profile / claims JSON,留作 audit + 后续扩展
   profile         Json?
   createdAt       DateTime @default(now()) @map("created_at")
@@ -77,6 +100,7 @@ model UserProviderAccount {
 
   @@unique([provider, providerUserId])
   @@index([userId])
+  @@index([userId, deletedAt])
   @@map("user_provider_accounts")
 }
 
@@ -145,10 +169,13 @@ model Chapter {
   description String?  @db.Text
   orderIndex  Int      @map("order_index")
   createdAt   DateTime @default(now()) @map("created_at")
+  // P2: 软删 — admin 端点删章节走软删,前端 / 用户进度仍能查到
+  deletedAt   DateTime? @map("deleted_at")
 
   course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons Lesson[]
 
+  @@index([courseId, deletedAt])
   @@map("chapters")
 }
 
@@ -162,11 +189,17 @@ model Lesson {
   orderIndex    Int      @map("order_index")
   isPreview     Boolean  @default(false) @map("is_preview")
   createdAt     DateTime @default(now()) @map("created_at")
+  // P2: 软删
+  deletedAt     DateTime? @map("deleted_at")
 
   chapter   Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   resources Resource[]
   progress  ProgressRecord[]
+  // P2 关联
+  learningEvents LearningEvent[]
+  chatSessions   ChatSession[]
 
+  @@index([chapterId, deletedAt])
   @@map("lessons")
 }
 
@@ -178,9 +211,12 @@ model Resource {
   type      ResourceType
   isLocked  Boolean      @default(true) @map("is_locked")
   createdAt DateTime     @default(now()) @map("created_at")
+  // P2: 软删
+  deletedAt DateTime? @map("deleted_at")
 
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
+  @@index([lessonId, deletedAt])
   @@map("resources")
 }
 
@@ -636,3 +672,96 @@ model PointTransaction {
 }
 
 
+
+// ==================== P2: AI 助教 / 学情事件 ====================
+// 详见 review/redesign-spec.md §6.1
+
+model ChatSession {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  // scope 用 'lesson:<id>' | 'general' 形式,P2 先做 lesson
+  lessonId  String?  @map("lesson_id")
+  title     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson   Lesson?      @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  messages ChatMessage[]
+
+  @@index([userId, lessonId])
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String   @map("session_id")
+  // 'user' | 'assistant' | 'system'
+  role      String
+  content   String   @db.Text
+  // mock 阶段每条 100 tokens,P2 切真 AI 时改用 tokensIn / tokensOut
+  tokens    Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@map("chat_messages")
+}
+
+model LearningEvent {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  lessonId    String?  @map("lesson_id")
+  // 'play' | 'pause' | 'seek' | 'complete' | 'replay' | 'skip' | 'note'
+  eventType   String   @map("event_type")
+  positionSec Int?     @map("position_sec")
+  durationMs  Int?     @map("duration_ms")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([lessonId, eventType])
+  @@map("learning_events")
+}
+
+// AI token 用量（P2 看板 + cost 监控用）
+// 每调一次 AI 写一条,mock 阶段 tokensIn/Out 都填 0 或 100
+model AiUsage {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  // 'chat' | 'content_gen' | 'recommend' | ...
+  feature   String
+  tokensIn  Int      @default(0) @map("tokens_in")
+  tokensOut Int      @default(0) @map("tokens_out")
+  // 估算成本(USD);mock 阶段填 0
+  cost      Decimal  @default(0) @db.Decimal(10, 4)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([feature, createdAt])
+  @@map("ai_usage")
+}
+
+// ==================== 课程评价 (P1 spec §6.1, schema 漂移修复) ====================
+// 实际 dev DB 里已存在空 reviews 表(历史 drift),把 model 加回来保持 schema ↔ DB 对齐
+// controller 暂不实现,等 P1 业务
+model Review {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  courseId  String   @map("course_id")
+  rating    Int
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, courseId])
+  @@index([courseId, rating])
+  @@map("reviews")
+}
