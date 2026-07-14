@@ -28,9 +28,12 @@ import {
   Home,
   BookOpen,
   Trophy,
+  Search,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { CommandPalette } from './CommandPalette';
+import { cn } from '../lib/cn';
 
 type Theme = 'light' | 'dark';
 
@@ -82,10 +85,28 @@ export function initThemeFromStorage() {
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, toggleTheme] = useTheme();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 全局 ⌘K / Ctrl+K 触发 CommandPalette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // 路由切换时关闭移动端菜单 / 搜索弹层
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const navItems = [
     { label: '课程', path: '/courses' },
@@ -133,6 +154,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
+          {/* P1-2: 顶部搜索框(md+ 显 / mobile 隐) — 点击 / focus 调出 CommandPalette */}
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            aria-label="打开搜索(⌘K)"
+            className={cn(
+              'hidden md:flex items-center gap-2',
+              'flex-1 max-w-md mx-4 h-9 px-3',
+              'rounded-md border border-neutral-200',
+              'bg-neutral-100 dark:bg-neutral-100',
+              'text-neutral-600 dark:text-neutral-600',
+              'hover:border-brand-500 hover:bg-neutral-0 dark:hover:bg-neutral-0',
+              'transition-colors text-left text-sm',
+            )}
+          >
+            <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span className="flex-1 truncate">搜索课程 / 讲师 / 技能</span>
+            <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono rounded border border-neutral-200 text-neutral-600 dark:text-neutral-600">
+              ⌘K
+            </kbd>
+          </button>
+
           <div className="flex items-center gap-1">
             {user ? (
               <>
@@ -172,6 +215,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <UserIcon className="w-4 h-4" /> 登录
               </Link>
             )}
+
+            {/* P1-2: mobile 搜索图标按钮(md 以下点击也调出 CommandPalette) */}
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="md:hidden p-2 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+              aria-label="打开搜索"
+              title="搜索(⌘K)"
+            >
+              <Search className="w-5 h-5" />
+            </button>
 
             {/* P0-5 新增:theme toggle 按钮(admin 入口前) */}
             <button
@@ -223,6 +276,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       <main>{children}</main>
+
+      {/* P1-2: 全局 ⌘K 搜索弹层 */}
+      <CommandPalette open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
       {/* ============================================================
        * AI 助教 FAB(P0-5 placeholder → 跳 /dashboard/learning)
