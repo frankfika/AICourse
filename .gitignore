@@ -45,6 +45,11 @@ public/uploads/
 
 # dev-only screenshots (P0-4 验证用,不进版本控制)
 apps/web/.screenshots/
+screenshots/
+
+# 一次性 screenshot 脚本 (sub-agent dev artifact, 不进版本控制)
+scripts/p1-*-screenshots.py
+scripts/p0-*-screenshots.py
 
 # build artifacts (nest + vite) — 历来 tracked 但 dev 时污染, 改为 untracked
 apps/api/dist/
