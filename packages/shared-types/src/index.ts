@@ -48,6 +48,28 @@ export type BadgeCriteriaType =
   | 'practice_completed'
   | 'points_reached';
 
+/**
+ * 徽章嵌套条件 DSL(P1-3):
+ *   叶子: { type: BadgeCriteriaType, value?: number }   // value 缺省 = 1
+ *   组合: { op: 'and' | 'or' | 'not', rules: BadgeCriteriaRule[] }
+ *
+ * 后端 BadgesService.evaluateCriteria 会按 op 递归评估;
+ * 旧版 criteriaType + criteriaValue 仍兼容(criteriaJson 优先)。
+ */
+export type BadgeCriteriaOp = 'and' | 'or' | 'not';
+
+export interface BadgeCriteriaLeaf {
+  type: BadgeCriteriaType;
+  value?: number;
+}
+
+export interface BadgeCriteriaRule {
+  op?: BadgeCriteriaOp;
+  rules?: BadgeCriteriaRule[];
+  type?: BadgeCriteriaType;
+  value?: number;
+}
+
 // ==================== Entity Interfaces ====================
 
 export interface User {
@@ -456,6 +478,8 @@ export interface Badge {
   category: string;
   criteriaType: BadgeCriteriaType;
   criteriaValue: number;
+  /** P1-3 嵌套规则 — 优先于 criteriaType + criteriaValue */
+  criteriaJson?: BadgeCriteriaRule | null;
   points: number;
   isActive: boolean;
   orderIndex: number;
@@ -526,6 +550,8 @@ export interface CreateBadgeRequest {
   category?: string;
   criteriaType: BadgeCriteriaType;
   criteriaValue?: number;
+  /** P1-3 嵌套规则 — 优先于 criteriaType + criteriaValue */
+  criteriaJson?: BadgeCriteriaRule | null;
   points?: number;
   isActive?: boolean;
   orderIndex?: number;

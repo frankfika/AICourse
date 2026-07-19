@@ -58,6 +58,7 @@ import { Input } from '../../components/ui/Input';
 import api from '../../lib/api';
 import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
+import { coursesAdminApi, type Chapter, type ChapterLesson } from '../../lib/coursesAdminApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -548,457 +549,449 @@ function CourseListView() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// 2) 编辑模式:5 tab
+// 2) 编辑模式:5 tab(v1.1.0 全部接真后端,无 mock)
 // ──────────────────────────────────────────────────────────────────────────
 
 type Tab = 'info' | 'chapters' | 'resources' | 'pricing' | 'publish';
 
-const TABS: { id: Tab; label: string; count?: string }[] = [
-  { id: 'info', label: '基本信息' },
-  { id: 'chapters', label: '章节大纲', count: '5 章' },
-  { id: 'resources', label: '资源', count: '12' },
-  { id: 'pricing', label: '价格 / 试看' },
-  { id: 'publish', label: '发布设置' },
-];
-
-// ── Mock 课程数据(P0-8 后端未接) ─────────────────────────────────────
-const MOCK_COURSE = {
-  id: 'c_01h8f3kq',
-  title: '用 LangChain 搭建第一个 Agent',
-  status: 'published' as 'published' | 'draft' | 'unpublished',
-  savedAt: '2 分钟前',
-};
-
-interface MockLesson {
+interface CourseForEdit {
   id: string;
   title: string;
-  isPreview: boolean;
-  isCompleted: boolean;
-  isProject?: boolean;
-  duration?: string;
-  active?: boolean;
+  description: string;
+  learningPoints: string; // JSON 字符串
+  instructor: string;
+  level: string;
+  duration: string;
+  thumbnail: string;
+  tags: string; // JSON 字符串
+  costType: 'free' | 'paid' | 'charity';
+  courseType: 'own' | 'partner' | 'public' | 'third_party';
+  externalUrl: string | null;
+  price: number;
+  status: 'draft' | 'published' | 'unpublished';
+  publishedAt: string | null;
 }
 
-interface MockChapter {
-  id: string;
-  index: number;
-  title: string;
-  lessons: MockLesson[];
-  defaultOpen: boolean;
+function useCourseEdit(courseId: string | undefined) {
+  const queryClient = useQueryClient();
+  const enabled = !!courseId;
+
+  const courseQuery = useQuery({
+    queryKey: ['admin-course-edit', courseId],
+    queryFn: async () => {
+      const { data } = await api.get<CourseForEdit>(`/api/v1/courses/${courseId}`);
+      return data;
+    },
+    enabled,
+  });
+
+  const chaptersQuery = useQuery({
+    queryKey: ['admin-course-chapters', courseId],
+    queryFn: () => coursesAdminApi.listChapters(courseId!),
+    enabled,
+  });
+
+  const updateCourse = useMutation({
+    mutationFn: (payload: Partial<CourseForEdit> & { learningPoints?: string[]; tags?: string[] }) =>
+      coursesAdminApi.updateCourse(courseId!, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-course-edit', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+
+  return { courseQuery, chaptersQuery, updateCourse };
 }
 
-const MOCK_CHAPTERS: MockChapter[] = [
-  {
-    id: 'ch1',
-    index: 1,
-    title: '第一章 · Agent 心智模型',
-    defaultOpen: true,
-    lessons: [
-      { id: 'l11', title: '1.1 什么是 Agent', isPreview: true, isCompleted: true },
-      { id: 'l12', title: '1.2 LLM 如何"思考"', isPreview: true, isCompleted: true },
-      { id: 'l13', title: '1.3 第一个最小 Agent(命令行版)', isPreview: false, isCompleted: false, duration: '8:15', active: true },
-      { id: 'l14', title: '1.4 ReAct:Reason + Act', isPreview: false, isCompleted: false, duration: '22:08' },
-      { id: 'l15', title: '1.5 调试 Agent', isPreview: false, isCompleted: false, duration: '15:30' },
-      { id: 'l16', title: '1.6 章节项目', isPreview: false, isCompleted: false, isProject: true },
-    ],
-  },
-  { id: 'ch2', index: 2, title: '第二章 · Tool Calling', defaultOpen: false, lessons: [] },
-  { id: 'ch3', index: 3, title: '第三章 · Memory', defaultOpen: false, lessons: [] },
-  { id: 'ch4', index: 4, title: '第四章 · Chain', defaultOpen: false, lessons: [] },
-  { id: 'ch5', index: 5, title: '第五章 · 期末项目', defaultOpen: false, lessons: [] },
-];
+// ──────────────────────────────────────────────────────────────────────
+// InfoTab — 基本信息(接 PATCH /api/v1/courses/:id 真后端)
+// ──────────────────────────────────────────────────────────────────────
 
-// ── 基本信息 tab ────────────────────────────────────────────────────────
-function InfoTab() {
-  const [title, setTitle] = useState(MOCK_COURSE.title);
-  const [subtitle, setSubtitle] = useState('5 分钟跑通,30 行代码,人人能学');
-  const [instructor, setInstructor] = useState('张天飞');
-  const [level, setLevel] = useState('Beginner');
-  const [duration, setDuration] = useState('6.5h');
-  const [tags, setTags] = useState('LangChain, Agent, LLM, Python');
-  const [previewLesson, setPreviewLesson] = useState('1.1');
-  const [coverFile, setCoverFile] = useState<string | null>(null);
+function InfoTab({ courseId }: { courseId: string }) {
+  const { courseQuery, updateCourse } = useCourseEdit(courseId);
+  const course = courseQuery.data;
+  const [form, setForm] = useState<{
+    title: string;
+    description: string;
+    instructor: string;
+    level: string;
+    duration: string;
+    thumbnail: string;
+  }>({ title: '', description: '', instructor: '', level: 'Beginner', duration: '', thumbnail: '' });
+
+  useEffect(() => {
+    if (course) {
+      setForm({
+        title: course.title ?? '',
+        description: course.description ?? '',
+        instructor: course.instructor ?? '',
+        level: course.level ?? 'Beginner',
+        duration: course.duration ?? '',
+        thumbnail: course.thumbnail ?? '',
+      });
+    }
+  }, [course?.id, course?.title, course?.description, course?.instructor, course?.level, course?.duration, course?.thumbnail]);
+
+  if (courseQuery.isLoading) {
+    return <div className="p-8 text-center text-sm text-[#666666]">加载中…</div>;
+  }
+  if (courseQuery.isError) {
+    return (
+      <div className="p-8 text-center text-sm text-red-600">
+        加载失败：{(courseQuery.error as any)?.message ?? '未知错误'}
+      </div>
+    );
+  }
+
+  const save = () => {
+    updateCourse.mutate(form, {
+      onSuccess: () => alert('已保存'),
+      onError: (e: any) => alert('保存失败：' + (e?.response?.data?.message ?? e?.message ?? '未知错误')),
+    });
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div className="lg:col-span-2 space-y-4">
-        <Card padding="md">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-4">主要信息</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-4">
+      <Card padding="md">
+        <h3 className="text-sm font-semibold text-neutral-900 mb-4">主要信息</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="课程标题"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            required
+          />
+          <Input
+            label="讲师"
+            value={form.instructor}
+            onChange={(e) => setForm({ ...form, instructor: e.target.value })}
+            required
+          />
+          <div>
+            <label className="text-sm font-medium text-neutral-900 mb-1.5 block">难度</label>
+            <select
+              value={form.level}
+              onChange={(e) => setForm({ ...form, level: e.target.value })}
+              className="w-full h-10 px-3 rounded-md border border-neutral-200 bg-neutral-0 text-sm focus:outline-none focus:border-brand-500"
+            >
+              <option value="Beginner">入门</option>
+              <option value="Intermediate">进阶</option>
+              <option value="Advanced">高级</option>
+              <option value="Expert">专家</option>
+            </select>
+          </div>
+          <Input
+            label="总时长"
+            value={form.duration}
+            onChange={(e) => setForm({ ...form, duration: e.target.value })}
+            placeholder="如 6.5h"
+          />
+          <div className="md:col-span-2">
             <Input
-              label="课程标题"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-            <Input
-              label="副标题"
-              value={subtitle}
-              onChange={(e) => setSubtitle(e.target.value)}
-              hint="一句话说清卖点,展示在卡片下方"
-            />
-            <Input
-              label="讲师"
-              value={instructor}
-              onChange={(e) => setInstructor(e.target.value)}
-              leftIcon={<UserIcon className="w-4 h-4" />}
-              required
-            />
-            <div>
-              <label className="text-sm font-medium text-neutral-900 mb-1.5 block">难度</label>
-              <select
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-                className="w-full h-10 px-3 rounded-md border border-neutral-200 bg-neutral-0 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-              >
-                <option value="Beginner">入门</option>
-                <option value="Intermediate">进阶</option>
-                <option value="Advanced">高级</option>
-                <option value="Expert">专家</option>
-              </select>
-            </div>
-            <Input
-              label="总时长"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              leftIcon={<ClockIcon className="w-4 h-4" />}
-            />
-            <Input
-              label="标签"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              leftIcon={<TagIcon className="w-4 h-4" />}
-              hint="用逗号分隔,最多 8 个"
+              label="封面图 URL"
+              value={form.thumbnail}
+              onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
             />
           </div>
-        </Card>
-
-        <Card padding="md">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-4">试看设置</h3>
-          <p className="text-xs text-neutral-600 mb-3">
-            未报名用户可试看选中的课时。最多 3 节。
-          </p>
-          <div className="space-y-2">
-            {['1.1 什么是 Agent', '1.2 LLM 如何"思考"', '1.3 第一个最小 Agent'].map(
-              (lesson) => (
-                <label
-                  key={lesson}
-                  className="flex items-center gap-3 p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={previewLesson === lesson}
-                    onChange={() => setPreviewLesson(lesson)}
-                    className="w-4 h-4 accent-brand-500"
-                  />
-                  <span className="text-sm text-neutral-900 flex-1">{lesson}</span>
-                  {previewLesson === lesson && (
-                    <span className="text-[10px] font-medium text-success-500 bg-success-500/10 px-2 py-0.5 rounded-full">
-                      试看
-                    </span>
-                  )}
-                </label>
-              ),
-            )}
-          </div>
-        </Card>
-      </div>
-
-      <Card padding="md" className="lg:col-span-1">
-        <h3 className="text-sm font-semibold text-neutral-900 mb-4">封面图</h3>
-        <div className="aspect-video w-full rounded-lg bg-neutral-100 border-2 border-dashed border-neutral-200 flex items-center justify-center overflow-hidden">
-          {coverFile ? (
-            <img
-              src={coverFile}
-              alt="封面预览"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="text-center px-4">
-              <ImageIcon className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
-              <p className="text-xs text-neutral-600">支持 JPG/PNG,16:9,≤2MB</p>
-            </div>
+        </div>
+        <div className="mt-4">
+          <label className="text-sm font-medium text-neutral-900 mb-1.5 block">课程描述</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={4}
+            className="w-full px-3 py-2 rounded-md border border-neutral-200 bg-neutral-0 text-sm focus:outline-none focus:border-brand-500 resize-none"
+          />
+        </div>
+        <div className="mt-4 flex items-center gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={save}
+            disabled={updateCourse.isPending}
+            leftIcon={<Save className="w-4 h-4" />}
+          >
+            {updateCourse.isPending ? '保存中…' : '保存修改'}
+          </Button>
+          {updateCourse.isSuccess && (
+            <span className="text-xs text-success-500">已保存</span>
           )}
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 text-sm hover:border-brand-500 cursor-pointer transition-colors">
-            <Upload className="w-4 h-4" />
-            <span>选择文件</span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  // mock:不真传,只读 dataURL 做本地预览
-                  const reader = new FileReader();
-                  reader.onload = () => setCoverFile(reader.result as string);
-                  reader.readAsDataURL(file);
-                }
-              }}
-            />
-          </label>
-          {coverFile && (
-            <Button variant="ghost" size="sm" onClick={() => setCoverFile(null)}>
-              移除
-            </Button>
-          )}
-        </div>
-        <p className="mt-3 text-[10px] text-warning-500">
-          ⚠ TODO: P0-8 后端暂未实现,封面仅本地预览,保存草稿不会真上传
-        </p>
       </Card>
     </div>
   );
 }
 
-// ── 章节大纲 tab ────────────────────────────────────────────────────────
-function ChapterTreeItem({
-  chapter,
-  activeId,
-  onSelect,
-  expanded,
-  onToggle,
-}: {
-  chapter: MockChapter;
-  activeId: string;
-  onSelect: (id: string) => void;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
+// ──────────────────────────────────────────────────────────────────────
+// ChaptersTab — 章节树 + 课时管理(全部接真后端)
+// ──────────────────────────────────────────────────────────────────────
+
+function ChaptersTab({ courseId }: { courseId: string }) {
+  const queryClient = useQueryClient();
+  const { chaptersQuery } = useCourseEdit(courseId);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [activeLesson, setActiveLesson] = useState<{ chapterId: string; lesson: ChapterLesson } | null>(null);
+  const [newChapterTitle, setNewChapterTitle] = useState('');
+
+  const chapters = chaptersQuery.data ?? [];
+
+  const totalLessons = chapters.reduce((s, c) => s + c.lessons.length, 0);
+
+  const createChapter = useMutation({
+    mutationFn: (title: string) => coursesAdminApi.createChapter(courseId, { title }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-course-chapters', courseId] });
+      setNewChapterTitle('');
+    },
+  });
+
+  const deleteChapter = useMutation({
+    mutationFn: (id: string) => coursesAdminApi.deleteChapter(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-course-chapters', courseId] });
+    },
+  });
+
+  const deleteLesson = useMutation({
+    mutationFn: ({ lessonId }: { chapterId: string; lessonId: string }) =>
+      coursesAdminApi.deleteLesson(lessonId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-course-chapters', courseId] });
+    },
+  });
+
+  const addLesson = useMutation({
+    mutationFn: ({ chapterId, title }: { chapterId: string; title: string }) =>
+      coursesAdminApi.createLesson(chapterId, { title }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-course-chapters', courseId] });
+    },
+  });
+
+  if (chaptersQuery.isLoading) {
+    return <div className="p-8 text-center text-sm text-[#666666]">加载章节中…</div>;
+  }
+  if (chaptersQuery.isError) {
+    return (
+      <div className="p-8 text-center text-sm text-red-600">
+        加载失败：{(chaptersQuery.error as any)?.message ?? '未知错误'}
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-md">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-neutral-50 text-left"
-      >
-        {expanded ? (
-          <ChevronDown className="w-4 h-4 text-neutral-400" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-neutral-400" />
-        )}
-        <span
-          className={
-            'w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center ' +
-            (chapter.defaultOpen
-              ? 'bg-success-500/10 text-success-500'
-              : 'bg-neutral-200 text-neutral-600')
-          }
-        >
-          {chapter.index}
-        </span>
-        <span className="flex-1 font-medium text-sm text-neutral-900 truncate">
-          {chapter.title}
-        </span>
-        <span className="text-[10px] text-neutral-400 font-mono">
-          {chapter.lessons.length || '0'} 课时
-        </span>
-      </button>
-      {expanded && chapter.lessons.length > 0 && (
-        <div className="ml-3 pl-3 border-l border-neutral-200 space-y-0.5 mt-1">
-          {chapter.lessons.map((l) => (
-            <button
-              key={l.id}
-              type="button"
-              onClick={() => onSelect(l.id)}
-              className={
-                'w-full flex items-center gap-2 p-1.5 rounded text-xs text-left transition-colors ' +
-                (activeId === l.id
-                  ? 'bg-brand-50 text-brand-700 font-medium'
-                  : 'hover:bg-neutral-50 text-neutral-700')
-              }
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 border border-neutral-200 rounded-xl overflow-hidden bg-neutral-0 min-h-[500px]">
+      <aside className="bg-neutral-0 border-r border-neutral-200 flex flex-col">
+        <div className="p-3 border-b border-neutral-200">
+          <h3 className="text-sm font-semibold text-neutral-900 mb-2">章节大纲</h3>
+          <div className="flex items-center gap-1">
+            <input
+              value={newChapterTitle}
+              onChange={(e) => setNewChapterTitle(e.target.value)}
+              placeholder="新章节标题"
+              className="flex-1 h-8 px-2 text-xs border border-neutral-200 focus:outline-none focus:border-brand-500"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={!newChapterTitle.trim() || createChapter.isPending}
+              onClick={() => createChapter.mutate(newChapterTitle.trim())}
             >
-              {l.isCompleted ? (
-                <Check className="w-3.5 h-3.5 text-success-500 shrink-0" />
-              ) : l.isProject ? (
-                <Code className="w-3.5 h-3.5 text-xp-500 shrink-0" />
-              ) : (
-                <VideoIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-              )}
-              <span className="flex-1 truncate">{l.title}</span>
-              {l.isPreview && (
-                <span className="text-[10px] font-medium text-success-500 bg-success-500/10 px-1.5 py-0.5 rounded-full">
-                  试看
-                </span>
-              )}
-              {l.isProject && (
-                <span className="text-[10px] font-medium text-xp-500 bg-xp-500/10 px-1.5 py-0.5 rounded-full">
-                  项目
-                </span>
-              )}
-              {l.duration && (
-                <span className="text-[10px] text-neutral-400 font-mono">{l.duration}</span>
-              )}
-            </button>
-          ))}
-          <button
-            type="button"
-            className="w-full text-left p-1.5 text-xs text-neutral-400 hover:text-brand-500"
-          >
-            + 添加课时
-          </button>
+              + 章节
+            </Button>
+          </div>
         </div>
-      )}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {chapters.length === 0 && (
+            <div className="text-[10px] text-[#A3A3A3] italic p-3 text-center">
+              暂无章节 · 在上方添加
+            </div>
+          )}
+          {chapters.map((c, idx) => {
+            const isOpen = expanded[c.id] ?? idx === 0;
+            return (
+              <div key={c.id} className="rounded-md">
+                <div className="flex items-center gap-1 p-1.5 hover:bg-neutral-50">
+                  <button
+                    type="button"
+                    onClick={() => setExpanded({ ...expanded, [c.id]: !isOpen })}
+                    className="p-0.5"
+                  >
+                    {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                  </button>
+                  <span className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-neutral-200 text-neutral-600 shrink-0">
+                    {idx + 1}
+                  </span>
+                  <span className="flex-1 font-medium text-sm text-neutral-900 truncate" title={c.title}>
+                    {c.title}
+                  </span>
+                  <span className="text-[10px] text-neutral-400 font-mono">{c.lessons.length}</span>
+                  <button
+                    onClick={() => {
+                      if (confirm(`删除章节「${c.title}」？将级联软删其下 ${c.lessons.length} 个课时`)) {
+                        deleteChapter.mutate(c.id);
+                      }
+                    }}
+                    className="p-1 text-[#A3A3A3] hover:text-[#171717] hover:bg-[#EEEDE9]"
+                    title="删除"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {isOpen && (
+                  <div className="ml-6 pl-2 border-l border-neutral-200 space-y-0.5 mt-1">
+                    {c.lessons.map((l) => (
+                      <div
+                        key={l.id}
+                        className={`flex items-center gap-1 p-1.5 rounded text-xs cursor-pointer transition-colors ${
+                          activeLesson?.lesson.id === l.id
+                            ? 'bg-brand-50 text-brand-700 font-medium'
+                            : 'hover:bg-neutral-50 text-neutral-700'
+                        }`}
+                        onClick={() => setActiveLesson({ chapterId: c.id, lesson: l })}
+                      >
+                        <VideoIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                        <span className="flex-1 truncate" title={l.title}>{l.title}</span>
+                        {l.isPreview && (
+                          <span className="text-[9px] font-medium text-success-500 bg-success-500/10 px-1 py-0.5 rounded">
+                            试看
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                    <NewLessonRow chapterId={c.id} onAdd={(title) => addLesson.mutate({ chapterId: c.id, title })} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="p-3 border-t border-neutral-200 text-xs text-neutral-600">
+          共 {chapters.length} 章 · {totalLessons} 课时
+        </div>
+      </aside>
+
+      <div className="bg-neutral-50 p-4">
+        {activeLesson ? (
+          <LessonDetail
+            lesson={activeLesson.lesson}
+            onDelete={() => {
+              if (confirm(`删除课时「${activeLesson.lesson.title}」？`)) {
+                deleteLesson.mutate(
+                  { chapterId: activeLesson.chapterId, lessonId: activeLesson.lesson.id },
+                  { onSuccess: () => setActiveLesson(null) },
+                );
+              }
+            }}
+          />
+        ) : (
+          <div className="h-full flex items-center justify-center text-sm text-[#666666]">
+            <div className="text-center">
+              <VideoIcon className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
+              点击左侧课时查看 / 编辑元数据
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function LessonEditor() {
-  const [content, setContent] = useState(`# 第一个最小 Agent(命令行版)
-
-这一节我们写一个能回答本地问题的 Agent,只调一个 tool:查当前时间。整个过程 5 分钟。
-
-## 核心代码
-
-看下面这 30 行,先别急着理解每一行,我们跑起来再讲。
-
-\`\`\`python
-from langchain.agents import initialize_agent, Tool
-from langchain.llms import OpenAI
-from datetime import datetime
-
-def get_time(_: str) -> str:
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-tools = [Tool(name="GetTime", func=get_time, description="返回当前时间")]
-
-agent = initialize_agent(
-    tools, OpenAI(temperature=0), agent="zero-shot-react-description", verbose=True
-)
-
-print(agent.run("现在几点了?"))
-\`\`\`
-
-## 怎么跑
-
-1. 把上面代码存为 \`agent.py\`
-2. 设置 \`export OPENAI_API_KEY=sk-...\`
-3. 运行 \`python agent.py\`
-`);
-  const [isPreview, setIsPreview] = useState(false);
-
+function NewLessonRow({ chapterId: _chapterId, onAdd }: { chapterId: string; onAdd: (title: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full text-left p-1.5 text-xs text-neutral-400 hover:text-brand-500"
+      >
+        + 添加课时
+      </button>
+    );
+  }
   return (
-    <Card padding="none" className="flex-1 flex flex-col overflow-hidden">
-      {/* 标题栏 */}
-      <div className="px-6 py-4 border-b border-neutral-200">
-        <div className="flex items-center gap-2 text-xs text-neutral-600">
-          <span>第一章</span>
-          <span>/</span>
-          <span>1.3 第一个最小 Agent(命令行版)</span>
-          <span className="ml-auto font-mono flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-success-500" />已自动保存
-          </span>
-        </div>
-        <h2 className="mt-1 text-xl font-bold text-neutral-900">
-          1.3 第一个最小 Agent(命令行版)
-        </h2>
-      </div>
-      {/* toolbar */}
-      <div className="border-b border-neutral-200 px-4 py-2 flex items-center gap-1 overflow-x-auto bg-neutral-50">
-        <button className="p-1.5 rounded hover:bg-neutral-100" title="标题">
-          <Type className="w-4 h-4 text-neutral-700" />
-        </button>
-        <button className="p-1.5 rounded hover:bg-neutral-100" title="粗体">
-          <Bold className="w-4 h-4 text-neutral-700" />
-        </button>
-        <button className="p-1.5 rounded hover:bg-neutral-100" title="斜体">
-          <Italic className="w-4 h-4 text-neutral-700" />
-        </button>
-        <div className="w-px h-5 bg-neutral-200 mx-1" />
-        <button className="p-1.5 rounded hover:bg-neutral-100" title="代码块">
-          <Code className="w-4 h-4 text-neutral-700" />
-        </button>
-        <button className="p-1.5 rounded hover:bg-neutral-100" title="图片">
-          <ImagePlus className="w-4 h-4 text-neutral-700" />
-        </button>
-        <button className="p-1.5 rounded hover:bg-neutral-100" title="附件">
-          <Paperclip className="w-4 h-4 text-neutral-700" />
-        </button>
-        <div className="w-px h-5 bg-neutral-200 mx-1" />
-        <button className="p-1.5 rounded hover:bg-neutral-100" title="AI 帮写">
-          <Sparkle className="w-4 h-4 text-xp-500" />
-        </button>
-        <div className="ml-auto text-xs text-neutral-600 flex items-center gap-2">
-          <span>
-            字数 <span className="font-mono">{content.length.toLocaleString()}</span>
-          </span>
-          <span>·</span>
-          <span>预计阅读 {Math.max(1, Math.round(content.length / 300))} 分钟</span>
-          <button
-            onClick={() => setIsPreview((p) => !p)}
-            className="ml-2 px-2 py-1 rounded border border-neutral-200 hover:border-brand-500"
-          >
-            {isPreview ? '编辑' : '预览'}
-          </button>
-        </div>
-      </div>
-      {/* 编辑器主体 */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {isPreview ? (
-          <div className="prose prose-sm max-w-none">
-            <pre className="whitespace-pre-wrap font-sans text-sm text-neutral-700 leading-relaxed">
-              {content}
-            </pre>
-            <p className="mt-4 text-[10px] text-warning-500">
-              ⚠ TODO: 简化版预览(纯文本),生产应接 markdown 渲染
-            </p>
-          </div>
-        ) : (
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full h-full min-h-[400px] resize-none bg-transparent text-sm font-mono text-neutral-900 leading-relaxed focus:outline-none"
-            placeholder="开始写课程内容…"
-          />
-        )}
-      </div>
-      {/* 视频上传 */}
-      <div className="border-t border-neutral-200 p-4 flex items-center gap-3 bg-neutral-50">
-        <div className="flex-1 p-3 rounded-md border border-dashed border-neutral-200 flex items-center gap-3 bg-neutral-0">
-          <VideoIcon className="w-5 h-5 text-neutral-400 shrink-0" />
-          <div className="flex-1 text-sm min-w-0">
-            <div className="font-medium text-neutral-900 truncate">lesson-1-3-main.mp4</div>
-            <div className="text-xs text-neutral-600">
-              已上传 · 142 MB · 8:15 · 转码中 (60%)
-            </div>
-          </div>
-          <Button variant="ghost" size="sm">
-            替换
-          </Button>
-        </div>
-        <Button variant="ghost" size="sm" leftIcon={<Paperclip className="w-4 h-4" />}>
-          + 附加资源
-        </Button>
-      </div>
-    </Card>
+    <div className="flex items-center gap-1 p-1">
+      <input
+        autoFocus
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && title.trim()) {
+            onAdd(title.trim());
+            setTitle('');
+            setOpen(false);
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+            setTitle('');
+          }
+        }}
+        placeholder="新课时标题"
+        className="flex-1 h-7 px-2 text-xs border border-neutral-300 focus:outline-none focus:border-brand-500"
+      />
+      <button
+        onClick={() => {
+          if (title.trim()) {
+            onAdd(title.trim());
+            setTitle('');
+            setOpen(false);
+          }
+        }}
+        className="px-2 h-7 bg-[#171717] text-white text-xs"
+      >
+        +
+      </button>
+      <button
+        onClick={() => { setOpen(false); setTitle(''); }}
+        className="px-1 h-7 text-[#A3A3A3] hover:text-[#171717]"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
   );
 }
 
-function LessonSettingsPanel() {
-  const [isPreview, setIsPreview] = useState(true);
-  const [keyPoints, setKeyPoints] = useState([
-    'ReAct 循环显式痕迹',
-    'tool schema 设计要点',
-    'verbose 模式调试',
-  ]);
-  const [newPoint, setNewPoint] = useState('');
+function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: () => void }) {
+  const [title, setTitle] = useState(lesson.title);
+  const [description, setDescription] = useState(lesson.description ?? '');
+  const [videoUrl, setVideoUrl] = useState(lesson.videoUrl ?? '');
+  const [isPreview, setIsPreview] = useState(lesson.isPreview);
+
+  useEffect(() => {
+    setTitle(lesson.title);
+    setDescription(lesson.description ?? '');
+    setVideoUrl(lesson.videoUrl ?? '');
+    setIsPreview(lesson.isPreview);
+  }, [lesson.id]);
+
+  const save = useMutation({
+    mutationFn: () =>
+      coursesAdminApi.updateLesson(lesson.id, { title, description, videoUrl, isPreview }),
+  });
 
   return (
-    <div className="p-5 space-y-5">
-      <h3 className="text-sm font-semibold text-neutral-900">课时设置</h3>
-      <Input label="课时标题" defaultValue="第一个最小 Agent(命令行版)" required />
-      <div className="grid grid-cols-2 gap-3">
-        <Input label="时长(秒)" type="number" defaultValue="495" />
-        <Input label="顺序" type="number" defaultValue="3" />
-      </div>
-      <Input
-        label="视频源 URL"
-        defaultValue="https://cdn.opencsg.ai/lessons/1-3-main.mp4"
-        className="font-mono text-xs"
-      />
-      <div className="p-3 rounded-md bg-brand-50 border border-brand-100">
+    <Card padding="md">
+      <h3 className="text-sm font-semibold text-neutral-900 mb-4">课时详情</h3>
+      <div className="space-y-3">
+        <Input label="标题" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <Input
+          label="视频 URL"
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+          placeholder="https://cdn.opencsg.ai/lessons/...mp4"
+        />
+        <div>
+          <label className="text-sm font-medium text-neutral-900 mb-1.5 block">描述 / 笔记</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={6}
+            className="w-full px-3 py-2 rounded-md border border-neutral-200 bg-neutral-0 text-sm focus:outline-none focus:border-brand-500 resize-none"
+            placeholder="支持 Markdown（生产环境可接渲染器）"
+          />
+        </div>
         <label className="flex items-center gap-2 text-sm cursor-pointer text-neutral-900">
           <input
             type="checkbox"
@@ -1006,333 +999,228 @@ function LessonSettingsPanel() {
             onChange={(e) => setIsPreview(e.target.checked)}
             className="w-4 h-4 accent-brand-500"
           />
-          <span>设为试看课时(未报名可看)</span>
+          <span>设为试看课时（未报名可看）</span>
         </label>
-        <p className="mt-1 text-[10px] text-neutral-600">勾选后,未报名用户可试看本节</p>
       </div>
-      <div>
-        <label className="text-sm font-medium text-neutral-900 mb-1.5 block">
-          关键点(AI 自动提取,可编辑)
-        </label>
-        <div className="space-y-1.5">
-          {keyPoints.map((kp, i) => (
-            <div
-              key={kp}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-xp-500/10 text-xs text-xp-500"
-            >
-              <span className="flex-1 truncate">{kp}</span>
-              <button
-                onClick={() => setKeyPoints(keyPoints.filter((_, j) => j !== i))}
-                className="text-neutral-400 hover:text-danger-500"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-          <div className="flex items-center gap-1">
-            <Input
-              value={newPoint}
-              onChange={(e) => setNewPoint(e.target.value)}
-              placeholder="+ 添加关键点"
-              size="sm"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newPoint.trim()) {
-                  setKeyPoints([...keyPoints, newPoint.trim()]);
-                  setNewPoint('');
-                }
-              }}
-            />
-          </div>
-        </div>
-      </div>
-      <div>
-        <label className="text-sm font-medium text-neutral-900 mb-1.5 block">课后测验</label>
-        <div className="p-3 rounded-md border border-dashed border-neutral-200 text-center">
-          <p className="text-xs text-neutral-600">3 道题 · 自动评分</p>
-          <button className="mt-2 text-xs text-brand-500 hover:underline">编辑题目</button>
-        </div>
-      </div>
-      <div>
-        <label className="text-sm font-medium text-neutral-900 mb-1.5 block">关联资源</label>
-        <div className="space-y-1.5 text-xs">
-          {['agent.py · 2KB', 'cheatsheet.md · 8KB'].map((r) => (
-            <div key={r} className="flex items-center gap-2 p-2 rounded bg-neutral-50">
-              <FileText className="w-3.5 h-3.5 text-neutral-600" />
-              <span className="flex-1 truncate text-neutral-900">{r.split(' · ')[0]}</span>
-              <span className="text-neutral-400">{r.split(' · ')[1]}</span>
-            </div>
-          ))}
-          <button className="w-full text-xs text-brand-500 hover:underline py-1">
-            + 添加资源
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ChaptersTab() {
-  const [activeId, setActiveId] = useState('l13');
-  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {};
-    MOCK_CHAPTERS.forEach((c) => (init[c.id] = c.defaultOpen));
-    return init;
-  });
-  const totalLessons = MOCK_CHAPTERS.reduce((s, c) => s + c.lessons.length, 0);
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-0 border border-neutral-200 rounded-xl overflow-hidden bg-neutral-0 min-h-[600px]">
-      {/* 左侧:章节树 */}
-      <aside className="hidden lg:flex flex-col bg-neutral-0 border-r border-neutral-200 overflow-hidden">
-        <div className="p-3 border-b border-neutral-200 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-neutral-900">章节大纲</h3>
-          <Button variant="ghost" size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>
-            新增章节
-          </Button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 text-sm">
-          {MOCK_CHAPTERS.map((c) => (
-            <ChapterTreeItem
-              key={c.id}
-              chapter={c}
-              activeId={activeId}
-              onSelect={setActiveId}
-              expanded={expanded[c.id] ?? false}
-              onToggle={() => setExpanded({ ...expanded, [c.id]: !expanded[c.id] })}
-            />
-          ))}
-        </div>
-        <div className="p-3 border-t border-neutral-200 text-xs text-neutral-600">
-          总时长: <span className="font-mono text-neutral-900">6.5h</span> · 共 {totalLessons} 课时
-        </div>
-        <p className="px-3 pb-3 text-[10px] text-warning-500">
-          ⚠ TODO: P0-8 后端暂未实现,操作仅前端 mock
-        </p>
-      </aside>
-
-      {/* 中间:编辑器 */}
-      <div className="flex flex-col overflow-hidden bg-neutral-50">
-        <LessonEditor />
-      </div>
-
-      {/* 右侧:字段面板 */}
-      <aside className="hidden lg:flex flex-col bg-neutral-0 border-l border-neutral-200 overflow-y-auto">
-        <LessonSettingsPanel />
-      </aside>
-    </div>
-  );
-}
-
-// ── 资源 tab ────────────────────────────────────────────────────────────
-function ResourcesTab() {
-  const resources = [
-    { name: '课程讲义.pdf', size: '2.4 MB', type: 'pdf' },
-    { name: 'agent.py', size: '2 KB', type: 'code' },
-    { name: 'cheatsheet.md', size: '8 KB', type: 'md' },
-    { name: '数据集 sample.csv', size: '340 KB', type: 'csv' },
-    { name: '参考论文 1.pdf', size: '1.1 MB', type: 'pdf' },
-  ];
-  return (
-    <Card padding="md">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-neutral-900">课程资源 · 5</h3>
-        <Button variant="secondary" size="sm" leftIcon={<Upload className="w-4 h-4" />}>
-          上传
+      <div className="mt-4 flex items-center gap-2 pt-4 border-t border-neutral-200">
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => save.mutate()}
+          disabled={save.isPending}
+          leftIcon={<Save className="w-4 h-4" />}
+        >
+          {save.isPending ? '保存中…' : '保存课时'}
         </Button>
+        <Button variant="ghost" size="sm" onClick={onDelete} leftIcon={<Trash2 className="w-4 h-4" />}>
+          删除
+        </Button>
+        {save.isSuccess && <span className="text-xs text-success-500">已保存</span>}
+        {save.isError && <span className="text-xs text-red-600">保存失败</span>}
       </div>
-      <div className="space-y-2">
-        {resources.map((r) => (
-          <div
-            key={r.name}
-            className="flex items-center gap-3 p-3 rounded-md border border-neutral-200 hover:bg-neutral-50"
-          >
-            <FileText className="w-4 h-4 text-neutral-600 shrink-0" />
-            <span className="flex-1 text-sm text-neutral-900 truncate">{r.name}</span>
-            <span className="text-xs text-neutral-600 font-mono">{r.size}</span>
-            <Button variant="ghost" size="sm">
-              删除
-            </Button>
-          </div>
-        ))}
-      </div>
-      <p className="mt-4 text-[10px] text-warning-500">
-        ⚠ TODO: 资源上传后端 P0-8 暂未实现
-      </p>
     </Card>
   );
 }
 
-// ── 价格 tab ────────────────────────────────────────────────────────────
-function PricingTab() {
-  const [plan, setPlan] = useState<'free' | 'oneTime' | 'subscription'>('oneTime');
-  const [price, setPrice] = useState('299');
-  const [trialEnabled, setTrialEnabled] = useState(true);
+// ──────────────────────────────────────────────────────────────────────
+// ResourcesTab — 资源管理(P2:后端 resource endpoint 待实现,先占位)
+// ──────────────────────────────────────────────────────────────────────
 
-  const plans: { id: 'free' | 'oneTime' | 'subscription'; title: string; sub: string; priceHint: string }[] = [
-    { id: 'free', title: '免费', sub: '全部章节对所有人开放', priceHint: '¥ 0' },
-    { id: 'oneTime', title: '一次性买断', sub: '一次付费,永久学习', priceHint: '¥ 299' },
-    { id: 'subscription', title: '订阅', sub: '加入 OpenCSG 会员可学全部课程', priceHint: '¥ 99/月' },
+function ResourcesTab({ courseId: _courseId }: { courseId: string }) {
+  return (
+    <Card padding="md">
+      <h3 className="text-sm font-semibold text-neutral-900 mb-2">课程资源</h3>
+      <p className="text-xs text-neutral-600 mb-4">
+        资源上传 / 管理后端接口（<code>POST /api/v1/courses/:id/resources</code> +{' '}
+        <code>GET /api/v1/courses/:id/resources</code>）正在设计中。
+      </p>
+      <div className="border-2 border-dashed border-neutral-200 rounded-md p-12 text-center">
+        <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
+        <p className="text-sm text-neutral-600">P2 · 资源管理</p>
+        <p className="text-[10px] text-neutral-400 mt-1">
+          当前阶段课时元数据（标题/描述/视频URL）已在「章节大纲」tab 编辑
+        </p>
+      </div>
+    </Card>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// PricingTab — 价格(接 PATCH /api/v1/courses/:id 真后端)
+// ──────────────────────────────────────────────────────────────────────
+
+function PricingTab({ courseId }: { courseId: string }) {
+  const { courseQuery, updateCourse } = useCourseEdit(courseId);
+  const course = courseQuery.data;
+  const [costType, setCostType] = useState<'free' | 'paid' | 'charity'>('free');
+  const [price, setPrice] = useState(0);
+
+  useEffect(() => {
+    if (course) {
+      setCostType(course.costType);
+      setPrice(course.price);
+    }
+  }, [course?.id, course?.costType, course?.price]);
+
+  if (courseQuery.isLoading) return <div className="p-8 text-center text-sm text-[#666666]">加载中…</div>;
+
+  const save = () => {
+    updateCourse.mutate(
+      { costType, price: costType === 'free' ? 0 : price },
+      { onSuccess: () => alert('已保存') },
+    );
+  };
+
+  const plans = [
+    { id: 'free' as const, title: '免费', sub: '全部章节对所有人开放', priceHint: '¥ 0' },
+    { id: 'paid' as const, title: '付费买断', sub: '一次付费，永久学习', priceHint: `¥ ${price}` },
+    { id: 'charity' as const, title: '公益', sub: '自由付费，部分收入捐赠', priceHint: '¥ 0+ 自定' },
   ];
 
   return (
     <div className="space-y-4">
       <Card padding="md">
         <h3 className="text-sm font-semibold text-neutral-900 mb-1">价格模式</h3>
-        <p className="text-xs text-neutral-600 mb-4">选择一种主要定价方式,后续可在订单页调整</p>
+        <p className="text-xs text-neutral-600 mb-4">选择主要定价方式</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {plans.map((p) => {
-            const active = plan === p.id;
+            const active = costType === p.id;
             return (
               <label
                 key={p.id}
-                className={
-                  'p-4 rounded-xl border-2 cursor-pointer transition-colors ' +
-                  (active
-                    ? 'border-brand-500 bg-brand-50'
-                    : 'border-neutral-200 hover:border-neutral-400')
-                }
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+                  active ? 'border-brand-500 bg-brand-50' : 'border-neutral-200 hover:border-neutral-400'
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <input
                     type="radio"
                     name="plan"
                     checked={active}
-                    onChange={() => setPlan(p.id)}
+                    onChange={() => setCostType(p.id)}
                     className="w-4 h-4 accent-brand-500"
                   />
                   <span className="text-sm font-semibold text-neutral-900">{p.title}</span>
                 </div>
                 <p className="mt-1 text-xs text-neutral-600">{p.sub}</p>
-                <p className="mt-2 text-base font-mono font-bold text-neutral-900">
-                  {p.priceHint}
-                </p>
+                <p className="mt-2 text-base font-mono font-bold text-neutral-900">{p.priceHint}</p>
               </label>
             );
           })}
         </div>
       </Card>
 
-      {plan === 'oneTime' && (
+      {costType === 'paid' && (
         <Card padding="md">
           <h3 className="text-sm font-semibold text-neutral-900 mb-4">买断定价</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="售价 (¥)"
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              hint="用户实际支付金额"
-            />
-            <Input label="原价 (¥)" type="number" defaultValue="499" hint="展示划线价" />
-            <Input label="促销标签" defaultValue="早鸟" hint="显示在价格旁边" />
-          </div>
+          <Input
+            label="售价 (¥)"
+            type="number"
+            value={String(price)}
+            onChange={(e) => setPrice(Number(e.target.value))}
+          />
         </Card>
       )}
 
-      <Card padding="md">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={trialEnabled}
-            onChange={(e) => setTrialEnabled(e.target.checked)}
-            className="w-4 h-4 accent-brand-500"
-          />
-          <span className="text-sm text-neutral-900">开启试看(已默认开启 1-2 节)</span>
-        </label>
-        <p className="mt-2 text-xs text-neutral-600 pl-6">
-          试看课时未报名用户也可观看,提升转化
-        </p>
-      </Card>
+      <div className="flex items-center gap-2">
+        <Button variant="primary" size="sm" onClick={save} disabled={updateCourse.isPending} leftIcon={<Save className="w-4 h-4" />}>
+          {updateCourse.isPending ? '保存中…' : '保存修改'}
+        </Button>
+        {updateCourse.isSuccess && <span className="text-xs text-success-500">已保存</span>}
+      </div>
     </div>
   );
 }
 
-// ── 发布 tab ────────────────────────────────────────────────────────────
-function PublishTab() {
-  const [isPublished, setIsPublished] = useState(true);
-  const [publishAt, setPublishAt] = useState('2026-05-15T10:00');
+// ──────────────────────────────────────────────────────────────────────
+// PublishTab — 发布设置(接 PATCH /api/v1/courses/:id 真后端)
+// ──────────────────────────────────────────────────────────────────────
+
+function PublishTab({ courseId }: { courseId: string }) {
+  const { courseQuery, updateCourse } = useCourseEdit(courseId);
+  const course = courseQuery.data;
+  const [isPublished, setIsPublished] = useState(false);
+
+  useEffect(() => {
+    if (course) setIsPublished(course.status === 'published');
+  }, [course?.id, course?.status]);
+
+  if (courseQuery.isLoading) return <div className="p-8 text-center text-sm text-[#666666]">加载中…</div>;
+
+  const save = () => {
+    updateCourse.mutate(
+      { status: isPublished ? 'published' : 'unpublished' },
+      { onSuccess: () => alert(isPublished ? '已发布' : '已下架') },
+    );
+  };
 
   return (
     <div className="space-y-4">
       <Card padding="md">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-semibold text-neutral-900">上下架状态</h3>
             <p className="text-xs text-neutral-600 mt-1">
-              {isPublished
-                ? '课程已发布,正在招生中'
-                : '课程未发布,只有内部可见'}
+              {isPublished ? '课程已发布，正在招生中' : '课程未发布，只有内部可见'}
             </p>
           </div>
           <button
             type="button"
             onClick={() => setIsPublished((p) => !p)}
-            className={
-              'relative w-12 h-7 rounded-full transition-colors ' +
-              (isPublished ? 'bg-brand-500' : 'bg-neutral-200')
-            }
+            className={`relative w-12 h-7 rounded-full transition-colors ${
+              isPublished ? 'bg-brand-500' : 'bg-neutral-200'
+            }`}
             aria-pressed={isPublished}
             aria-label="上下架"
           >
             <span
-              className={
-                'absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ' +
-                (isPublished ? 'translate-x-5' : 'translate-x-0.5')
-              }
+              className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                isPublished ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
             />
           </button>
         </div>
       </Card>
-
-      <Card padding="md">
-        <h3 className="text-sm font-semibold text-neutral-900 mb-1">定时发布</h3>
-        <p className="text-xs text-neutral-600 mb-4">
-          设置后即使切到"已发布"也不会立即生效,到点才真正展示
-        </p>
-        <Input
-          label="发布时间"
-          type="datetime-local"
-          value={publishAt}
-          onChange={(e) => setPublishAt(e.target.value)}
-          leftIcon={<Calendar className="w-4 h-4" />}
-        />
-      </Card>
-
-      <Card padding="md">
-        <h3 className="text-sm font-semibold text-neutral-900 mb-4">发布检查</h3>
-        <ul className="space-y-2 text-sm">
-          {[
-            { ok: true, label: '课程标题与封面已设置' },
-            { ok: true, label: '至少 3 个章节,共 32 课时' },
-            { ok: false, label: 'SEO meta description 缺失(SEO/元数据 tab)' },
-            { ok: true, label: '试看课时已勾选' },
-          ].map((c) => (
-            <li key={c.label} className="flex items-center gap-2">
-              {c.ok ? (
-                <Check className="w-4 h-4 text-success-500 shrink-0" />
-              ) : (
-                <X className="w-4 h-4 text-warning-500 shrink-0" />
-              )}
-              <span className="text-neutral-900">{c.label}</span>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <div className="flex items-center gap-2">
+        <Button variant="primary" size="sm" onClick={save} disabled={updateCourse.isPending} leftIcon={<Send className="w-4 h-4" />}>
+          {updateCourse.isPending ? '处理中…' : isPublished ? '发布课程' : '下架课程'}
+        </Button>
+        {updateCourse.isSuccess && <span className="text-xs text-success-500">已保存</span>}
+      </div>
     </div>
   );
 }
 
 // ── 编辑模式主组件 ──────────────────────────────────────────────────────
+
 function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
+  const { courseQuery, chaptersQuery } = useCourseEdit(courseId);
+  const course = courseQuery.data;
+  const chapters = chaptersQuery.data ?? [];
   const [currentTab, setCurrentTab] = useState<Tab>(tab);
 
   useEffect(() => {
     setCurrentTab(tab);
   }, [tab]);
 
+  if (!courseId) {
+    return (
+      <div className="p-12 text-center text-sm text-[#666666]">
+        请在 URL 中提供 <code>?id=...</code> 参数
+      </div>
+    );
+  }
+
+  const TABS_DYNAMIC: { id: Tab; label: string; count?: string }[] = [
+    { id: 'info', label: '基本信息' },
+    { id: 'chapters', label: '章节大纲', count: `${chapters.length} 章` },
+    { id: 'resources', label: '资源', count: 'P2' },
+    { id: 'pricing', label: '价格 / 试看' },
+    { id: 'publish', label: '发布设置' },
+  ];
+
   return (
     <div className="-mx-6 -my-8">
-      {/* 顶部 sticky header */}
       <header className="bg-neutral-0 border-b border-neutral-200 sticky top-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -1346,19 +1234,31 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
             <span className="text-neutral-300">/</span>
             <div className="min-w-0">
               <div className="text-sm font-semibold text-neutral-900 truncate">
-                {MOCK_COURSE.title}
+                {courseQuery.isLoading ? '加载中…' : course?.title ?? '未知课程'}
               </div>
               <div className="text-xs text-neutral-600 flex items-center gap-2 flex-wrap">
                 <span>
-                  课程 ID: <span className="font-mono">{courseId ?? MOCK_COURSE.id}</span>
+                  课程 ID: <span className="font-mono">{courseId}</span>
                 </span>
-                <span>·</span>
-                <span className="text-success-500 flex items-center gap-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success-500" />
-                  已发布
-                </span>
-                <span>·</span>
-                <span>最后保存 {MOCK_COURSE.savedAt}</span>
+                {course && (
+                  <>
+                    <span>·</span>
+                    <span
+                      className={
+                        course.status === 'published'
+                          ? 'text-success-500 flex items-center gap-0.5'
+                          : 'text-neutral-500'
+                      }
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          course.status === 'published' ? 'bg-success-500' : 'bg-neutral-400'
+                        }`}
+                      />
+                      {course.status === 'published' ? '已发布' : '未发布'}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1366,29 +1266,26 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
             <Button variant="secondary" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
               预览
             </Button>
-            <Button variant="secondary" size="sm" leftIcon={<Save className="w-4 h-4" />}>
-              保存草稿
-            </Button>
-            <Button variant="primary" size="sm" leftIcon={<Send className="w-4 h-4" />}>
-              发布更新
-            </Button>
+            <Link to={`/courses/${courseId}`} target="_blank">
+              <Button variant="secondary" size="sm">
+                查看公开页
+              </Button>
+            </Link>
           </div>
         </div>
-        {/* Tabs */}
         <div className="px-4 sm:px-6 flex gap-6 overflow-x-auto text-sm">
-          {TABS.map((t) => {
+          {TABS_DYNAMIC.map((t) => {
             const active = currentTab === t.id;
             return (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => setCurrentTab(t.id)}
-                className={
-                  'py-3 border-b-2 whitespace-nowrap transition-colors ' +
-                  (active
+                className={`py-3 border-b-2 whitespace-nowrap transition-colors ${
+                  active
                     ? 'border-brand-500 text-brand-500 font-medium'
-                    : 'border-transparent text-neutral-600 hover:text-brand-500')
-                }
+                    : 'border-transparent text-neutral-600 hover:text-brand-500'
+                }`}
               >
                 {t.label}
                 {t.count && <span className="ml-1 text-xs text-neutral-400">· {t.count}</span>}
@@ -1398,50 +1295,23 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
         </div>
       </header>
 
-      {/* 主体 */}
-      <div className="px-4 sm:px-6 py-6 pb-24">
-        {currentTab === 'info' && <InfoTab />}
-        {currentTab === 'chapters' && <ChaptersTab />}
-        {currentTab === 'resources' && <ResourcesTab />}
-        {currentTab === 'pricing' && <PricingTab />}
-        {currentTab === 'publish' && <PublishTab />}
+      <div className="px-4 sm:px-6 py-6 pb-12">
+        {courseQuery.isLoading && currentTab !== 'chapters' ? (
+          <div className="p-8 text-center text-sm text-[#666666]">加载课程中…</div>
+        ) : courseQuery.isError ? (
+          <div className="p-8 text-center text-sm text-red-600">
+            加载失败：{(courseQuery.error as any)?.message ?? '未知错误'}
+          </div>
+        ) : (
+          <>
+            {currentTab === 'info' && <InfoTab courseId={courseId} />}
+            {currentTab === 'chapters' && <ChaptersTab courseId={courseId} />}
+            {currentTab === 'resources' && <ResourcesTab courseId={courseId} />}
+            {currentTab === 'pricing' && <PricingTab courseId={courseId} />}
+            {currentTab === 'publish' && <PublishTab courseId={courseId} />}
+          </>
+        )}
       </div>
-
-      {/* 底部 sticky 工具条 */}
-      <footer className="fixed bottom-0 inset-x-0 bg-neutral-0/95 backdrop-blur border-t border-neutral-200 px-4 sm:px-6 py-3 flex items-center justify-between z-40">
-        <div className="flex items-center gap-3 text-xs text-neutral-600">
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-success-500" />
-            已自动保存 · {MOCK_COURSE.savedAt}
-          </span>
-          <span className="hidden sm:inline">·</span>
-          <span className="hidden sm:inline">3 个未保存的修改</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<RotateCcw className="w-4 h-4" />}
-          >
-            撤销
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<Save className="w-4 h-4" />}
-          >
-            保存草稿
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Send className="w-4 h-4" />}
-            className="shadow-glow"
-          >
-            发布更新
-          </Button>
-        </div>
-      </footer>
     </div>
   );
 }

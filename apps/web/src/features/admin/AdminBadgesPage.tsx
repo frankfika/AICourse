@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Edit2, Award } from 'lucide-react';
+import { Plus, Trash2, Edit2, Award, ChevronRight, ChevronDown, X, Layers } from 'lucide-react';
 import { badgesApi } from '../../lib/badgesApi';
-import type { Badge, BadgeCriteriaType } from '@opencsg/shared-types';
+import type {
+  Badge,
+  BadgeCriteriaType,
+  BadgeCriteriaRule,
+  BadgeCriteriaOp,
+} from '@opencsg/shared-types';
 
 const criteriaTypeOptions: { value: BadgeCriteriaType; label: string }[] = [
   { value: 'course_completed', label: '完成课程' },
@@ -13,7 +18,22 @@ const criteriaTypeOptions: { value: BadgeCriteriaType; label: string }[] = [
   { value: 'points_reached', label: '积分达到' },
 ];
 
-const emptyForm = {
+interface BadgeForm {
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  criteriaType: BadgeCriteriaType;
+  criteriaValue: number;
+  points: number;
+  isActive: boolean;
+  orderIndex: number;
+  useAdvanced: boolean;
+  criteriaJson: BadgeCriteriaRule | null;
+}
+
+const emptyForm: BadgeForm = {
   code: '',
   name: '',
   description: '',
@@ -24,6 +44,8 @@ const emptyForm = {
   points: 0,
   isActive: true,
   orderIndex: 0,
+  useAdvanced: false,
+  criteriaJson: null,
 };
 
 export function AdminBadgesPage() {
@@ -82,18 +104,30 @@ export function AdminBadgesPage() {
       points: badge.points,
       isActive: badge.isActive,
       orderIndex: badge.orderIndex,
+      useAdvanced: !!badge.criteriaJson,
+      criteriaJson: badge.criteriaJson ?? null,
     });
     setIsCreating(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
-      ...form,
+    const base = {
+      code: form.code,
+      name: form.name,
+      description: form.description,
+      icon: form.icon,
+      category: form.category,
+      criteriaType: form.criteriaType,
       criteriaValue: Number(form.criteriaValue),
       points: Number(form.points),
+      isActive: form.isActive,
       orderIndex: Number(form.orderIndex),
     };
+    // P1-3: 嵌套规则优先 — useAdvanced 时清掉旧 flat 字段
+    const payload = form.useAdvanced
+      ? { ...base, criteriaValue: 1, criteriaJson: form.criteriaJson }
+      : { ...base, criteriaJson: null };
     if (editingId) {
       updateMutation.mutate({ id: editingId, data: payload });
     } else {
@@ -154,18 +188,72 @@ export function AdminBadgesPage() {
               value={form.category}
               onChange={(v) => setForm({ ...form, category: v })}
             />
-            <BrutalSelect
-              label="达成条件类型"
-              value={form.criteriaType}
-              onChange={(v) => setForm({ ...form, criteriaType: v as BadgeCriteriaType })}
-              options={criteriaTypeOptions.map((o) => ({ value: o.value, label: o.label }))}
-            />
-            <BrutalField
-              label="达成阈值"
-              type="number"
-              value={String(form.criteriaValue)}
-              onChange={(v) => setForm({ ...form, criteriaValue: Number(v) })}
-            />
+          </div>
+
+          {/* P1-3 嵌套规则切换 */}
+          <div className="mt-4 p-3 border border-[#171717] bg-[#F5F4F0] flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              <div>
+                <div className="text-xs font-black uppercase tracking-widest">
+                  高级 · 嵌套条件 DSL
+                </div>
+                <div className="text-[10px] text-[#666666] mt-0.5">
+                  AND / OR / NOT 组合多条件 · 提交时自动覆盖单条件
+                </div>
+              </div>
+            </div>
+            <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.useAdvanced}
+                onChange={(e) => {
+                  const enabled = e.target.checked;
+                  setForm((f) => ({
+                    ...f,
+                    useAdvanced: enabled,
+                    // 首次开启给一个默认 AND 组合
+                    criteriaJson:
+                      enabled && !f.criteriaJson
+                        ? { op: 'and', rules: [{ type: f.criteriaType, value: f.criteriaValue }] }
+                        : f.criteriaJson,
+                  }));
+                }}
+                className="w-4 h-4 accent-[#171717]"
+              />
+              {form.useAdvanced ? '已开启' : '关闭'}
+            </label>
+          </div>
+
+          {!form.useAdvanced ? (
+            <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <BrutalSelect
+                label="达成条件类型"
+                value={form.criteriaType}
+                onChange={(v) => setForm({ ...form, criteriaType: v as BadgeCriteriaType })}
+                options={criteriaTypeOptions.map((o) => ({ value: o.value, label: o.label }))}
+              />
+              <BrutalField
+                label="达成阈值"
+                type="number"
+                value={String(form.criteriaValue)}
+                onChange={(v) => setForm({ ...form, criteriaValue: Number(v) })}
+              />
+            </div>
+          ) : (
+            <div className="mt-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 block">
+                嵌套规则
+              </label>
+              <RuleBuilder
+                rule={form.criteriaJson ?? { op: 'and', rules: [] }}
+                onChange={(r) => setForm({ ...form, criteriaJson: r })}
+                depth={0}
+              />
+            </div>
+          )}
+
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
             <BrutalField
               label="解锁奖励积分"
               type="number"
@@ -359,6 +447,179 @@ function BrutalSelect({
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// RuleBuilder — P1-3 嵌套条件 DSL 编辑器
+//
+// 节点类型:
+//   - 组合: { op: 'and' | 'or' | 'not', rules: BadgeCriteriaRule[] }
+//   - 叶子: { type: BadgeCriteriaType, value?: number }
+//
+// 操作:
+//   - 切换 op (select)
+//   - 叶子编辑 type / value
+//   - 组合加/删子规则
+//   - 叶子转组合 / 组合转叶子(在根节点:整组重置)
+// ──────────────────────────────────────────────────────────────────────
+
+const OP_OPTIONS: { value: BadgeCriteriaOp; label: string }[] = [
+  { value: 'and', label: 'AND（全部满足）' },
+  { value: 'or', label: 'OR（任一满足）' },
+  { value: 'not', label: 'NOT（全部不满足）' },
+];
+
+function isOpRule(r: BadgeCriteriaRule): r is BadgeCriteriaRule & { op: BadgeCriteriaOp; rules: BadgeCriteriaRule[] } {
+  return !!r.op;
+}
+
+function emptyLeaf(): BadgeCriteriaRule {
+  return { type: 'lessons_completed', value: 1 };
+}
+
+function RuleBuilder({
+  rule,
+  onChange,
+  depth,
+}: {
+  rule: BadgeCriteriaRule;
+  onChange: (r: BadgeCriteriaRule) => void;
+  depth: number;
+}) {
+  const [expanded, setExpanded] = useState(true);
+
+  if (isOpRule(rule)) {
+    // 组合节点
+    return (
+      <div
+        className="border border-[#171717] bg-white"
+        style={{ marginLeft: depth * 12 }}
+      >
+        <div className="flex items-center gap-2 p-2 bg-[#F5F4F0] border-b border-[#171717]">
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="p-0.5 hover:bg-[#EEEDE9]"
+          >
+            {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </button>
+          <select
+            value={rule.op}
+            onChange={(e) =>
+              onChange({ ...rule, op: e.target.value as BadgeCriteriaOp })
+            }
+            className="px-2 py-1 border border-[#171717] text-xs font-black uppercase tracking-widest bg-white"
+          >
+            {OP_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <span className="text-[10px] text-[#666666] font-mono">
+            {rule.rules.length} 子规则
+          </span>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() =>
+                onChange({
+                  ...rule,
+                  rules: [...rule.rules, emptyLeaf()],
+                })
+              }
+              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white transition-colors"
+              title="加叶子"
+            >
+              + 叶子
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                onChange({
+                  ...rule,
+                  rules: [...rule.rules, { op: 'and', rules: [] }],
+                })
+              }
+              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white transition-colors"
+              title="加组合"
+            >
+              + 组合
+            </button>
+          </div>
+        </div>
+        {expanded && (
+          <div className="p-2 space-y-2">
+            {rule.rules.length === 0 && (
+              <div className="text-[10px] text-[#A3A3A3] italic p-2">
+                空组合(永远不达成) · 点上面 + 叶子 / + 组合 添加
+              </div>
+            )}
+            {rule.rules.map((child, idx) => (
+              <div key={idx} className="flex items-start gap-1">
+                <div className="flex-1 min-w-0">
+                  <RuleBuilder
+                    rule={child}
+                    depth={depth + 1}
+                    onChange={(r) => {
+                      const next = [...rule.rules];
+                      next[idx] = r;
+                      onChange({ ...rule, rules: next });
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = rule.rules.filter((_, i) => i !== idx);
+                    onChange({ ...rule, rules: next });
+                  }}
+                  className="p-1 mt-1 text-[#A3A3A3] hover:text-[#171717] hover:bg-[#EEEDE9]"
+                  title="删除"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 叶子节点
+  return (
+    <div
+      className="border border-[#171717] bg-white p-2 flex items-center gap-2"
+      style={{ marginLeft: depth * 12 }}
+    >
+      <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+        叶子
+      </span>
+      <select
+        value={rule.type ?? 'lessons_completed'}
+        onChange={(e) =>
+          onChange({ ...rule, type: e.target.value as BadgeCriteriaType })
+        }
+        className="flex-1 px-2 py-1 border border-[#171717] text-xs bg-white focus:outline-none focus:bg-[#EEEDE9]"
+      >
+        {criteriaTypeOptions.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+        阈值
+      </span>
+      <input
+        type="number"
+        value={rule.value ?? 1}
+        onChange={(e) => onChange({ ...rule, value: Number(e.target.value) })}
+        className="w-20 px-2 py-1 border border-[#171717] text-xs focus:outline-none focus:bg-[#EEEDE9]"
+      />
     </div>
   );
 }

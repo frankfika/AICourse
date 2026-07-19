@@ -21,6 +21,7 @@ import { EnterpriseModule } from './modules/enterprise/enterprise.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { UrlImportModule } from './modules/url-import/url-import.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { CertificatesModule } from './modules/certificates/certificates.module';
     NotificationModule,
     UrlImportModule,
     CertificatesModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

@@ -14,6 +14,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -23,6 +24,9 @@ import {
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto, ListReviewsQueryDto } from './reviews.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
 
 interface AuthedRequest {
   user: { id: string; role?: string };
@@ -66,5 +70,40 @@ export class ReviewsController {
     @Req() req: AuthedRequest,
   ) {
     return this.reviewsService.markHelpful(req.user.id, reviewId);
+  }
+
+  /**
+   * P1-3 admin 全量评价列表
+   * GET /api/v1/reviews?page=1&limit=20&courseId=...&rating=5&onlyDeleted=false
+   * 给 AdminReviewsPage 用:列全站评价 + 一键软删
+   */
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  async findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('courseId') courseId?: string,
+    @Query('rating') rating?: string,
+    @Query('onlyDeleted') onlyDeleted?: string,
+  ) {
+    return this.reviewsService.findAll({
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      courseId,
+      rating: rating ? parseInt(rating, 10) : undefined,
+      onlyDeleted: onlyDeleted === 'true',
+    });
+  }
+
+  /**
+   * P1-3 admin 软删评价(content 置空 + 隐藏,不物理删保留审计)
+   * 原因:合规要求保留用户行为痕迹;且有用作 review 训练数据
+   */
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  async adminRemove(@Param('id') id: string) {
+    return this.reviewsService.adminRemove(id);
   }
 }

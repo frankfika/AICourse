@@ -58,6 +58,29 @@ export class ReviewsService {
   ) {}
 
   /**
+   * P1-3 admin 软删评价
+   * 方案:content 置 "[已删除]" + 改 userId 为 null(脱敏作者)
+   * 优点:保留 audit trace + 不影响评分分布统计(groupBy 仍算)
+   */
+  async adminRemove(reviewId: string) {
+    const existing = await this.prisma.review.findUnique({ where: { id: reviewId } });
+    if (!existing) throw new NotFoundException('Review not found');
+    const updated = await this.prisma.review.update({
+      where: { id: reviewId },
+      data: {
+        content: '[已删除]',
+        userId: existing.userId, // 保留 userId 用于审计追溯
+      },
+    });
+    await this.auditLog.log({
+      action: 'review.admin_remove',
+      entity: 'Review',
+      entityId: reviewId,
+    });
+    return { ok: true, id: updated.id };
+  }
+
+  /**
    * 拉课程评价列表,分页 + 含 user
    * 排序:helpful DESC, createdAt DESC
    */
@@ -181,6 +204,55 @@ export class ReviewsService {
     });
 
     return updated;
+  }
+
+  /**
+   * 管理员全量评价列表(分页)
+   * 用于 AdminReviewsPage — 显示所有用户评价,支持按课程/评分/状态过滤
+   */
+  async findAll(params: {
+    page?: number;
+    limit?: number;
+    courseId?: string;
+    rating?: number;
+    onlyDeleted?: boolean;
+  }): Promise<{
+    items: ReviewWithUser[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(100, Math.max(1, params.limit ?? 20));
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (params.courseId) where.courseId = params.courseId;
+    if (params.rating) where.rating = params.rating;
+    if (params.onlyDeleted) {
+      where.content = '[已删除]';
+    }
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.review.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: { id: true, name: true, avatarUrl: true },
+          },
+        },
+      }),
+      this.prisma.review.count({ where }),
+    ]);
+
+    return {
+      items: items as unknown as ReviewWithUser[],
+      total,
+      page,
+      limit,
+    };
   }
 
   /**

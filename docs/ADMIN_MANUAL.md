@@ -199,7 +199,8 @@ UPDATE users SET role = 'admin' WHERE email = '<email>';
 - 每个资源:标题 + 类型 + URL/文件 + 排序
 - 支持批量拖拽排序
 
-> ⚠️ **当前版本**:资源上传后端暂未实现,仅前端 mock。
+> ⚠️ **v1.1.0**:资源管理后端 `POST /api/v1/courses/:id/resources` 端点待实现,当前 tab 显示
+> P2 占位。课时元数据(标题/描述/视频URL)已在「章节大纲」tab 编辑。
 
 #### Tab 4:pricing — 价格
 
@@ -474,29 +475,50 @@ draft → upcoming(报名中) → active(进行中) → judging(评审中) → f
 - **黑客松徽章**:绑定特定黑客松,完赛/获奖解锁
 - **成就徽章**:基于条件(连续学习 N 天 / 累计 X 积分 / 解锁 5 门课等)
 
-### 8.3 解锁条件(规则 DSL)
+### 8.3 解锁条件(规则 DSL)— v1.1.0 升级
 
-JSON 格式:
+**两种模式**:
+- **简单模式**:`criteriaType` + `criteriaValue`(单条件,默认值 = 1)
+- **嵌套模式**:`criteriaJson` JSON 字段(AND / OR / NOT 组合,优先级高)
+
+**嵌套规则 shape**:
 
 ```json
 {
-  "type": "and",
+  "op": "and",
   "rules": [
-    { "type": "course_completed", "courseId": "abc123" },
-    { "type": "points_earned", "min": 500 }
+    { "type": "lessons_completed", "value": 3 },
+    {
+      "op": "or",
+      "rules": [
+        { "type": "streak_days", "value": 7 },
+        { "type": "points_reached", "value": 100 }
+      ]
+    }
   ]
 }
 ```
 
-支持的规则类型:
-- `course_completed`(指定课程完成)
-- `lessons_completed`(累计完成 X 课时)
-- `streak_days`(连续学习 N 天)
-- `first_enrollment`(首次报名任意课程)
-- `practice_completed`(完成 X 次实践作业)
-- `points_reached`(积分 ≥ min)
+**叶子节点**:`{ type: BadgeCriteriaType, value?: number }`(`value` 缺省 = 1)
 
-组合:`and` / `or` / `not`。
+**支持的规则类型**:
+- `course_completed` — 累计完成 N 门课
+- `lessons_completed` — 累计完成 N 课时
+- `streak_days` — 连续学习 N 天
+- `first_enrollment` — 首次报名(任何课程)
+- `practice_completed` — 完成 N 次实践项目
+- `points_reached` — 积分 ≥ N
+
+**组合操作符**:
+- `and` — 所有子规则都通过
+- `or` — 任一子规则通过
+- `not` — 所有子规则都不通过
+
+**评估函数**:`BadgesService.evaluateCriteria(criteriaJson, userStats)`
+返回 `{ passed, current, target }`,给徽章墙进度条用。
+
+**UI 编辑**:在 `AdminBadgesPage` 表单顶部开启「高级 · 嵌套条件 DSL」开关,出现 RuleBuilder 树状编辑器
+(组合 / 叶子互转、加/删子规则、深度缩进)。
 
 ### 8.4 创建徽章
 
@@ -554,19 +576,40 @@ BD 认领 → 状态「已联系」
 
 ---
 
-## 10. 审计日志(规划中)
+## 10. 评价管理(Admin Reviews)— v1.1.0 新增
 
-> 占位。Phase 2+ 上线。
+入口:`/admin/reviews` · API:`GET /api/v1/reviews` / `DELETE /api/v1/reviews/:id`
 
-设计目标:
-- 记录所有 admin 写操作(创建 / 修改 / 删除)
-- 不可篡改(append-only)
-- 90 天保留
-- 支持按 admin / 时间 / 资源类型筛选
+**功能**:
+- 全站评价列表,4 维过滤(评分 / courseId / 仅已删 / 时间)
+- 一键软删(合规留痕:content → `[已删除]`, userId 保留审计)
+- 评分分布(1-5 星)、helpful 数、用户/课程上下文
+
+**典型场景**:
+- 用户投诉某评价违规 → 在「仅显示已删」tab 关闭前先核对 → 软删
+- 找出全站 1 星评价 → 按 rating=1 过滤 → 排查问题
 
 ---
 
-## 11. 系统设置(规划中)
+## 11. 审计日志(Audit Logs)— v1.1.0 新增
+
+入口:`/admin/audit` · API:`GET /api/v1/audit-logs`
+
+**功能**:
+- 4 tab 过滤:全部 / 订单(`entity=Order`) / 评价(`entity=Review`) / 课程(`entity=Course`)
+- 按 userId / action 关键字过滤
+- 分页(默认 20 / 页)
+- details 字段以 JSON 展示
+
+**典型场景**:
+- 用户反馈订单异常 → audit tab 选「订单」,输入 userId,查 `order.create` / `order.refund` 流
+- 找出最近所有 `chapter.reorder` 操作(action 关键字过滤)
+
+> 后端 `AuditLogService.log()` 已在所有 admin 写操作埋点(course / chapter / lesson / review / order)。
+
+---
+
+## 12. 系统设置(规划中)
 
 > 占位。Phase 2+ 上线,仅 super_admin 可见。
 
@@ -580,9 +623,9 @@ BD 认领 → 状态「已联系」
 
 ---
 
-## 12. 审核工作流
+## 13. 审核工作流
 
-### 12.1 课程审核(草稿 → 发布)
+### 13.1 课程审核(草稿 → 发布)
 
 1. 草稿创建(从 URL 导入 / 手动)
 2. admin 填写完整信息
@@ -594,19 +637,19 @@ BD 认领 → 状态「已联系」
 
 > 当前版本:无显式 pending_review 状态,admin 自审通过后直接 publish。
 
-### 12.2 评论 / 评价审核
+### 13.2 评论 / 评价审核
 
 (规划中)用户提交课程评价后,先进 pending 状态,admin 审核通过才公开。
 
-### 12.3 黑客松作品审核
+### 13.3 黑客松作品审核
 
 (规划中)参赛团队提交作品后,需 admin 确认格式合规才进入评审。
 
 ---
 
-## 13. 数据导入 / 导出
+## 14. 数据导入 / 导出
 
-### 13.1 导出
+### 14.1 导出
 
 `/admin/users` 顶部「导出」:
 - CSV:用户表
@@ -616,20 +659,20 @@ BD 认领 → 状态「已联系」
 - CSV:订单表
 - 财务对账用
 
-### 13.2 批量导入
+### 14.2 批量导入
 
 - 用户:CSV 格式(邮箱 / 昵称 / 角色),可批量授权课程
 - 课程:暂无批量导入(从 URL 导入见 §4.4)
 
-### 13.3 数据备份
+### 14.3 数据备份
 
 (运维侧,不在后台)每日 MySQL 全量备份 + 异地存储,保留 30 天。
 
 ---
 
-## 14. 常见任务清单
+## 15. 常见任务清单
 
-### 14.1 我是新人 admin,今天该做什么?
+### 15.1 我是新人 admin,今天该做什么?
 
 1. 看 `/admin/dashboard` 看板,了解平台状态
 2. 检查「待审草稿」处理 P1 阶段从 URL 导入的课程
@@ -637,7 +680,7 @@ BD 认领 → 状态「已联系」
 4. 检查「黑客松」状态,确认时间正常推进
 5. 查「用户」异常账号(被举报 / 异常登录)
 
-### 14.2 用户反馈「证书没拿到」
+### 15.2 用户反馈「证书没拿到」
 
 1. `/admin/users` 搜用户邮箱
 2. 进用户详情,看 enrollments 表
@@ -645,7 +688,7 @@ BD 认领 → 状态「已联系」
 4. 看「证书」tab,有证书 → 让用户重试;无证书 → 看订单 / 课程状态
 5. 若课程状态正常但证书未签发 → 手动 `INSERT INTO certificates ...`(临时方案,Phase 2+ 上 UI 按钮)
 
-### 14.3 用户反馈「付款成功但课程没开通」
+### 15.3 用户反馈「付款成功但课程没开通」
 
 1. `/admin/orders` 搜订单号 / 邮箱
 2. 看订单状态:`paid` 但无 enrollment → 手动补:
@@ -656,13 +699,13 @@ BD 认领 → 状态「已联系」
    ```
 3. 通知用户已开通
 
-### 14.4 黑客松时间要改
+### 15.4 黑客松时间要改
 
 1. `/admin/hackathons/:id/edit`
 2. 改时间 → 强制重新发通知给已报名团队
 3. 站内公告 + 邮件
 
-### 14.5 撤下违规课程
+### 15.5 撤下违规课程
 
 1. `/admin/courses/:id/edit`
 2. publish tab → 状态切「下架」
@@ -670,14 +713,14 @@ BD 认领 → 状态「已联系」
 4. 已报名学员不退款,但保留学习访问(直到课程正常结束)
 5. 通知学员邮件
 
-### 14.6 给某用户手动开通学位
+### 15.6 给某用户手动开通学位
 
 (Phase 2+ 会有 UI 按钮)临时方案:
 1. `/admin/users/:id` 抽屉
 2. 「授权」选学位 + 过期时间
 3. 系统写入 `enrollments` 表 + 颁发学位证书
 
-### 14.7 删一条评价
+### 15.7 删一条评价
 
 1. `/admin/courses/:id/reviews` (Phase 2+)
 2. 选违规评价 → 删

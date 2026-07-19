@@ -44,6 +44,8 @@ const AdminBadgesPage = lazy(() => import('./features/admin/AdminBadgesPage').th
 const AdminDashboardPage = lazy(() => import('./features/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
 const AdminHackathonsPage = lazy(() => import('./features/admin/AdminHackathonsPage').then(m => ({ default: m.AdminHackathonsPage })));
 const AdminEnterprisePage = lazy(() => import('./features/admin/AdminEnterprisePage').then(m => ({ default: m.AdminEnterprisePage })));
+const AdminAuditLogsPage = lazy(() => import('./features/admin/AdminAuditLogsPage').then(m => ({ default: m.AdminAuditLogsPage })));
+const AdminReviewsPage = lazy(() => import('./features/admin/AdminReviewsPage').then(m => ({ default: m.AdminReviewsPage })));
 const EnterprisePage = lazy(() => import('./features/enterprise/EnterprisePage').then(m => ({ default: m.EnterprisePage })));
 const NotFoundPage = lazy(() => import('./features/misc/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const DesignSystemPage = lazy(() => import('./routes/design-system').then(m => ({ default: m.default })));
@@ -109,6 +111,8 @@ export const router = createBrowserRouter([
           { path: 'badges', element: <PublicSuspense><AdminBadgesPage /></PublicSuspense> },
           { path: 'hackathons', element: <PublicSuspense><AdminHackathonsPage /></PublicSuspense> },
           { path: 'enterprise', element: <PublicSuspense><AdminEnterprisePage /></PublicSuspense> },
+          { path: 'reviews', element: <PublicSuspense><AdminReviewsPage /></PublicSuspense> },
+          { path: 'audit', element: <PublicSuspense><AdminAuditLogsPage /></PublicSuspense> },
         ],
       },
     ],

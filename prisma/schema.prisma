@@ -637,6 +637,9 @@ model Badge {
   category      String           @default("general") // 分组：learning / streak / milestone ...
   criteriaType  BadgeCriteriaType @map("criteria_type")
   criteriaValue Int              @default(1) @map("criteria_value") // 达成阈值
+  // P1-3 嵌套规则 DSL(JSON 树,支持 AND/OR/NOT 组合)
+  // 为 null 时 fallback 到 criteriaType + criteriaValue
+  criteriaJson  Json?            @map("criteria_json")
   points        Int              @default(0) // 解锁奖励积分
   isActive      Boolean          @default(true) @map("is_active")
   orderIndex    Int              @default(0) @map("order_index")

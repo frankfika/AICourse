@@ -13,7 +13,7 @@
  *
  * 数据策略:
  *   - 1) 优先用 coursesApi + progressApi 拉真实数据
- *   - 2) 失败 / 401 / 网络错 → fallback 到内置 MOCK_CHAPTERS(5 章 / 28 课)
+ *   - 2) 失败 / 401 / 网络错 → 渲染 EmptyState(无 mock fallback)
  *   - 3) 在 mock 模式下,前置"lesson 1.3"为 in-progress,1.1/1.2 已完成
  *
  * TODO(后端):
@@ -97,98 +97,6 @@ interface ProgressRecord {
   status: 'not_started' | 'in_progress' | 'completed';
   lastPosition?: number | null;
 }
-
-// =============================================================
-// Mock 数据 — 5 章 / 28 课(后端不可用时 fallback)
-// 完全按 mock-learn.html 的 5 章结构造,current lesson = 1.3(进行中)
-// =============================================================
-const MOCK_CHAPTERS: Chapter[] = [
-  {
-    id: 'ch1',
-    title: '第一章 · Agent 心智模型',
-    orderIndex: 0,
-    description: '理解 Agent 的本质,与传统程序的区别',
-    lessons: [
-      { id: 'l1', title: '1.1 什么是 Agent', orderIndex: 0, isPreview: true, videoDuration: 750, resources: [] },
-      { id: 'l2', title: '1.2 LLM 如何"思考"', orderIndex: 1, isPreview: true, videoDuration: 1122, resources: [] },
-      { id: 'l3', title: '1.3 第一个最小 Agent(命令行版)', orderIndex: 2, isPreview: false, videoDuration: 495, resources: [] },
-      { id: 'l4', title: '1.4 ReAct:Reason + Act', orderIndex: 3, isPreview: false, videoDuration: 1328, resources: [] },
-      { id: 'l5', title: '1.5 调试 Agent', orderIndex: 4, isPreview: false, videoDuration: 930, resources: [] },
-      { id: 'l6', title: '1.6 章节项目', orderIndex: 5, isPreview: false, videoDuration: 0, resources: [] },
-    ],
-  },
-  {
-    id: 'ch2',
-    title: '第二章 · Tool Calling',
-    orderIndex: 1,
-    description: '让 Agent 学会使用外部工具',
-    lessons: Array.from({ length: 7 }, (_, i) => ({
-      id: `l2${i + 1}`,
-      title: `2.${i + 1} ${['Tool schema 设计', 'Function call 协议', '错误重试策略', 'Tool 选择策略', '并行调用', '流式输出', '章节项目'][i]}`,
-      orderIndex: i,
-      isPreview: i === 0,
-      videoDuration: 600 + i * 90,
-      resources: [],
-    })),
-  },
-  {
-    id: 'ch3',
-    title: '第三章 · Memory',
-    orderIndex: 2,
-    description: '短期 / 长期 / 向量记忆',
-    lessons: Array.from({ length: 6 }, (_, i) => ({
-      id: `l3${i + 1}`,
-      title: `3.${i + 1} ${['短期记忆 Buffer', '长期记忆持久化', '向量检索', '摘要压缩', '多 Agent 共享', '章节项目'][i]}`,
-      orderIndex: i,
-      isPreview: i === 0,
-      videoDuration: 540 + i * 80,
-      resources: [],
-    })),
-  },
-  {
-    id: 'ch4',
-    title: '第四章 · Chain',
-    orderIndex: 3,
-    description: '链式调用与编排',
-    lessons: Array.from({ length: 6 }, (_, i) => ({
-      id: `l4${i + 1}`,
-      title: `4.${i + 1} ${['LCEL 语法', 'Runnable 接口', '并行 / 串行编排', '条件分支', 'Fallback 兜底', '章节项目'][i]}`,
-      orderIndex: i,
-      isPreview: i === 0,
-      videoDuration: 720 + i * 60,
-      resources: [],
-    })),
-  },
-  {
-    id: 'ch5',
-    title: '第五章 · 期末项目',
-    orderIndex: 4,
-    description: '从 0 到 1 搭建完整 Agent',
-    lessons: Array.from({ length: 7 }, (_, i) => ({
-      id: `l5${i + 1}`,
-      title: `5.${i + 1} ${['需求拆解', '架构设计', '核心 Loop 实现', 'Tool 集成', '评估体系', '部署上线', '毕业设计'][i]}`,
-      orderIndex: i,
-      isPreview: false,
-      videoDuration: 900 + i * 100,
-      resources: [],
-    })),
-  },
-];
-
-const MOCK_COURSE: Course = {
-  id: 'c1',
-  title: '用 LangChain 搭建第一个 Agent',
-  description: '从 0 到 1 理解 Agent 心智模型,搭建你的第一个生产可用 Agent',
-  instructor: 'Frank Chen',
-  duration: '80h',
-  chapters: MOCK_CHAPTERS,
-};
-
-// 当前进行中的 lesson id(mock 模式下 hardcode 为 l3)
-const MOCK_IN_PROGRESS_LESSON_ID = 'l3';
-// mock 模式下前置完成的 lesson
-const MOCK_COMPLETED_LESSON_IDS = new Set(['l1', 'l2']);
-
 // =============================================================
 // AI 助教 mock 数据(后端 /api/v1/chat/sessions 未建,前端 hardcode)
 // =============================================================
@@ -202,63 +110,8 @@ interface ChatMessage {
   challenge?: { title: string; description: string };
 }
 
-const MOCK_CHAT: ChatMessage[] = [
-  {
-    id: 'm0',
-    role: 'ai',
-    content:
-      '你好!我是你的 AI 助教,我看到你正在学 Lesson 1.3(第一个最小 Agent)。\n\n有什么不懂的?或者我可以给你一个 5 分钟的代码挑战?',
-    citation: { lessonId: 'l3', start: '00:00:00', end: '00:08:15', label: '我能引用你学过的 1,200 个课时' },
-  },
-  {
-    id: 'm1',
-    role: 'user',
-    content: 'ReAct 和 Tool Use 到底有什么区别?感觉都是"让 LLM 调用工具"啊',
-  },
-  {
-    id: 'm2',
-    role: 'ai',
-    content:
-      '好问题!**ReAct** 是"Reason + Act"的循环模式(算法层),**Tool Use** 是其中"Act"环节的具体实现(API 层)。\n\n类比:ReAct 像"如果 A 就 B"这种控制流,Tool Use 像"调用 fetch()"。前者是设计模式,后者是函数调用。',
-    citation: { lessonId: 'l4', start: '00:01:23', end: '00:08:30', label: 'Lesson 1.4 · 完整讲 ReAct' },
-  },
-  {
-    id: 'm3',
-    role: 'ai',
-    content:
-      '写一个最小 Agent,只能调 1 个 tool:返回当前时间。跑通后,我给你看其他学员怎么扩展到 3 个 tool。',
-    challenge: { title: '🎯 5 分钟挑战(可选)', description: '写一个最小 Agent,只能调 1 个 tool:返回当前时间' },
-  },
-];
-
-// 快捷提示 chips
+// AI 助教快捷提示 chips(纯 UI,不是数据 mock)
 const QUICK_PROMPTS = ['📌 解释这节课', '💡 ReAct vs CoT', '🧪 给个练习', '🛠️ 这段代码怎么改'];
-
-// 笔记 mock 列表(3 条)
-const MOCK_NOTES = [
-  {
-    id: 'n1',
-    time: '01:42',
-    relative: '2 天前',
-    visibility: 'public' as const,
-    content: 'ReAct 的关键是"显式分离 reasoning 和 action",这跟传统 if-else 的本质区别在哪?是不是意味着 reasoning 的 prompt 必须独立可调试?',
-  },
-  {
-    id: 'n2',
-    time: '03:10',
-    relative: '刚刚',
-    visibility: 'private' as const,
-    content: '用 temperature=0 的时候,tool call schema 校验失败的概率明显比 0.7 高 —— 待验证',
-  },
-  {
-    id: 'n3',
-    time: '04:55',
-    relative: '1 周前',
-    visibility: 'public' as const,
-    content: '最小 Agent 的代码结构其实就 4 块:Prompt + Tool schema + Parser + Loop。这跟"先有架构还是先有代码"的争论相比,我更倾向先 Loop 起来再分层。',
-    citation: 'Lesson 1.3 · 00:04:55',
-  },
-];
 
 // =============================================================
 // 工具函数
@@ -602,37 +455,16 @@ function VideoCenter({
                 💡 提示:在视频任意时间点按 <kbd className="px-1.5 py-0.5 rounded bg-neutral-0 dark:bg-neutral-100 border text-xs font-mono">N</kbd> 添加时间戳笔记
               </p>
             </div>
-            {MOCK_NOTES.map((n) => (
-              <div
-                key={n.id}
-                className="p-3 sm:p-4 rounded-lg border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100"
-              >
-                <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600">
-                  <span className="font-mono">@ {n.time}</span>
-                  <span>·</span>
-                  <span>{n.relative}</span>
-                  <span
-                    className={cn(
-                      'ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium',
-                      n.visibility === 'public'
-                        ? 'bg-success-500/10 text-success-500'
-                        : 'bg-neutral-100 dark:bg-neutral-100',
-                    )}
-                  >
-                    {n.visibility === 'public' ? '公开' : '私有'}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-neutral-900 dark:text-neutral-900 leading-relaxed">
-                  {n.content}
-                </p>
-                {n.citation && (
-                  <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-600">📎 引用:{n.citation}</p>
-                )}
-              </div>
-            ))}
-            <button className="w-full py-2 rounded-md border border-dashed border-neutral-200 dark:border-neutral-200 text-sm text-neutral-600 dark:text-neutral-600 hover:border-brand-500 hover:text-brand-500 transition-colors flex items-center justify-center gap-1">
-              <Plus className="w-4 h-4" /> 添加笔记
-            </button>
+            <div className="border-2 border-dashed border-neutral-200 dark:border-neutral-200 rounded-lg p-12 text-center bg-neutral-0 dark:bg-neutral-100">
+              <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
+              <p className="text-sm text-neutral-900 dark:text-neutral-900 font-medium">还没有笔记</p>
+              <p className="text-xs text-neutral-600 dark:text-neutral-600 mt-1">
+                在视频任意时间点按 <kbd className="px-1 py-0.5 rounded bg-neutral-50 border text-[10px] font-mono">N</kbd> 添加第一条笔记
+              </p>
+              <p className="text-[10px] text-neutral-400 mt-3">
+                笔记后端 API（POST/GET /api/v1/notes）正在设计中
+              </p>
+            </div>
           </div>
         )}
 
@@ -733,10 +565,10 @@ function AiAssistant({
   currentLessonTitle: string;
   onClose?: () => void;
 }) {
-  const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
 
-  // TODO(后端):chat module 未建,目前前端 mock。等后端 /api/v1/chat/sessions 上线后:
+  // P2:chat module 后端未建,目前是 placeholder UI。等后端 /api/v1/chat/sessions 上线后:
   //  - onSend POST /api/v1/chat/sessions
   //  - 流式响应 (SSE) 增量更新
   const handleSend = () => {
@@ -747,18 +579,17 @@ function AiAssistant({
       { id: `u-${Date.now()}`, role: 'user', content: text },
     ]);
     setInput('');
-    // mock 立即回一个固定答复
+    // 后端未上线,回一个 P2 placeholder
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
         {
           id: `a-${Date.now()}`,
           role: 'ai',
-          content: '收到你的问题。这节课我帮你聚焦在「最小 Agent 跑通」这一件事上,先别分心看 ReAct —— 等你写完 Hello Agent 我再讲 1.4。',
-          citation: { lessonId: 'l3', start: '00:04:00', end: '00:05:30', label: '回到 Lesson 1.3 · 04:00' },
+          content: 'AI 助教即将推出。后端 chat module 上线后,我能基于你正在学的课程回答问题、给代码挑战、引用具体时间戳。',
         },
       ]);
-    }, 600);
+    }, 400);
   };
 
   const handleQuick = (label: string) => {
@@ -782,7 +613,7 @@ function AiAssistant({
         <button
           className="p-1.5 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 text-neutral-600 dark:text-neutral-600"
           title="重新开始"
-          onClick={() => setMessages(MOCK_CHAT)}
+          onClick={() => setMessages([])}
         >
           <RefreshCw className="w-4 h-4" />
         </button>
@@ -920,7 +751,7 @@ export function DashboardPage() {
   // tablet 抽屉 AI
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   // 当前 lesson
-  const [currentLessonId, setCurrentLessonId] = useState<string>(MOCK_IN_PROGRESS_LESSON_ID);
+  const [currentLessonId, setCurrentLessonId] = useState<string>('');
 
   // 1) 拉课程列表(用于选"当前 in-progress 课程" — P0-6 简化:直接用第一门)
   const coursesQuery = useQuery({
@@ -952,12 +783,12 @@ export function DashboardPage() {
     retry: 0,
   });
 
-  // === 数据归一化:API OK 用 API,失败用 mock ===
+  // === 数据归一化:API OK 用 API,失败用空 / null(无 mock fallback) ===
   const course: Course | null = useMemo(() => {
     if (courseQuery.data && courseQuery.data.chapters?.length) {
       return courseQuery.data;
     }
-    return MOCK_COURSE;
+    return null;
   }, [courseQuery.data]);
 
   const completedSet = useMemo(() => {
@@ -968,9 +799,7 @@ export function DashboardPage() {
       : Array.isArray((raw as any)?.data)
         ? ((raw as any).data as ProgressRecord[])
         : [];
-    const apiCompleted = new Set(records.filter((r) => r.status === 'completed').map((r) => r.lessonId));
-    if (apiCompleted.size > 0) return apiCompleted;
-    return MOCK_COMPLETED_LESSON_IDS;
+    return new Set(records.filter((r) => r.status === 'completed').map((r) => r.lessonId));
   }, [progressQuery.data]);
 
   // === 4) 标记完成 mutation ===

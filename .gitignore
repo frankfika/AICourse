@@ -51,9 +51,10 @@ screenshots/
 scripts/p1-*-screenshots.py
 scripts/p0-*-screenshots.py
 
-# build artifacts (nest + vite) — 历来 tracked 但 dev 时污染, 改为 untracked
+# build artifacts (nest + vite + shared-types) — 历来 tracked 但 dev 时污染, 改为 untracked
 apps/api/dist/
 apps/web/dist/
+packages/shared-types/dist/
 
 # worktree + dev sandbox (不进版本控制)
 .worktrees/

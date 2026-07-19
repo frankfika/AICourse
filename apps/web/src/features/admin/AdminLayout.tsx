@@ -15,6 +15,7 @@ import {
   Building2,
   ScrollText,
   Settings,
+  Star,
 } from 'lucide-react';
 import { MobileBlocked } from '../../components/MobileBlocked';
 
@@ -36,8 +37,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { path: '/admin/hackathons', label: '黑客松管理', icon: Rocket },
     { path: '/admin/enterprise', label: '企业咨询', icon: Building2 },
     { path: '/admin/badges', label: '徽章管理', icon: Award },
-    // 占位:P0-7 设计稿提到但后端 module 暂未提供 read API
-    { path: '/admin/audit', label: '审计日志', icon: ScrollText, comingSoon: true },
+    // v1.1.0: 接 AuditLogController + ReviewsController,真后端
+    { path: '/admin/reviews', label: '评价管理', icon: Star },
+    { path: '/admin/audit', label: '审计日志', icon: ScrollText },
+    // P0-7 占位,系统设置后端 module 暂未提供
     { path: '/admin/system', label: '系统设置', icon: Settings, comingSoon: true },
   ];
 

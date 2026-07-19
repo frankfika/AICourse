@@ -53,14 +53,18 @@ export class BadgesService {
     const unlockedMap = new Map(userBadges.map((ub) => [ub.badgeId, ub.unlockedAt]));
 
     return badges.map((badge) => {
-      const progress = this.computeProgress(badge.criteriaType, badge.criteriaValue, userStats);
+      // P1-3 嵌套规则优先
+      const evalResult: { passed: boolean; current: number; target: number } = badge.criteriaJson
+        ? this.evaluateCriteria(badge.criteriaJson, userStats)
+        : { ...this.computeProgress(badge.criteriaType, badge.criteriaValue, userStats), passed: false };
+      evalResult.passed = evalResult.current >= evalResult.target;
       const unlocked = !!unlockedMap.get(badge.id);
       return {
         ...badge,
         unlocked,
         unlockedAt: unlockedMap.get(badge.id) ?? null,
-        progress: progress.current,
-        target: progress.target,
+        progress: evalResult.current,
+        target: evalResult.target,
       };
     });
   }
@@ -79,8 +83,12 @@ export class BadgesService {
     for (const badge of badges) {
       if (unlockedBadgeIds.has(badge.id)) continue;
 
-      const { current, target } = this.computeProgress(badge.criteriaType, badge.criteriaValue, userStats);
-      if (current >= target) {
+      // P1-3 嵌套规则
+      const baseProgress = badge.criteriaJson
+        ? this.evaluateCriteria(badge.criteriaJson, userStats)
+        : { ...this.computeProgress(badge.criteriaType, badge.criteriaValue, userStats), passed: false };
+      const passed = baseProgress.passed ?? baseProgress.current >= baseProgress.target;
+      if (passed) {
         try {
           await this.prisma.userBadge.create({
             data: { userId, badgeId: badge.id },
@@ -330,5 +338,47 @@ export class BadgesService {
       default:
         return { current: 0, target };
     }
+  }
+
+  /**
+   * P1-3 嵌套规则 DSL 评估
+   *
+   * 支持两种结构:
+   * 1) 叶子节点: { type: 'course_completed', value: 5 }
+   * 2) 组合节点: { op: 'and' | 'or' | 'not', rules: [...] }
+   *
+   * 返回: { passed: boolean, current: number, target: number }
+   *   - passed: 规则是否达成
+   *   - current: 进度(组合节点 = 命中子规则数 / 总数)
+   *   - target: 目标(组合节点 = 子规则总数)
+   */
+  evaluateCriteria(
+    criteria: any,
+    stats: UserStats,
+  ): { passed: boolean; current: number; target: number } {
+    if (!criteria) return { passed: false, current: 0, target: 0 };
+    if (criteria.op) {
+      // 组合节点
+      const childResults = (criteria.rules ?? []).map((r: any) =>
+        this.evaluateCriteria(r, stats),
+      );
+      const total = childResults.length;
+      const passedCount = childResults.filter(
+        (r: { passed: boolean }) => r.passed,
+      ).length;
+      let passedAll = false;
+      if (criteria.op === 'and') {
+        passedAll = total > 0 && childResults.every((r: { passed: boolean }) => r.passed);
+      } else if (criteria.op === 'or') {
+        passedAll = childResults.some((r: { passed: boolean }) => r.passed);
+      } else if (criteria.op === 'not') {
+        // not: 所有子规则都不通过(not 的语义)
+        passedAll = childResults.every((r: { passed: boolean }) => !r.passed);
+      }
+      return { passed: passedAll, current: passedCount, target: total };
+    }
+    // 叶子
+    const leaf = this.computeProgress(criteria.type, criteria.value ?? 1, stats);
+    return { passed: leaf.current >= leaf.target, current: leaf.current, target: leaf.target };
   }
 }
