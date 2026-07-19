@@ -17,6 +17,7 @@ import {
   Settings,
   Sparkles,
 } from 'lucide-react';
+import { MobileBlocked } from '../../components/MobileBlocked';
 
 interface NavItem {
   path: string;
@@ -42,7 +43,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300 text-neutral-900 dark:bg-neutral-950 rounded-xl">
+    <>
+      {/* P1-3: < md 拦截,提示用桌面访问 */}
+      <MobileBlocked />
+      <div className="hidden md:block max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300 text-neutral-900 dark:bg-neutral-950 rounded-xl">
       <div className="mb-8">
         <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 mb-2">
           / Admin Console
@@ -87,5 +91,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 min-w-0">{children}</div>
       </div>
     </div>
+    </>
   );
 }

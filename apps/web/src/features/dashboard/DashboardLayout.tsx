@@ -18,38 +18,16 @@
  */
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon, Bell, ShoppingBag } from 'lucide-react';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense } from 'react';
+import { useTheme, useThemeStore } from '../../stores/themeStore';
 
-type Theme = 'light' | 'dark';
-
-// useTheme 复刻 P0-5 Layout 里的同款 hook(不导出,所以这里 inline 一份)。
-// 这样 DashboardLayout 不需要 import Layout.tsx 任何符号,Layout.tsx 文件 0 改动。
-function useDashboardTheme(): [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof document === 'undefined') return 'light';
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    try {
-      localStorage.setItem('theme', theme);
-    } catch {
-      /* localStorage 不可用时忽略 */
-    }
-  }, [theme]);
-
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
-  return [theme, toggle];
-}
+// P1-2 修复:不再用 useDashboardTheme 独立复刻,改用全局 themeStore
+// 跟 Layout / AdminDashboardPage 共享同一份状态,icon 切换跟实际 class 永远一致
+// 旧 useDashboardTheme 已删除(重构为 zustand)
 
 export function DashboardLayout() {
-  const [theme, toggleTheme] = useDashboardTheme();
+  const theme = useTheme();
+  const toggleTheme = useThemeStore((s) => s.toggle);
   const location = useLocation();
   const params = useParams<{ courseId?: string }>();
 

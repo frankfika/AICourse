@@ -30,60 +30,18 @@ import {
 } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { useTheme, useThemeStore } from '../stores/themeStore';
 import { CommandPalette } from './CommandPalette';
 import { cn } from '../lib/cn';
 import { Skeleton } from './ui/Skeleton';
 
-type Theme = 'light' | 'dark';
-
-// 全站 theme state — 同步到 <html class="dark"> + localStorage('theme')
-// 首次访问读 localStorage,没有就读 system pref
-function useTheme(): [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof document === 'undefined') return 'light';
-    return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    try {
-      localStorage.setItem('theme', theme);
-    } catch {
-      /* localStorage 不可用时忽略 */
-    }
-  }, [theme]);
-
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
-  return [theme, toggle];
-}
-
-// 初始化:在 main.tsx 之前一次性写入 <html class="dark">,避免页面闪烁
-export function initThemeFromStorage() {
-  if (typeof window === 'undefined') return;
-  try {
-    const saved = localStorage.getItem('theme') as Theme | null;
-    if (saved === 'dark' || saved === 'light') {
-      if (saved === 'dark') document.documentElement.classList.add('dark');
-      else document.documentElement.classList.remove('dark');
-    } else {
-      // 没有 localStorage,看系统偏好
-      const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (sysDark) document.documentElement.classList.add('dark');
-      else document.documentElement.classList.remove('dark');
-    }
-  } catch {
-    /* ignore */
-  }
-}
+// initThemeFromStorage 重新导出,保持 index.tsx 的导入路径不变
+export { initThemeFromStorage } from '../stores/themeStore';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [theme, toggleTheme] = useTheme();
+  const theme = useTheme();
+  const toggleTheme = useThemeStore((s) => s.toggle);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);

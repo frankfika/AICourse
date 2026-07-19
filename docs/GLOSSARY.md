@@ -253,7 +253,6 @@ HTTP 响应头,告诉浏览器「这个页面只能加载这些资源」,防 XSS
 | CSP | Content Security Policy | 内容安全策略 |
 | HSTS | HTTP Strict Transport Security | 严格传输安全 |
 | SKU | Stock Keeping Unit | 最小商品单元 |
-| CSP | (上面) | - |
 | HMR | Hot Module Replacement | 热模块替换 |
 
 ---

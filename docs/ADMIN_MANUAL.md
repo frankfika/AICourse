@@ -28,31 +28,37 @@
 
 ## 1. 角色与权限
 
-| 角色 | 描述 | 权限范围 |
+| 角色 (enum) | 描述 | 权限范围 |
 |------|------|----------|
-| `user` | 默认角色 | 前台全部功能,无后台 |
+| `student` | 默认角色 (DB 枚举值,前端展示为「学员」) | 前台全部功能,无后台 |
+| `instructor` | 讲师 (DB 枚举值,可创建/管理自己课程) | 前台 + 自有课程管理 (UI 在 P2+) |
 | `admin` | 运营 / 内容编辑 | 后台 7 个模块(无系统设置) |
-| `super_admin` | 技术负责人 / 平台 owner | 后台全部 + 创建 admin + 改配置 |
+
+> ⚠️ **Schema 实际只有 3 个 role**:`student` / `instructor` / `admin`(`prisma/schema.prisma` `enum UserRole`)。
+> 文档之前提到的 `super_admin` / `user` 是早期设计草稿,代码中**不存在**这两个角色。
+> 当前所有 admin 都是同一权限级别,无 super_admin 区分(后续 P2+ 加 `super_admin` 角色区分)。
+>
+> **历史说明**:
+> - `user` → 重命名为 `student`(更符合教育场景)
+> - `super_admin` → 暂未实现,所有 admin 平等
 
 ### 1.1 创建 admin
 
-只有 `super_admin` 可操作:
+当前无 UI,需直接改 DB:
 
 ```bash
-# 暂未上线 UI,目前走 DB 直接改 role 字段
-# TODO: AdminUsersPage 加 "变更角色" 下拉
+# TODO: AdminUsersPage 加 "变更角色" 下拉(P2+ 才有 UI)
 UPDATE users SET role = 'admin' WHERE email = '<email>';
 ```
 
 ### 1.2 权限边界
 
-| 模块 | user | admin | super_admin |
-|------|:----:|:-----:|:-----------:|
+| 模块 | student | instructor | admin |
+|------|:-------:|:----------:|:-----:|
 | 前台学习 | ✓ | ✓ | ✓ |
-| 后台 /admin/* | ✗ | ✓ | ✓ |
-| 创建 admin | ✗ | ✗ | ✓ |
-| 修改平台配置 | ✗ | ✗ | ✓ |
-| 改其他 admin 角色 | ✗ | ✗ | ✓ |
+| 自有课程管理 | ✗ | ✓ (P2+) | ✓ |
+| 后台 /admin/* | ✗ | ✗ | ✓ |
+| 修改平台配置 | ✗ | ✗ | ✗ (P2+ 加 super_admin 才放开) |
 
 ---
 
@@ -99,10 +105,10 @@ UPDATE users SET role = 'admin' WHERE email = '<email>';
 
 ### 3.1 4 个 KPI 卡片
 
-- **总用户数**(含周环比 ↑↓)
-- **总课程数**
-- **本月订单收入**(CNY)
-- **本月活跃学员**(过去 30 天有学习行为的)
+- **今日 GMV**(含较昨日 ↑↓,单位 CNY)
+- **新增用户**(今日注册数 + 付费转化率)
+- **活跃学员 (DAU)**(今日活跃 + 平均学习时长)
+- **AI token 成本**(当月 + 预算占比)
 
 ### 3.2 4 个图表
 
@@ -427,7 +433,7 @@ draft → upcoming(报名中) → active(进行中) → judging(评审中) → f
 
 - 左侧:参赛作品列表(按提交时间倒序)
 - 中间:作品详情(仓库 / 演示 / 视频 / 描述)
-- 右侧:评分表(各维度 1-10 分 + 评语)
+- 右侧:评分表(各维度 0-100 分 + 评语)
 
 评审进度:
 - 未评分 / 已评分 / 锁分
@@ -482,12 +488,11 @@ JSON 格式:
 
 支持的规则类型:
 - `course_completed`(指定课程完成)
-- `degree_completed`(指定学位完成)
-- `hackathon_joined`(参赛任意比赛)
-- `hackathon_won`(赢得指定名次)
-- `points_earned`(积分 ≥ min)
+- `lessons_completed`(累计完成 X 课时)
 - `streak_days`(连续学习 N 天)
-- `lessons_completed`(完成 X 课时)
+- `first_enrollment`(首次报名任意课程)
+- `practice_completed`(完成 X 次实践作业)
+- `points_reached`(积分 ≥ min)
 
 组合:`and` / `or` / `not`。
 

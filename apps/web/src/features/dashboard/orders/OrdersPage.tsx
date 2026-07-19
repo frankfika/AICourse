@@ -32,6 +32,8 @@ import { useToast } from '../../../components/auth/Toast';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
+import { QueryErrorState } from '../../../components/QueryErrorState';
+import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { cn } from '../../../lib/cn';
 
 type TabKey = 'all' | 'pending' | 'paid' | 'cancelled' | 'refunded';
@@ -75,7 +77,7 @@ export function OrdersPage() {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: orders = [], isLoading } = useQuery({
+  const { data: orders = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['orders', 'me'],
     queryFn: () => ordersApi.myOrders(),
   });
@@ -132,6 +134,10 @@ export function OrdersPage() {
     onError: (err: Error) => showToast(err.message || '退款申请失败', 'error'),
   });
 
+  // P1: 二次确认 + 按钮 isPending 锁
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const [confirmRefundId, setConfirmRefundId] = useState<string | null>(null);
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -177,7 +183,9 @@ export function OrdersPage() {
         </div>
 
         {/* 内容区 */}
-        {isLoading ? (
+        {isError ? (
+          <QueryErrorState error={error} onRetry={refetch} />
+        ) : isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} variant="rectangle" className="h-24 w-full" />
@@ -207,8 +215,9 @@ export function OrdersPage() {
                   key={o.id}
                   order={o}
                   onPay={(id) => payMutation.mutate(id)}
-                  onCancel={(id) => cancelMutation.mutate(id)}
-                  onRefund={(id) => refundMutation.mutate(id)}
+                  onCancel={(id) => setConfirmCancelId(id)}
+                  onRefund={(id) => setConfirmRefundId(id)}
+                  isAnyPending={payMutation.isPending || cancelMutation.isPending || refundMutation.isPending}
                 />
               ))}
             </div>
@@ -216,12 +225,37 @@ export function OrdersPage() {
             <OrderTable
               orders={filtered}
               onPay={(id) => payMutation.mutate(id)}
-              onCancel={(id) => cancelMutation.mutate(id)}
-              onRefund={(id) => refundMutation.mutate(id)}
+              onCancel={(id) => setConfirmCancelId(id)}
+              onRefund={(id) => setConfirmRefundId(id)}
+              isAnyPending={payMutation.isPending || cancelMutation.isPending || refundMutation.isPending}
             />
           </>
         )}
       </div>
+
+      {/* 二次确认弹层 */}
+      <ConfirmDialog
+        open={!!confirmCancelId}
+        onClose={() => setConfirmCancelId(null)}
+        onConfirm={async () => {
+          if (confirmCancelId) await cancelMutation.mutateAsync(confirmCancelId);
+        }}
+        title="确认取消订单?"
+        description="取消后该订单将关闭,如需重新购买请创建新订单。"
+        variant="warning"
+        confirmText="确认取消"
+      />
+      <ConfirmDialog
+        open={!!confirmRefundId}
+        onClose={() => setConfirmRefundId(null)}
+        onConfirm={async () => {
+          if (confirmRefundId) await refundMutation.mutateAsync(confirmRefundId);
+        }}
+        title="确认申请退款?"
+        description="退款规则请参考用户手册 §12.4。申请提交后 1-3 个工作日处理。"
+        variant="danger"
+        confirmText="确认退款"
+      />
     </div>
   );
 }
@@ -234,11 +268,13 @@ function OrderCard({
   onPay,
   onCancel,
   onRefund,
+  isAnyPending,
 }: {
   order: OrderWithItems;
   onPay: (id: string) => void;
   onCancel: (id: string) => void;
   onRefund: (id: string) => void;
+  isAnyPending?: boolean;
 }) {
   const item = order.course ?? order.degree;
   const itemTitle = item?.title ?? '未知商品';
@@ -284,7 +320,7 @@ function OrderCard({
             <div className="text-lg font-bold text-brand-500">
               ¥{Number(order.amount).toFixed(2)}
             </div>
-            <OrderActions order={order} onPay={onPay} onCancel={onCancel} onRefund={onRefund} compact />
+            <OrderActions order={order} onPay={onPay} onCancel={onCancel} onRefund={onRefund} compact isAnyPending={isAnyPending} />
           </div>
           <p className="mt-1 text-xs text-neutral-400">{orderDate}</p>
         </div>
@@ -301,11 +337,13 @@ function OrderTable({
   onPay,
   onCancel,
   onRefund,
+  isAnyPending,
 }: {
   orders: OrderWithItems[];
   onPay: (id: string) => void;
   onCancel: (id: string) => void;
   onRefund: (id: string) => void;
+  isAnyPending?: boolean;
 }) {
   return (
     <div className="hidden lg:block bg-neutral-0 dark:bg-neutral-100 rounded-xl border border-neutral-200 overflow-hidden">
@@ -359,7 +397,7 @@ function OrderTable({
                 </td>
                 <td className="px-4 py-3 text-xs text-neutral-600">{orderDate}</td>
                 <td className="px-4 py-3">
-                  <OrderActions order={o} onPay={onPay} onCancel={onCancel} onRefund={onRefund} />
+                  <OrderActions order={o} onPay={onPay} onCancel={onCancel} onRefund={onRefund} isAnyPending={isAnyPending} />
                 </td>
               </tr>
             );
@@ -379,12 +417,15 @@ function OrderActions({
   onCancel,
   onRefund,
   compact = false,
+  isAnyPending = false,
 }: {
   order: OrderWithItems;
   onPay: (id: string) => void;
   onCancel: (id: string) => void;
   onRefund: (id: string) => void;
   compact?: boolean;
+  /** 任一操作进行中时锁住所有按钮,避免双击/连点 */
+  isAnyPending?: boolean;
 }) {
   const baseBtn = cn(
     'inline-flex items-center justify-center gap-1 rounded-md font-medium transition-colors',
@@ -407,9 +448,11 @@ function OrderActions({
         <>
           <button
             onClick={() => onPay(order.id)}
+            disabled={isAnyPending}
             className={cn(
               baseBtn,
               'bg-brand-500 text-neutral-0 hover:bg-brand-700',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
             )}
             title="去支付"
           >
@@ -418,9 +461,11 @@ function OrderActions({
           </button>
           <button
             onClick={() => onCancel(order.id)}
+            disabled={isAnyPending}
             className={cn(
               baseBtn,
               'bg-neutral-100 dark:bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
             )}
             title="取消订单"
           >
@@ -432,9 +477,11 @@ function OrderActions({
       {order.status === 'paid' && (
         <button
           onClick={() => onRefund(order.id)}
+          disabled={isAnyPending}
           className={cn(
             baseBtn,
             'bg-info-100 text-info-500 hover:bg-info-500/20',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
           )}
           title="申请退款"
         >

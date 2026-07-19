@@ -20,6 +20,7 @@
  */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTheme, useThemeStore } from '../../stores/themeStore';
 import {
   TrendingUp,
   TrendingDown,
@@ -425,23 +426,11 @@ function DegreePieChart() {
 
 export function AdminDashboardPage() {
   const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'custom'>('7d');
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof document === 'undefined') return false;
-    return document.documentElement.classList.contains('dark');
-  });
-
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    if (typeof document !== 'undefined') {
-      document.documentElement.classList.toggle('dark', next);
-      try {
-        localStorage.setItem('theme', next ? 'dark' : 'light');
-      } catch {
-        // localStorage 不可用时静默
-      }
-    }
-  };
+  // P1-2 修复:跟 Layout / DashboardLayout 共享同一份 themeStore
+  // 之前独立 useState 跟实际 <html class="dark"> 可能不一致
+  const theme = useTheme();
+  const toggleTheme = useThemeStore((s) => s.toggle);
+  const isDark = theme === 'dark';
 
   return (
     <div className="space-y-6">

@@ -29,6 +29,12 @@ const mockPrisma: any = {
   degreeCourse: {
     findMany: jest.fn(),
   },
+  progressRecord: {
+    count: jest.fn(),
+  },
+  lesson: {
+    count: jest.fn(),
+  },
 };
 // $transaction receives a callback; run it against the same mockPrisma so
 // conditional updateMany / upsert flows can be exercised.
@@ -59,6 +65,8 @@ describe('OrdersService', () => {
     mockPrisma.enrollment.create.mockReset();
     mockPrisma.enrollment.upsert.mockReset();
     mockPrisma.degreeCourse.findMany.mockReset();
+    mockPrisma.progressRecord.count.mockReset();
+    mockPrisma.lesson.count.mockReset();
     mockCertificatesService.issueCertificate.mockClear();
     mockAuditLog.log.mockClear();
     const module: TestingModule = await Test.createTestingModule({
@@ -253,12 +261,20 @@ describe('OrdersService', () => {
   });
 
   describe('refundOrder', () => {
-    it('should refund a paid order', async () => {
+    it('should refund a paid order (未开始 → 全额退)', async () => {
       mockPrisma.order.findUnique.mockResolvedValue({
         id: 'o1',
         userId: 'u1',
+        type: OrderType.course,
+        courseId: 'c1',
+        degreeId: null,
+        amount: 199,
+        paidAt: new Date(),
         status: OrderStatus.paid,
       });
+      // 0 进度 = 未开始 → 全额退
+      mockPrisma.progressRecord.count.mockResolvedValueOnce(0); // completed
+      mockPrisma.lesson.count.mockResolvedValueOnce(10); // total
       mockPrisma.order.update.mockResolvedValue({ id: 'o1', status: OrderStatus.refunded });
 
       const result = await service.refundOrder('u1', 'o1');
@@ -269,10 +285,105 @@ describe('OrdersService', () => {
       mockPrisma.order.findUnique.mockResolvedValue({
         id: 'o1',
         userId: 'u1',
+        type: OrderType.course,
+        courseId: 'c1',
+        amount: 199,
+        paidAt: new Date(),
         status: OrderStatus.pending,
       });
 
       await expect(service.refundOrder('u1', 'o1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('应拒绝进度 ≥ 20% 的退款', async () => {
+      mockPrisma.order.findUnique.mockResolvedValue({
+        id: 'o1',
+        userId: 'u1',
+        type: OrderType.course,
+        courseId: 'c1',
+        amount: 199,
+        paidAt: new Date(),
+        status: OrderStatus.paid,
+      });
+      // 3 / 10 = 30% 进度
+      mockPrisma.progressRecord.count.mockResolvedValueOnce(3);
+      mockPrisma.lesson.count.mockResolvedValueOnce(10);
+
+      await expect(service.refundOrder('u1', 'o1')).rejects.toThrow(/进度 30% ≥ 20%/);
+    });
+
+    it('应拒绝超过 7 天的退款', async () => {
+      const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+      mockPrisma.order.findUnique.mockResolvedValue({
+        id: 'o1',
+        userId: 'u1',
+        type: OrderType.course,
+        courseId: 'c1',
+        amount: 199,
+        paidAt: tenDaysAgo,
+        status: OrderStatus.paid,
+      });
+      // 1 进度 = 已开始但 < 20%
+      mockPrisma.progressRecord.count.mockResolvedValueOnce(1);
+      mockPrisma.lesson.count.mockResolvedValueOnce(10);
+
+      await expect(service.refundOrder('u1', 'o1')).rejects.toThrow(/超过 7 天/);
+    });
+
+    it('7 天内 + 进度 < 20% → 95% 退(扣 5% 手续费)', async () => {
+      mockPrisma.order.findUnique.mockResolvedValue({
+        id: 'o1',
+        userId: 'u1',
+        type: OrderType.course,
+        courseId: 'c1',
+        amount: 200,
+        paidAt: new Date(),
+        status: OrderStatus.paid,
+      });
+      mockPrisma.progressRecord.count.mockResolvedValueOnce(1);
+      mockPrisma.lesson.count.mockResolvedValueOnce(10);
+      mockPrisma.order.update.mockResolvedValue({ id: 'o1', status: OrderStatus.refunded });
+
+      const result = await service.refundOrder('u1', 'o1');
+      expect(result.status).toBe(OrderStatus.refunded);
+      // 200 * 0.95 = 190
+      expect((result as any).refundAmount).toBe(190);
+    });
+
+    it('学位订单 — 所有课程未开始 → 全额退', async () => {
+      mockPrisma.order.findUnique.mockResolvedValue({
+        id: 'o1',
+        userId: 'u1',
+        type: OrderType.degree,
+        courseId: null,
+        degreeId: 'd1',
+        amount: 999,
+        paidAt: new Date(),
+        status: OrderStatus.paid,
+      });
+      mockPrisma.degreeCourse.findMany.mockResolvedValueOnce([{ courseId: 'c1' }, { courseId: 'c2' }]);
+      mockPrisma.progressRecord.count.mockResolvedValueOnce(0); // 0 课程已开始
+      mockPrisma.order.update.mockResolvedValue({ id: 'o1', status: OrderStatus.refunded });
+
+      const result = await service.refundOrder('u1', 'o1');
+      expect(result.status).toBe(OrderStatus.refunded);
+    });
+
+    it('学位订单 — 任一课程已开始 → 拒绝', async () => {
+      mockPrisma.order.findUnique.mockResolvedValue({
+        id: 'o1',
+        userId: 'u1',
+        type: OrderType.degree,
+        courseId: null,
+        degreeId: 'd1',
+        amount: 999,
+        paidAt: new Date(),
+        status: OrderStatus.paid,
+      });
+      mockPrisma.degreeCourse.findMany.mockResolvedValueOnce([{ courseId: 'c1' }, { courseId: 'c2' }]);
+      mockPrisma.progressRecord.count.mockResolvedValueOnce(1); // 有 1 课已开始
+
+      await expect(service.refundOrder('u1', 'o1')).rejects.toThrow(/学位不支持退款/);
     });
   });
 

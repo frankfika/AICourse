@@ -32,6 +32,7 @@ import { useToast } from '../../../components/auth/Toast';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
+import { QueryErrorState } from '../../../components/QueryErrorState';
 import { cn } from '../../../lib/cn';
 
 type TabKey = 'all' | 'course' | 'degree' | 'hackathon';
@@ -68,7 +69,7 @@ export function CertificatesPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const { showToast } = useToast();
 
-  const { data: certs = [], isLoading } = useQuery({
+  const { data: certs = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['certificates', 'me'],
     queryFn: () => certificatesApi.getMyCertificates(),
   });
@@ -144,7 +145,9 @@ export function CertificatesPage() {
         </div>
 
         {/* 内容 */}
-        {isLoading ? (
+        {isError ? (
+          <QueryErrorState error={error} onRetry={refetch} />
+        ) : isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} variant="rectangle" className="h-72 w-full" />

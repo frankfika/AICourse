@@ -295,8 +295,20 @@ export class OrdersService {
   }
 
   /**
-   * 申请退款 (P1-8 新增): mock 实现, 改状态为 refunded + 写 audit。
-   * 实际退款流程在 P1-6 真实化后会接 Stripe webhook。
+   * 申请退款 (P1-8 升级): 落地 USER_MANUAL §12.4 退款规则
+   *
+   * 规则(分订单类型):
+   *   课程订单:
+   *     - 未开始(0 ProgressRecord)              → 全额退
+   *     - 已开始 < 7 天 + 进度 < 20%            → 95% 退(扣 5% 手续费)
+   *     - 其他(已学 / 超 7 天 / 进度 ≥ 20%)    → 不支持
+   *   学位订单:
+   *     - 所有关联课程都没开始                  → 全额退
+   *     - 任一课程已开始                        → 不支持
+   *
+   * 计算进度:已完成 lesson 数 / 课程总 lesson 数
+   *
+   * 真实流程在 P1-6 Stripe webhook 接入后改用 async refund。
    */
   async refundOrder(userId: string, orderId: string) {
     const order = await this.prisma.order.findUnique({ where: { id: orderId } });
@@ -305,6 +317,18 @@ export class OrdersService {
     if (order.status !== OrderStatus.paid) {
       throw new BadRequestException('Only paid orders can be refunded');
     }
+
+    // 1) 校验规则
+    const check = await this.checkRefundEligibility(userId, order);
+    if (!check.allowed) {
+      throw new BadRequestException(check.reason);
+    }
+
+    // 2) 计算退款金额(可能扣 5% 手续费)
+    const fullAmount = Number(order.amount);
+    const refundAmount = check.feeRate ? fullAmount * (1 - check.feeRate) : fullAmount;
+
+    // 3) mock 改状态 + 写 audit
     const updated = await this.prisma.order.update({
       where: { id: orderId },
       data: { status: OrderStatus.refunded },
@@ -314,9 +338,94 @@ export class OrdersService {
       action: 'order.refund',
       entity: 'Order',
       entityId: orderId,
-      details: { reason: 'user_request' },
+      details: {
+        reason: 'user_request',
+        feeRate: check.feeRate,
+        refundAmount,
+        originalAmount: fullAmount,
+      },
     });
-    return updated;
+    return { ...updated, refundAmount };
+  }
+
+  /**
+   * 校验退款资格(纯函数,可在退款按钮 disable 时调用)
+   * 返回:
+   *   - { allowed: true, feeRate?: 0 | 0.05 }  允许退,feeRate = 0 全退 / 0.05 扣手续费
+   *   - { allowed: false, reason: string }     不允许
+   */
+  private async checkRefundEligibility(
+    userId: string,
+    order: { type: OrderType; courseId: string | null; degreeId: string | null; paidAt: Date | null },
+  ): Promise<{ allowed: true; feeRate?: number } | { allowed: false; reason: string }> {
+    // 兜底:没 paidAt 当作"刚支付",从现在算
+    const paidAt = order.paidAt ?? new Date();
+    const daysSincePaid = (Date.now() - paidAt.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (order.type === OrderType.course) {
+      if (!order.courseId) {
+        return { allowed: false, reason: '订单缺少课程 ID' };
+      }
+      // 计算课程进度
+      const [completed, total] = await Promise.all([
+        this.prisma.progressRecord.count({
+          where: {
+            userId,
+            courseId: order.courseId,
+            status: 'completed',
+          },
+        }),
+        this.prisma.lesson.count({
+          where: { chapter: { courseId: order.courseId } },
+        }),
+      ]);
+
+      // 规则 1: 未开始
+      if (completed === 0) {
+        return { allowed: true, feeRate: 0 };
+      }
+      // 规则 2: 7 天内 + 进度 < 20%
+      const progress = total > 0 ? completed / total : 0;
+      if (daysSincePaid < 7 && progress < 0.2) {
+        return { allowed: true, feeRate: 0.05 };
+      }
+      // 规则 3: 其他
+      if (daysSincePaid >= 7) {
+        return { allowed: false, reason: '已超过 7 天退款窗口,无法退款' };
+      }
+      return { allowed: false, reason: `学习进度 ${(progress * 100).toFixed(0)}% ≥ 20%,无法退款` };
+    }
+
+    if (order.type === OrderType.degree) {
+      if (!order.degreeId) {
+        return { allowed: false, reason: '订单缺少学位 ID' };
+      }
+      // 规则 4: 所有关联课程都未开始
+      const links = await this.prisma.degreeCourse.findMany({
+        where: { degreeId: order.degreeId },
+        select: { courseId: true },
+      });
+      const courseIds = links.map((l) => l.courseId);
+      if (courseIds.length === 0) {
+        return { allowed: true, feeRate: 0 }; // 没关联课程,容许退
+      }
+      const startedCount = await this.prisma.progressRecord.count({
+        where: {
+          userId,
+          courseId: { in: courseIds },
+          status: { in: ['in_progress', 'completed'] },
+        },
+      });
+      if (startedCount === 0) {
+        return { allowed: true, feeRate: 0 };
+      }
+      return {
+        allowed: false,
+        reason: '学位关联课程中已有学习记录,学位不支持退款',
+      };
+    }
+
+    return { allowed: false, reason: '不支持的订单类型' };
   }
 
   private async enrollAllDegreeCourses(userId: string, degreeId: string) {

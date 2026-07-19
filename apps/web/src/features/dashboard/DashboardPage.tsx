@@ -232,7 +232,7 @@ const MOCK_CHAT: ChatMessage[] = [
 ];
 
 // 快捷提示 chips
-const QUICK_PROMPTS = ['📌 解释这节课', '💡 ReAct vs CoT', '🧪 给个练习'];
+const QUICK_PROMPTS = ['📌 解释这节课', '💡 ReAct vs CoT', '🧪 给个练习', '🛠️ 这段代码怎么改'];
 
 // 笔记 mock 列表(3 条)
 const MOCK_NOTES = [

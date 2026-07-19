@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Users, ArrowUpRight } from 'lucide-react';
 import type { HackathonListItem } from '@opencsg/shared-types';
 import { HackathonStatusBadge } from './HackathonStatusBadge';
+import { CountdownChip } from '../../components/CountdownChip';
 
 interface HackathonCardProps {
   hackathon: HackathonListItem;
@@ -11,6 +12,20 @@ interface HackathonCardProps {
 export function HackathonCard({ hackathon, isOrganizer }: HackathonCardProps) {
   const formatRange = (d: Date | string) =>
     new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+
+  // 倒计时目标优先级:registerDeadline > startDate
+  // status === 'upcoming' 时优先显示报名截止
+  // 其他状态显示距开赛
+  const countdownTarget =
+    hackathon.status === 'upcoming' && hackathon.registerDeadline
+      ? hackathon.registerDeadline
+      : hackathon.startDate;
+  const countdownPrefix =
+    hackathon.status === 'upcoming' && hackathon.registerDeadline
+      ? '报名截止'
+      : hackathon.status === 'upcoming'
+        ? '距开赛'
+        : '距开始';
 
   return (
     <Link
@@ -66,6 +81,13 @@ export function HackathonCard({ hackathon, isOrganizer }: HackathonCardProps) {
           <span className="flex items-center gap-1">
             <Users className="w-3 h-3" /> {hackathon.minTeamSize}-{hackathon.maxTeamSize} 人
           </span>
+          {(hackathon.status === 'upcoming' || hackathon.status === 'active') && (
+            <CountdownChip
+              deadline={countdownTarget}
+              prefix={countdownPrefix}
+              className="ml-1"
+            />
+          )}
         </div>
       </div>
 

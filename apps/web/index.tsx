@@ -6,6 +6,7 @@ import { router } from './src/router';
 import { queryClient } from './src/lib/queryClient';
 import { AuthProvider } from './src/lib/auth/AuthProvider';
 import { ToastProvider } from './src/components/auth/Toast';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { initThemeFromStorage } from './src/components/Layout';
 
 // 启动时同步 theme 到 <html class="dark">,避免首屏闪烁
@@ -19,12 +20,15 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <RouterProvider router={router} />
-        </ToastProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    {/* P1: 全局 ErrorBoundary,任一子组件 throw 不再白屏 */}
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 );

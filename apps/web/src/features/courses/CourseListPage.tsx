@@ -48,6 +48,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { cn } from '../../lib/cn';
 
 // =============================================================
@@ -155,7 +156,7 @@ export function CourseListPage() {
   }, [input]);
 
   // 拉数据(后端只支持 search 关键字,其他筛选客户端做)
-  const { data: courses, isLoading } = useQuery({
+  const { data: courses, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['courses', debouncedQ],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -541,7 +542,9 @@ export function CourseListPage() {
             </div>
 
             {/* 课程网格 */}
-            {isLoading ? (
+            {isError ? (
+              <QueryErrorState error={error} onRetry={refetch} />
+            ) : isLoading ? (
               <div className="grid sm:grid-cols-2 gap-5">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <Card key={i} padding="none" className="overflow-hidden">

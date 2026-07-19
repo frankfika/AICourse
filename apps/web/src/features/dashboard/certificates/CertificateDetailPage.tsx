@@ -7,12 +7,14 @@
  *   - 底部操作: 下载(mock) + 验证(跳 /verify/:serial) + 返回
  *   - 公开页面(任何人都能看), 响应式
  */
+import { useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Award,
   ArrowLeft,
   Download,
+  Printer,
   ShieldCheck,
   GraduationCap,
   Code2,
@@ -49,6 +51,7 @@ const TYPE_GRADIENT: Record<CertificateType, string> = {
 export function CertificateDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
   const { showToast } = useToast();
+  const certRef = useRef<HTMLDivElement>(null);
 
   const { data: cert, isLoading } = useQuery({
     queryKey: ['certificates', id],
@@ -56,8 +59,28 @@ export function CertificateDetailPage() {
     enabled: !!id,
   });
 
-  const handleDownload = () => {
-    showToast('证书已发送到你的邮箱 (mock)', 'info');
+  /**
+   * 下载 PDF — 走浏览器原生 print 对话框,用户可选「另存为 PDF」
+   * 配合内联 @media print 样式,只打印证书大图,隐藏其他 UI
+   * 比引入 jsPDF/html2canvas 轻量,无新依赖
+   */
+  const handleDownloadPdf = () => {
+    showToast('正在准备打印对话框,选择"另存为 PDF"即可保存', 'info');
+    setTimeout(() => window.print(), 100);
+  };
+
+  /**
+   * 复制公开验证链接到剪贴板
+   */
+  const handleCopyVerifyLink = async () => {
+    if (!cert) return;
+    const url = `${window.location.origin}/verify/${cert.serialNumber}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('验证链接已复制', 'success');
+    } catch {
+      showToast('复制失败,请手动选择链接', 'error');
+    }
   };
 
   if (isLoading) {
@@ -117,8 +140,10 @@ export function CertificateDetailPage() {
         {/* 大证书视图 */}
         <Card padding="none" variant="elevated" className="overflow-hidden">
           <div
+            ref={certRef}
             className={cn(
               'relative aspect-[16/10] sm:aspect-[16/9] bg-gradient-to-br text-white p-8 sm:p-12 flex flex-col items-center justify-center text-center',
+              'print:aspect-auto print:min-h-[80vh] print:p-16',
               TYPE_GRADIENT[typeKey],
             )}
           >
@@ -205,17 +230,24 @@ export function CertificateDetailPage() {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-2 pt-2">
+            <div className="flex flex-wrap items-center gap-2 pt-2 print:hidden">
               <button
-                onClick={handleDownload}
+                onClick={handleDownloadPdf}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 text-sm font-medium transition-colors"
               >
+                <Printer className="w-4 h-4" />
+                下载 PDF
+              </button>
+              <button
+                onClick={handleCopyVerifyLink}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-info-100 text-info-500 rounded-md hover:bg-info-500/20 text-sm font-medium transition-colors"
+              >
                 <Download className="w-4 h-4" />
-                下载证书
+                复制验证链接
               </button>
               <Link
                 to={`/verify/${cert.serialNumber}`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-info-100 text-info-500 rounded-md hover:bg-info-500/20 text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-success-100 text-success-500 rounded-md hover:bg-success-500/20 text-sm font-medium transition-colors"
               >
                 <ShieldCheck className="w-4 h-4" />
                 公开验证

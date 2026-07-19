@@ -24,6 +24,7 @@ import api from '../../lib/api';
 import { progressApi } from '../../lib/progressApi';
 import { useAuthStore } from '../../stores/authStore';
 import { ProgressRing } from '../../components/ProgressRing';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { PurchaseModal } from '../degrees/PurchaseModal';
 
 interface Course {
@@ -121,7 +122,7 @@ export function CourseDetailPage() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [purchaseOpen, setPurchaseOpen] = useState(false);
 
-  const { data: course, isLoading } = useQuery({
+  const { data: course, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['course', id],
     queryFn: async () => {
       const { data } = await api.get<Course>(`/api/v1/courses/${id}`);
@@ -190,6 +191,18 @@ export function CourseDetailPage() {
   const isUnlocked = course?.costType === 'free' || course?.costType === 'charity' || enrolled;
 
   if (isLoading) return <div className="text-center py-32 text-[#666666]">加载中...</div>;
+  if (isError) {
+    // 404 时给"课程不存在"友好提示,其他错误给重试
+    const status = (error as any)?.response?.status;
+    if (status === 404) {
+      return <div className="text-center py-32 text-[#666666]">课程不存在或已下架</div>;
+    }
+    return (
+      <div className="max-w-2xl mx-auto py-16">
+        <QueryErrorState error={error} onRetry={refetch} />
+      </div>
+    );
+  }
   if (!course) return <div className="text-center py-32">课程不存在</div>;
 
   const learningPoints = JSON.parse(course.learningPoints || '[]') as string[];
