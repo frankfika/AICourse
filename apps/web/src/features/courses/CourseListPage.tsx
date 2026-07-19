@@ -33,15 +33,13 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search as SearchIcon,
-  Clock,
-  User as UserIcon,
   Star,
   Sparkles,
   ArrowUpRight,
-  ChevronDown,
-  ChevronUp,
   X as XIcon,
   SlidersHorizontal as FilterIcon,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Card } from '../../components/ui/Card';

@@ -121,7 +121,7 @@ export function TeamPanel({ hackathonId, maxTeamSize, isRegistered }: TeamPanelP
       )}
 
       <div className="grid md:grid-cols-2 gap-0 border-t border-l border-[#171717]">
-        {teams?.map((team, i) => {
+        {teams?.map((team) => {
           const isMember = team.members.some((m) => m.user.id === user?.id);
           const isFull = team.members.length >= maxTeamSize;
           return (

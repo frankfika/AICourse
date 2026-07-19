@@ -333,21 +333,6 @@ function getCourseCoverGradient(tags: string | undefined): string {
   return 'from-brand-500 to-xp-500';
 }
 
-function getLevelLabel(level: string): string {
-  switch (level) {
-    case 'Beginner':
-      return '入门';
-    case 'Intermediate':
-      return '进阶';
-    case 'Advanced':
-      return '高级';
-    case 'Expert':
-      return '专家';
-    default:
-      return level;
-  }
-}
-
 // =============================================================
 // 4 段:热门课程
 // =============================================================

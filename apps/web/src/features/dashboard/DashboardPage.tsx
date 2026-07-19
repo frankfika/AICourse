@@ -505,7 +505,6 @@ function VideoCenter({
   const allLessons = course.chapters.flatMap((c) => c.lessons);
   const currentIdx = allLessons.findIndex((l) => l.id === currentLesson.id);
   const hasPrev = currentIdx > 0;
-  const hasNext = currentIdx < allLessons.length - 1;
 
   const tabs: Array<{ id: CenterTab; label: string; count?: number; icon: React.ReactNode }> = [
     { id: 'notes', label: '笔记', count: 3, icon: <FileText className="w-3.5 h-3.5" /> },

@@ -16,15 +16,4 @@ export function ProfilePage() {
 /* ────────────────────────────────────────────────────────────────
  * 旧版实现已废弃,完整代码保留在 git history(commit 8fed8e1 P0-5 之前)。
  * 如果 Frank 决定彻底删除 /profile,直接 delete 本文件 + 移除 router.tsx import 即可。
- * ────────────────────────────────────────────────────────────────
- *
- * 旧版文件依赖(P0-6 移除以让 tsc --noEmit 通过):
- *   - useQuery, Link, useNavigate (react-router-dom)
- *   - LogOut, User as UserIcon, BookOpen, Flame, Award, Settings, ArrowUpRight (lucide-react)
- *   - api, progressApi, pointsApi, badgesApi (lib/*)
- *   - useAuthStore (stores/authStore)
- *   - ProgressRing, LevelBadge, ActivityHeatmap, BadgeCard (components/*)
- *
- * 旧版 export 形状:
- *   export function ProfilePage() { /* 完整旧版个人中心 UI *\/ }
  * ──────────────────────────────────────────────────────────────── */

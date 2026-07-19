@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { BookOpen, GraduationCap, ChevronRight, Sparkles, ArrowUpRight } from 'lucide-react';
+import { BookOpen, GraduationCap, Sparkles, ArrowUpRight } from 'lucide-react';
 import api from '../../lib/api';
 import type { NanoDegreeWithPath } from '@opencsg/shared-types';
 

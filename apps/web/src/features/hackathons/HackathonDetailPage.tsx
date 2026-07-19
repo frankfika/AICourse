@@ -51,7 +51,6 @@ export function HackathonDetailPage() {
   });
 
   const formatDate = (d: Date | string) => new Date(d).toLocaleDateString('zh-CN');
-  const formatDateTime = (d: Date | string) => new Date(d).toLocaleString('zh-CN');
 
   if (isLoading) {
     return (

@@ -4,7 +4,7 @@
  * P0-7 调整:nav 顺序按 mock 调整(看板 / 课程 / 学位 / 用户 / 黑客松 / 企业),
  * 保留 徽章管理,新增 审计日志 / 系统设置 2 个 placeholder "即将推出"。
  */
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   BookOpen,
   GraduationCap,
@@ -15,7 +15,6 @@ import {
   Building2,
   ScrollText,
   Settings,
-  Sparkles,
 } from 'lucide-react';
 import { MobileBlocked } from '../../components/MobileBlocked';
 

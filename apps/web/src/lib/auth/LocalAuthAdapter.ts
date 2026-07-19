@@ -21,7 +21,6 @@ import type {
   ProviderInfo,
   SignInInput,
 } from './types';
-import type { AuthUser } from '../../stores/authStore';
 
 /** 后端 /auth/login 响应 */
 interface LoginResponse {

@@ -20,7 +20,7 @@ import {
   Code2,
   Trophy,
 } from 'lucide-react';
-import type { Certificate, CertificateType } from '@opencsg/shared-types';
+import type { CertificateType } from '@opencsg/shared-types';
 import { certificatesApi } from '../../../lib/certificatesApi';
 import { useToast } from '../../../components/auth/Toast';
 import { Skeleton } from '../../../components/ui/Skeleton';

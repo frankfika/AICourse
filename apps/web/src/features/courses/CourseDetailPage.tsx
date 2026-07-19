@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import {
-  Clock,
   User as UserIcon,
   BookOpen,
   PlayCircle,
@@ -160,7 +159,7 @@ export function CourseDetailPage() {
 
   const completeLessonMutation = useMutation({
     mutationFn: (lessonId: string) => progressApi.completeLesson(lessonId),
-    onSuccess: (data, lessonId) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-progress'] });
       queryClient.invalidateQueries({ queryKey: ['course-progress', id] });
       queryClient.invalidateQueries({ queryKey: ['my-points'] });
@@ -572,7 +571,7 @@ export function CourseDetailPage() {
                       </div>
                       <div>
                         {lessons.flatMap((lesson) =>
-                          lesson.resources.map((res, ri) => (
+                          lesson.resources.map((res) => (
                             <a
                               key={res.id}
                               href={res.url}

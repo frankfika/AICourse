@@ -291,7 +291,6 @@ function StageCard({
           {stageCourses.length > 0 && (
             <ul className="mt-3 space-y-1.5">
               {stageCourses.map((c) => {
-                const isDone = completed >= total && total > 0 ? true : false;
                 // 简化:如果阶段完成,所有课都显示 done
                 const done = status === 'completed' || (stage.courseIds.indexOf(c.id) < completed);
                 return (

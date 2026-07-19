@@ -7,7 +7,6 @@ import {
   Phone,
   User as UserIcon,
   Building,
-  Users,
   Target,
   Sparkles,
   Send,

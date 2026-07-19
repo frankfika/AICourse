@@ -70,13 +70,6 @@ export function CoursePracticesTab() {
     },
   });
 
-  const skipMutation = useMutation({
-    mutationFn: (projectId: string) => practicesApi.skipProject(projectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['practices-progress'] });
-    },
-  });
-
   const getProjectStatus = (projectId: string) => {
     return progress.find((p: any) => p.projectId === projectId);
   };
