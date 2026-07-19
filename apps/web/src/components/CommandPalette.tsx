@@ -296,10 +296,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             </div>
           )}
 
-          {/* mock 提示(全 fallback 时) */}
-          {data?.usingMock && debouncedQuery && (
-            <div className="px-5 py-2 text-[10px] text-neutral-400 border-t border-neutral-200">
-              搜索服务暂不可用,展示离线数据
+          {/* 部分端点失败提示 */}
+          {data?.hasFailures && debouncedQuery && (
+            <div className="px-5 py-2 text-[10px] text-warning-500 border-t border-neutral-200">
+              部分搜索服务暂不可用,部分结果可能缺失
             </div>
           )}
         </div>

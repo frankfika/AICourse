@@ -1,21 +1,17 @@
 /**
- * searchApi — P1-2 全站搜索 API 包装
+ * searchApi — v1.2.0 全量去 mock
  *
- * 职责:
- *   1. searchAll(q) — 并行查 4 个端点(/courses /degrees /hackathons /instructors)
- *   2. 合并成统一 SearchResult[] 列表(每项含 type + title + href + subtitle)
- *   3. 单个端点失败时不影响其他端点(用 Promise.allSettled)
- *   4. 全部失败 / 网络挂时 → 4+3+3+4 = 14 条 mock fallback
- *      mock 数据跟 P0-5 home 用的完全一致(共享数据源,避免飘)
+ * searchAll(q) 并行查 4 个端点 (/courses /degrees /hackathons /instructors)
+ * 任一端点失败 → 该端点用空数组(无 mock fallback)
  *
- * 排序规则(P1-2 spec):
+ * 排序:
  *   - courses:     enrollmentCount DESC
- *   - degrees:     学员数 DESC(用 stats.totalLearners)
+ *   - degrees:     学员数 DESC(stats.totalLearners)
  *   - hackathons:  startDate ASC(进行中优先)
  *   - instructors: 课程数 DESC
  *
- * 注意:后端目前没有 /api/v1/instructors 端点 — Promise.allSettled 拿到 reject
- * 后会触发 fallback,所以 instructor 数据永远走 mock(暂)。
+ * 注:后端目前没有 /api/v1/instructors 端点,Promise.allSettled 拿到 reject
+ *   后该 type 永远空(等后端补端点后自动生效)。
  */
 
 import api from './api';
@@ -68,122 +64,6 @@ interface InstructorSearchRaw {
   title?: string;
   courseCount?: number;
 }
-
-// =============================================================
-// Mock fallback 数据(全部失败时使用)
-// 数量:4 courses + 3 degrees + 3 hackathons + 4 instructors
-// =============================================================
-const MOCK_COURSES: CourseSearchRaw[] = [
-  {
-    id: 'm1',
-    title: '用 LangChain 搭建第一个 Agent',
-    description: '从零开始,5 个章节学会 prompt、tool、memory、chain 的核心抽象。',
-    instructor: '杨一帆',
-    level: 'Beginner',
-    costType: 'free',
-    price: 0,
-    tags: 'LangChain,Agent,Python',
-    enrollmentCount: 4280,
-    duration: '6.5h',
-  },
-  {
-    id: 'm2',
-    title: 'RAG 检索增强生成实战',
-    description: '从 embedding、向量库到 reranking,做出企业可用的知识库问答系统。',
-    instructor: '李珩',
-    level: 'Intermediate',
-    costType: 'paid',
-    price: 299,
-    tags: 'RAG,Embedding,向量库',
-    enrollmentCount: 3120,
-    duration: '8.0h',
-  },
-  {
-    id: 'm3',
-    title: '模型评估与生产部署',
-    description: '从离线评测、A/B 实验到 vLLM 部署,构建可监控的 LLM 服务。',
-    instructor: '周阳',
-    level: 'Advanced',
-    costType: 'paid',
-    price: 599,
-    tags: 'vLLM,A/B Test,MLOps',
-    enrollmentCount: 1840,
-    duration: '12.0h',
-  },
-  {
-    id: 'm4',
-    title: '开源模型微调实战',
-    description: '用 LoRA / QLoRA 微调 7B 模型,从数据准备到评测。',
-    instructor: '陈昕',
-    level: 'Intermediate',
-    costType: 'paid',
-    price: 499,
-    tags: 'Fine-tuning,LoRA,QLoRA',
-    enrollmentCount: 2210,
-    duration: '10.0h',
-  },
-];
-
-const MOCK_DEGREES: DegreeSearchRaw[] = [
-  {
-    id: 'd1',
-    title: 'AI 工程师基础',
-    description: '3 门核心课 + 2 个实践项目',
-    costType: 'free',
-    price: 0,
-    stats: { totalLearners: 1240, courseCount: 3, estimatedHours: 80 },
-  },
-  {
-    id: 'd2',
-    title: 'LLM 应用工程师',
-    description: '5 门核心课 + 3 个项目 + 1 个黑客松',
-    costType: 'paid',
-    price: 2999,
-    stats: { totalLearners: 820, courseCount: 5, estimatedHours: 160 },
-  },
-  {
-    id: 'd3',
-    title: 'AI 创业者学位',
-    description: '技术 + 商业 + 投资人路演',
-    costType: 'paid',
-    price: 9999,
-    stats: { totalLearners: 156, courseCount: 3, estimatedHours: 120 },
-  },
-];
-
-const MOCK_HACKATHONS = [
-  {
-    id: 'h1',
-    title: 'Spring 2026 Agent Builders Hackathon',
-    description: '用 OpenCSG AgentHub 搭建一个能完成真实任务的 Agent。',
-    status: 'active' as const,
-    startDate: new Date(Date.now() + 4 * 24 * 3600 * 1000).toISOString(),
-    location: '线上 + 北京',
-  },
-  {
-    id: 'h2',
-    title: 'RAG 检索评测挑战赛',
-    description: '构建可量化的检索系统,挑战 5 个企业级评测集。',
-    status: 'upcoming' as const,
-    startDate: new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString(),
-    location: '线上',
-  },
-  {
-    id: 'h3',
-    title: '开源模型微调黑客松',
-    description: '在 OpenCSG Hub 公开数据集上微调开源模型。',
-    status: 'upcoming' as const,
-    startDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
-    location: '线上',
-  },
-];
-
-const MOCK_INSTRUCTORS: InstructorSearchRaw[] = [
-  { id: 'i1', name: '杨一帆', title: '前 Anthropic · Agent', courseCount: 4 },
-  { id: 'i2', name: '李珩', title: 'OpenCSG CTO · RAG', courseCount: 3 },
-  { id: 'i3', name: '周阳', title: '前 Databricks · MLOps', courseCount: 2 },
-  { id: 'i4', name: '陈昕', title: '连续创业者 · AI 产品', courseCount: 3 },
-];
 
 // =============================================================
 // 内部:把原始数据转换成 SearchResult + 排序
@@ -276,14 +156,15 @@ export interface SearchAllResult {
   results: SearchResult[];
   /** 每个 type 单独的结果数,给 UI 分组 / 分 tab 用 */
   counts: Record<SearchResultType, number>;
-  /** 是否走了 mock fallback(后端全挂) */
-  usingMock: boolean;
+  /** 是否有任一端点失败(给 UI 显示提示) */
+  hasFailures: boolean;
 }
 
 export async function searchAll(q: string): Promise<SearchAllResult> {
   const query = q.trim();
 
   // 4 端点并行查(用 allSettled 避免一个挂掉全部挂)
+  // instructor 端点目前不存在,容错让单端点 null 不影响其他
   const [courseRes, degreeRes, hackathonRes, instructorRes] = await Promise.allSettled([
     api
       .get<CourseSearchRaw[]>('/api/v1/courses', { params: { search: query } })
@@ -298,44 +179,19 @@ export async function searchAll(q: string): Promise<SearchAllResult> {
       .catch(() => null),  // 端点不存在不抛,直接 null
   ]);
 
-  // 全部 reject → 走全 mock
-  const allFailed =
-    courseRes.status === 'rejected' &&
-    degreeRes.status === 'rejected' &&
-    (hackathonRes.status === 'rejected' || !hackathonRes.value) &&
-    (instructorRes.status === 'rejected' || !instructorRes.value);
-
-  if (allFailed) {
-    return {
-      results: [
-        ...sortCourses(MOCK_COURSES.filter((c) => matchQuery(c.title, query))).map(mapCourse),
-        ...sortDegrees(MOCK_DEGREES.filter((d) => matchQuery(d.title, query))).map(mapDegree),
-        ...sortHackathons(MOCK_HACKATHONS.filter((h) => matchQuery(h.title, query))).map(mapHackathon),
-        ...sortInstructors(MOCK_INSTRUCTORS.filter((i) => matchQuery(i.name, query))).map(mapInstructor),
-      ],
-      counts: {
-        course: MOCK_COURSES.length,
-        degree: MOCK_DEGREES.length,
-        hackathon: MOCK_HACKATHONS.length,
-        instructor: MOCK_INSTRUCTORS.length,
-      },
-      usingMock: true,
-    };
-  }
-
-  // 部分成功:成功的用真数据,失败的用 mock
-  const courses: CourseSearchRaw[] =
-    courseRes.status === 'fulfilled' ? courseRes.value : MOCK_COURSES;
-  const degrees: DegreeSearchRaw[] =
-    degreeRes.status === 'fulfilled' ? degreeRes.value : MOCK_DEGREES;
+  // 任一端点失败 → 该 type 返空(无 mock fallback)
+  const courses: CourseSearchRaw[] = courseRes.status === 'fulfilled' ? courseRes.value : [];
+  const degrees: DegreeSearchRaw[] = degreeRes.status === 'fulfilled' ? degreeRes.value : [];
   const hackathons =
-    hackathonRes.status === 'fulfilled' && hackathonRes.value
-      ? hackathonRes.value
-      : MOCK_HACKATHONS;
+    hackathonRes.status === 'fulfilled' && hackathonRes.value ? hackathonRes.value : [];
   const instructors: InstructorSearchRaw[] =
-    instructorRes.status === 'fulfilled' && instructorRes.value
-      ? instructorRes.value
-      : MOCK_INSTRUCTORS;
+    instructorRes.status === 'fulfilled' && instructorRes.value ? instructorRes.value : [];
+
+  const hasFailures =
+    courseRes.status === 'rejected' ||
+    degreeRes.status === 'rejected' ||
+    (hackathonRes.status === 'rejected' || !hackathonRes.value) ||
+    (instructorRes.status === 'rejected' || !instructorRes.value);
 
   // 客户端再过一遍搜索关键字(后端 search 已经过了一次,这里只是保险)
   const filteredCourses = query
@@ -364,11 +220,7 @@ export async function searchAll(q: string): Promise<SearchAllResult> {
       hackathon: filteredHackathons.length,
       instructor: filteredInstructors.length,
     },
-    usingMock:
-      courseRes.status === 'rejected' &&
-      degreeRes.status === 'rejected' &&
-      (hackathonRes.status === 'rejected' || !hackathonRes.value) &&
-      (instructorRes.status === 'rejected' || !instructorRes.value),
+    hasFailures,
   };
 }
 
@@ -378,7 +230,7 @@ function matchQuery(text: string, q: string): boolean {
 }
 
 // =============================================================
-// 热门搜索(P1-2 spec:空查询时显示 4 chips)
+// 热门搜索(空查询时显示)
 // =============================================================
 export const HOT_SEARCHES = ['LangChain', 'RAG', 'Agent', 'vLLM'];
 

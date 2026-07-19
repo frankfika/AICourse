@@ -1,23 +1,18 @@
 /**
- * AdminCoursesPage — P0-8 课程编辑(扩展)
+ * AdminCoursesPage — v1.2.0 全部接真后端(无 mock)
  *
  * 两种模式(由 URL ?tab= 决定):
  *   1) /admin/courses           → 列表模式(保留原 AdminCoursesPage 的 list + 新增/导入)
  *   2) /admin/courses?tab=...   → 编辑模式(5 tab:info / chapters / resources / pricing / publish)
  *
- * 设计参考: review/mocks/mock-admin-course-edit.html
+ * 5 tab 全部接真后端:
+ *   - info      PATCH /api/v1/courses/:id          基本信息
+ *   - chapters  GET/POST/PATCH/DELETE /chapters + /lessons  章节树 + 课时 CRUD
+ *   - resources P2 — 后端 POST /api/v1/courses/:id/resources 端点待补,显示占位
+ *   - pricing   PATCH /api/v1/courses/:id (costType + price)
+ *   - publish   PATCH /api/v1/courses/:id (status)
  *
- * 5 tab:
- *   - info      基本信息(标题/副标题/讲师/难度/时长/标签/试看/封面)
- *   - chapters  章节大纲(左侧 Chapter→Lesson 树,中间编辑器,右侧字段面板,纯前端 mock)
- *   - resources 资源(简化)
- *   - pricing   价格(免费/买断/订阅 3 radio card)
- *   - publish   发布(上下架 switch + 发布时间 picker)
- *
- * 后端 P0-8 暂未实现:
- *   - 章节树 CRUD 纯前端 mock,标 TODO
- *   - 数据 hardcode,标 TODO: 接 /api/v1/courses/{id}/chapters
- *   - 富文本用 textarea + 预览,不上 Tiptap/Lexical
+ * v1.2.0 起:无前端 mock,无 hardcode 数据,所有写操作走后端。
  */
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';

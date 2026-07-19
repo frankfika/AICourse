@@ -98,7 +98,9 @@ interface ProgressRecord {
   lastPosition?: number | null;
 }
 // =============================================================
-// AI 助教 mock 数据(后端 /api/v1/chat/sessions 未建,前端 hardcode)
+// AI 助教 — v1.2.0 起无 mock
+// 后端 /api/v1/chat/sessions 暂未建,UI 走 P2 placeholder 模式
+// (空 messages[],handleSend 回复"P2 占位"文案)
 // =============================================================
 interface ChatMessage {
   id: string;

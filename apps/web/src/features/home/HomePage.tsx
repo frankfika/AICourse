@@ -98,186 +98,6 @@ interface Instructor {
 }
 
 // =============================================================
-// Mock fallback 数据
-// 当 API 4xx/5xx 时,自动用这些 hardcode 数据填充,避免白屏。
-// 4 courses / 3 degrees / 3 hackathons / 4 instructors
-// =============================================================
-const MOCK_COURSES: Course[] = [
-  {
-    id: 'm1',
-    title: '用 LangChain 搭建第一个 Agent',
-    description: '从零开始,5 个章节学会 prompt、tool、memory、chain 的核心抽象。',
-    thumbnail: '',
-    duration: '6.5h',
-    instructor: '杨一帆',
-    level: 'Beginner',
-    costType: 'free',
-    price: 0,
-    tags: 'LLM',
-  },
-  {
-    id: 'm2',
-    title: 'RAG 检索增强生成实战',
-    description: '从 embedding、向量库到 reranking,做出企业可用的知识库问答系统。',
-    thumbnail: '',
-    duration: '8.0h',
-    instructor: '李珩',
-    level: 'Intermediate',
-    costType: 'paid',
-    price: 299,
-    tags: 'RAG',
-  },
-  {
-    id: 'm3',
-    title: '模型评估与生产部署',
-    description: '从离线评测、A/B 实验到 vLLM 部署,构建可监控的 LLM 服务。',
-    thumbnail: '',
-    duration: '12.0h',
-    instructor: '周阳',
-    level: 'Advanced',
-    costType: 'paid',
-    price: 599,
-    tags: 'MLOps',
-  },
-  {
-    id: 'm4',
-    title: '开源模型微调实战',
-    description: '用 LoRA / QLoRA 微调 7B 模型,从数据准备到评测。',
-    thumbnail: '',
-    duration: '10.0h',
-    instructor: '陈昕',
-    level: 'Intermediate',
-    costType: 'paid',
-    price: 499,
-    tags: 'Fine-tuning',
-  },
-];
-
-const MOCK_DEGREES: Degree[] = [
-  {
-    id: 'd1',
-    title: 'AI 工程师基础',
-    description: '3 门核心课 + 2 个实践项目',
-    icon: '01',
-    price: 0,
-    costType: 'free',
-    courses: [
-      { id: 'c1', title: 'Python 数据处理', stepNumber: 1 },
-      { id: 'c2', title: '机器学习基础', stepNumber: 2 },
-      { id: 'c3', title: '深度学习入门', stepNumber: 3 },
-    ],
-    stats: { courseCount: 3, totalChapters: 18, estimatedHours: 80, totalLearners: 1240 },
-  },
-  {
-    id: 'd2',
-    title: 'LLM 应用工程师',
-    description: '5 门核心课 + 3 个项目 + 1 个黑客松',
-    icon: '02',
-    price: 2999,
-    costType: 'paid',
-    courses: [
-      { id: 'c4', title: 'Prompt 工程', stepNumber: 1 },
-      { id: 'c5', title: 'LangChain / LlamaIndex', stepNumber: 2 },
-      { id: 'c6', title: 'RAG / Agent 实战', stepNumber: 3 },
-      { id: 'c7', title: '评估与生产部署', stepNumber: 4 },
-    ],
-    stats: { courseCount: 5, totalChapters: 32, estimatedHours: 160, totalLearners: 820 },
-  },
-  {
-    id: 'd3',
-    title: 'AI 创业者学位',
-    description: '技术 + 商业 + 投资人路演',
-    icon: '03',
-    price: 9999,
-    costType: 'paid',
-    courses: [
-      { id: 'c8', title: 'AI 产品方法论', stepNumber: 1 },
-      { id: 'c9', title: '技术选型与成本', stepNumber: 2 },
-      { id: 'c10', title: 'GTM 与增长', stepNumber: 3 },
-    ],
-    stats: { courseCount: 3, totalChapters: 24, estimatedHours: 120, totalLearners: 156 },
-  },
-];
-
-const MOCK_HACKATHONS: Hackathon[] = [
-  {
-    id: 'h1',
-    title: 'Spring 2026 Agent Builders Hackathon',
-    description: '用 OpenCSG AgentHub 搭建一个能完成真实任务的 Agent。¥ 50,000 奖金池 + 投资人直通车。',
-    status: 'active',
-    startDate: new Date(Date.now() + 4 * 24 * 3600 * 1000).toISOString(),
-    endDate: new Date(Date.now() + 11 * 24 * 3600 * 1000).toISOString(),
-    location: '线上 + 北京',
-    maxTeamSize: 5,
-    minTeamSize: 1,
-    _count: { registrations: 312 },
-  },
-  {
-    id: 'h2',
-    title: 'RAG 检索评测挑战赛',
-    description: '构建可量化的检索系统,挑战 5 个企业级评测集。',
-    status: 'upcoming',
-    startDate: new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString(),
-    endDate: new Date(Date.now() + 28 * 24 * 3600 * 1000).toISOString(),
-    location: '线上',
-    maxTeamSize: 3,
-    minTeamSize: 1,
-    _count: { registrations: 86 },
-  },
-  {
-    id: 'h3',
-    title: '开源模型微调黑客松',
-    description: '在 OpenCSG Hub 公开数据集上微调开源模型,提交评测结果。',
-    status: 'upcoming',
-    startDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
-    endDate: new Date(Date.now() + 60 * 24 * 3600 * 1000).toISOString(),
-    location: '线上',
-    maxTeamSize: 4,
-    minTeamSize: 1,
-    _count: { registrations: 142 },
-  },
-];
-
-const MOCK_INSTRUCTORS: Instructor[] = [
-  {
-    id: 'i1',
-    name: '杨一帆',
-    title: '前 Anthropic · Agent',
-    initials: '杨',
-    gradientFrom: 'from-brand-500',
-    gradientTo: 'to-xp-500',
-    linkedin: '#',
-  },
-  {
-    id: 'i2',
-    name: '李珩',
-    title: 'OpenCSG CTO · RAG',
-    initials: '李',
-    gradientFrom: 'from-xp-500',
-    gradientTo: 'to-cert-500',
-    linkedin: '#',
-  },
-  {
-    id: 'i3',
-    name: '周阳',
-    title: '前 Databricks · MLOps',
-    initials: '周',
-    gradientFrom: 'from-info-500',
-    gradientTo: 'to-brand-500',
-    linkedin: '#',
-  },
-  {
-    id: 'i4',
-    name: '陈昕',
-    title: '连续创业者 · AI 产品',
-    initials: '陈',
-    gradientFrom: 'from-cert-500',
-    gradientTo: 'to-danger-500',
-    linkedin: '#',
-  },
-];
-
-// =============================================================
 // 倒计时 hook (两态: 距开始 / 距截止)
 // =============================================================
 interface CountdownState {
@@ -347,11 +167,8 @@ function CoursesSection() {
     staleTime: 60_000,
   });
 
-  // 失败 / 空 → fallback mock
-  const courses = (!isLoading && (isError || !data || data.length === 0))
-    ? MOCK_COURSES
-    : (data ?? []);
-  const usingMock = isError || !data || data.length === 0;
+  // 失败 / 空 → 渲染 EmptyState(无 mock fallback)
+  const courses = data ?? [];
 
   return (
     <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">
@@ -457,9 +274,9 @@ function CoursesSection() {
                 </Link>
               ))}
             </div>
-            {usingMock && (
-              <p className="mt-4 text-xs text-neutral-400 text-center" aria-live="polite">
-                API 暂不可用,显示离线示例数据{(error as Error | undefined)?.message ? `(${ (error as Error).message })` : ''}
+            {isError && (
+              <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
+                课程数据加载失败{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
               </p>
             )}
           </>
@@ -483,10 +300,7 @@ function DegreesSection() {
     staleTime: 60_000,
   });
 
-  const degrees = (!isLoading && (isError || !data || data.length === 0))
-    ? MOCK_DEGREES
-    : (data ?? []);
-  const usingMock = isError || !data || data.length === 0;
+  const degrees = data ?? [];
 
   return (
     <section className="py-16 md:py-24">
@@ -597,9 +411,9 @@ function DegreesSection() {
             })}
           </div>
         )}
-        {usingMock && (
-          <p className="mt-4 text-xs text-neutral-400 text-center" aria-live="polite">
-            API 暂不可用,显示离线示例数据{(error as Error | undefined)?.message ? `(${ (error as Error).message })` : ''}
+        {isError && (
+          <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
+            数据加载失败{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
           </p>
         )}
       </div>
@@ -674,10 +488,7 @@ function HackathonsSection() {
     staleTime: 60_000,
   });
 
-  const hackathons = (!isLoading && (isError || !data || data.length === 0))
-    ? MOCK_HACKATHONS
-    : (data ?? []);
-  const usingMock = isError || !data || data.length === 0;
+  const hackathons = data ?? [];
 
   const main = hackathons[0];
   const small = hackathons.slice(1, 3);
@@ -775,9 +586,9 @@ function HackathonsSection() {
             </div>
           </div>
         )}
-        {usingMock && (
-          <p className="mt-4 text-xs text-neutral-400 text-center" aria-live="polite">
-            API 暂不可用,显示离线示例数据{(error as Error | undefined)?.message ? `(${ (error as Error).message })` : ''}
+        {isError && (
+          <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
+            数据加载失败{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
           </p>
         )}
       </div>
@@ -856,8 +667,56 @@ function AiTutorSection() {
 // 8 段:讲师墙
 // =============================================================
 function InstructorsSection() {
-  // 讲师 API 不存在,直接用 4 个 mock(fake names)
-  const instructors = MOCK_INSTRUCTORS;
+  // 从真实课程数据聚合 instructor 字段去重(共享 CoursesSection 的 query cache)
+  const { data: courses } = useQuery({
+    queryKey: ['home', 'courses'],
+    queryFn: async () => {
+      const { data } = await api.get<Course[]>('/api/v1/courses');
+      return data;
+    },
+    retry: 1,
+    staleTime: 60_000,
+  });
+
+  // 按 instructor 字段去重,保留前 4 个
+  const instructors: Instructor[] = useMemo(() => {
+    if (!courses) return [];
+    const seen = new Set<string>();
+    const palette = [
+      { gradientFrom: 'from-brand-500', gradientTo: 'to-xp-500' },
+      { gradientFrom: 'from-xp-500', gradientTo: 'to-cert-500' },
+      { gradientFrom: 'from-info-500', gradientTo: 'to-brand-500' },
+      { gradientFrom: 'from-cert-500', gradientTo: 'to-danger-500' },
+    ];
+    const result: Instructor[] = [];
+    for (let i = 0; i < courses.length && result.length < 4; i++) {
+      const c = courses[i];
+      const name = c.instructor?.trim();
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      result.push({
+        id: `i-${name}`,
+        name,
+        title: '课程讲师', // 后端目前没有 instructor.title 字段,统一占位
+        initials: name.charAt(0),
+        gradientFrom: palette[result.length].gradientFrom,
+        gradientTo: palette[result.length].gradientTo,
+        linkedin: '#',
+      });
+    }
+    return result;
+  }, [courses]);
+
+  if (instructors.length === 0) {
+    return (
+      <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">来自一线的讲师</h2>
+          <p className="mt-2 text-neutral-600 text-sm md:text-base">讲师信息将在课程上线后展示</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">

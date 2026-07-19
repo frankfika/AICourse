@@ -145,8 +145,8 @@ export function SearchPage() {
             {isLoading
               ? '搜索中...'
               : `共找到 ${totalCount} 条结果`}
-            {data?.usingMock && (
-              <span className="ml-2 text-warning-500">(展示离线数据)</span>
+            {data?.hasFailures && (
+              <span className="ml-2 text-warning-500">(部分服务暂不可用)</span>
             )}
           </p>
 
