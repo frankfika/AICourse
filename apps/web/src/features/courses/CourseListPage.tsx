@@ -41,6 +41,7 @@ import {
   ChevronDown,
   ChevronUp,
   X as XIcon,
+  SlidersHorizontal as FilterIcon,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Card } from '../../components/ui/Card';
@@ -308,10 +309,10 @@ export function CourseListPage() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setMobileFiltersOpen((v) => !v)}
+            onClick={() => setMobileFiltersOpen(true)}
+            leftIcon={<FilterIcon className="w-4 h-4" />}
           >
             筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
-            {mobileFiltersOpen ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
           </Button>
           <div className="text-sm text-neutral-600 dark:text-neutral-600">
             {isLoading ? '加载中…' : `共 ${sorted.length} 门课程`}
@@ -319,14 +320,31 @@ export function CourseListPage() {
         </div>
 
         <div className="grid lg:grid-cols-[280px_1fr] gap-8">
-          {/* 左侧筛选侧栏 */}
+          {/* 左侧筛选侧栏 — < lg 时用 fixed 弹层,≥ lg 时 sticky in-flow */}
           <aside
             className={cn(
               'space-y-6',
               'lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2',
-              mobileFiltersOpen ? 'block' : 'hidden lg:block',
+              mobileFiltersOpen
+                ? 'fixed inset-0 z-[150] lg:static lg:z-auto overflow-y-auto bg-neutral-0 dark:bg-neutral-100 p-5 lg:p-0'
+                : 'hidden lg:block',
             )}
           >
+            {/* mobile 弹层关闭按钮 — lg 时 hidden */}
+            <div className="flex items-center justify-between mb-4 lg:hidden">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <FilterIcon className="w-4 h-4 text-brand-500" />
+                筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen(false)}
+                className="p-1.5 rounded-md text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-200"
+                aria-label="关闭筛选"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
             <FilterSection title="分类" defaultOpen>
               {CATEGORIES.map((cat) => (
                 <label key={cat.key} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
@@ -497,7 +515,29 @@ export function CourseListPage() {
             >
               清除全部筛选
             </button>
+
+            {/* mobile 完成按钮 — lg 隐藏 */}
+            {mobileFiltersOpen && (
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full mt-4 lg:hidden"
+                onClick={() => setMobileFiltersOpen(false)}
+              >
+                查看 {sorted.length} 门课程
+              </Button>
+            )}
           </aside>
+
+          {/* mobile 筛选遮罩 — lg 隐藏 */}
+          {mobileFiltersOpen && (
+            <button
+              type="button"
+              aria-label="关闭筛选"
+              onClick={() => setMobileFiltersOpen(false)}
+              className="lg:hidden fixed inset-0 z-[140] bg-neutral-900/50 dark:bg-neutral-950/70 backdrop-blur-sm -m-4 sm:-m-6 lg:m-0"
+            />
+          )}
 
           {/* 右侧列表 */}
           <div>

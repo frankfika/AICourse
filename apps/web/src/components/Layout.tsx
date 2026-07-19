@@ -136,9 +136,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-1">
             {user ? (
               <>
+                {/* P1-3 修复:头像/名字 < sm 也显示(只显头像,名字 >= sm 显) */}
                 <Link
                   to="/profile"
-                  className="hidden sm:flex items-center gap-2 text-sm font-bold px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+                  className="flex items-center gap-2 text-sm font-bold px-2 sm:px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+                  aria-label={`个人中心:${user.name}`}
                 >
                   <div className="w-7 h-7 bg-brand-500 flex items-center justify-center text-white text-xs font-black rounded-md">
                     {user.name.charAt(0).toUpperCase()}
@@ -167,9 +169,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             ) : (
               <Link
                 to="/login"
-                className="hidden sm:flex items-center gap-2 text-sm font-black uppercase tracking-wider text-[12px] bg-brand-500 text-white px-4 py-2 hover:bg-brand-700 transition-colors rounded-md"
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-wider bg-brand-500 text-white px-3 sm:px-4 py-2 hover:bg-brand-700 transition-colors rounded-md"
+                aria-label="登录"
               >
-                <UserIcon className="w-4 h-4" /> 登录
+                <UserIcon className="w-4 h-4" /> <span className="hidden xs:inline sm:hidden">登</span><span className="hidden sm:inline">登录</span>
               </Link>
             )}
 

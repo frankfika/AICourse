@@ -62,12 +62,37 @@ export class UsersService {
   }
 
   async findOne(id: string) {
+    // P1-3 扩展:admin 详情抽屉需要 6 section — 一次查全减少 N+1
+    // 注意:passwordHash 不返回(已在 userSelect 排除)
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
         ...this.userSelect,
         enrollments: {
           include: { course: true, degree: true },
+          orderBy: { enrolledAt: 'desc' },
+          take: 20, // 最近 20 笔报名
+        },
+        orders: {
+          orderBy: { createdAt: 'desc' },
+          take: 20, // 最近 20 笔订单
+        },
+        certificates: {
+          orderBy: { issuedAt: 'desc' },
+          take: 20, // 最近 20 张证书
+        },
+        pointTransactions: {
+          orderBy: { createdAt: 'desc' },
+          take: 20, // 最近 20 笔积分流水
+        },
+        _count: {
+          select: {
+            enrollments: true,
+            orders: true,
+            certificates: true,
+            progressRecords: true,
+            submissions: true,
+          },
         },
       },
     });
