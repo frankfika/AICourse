@@ -79,7 +79,6 @@ function parseBilibili(url: URL): ParsedVideoUrl {
     throw new BadRequestException('Could not extract Bilibili video ID from URL');
   }
   const id = match[1];
-  const isBV = id.toLowerCase().startsWith('bv');
   return {
     platform: 'bilibili',
     videoId: id,

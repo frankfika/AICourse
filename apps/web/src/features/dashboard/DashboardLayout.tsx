@@ -87,7 +87,7 @@ export function DashboardLayout() {
           {/* P1-8: Bell (通知) + Order (订单) 入口 (顶栏右侧) */}
           <Link
             to="/dashboard/notifications"
-            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
             aria-label="通知中心"
             title="通知中心"
           >
@@ -95,7 +95,7 @@ export function DashboardLayout() {
           </Link>
           <Link
             to="/dashboard/orders"
-            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
             aria-label="我的订单"
             title="我的订单"
           >
@@ -105,7 +105,7 @@ export function DashboardLayout() {
           {/* 主题切换 */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
             aria-label={theme === 'dark' ? '切换为亮色' : '切换为暗色'}
             title={theme === 'dark' ? '切换为亮色' : '切换为暗色'}
           >

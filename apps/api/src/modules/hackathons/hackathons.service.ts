@@ -298,7 +298,7 @@ export class HackathonsService {
     hackathonId: string,
     dto: CreateTeamDto,
   ) {
-    const hackathon = await this.ensureExists(hackathonId);
+    await this.ensureExists(hackathonId);
     await this.ensureRegistered(userId, hackathonId);
 
     const existingTeam = await this.prisma.team.findFirst({
@@ -407,7 +407,7 @@ export class HackathonsService {
     hackathonId: string,
     dto: CreateSubmissionDto,
   ) {
-    const hackathon = await this.ensureExists(hackathonId);
+    await this.ensureExists(hackathonId);
     await this.ensureRegistered(userId, hackathonId);
 
     let teamId: string | undefined = dto.teamId;

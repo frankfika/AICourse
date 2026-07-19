@@ -121,8 +121,8 @@ export class CoursesService {
   }
 
   async update(id: string, dto: UpdateCourseDto) {
-    const { chapters, ...courseData } = dto;
-    // For simplicity, chapters are not updated inline; use dedicated endpoints
+    // chapters 字段:dedicated endpoints 处理,这里只更新 course 本身
+    const { chapters: _chapters, ...courseData } = dto;
     const course = await this.prisma.course.update({
       where: { id },
       data: courseData,

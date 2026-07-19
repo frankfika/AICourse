@@ -79,7 +79,7 @@ export class UrlImportService {
     const results: BatchImportResult[] = [];
     for (const rawUrl of rawUrls) {
       try {
-        const r = await this.importFromUrl(rawUrl);
+        await this.importFromUrl(rawUrl);
         results.push({ url: rawUrl, status: 'created' });
         // Caller (controller) will turn the metadata into a draft course row
         // after this. We just confirm the fetch succeeded here.

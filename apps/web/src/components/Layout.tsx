@@ -139,7 +139,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* P1-3 修复:头像/名字 < sm 也显示(只显头像,名字 >= sm 显) */}
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 text-sm font-bold px-2 sm:px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+                  className="flex items-center gap-2 text-sm font-bold px-2 sm:px-3 py-2 min-h-[44px] hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
                   aria-label={`个人中心:${user.name}`}
                 >
                   <div className="w-7 h-7 bg-brand-500 flex items-center justify-center text-white text-xs font-black rounded-md">
@@ -152,7 +152,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {user.role === 'admin' && (
                   <Link
                     to="/admin"
-                    className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+                    className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
                     title="管理后台"
                   >
                     <Settings className="w-5 h-5" />
@@ -160,7 +160,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 )}
                 <button
                   onClick={handleLogout}
-                  className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+                  className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
                   title="退出登录"
                 >
                   <LogOut className="w-5 h-5" />
@@ -169,7 +169,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-wider bg-brand-500 text-white px-3 sm:px-4 py-2 hover:bg-brand-700 transition-colors rounded-md"
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-wider bg-brand-500 text-white px-3 sm:px-4 py-2 min-h-[44px] hover:bg-brand-700 transition-colors rounded-md"
                 aria-label="登录"
               >
                 <UserIcon className="w-4 h-4" /> <span className="hidden xs:inline sm:hidden">登</span><span className="hidden sm:inline">登录</span>
@@ -179,7 +179,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* P1-2: mobile 搜索图标按钮(md 以下点击也调出 CommandPalette) */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="md:hidden p-2 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+              className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
               aria-label="打开搜索"
               title="搜索(⌘K)"
             >
@@ -189,7 +189,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* P0-5 新增:theme toggle 按钮(admin 入口前) */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
               aria-label={theme === 'dark' ? '切换为亮色' : '切换为暗色'}
               title={theme === 'dark' ? '切换为亮色' : '切换为暗色'}
             >
@@ -353,7 +353,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-// 移动 bottom tab 单个 item
+// 移动 bottom tab 单个 item — P1-3 触摸目标 ≥ 44px(iOS HIG)
 function BottomTabLink({
   to,
   label,
@@ -368,7 +368,7 @@ function BottomTabLink({
   return (
     <Link
       to={to}
-      className={`flex flex-col items-center gap-0.5 py-1 transition-colors ${
+      className={`flex flex-col items-center justify-center gap-0.5 min-h-[48px] min-w-[48px] py-1.5 px-2 transition-colors ${
         active
           ? 'text-brand-500'
           : 'text-neutral-600 dark:text-neutral-600 hover:text-brand-500'
@@ -376,7 +376,7 @@ function BottomTabLink({
       aria-current={active ? 'page' : undefined}
     >
       <Icon className="w-5 h-5" />
-      <span className="text-[10px] font-medium">{label}</span>
+      <span className="text-[10px] font-medium leading-tight">{label}</span>
     </Link>
   );
 }
