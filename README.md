@@ -2,6 +2,20 @@
 
 OpenCSG Academy 是一个现代化的在线教育平台，专注于 AI 和大模型技术培训。
 
+---
+
+## 📖 文档导航
+
+> **如果你是学习者 / 学员**:从 [用户手册](./docs/USER_MANUAL.md) 开始 — 5 分钟快速上手 + 完整功能指南
+>
+> **如果你是 admin / 运营**:看 [管理员手册](./docs/ADMIN_MANUAL.md) — 后台 7 个模块全部覆盖
+>
+> **如果遇到 AI / LLM 术语不懂**:[术语表](./docs/GLOSSARY.md) 速查
+>
+> **如果你是开发者**:往下读「项目架构」「快速开始」章节
+
+---
+
 ## 🏗️ 项目架构
 
 本项目采用 **Monorepo** 架构，使用 **pnpm workspace** 管理多个子项目：
@@ -327,6 +341,9 @@ vercel --prod
 
 | 文档 | 说明 |
 |------|------|
+| [用户手册](./docs/USER_MANUAL.md) | 学习者完整使用指南(账号/课程/学位/黑客松/证书/订单/移动端) |
+| [管理员手册](./docs/ADMIN_MANUAL.md) | admin 后台 7 模块操作 + 审核工作流 + 常见任务清单 |
+| [术语表](./docs/GLOSSARY.md) | AI / LLM / 教育领域术语速查 |
 | [API 文档](http://localhost:8080/api/docs) | Swagger 自动生成的 API 文档 |
 | [Prisma Schema](./prisma/schema.prisma) | 数据库模型定义 |
 | [部署指南](./apps/web/docs/部署指南.md) | 详细部署说明 |
