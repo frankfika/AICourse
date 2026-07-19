@@ -32,7 +32,6 @@ import {
   Check,
   X,
   Eye,
-  EyeOff,
   Save,
   Send,
   RotateCcw,
@@ -40,11 +39,9 @@ import {
   Image as ImageIcon,
   Video as VideoIcon,
   FileText,
-  Package,
   Tag as TagIcon,
   Clock as ClockIcon,
   User as UserIcon,
-  Layers,
   Code,
   Bold,
   Italic,
@@ -53,9 +50,7 @@ import {
   Paperclip,
   Sparkle,
   Pencil,
-  Globe,
   Calendar,
-  Power,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';

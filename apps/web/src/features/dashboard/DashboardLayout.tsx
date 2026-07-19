@@ -18,7 +18,7 @@
  */
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon, Bell, ShoppingBag } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -140,7 +140,26 @@ export function DashboardLayout() {
        * 主区域 — 渲染子路由(<Outlet />)
        * dashboard 页面会用 calc(100vh - 3.5rem) 控制三栏 fill 高度
        * ============================================================ */}
-      <Outlet />
+      <Suspense fallback={<DashboardFallback />}>
+        <Outlet />
+      </Suspense>
+    </div>
+  );
+}
+
+// Dashboard 内 React.lazy() 路由的 fallback — 三栏布局的中部主区
+// 保持 fill 高度,避免回流抖动
+function DashboardFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="加载中"
+      className="flex-1 flex items-center justify-center text-neutral-400 dark:text-neutral-500"
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm">加载中…</span>
+      </div>
     </div>
   );
 }

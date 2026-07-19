@@ -21,19 +21,18 @@ import {
   User as UserIcon,
   LogOut,
   Settings,
-  Building2,
   Sun,
   Moon,
   Sparkles,
   Home,
   BookOpen,
-  Trophy,
   Search,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { CommandPalette } from './CommandPalette';
 import { cn } from '../lib/cn';
+import { Skeleton } from './ui/Skeleton';
 
 type Theme = 'light' | 'dark';
 
@@ -275,7 +274,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main>{children}</main>
+      <main>
+        {/* P0-6 + 后续懒加载路由 fallback — 顶部 nav 不闪,主区域显示骨架 */}
+        <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+      </main>
 
       {/* P1-2: 全局 ⌘K 搜索弹层 */}
       <CommandPalette open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
@@ -418,6 +420,22 @@ function BottomTabLink({
   );
 }
 
-// 显式避免未使用的引用警告
-void Trophy;
-void Building2;
+// React.lazy() 路由的 Suspense fallback — 顶部 nav 不闪,
+// 主区域显示轻量骨架,避免白屏(LCP 友好)
+function RouteFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="加载中"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+    >
+      <Skeleton className="h-10 w-2/3 mb-6" />
+      <Skeleton className="h-4 w-full mb-2" count={3} />
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Skeleton variant="rectangle" className="h-48" />
+        <Skeleton variant="rectangle" className="h-48" />
+        <Skeleton variant="rectangle" className="h-48" />
+      </div>
+    </div>
+  );
+}
