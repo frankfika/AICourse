@@ -31,13 +31,10 @@ import {
   Moon,
   ScrollText,
   FileText,
-  Sparkles as SparklesIcon,
   MessageCircle,
   Megaphone,
   FilePlus2,
 } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { useTheme, useThemeStore } from '../../stores/themeStore';
@@ -46,20 +43,32 @@ import { cn } from '../../lib/cn';
 
 type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
+// Brutalist tone mapping:
+//   - success / danger: 黑色实心(高对比,语义"已确认")
+//   - warning / info:   白底黑边(语义"需关注/中性")
+//   - neutral:          灰色
 const TONE_DOT: Record<Tone, string> = {
-  success: 'bg-success-500',
-  warning: 'bg-warning-500',
-  danger: 'bg-danger-500',
-  info: 'bg-info-500',
-  neutral: 'bg-neutral-400',
+  success: 'bg-[#171717]',
+  warning: 'bg-white border border-[#171717]',
+  danger: 'bg-[#171717]',
+  info: 'bg-[#666666]',
+  neutral: 'bg-[#A3A3A3]',
+};
+
+const TONE_CHIP: Record<Tone, string> = {
+  success: 'bg-[#171717] text-white',
+  warning: 'border border-[#171717] text-[#171717] bg-white',
+  danger: 'bg-[#171717] text-white',
+  info: 'border border-[#171717] text-[#171717] bg-white',
+  neutral: 'border border-[#A3A3A3] text-[#666666] bg-white',
 };
 
 const TONE_TEXT: Record<Tone, string> = {
-  success: 'text-success-500',
-  warning: 'text-warning-500',
-  danger: 'text-danger-500',
-  info: 'text-info-500',
-  neutral: 'text-neutral-600',
+  success: 'text-[#171717]',
+  warning: 'text-[#171717]',
+  danger: 'text-[#171717]',
+  info: 'text-[#171717]',
+  neutral: 'text-[#666666]',
 };
 
 // =============================================================
@@ -103,18 +112,23 @@ export function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       {/* ─── 顶部 ─── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">数据看板</h1>
-          <p className="text-sm text-neutral-600 mt-0.5">
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-2">
+            / Admin · Dashboard
+          </div>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">数据看板</h2>
+          <p className="text-xs text-[#666666] mt-2">
             实时数据 · 自动每 60 秒刷新
             {data?.system.database === 'down' && (
-              <span className="ml-2 text-danger-500">· DB 异常</span>
+              <span className="ml-2 text-[#171717] font-black uppercase tracking-widest">
+                · DB 异常
+              </span>
             )}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 p-1 rounded-md bg-neutral-100 text-xs">
+          <div className="flex items-center gap-1 p-1 border border-[#171717] bg-white text-xs">
             {(['today', '7d', '30d', 'custom'] as const).map((p) => {
               const label = p === 'today' ? '今日' : p === '7d' ? '7 天' : p === '30d' ? '30 天' : '自定义';
               const active = period === p;
@@ -124,10 +138,10 @@ export function AdminDashboardPage() {
                   type="button"
                   onClick={() => setPeriod(p)}
                   className={cn(
-                    'px-3 py-1 rounded transition-colors',
+                    'px-3 py-1 font-black uppercase tracking-widest transition-colors',
                     active
-                      ? 'bg-neutral-0 font-medium text-neutral-900 shadow-sm'
-                      : 'text-neutral-600 hover:text-neutral-900',
+                      ? 'bg-[#171717] text-white'
+                      : 'text-[#171717] hover:bg-[#EEEDE9]',
                   )}
                 >
                   {label}
@@ -135,15 +149,15 @@ export function AdminDashboardPage() {
               );
             })}
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
+          <button
+            type="button"
             onClick={toggleTheme}
             aria-label="切换主题"
-            leftIcon={isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            className="px-4 py-2 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors inline-flex items-center gap-1.5"
           >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             {isDark ? '浅色' : '深色'}
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -154,11 +168,11 @@ export function AdminDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} padding="md">
+              <div key={i} className="border-2 border-[#171717] bg-white p-6">
                 <Skeleton className="h-3 w-1/2 mb-3" />
                 <Skeleton className="h-8 w-2/3 mb-2" />
                 <Skeleton className="h-3 w-3/4" />
-              </Card>
+              </div>
             ))
           : data?.kpis.map((k) => <KpiCard key={k.label} kpi={k} />)}
       </div>
@@ -192,10 +206,13 @@ export function AdminDashboardPage() {
       {/* ─── 待办 + 系统状态 ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* 待办 */}
-        <Card padding="md" className="lg:col-span-2">
+        <div className="border-2 border-[#171717] bg-white p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-sm text-neutral-900">待办事项</h3>
-            <Link to="/admin/enterprise" className="text-xs text-brand-500 hover:underline">
+            <h3 className="text-xs font-black uppercase tracking-widest">待办事项</h3>
+            <Link
+              to="/admin/enterprise"
+              className="text-[10px] font-black uppercase tracking-widest text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white px-1"
+            >
               查看企业咨询 →
             </Link>
           </div>
@@ -239,13 +256,13 @@ export function AdminDashboardPage() {
               />
             </div>
           )}
-        </Card>
+        </div>
 
         {/* 系统状态 */}
-        <Card padding="md">
+        <div className="border-2 border-[#171717] bg-white p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-sm text-neutral-900">系统状态</h3>
-            <ScrollText className="w-4 h-4 text-neutral-400" />
+            <h3 className="text-xs font-black uppercase tracking-widest">系统状态</h3>
+            <ScrollText className="w-4 h-4 text-[#A3A3A3]" />
           </div>
           {data && (
             <div className="space-y-3 text-sm">
@@ -279,10 +296,13 @@ export function AdminDashboardPage() {
                 tone={data.totals.completionRate >= 50 ? 'success' : 'warning'}
                 dot={data.totals.completionRate >= 50 ? 'success' : 'warning'}
               />
-              <div className="pt-3 mt-3 border-t border-neutral-200 flex items-center gap-2 text-xs text-neutral-600">
+              <div className="pt-3 mt-3 border-t border-[#EEEDE9] flex items-center gap-2 text-xs text-[#666666]">
                 <FileText className="w-3.5 h-3.5" />
                 <span>审计日志:</span>
-                <Link to="/admin/audit" className="text-brand-500 hover:underline">
+                <Link
+                  to="/admin/audit"
+                  className="text-[10px] font-black uppercase tracking-widest text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white px-1"
+                >
                   查看 →
                 </Link>
               </div>
@@ -290,11 +310,11 @@ export function AdminDashboardPage() {
           )}
           <Link
             to="/admin/courses"
-            className="mt-4 block text-center text-xs text-brand-500 hover:underline"
+            className="mt-4 block text-center text-[10px] font-black uppercase tracking-widest text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white py-2 border border-[#171717]"
           >
             查看课程管理 →
           </Link>
-        </Card>
+        </div>
       </div>
     </div>
   );
@@ -305,31 +325,33 @@ export function AdminDashboardPage() {
 // =============================================================
 function KpiCard({ kpi }: { kpi: AdminKpi }) {
   return (
-    <Card padding="md">
-      <div className="flex items-center justify-between text-xs text-neutral-600">
+    <div className="border-2 border-[#171717] bg-white p-6">
+      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#666666]">
         <span>{kpi.label}</span>
         {kpi.deltaTone === 'up' && (
-          <span className="text-success-500 flex items-center gap-0.5">
+          <span className="text-[#171717] flex items-center gap-0.5">
             <TrendingUp className="w-3 h-3" />
             {kpi.delta}
           </span>
         )}
         {kpi.deltaTone === 'down' && (
-          <span className="text-danger-500 flex items-center gap-0.5">
+          <span className="text-[#171717] flex items-center gap-0.5">
             <TrendingDown className="w-3 h-3" />
             {kpi.delta}
           </span>
         )}
         {kpi.deltaTone === 'warning' && (
-          <span className="text-warning-500 flex items-center gap-0.5">
+          <span className="text-[#171717] flex items-center gap-0.5">
             <AlertTriangle className="w-3 h-3" />
             预算 {kpi.delta}
           </span>
         )}
       </div>
-      <div className="mt-2 text-3xl font-bold font-mono text-neutral-900">{kpi.value}</div>
-      <div className="mt-1 text-xs text-neutral-600">{kpi.sub}</div>
-    </Card>
+      <div className="mt-2 text-3xl font-black tracking-tighter text-[#171717] font-mono">
+        {kpi.value}
+      </div>
+      <div className="mt-1 text-xs text-[#666666]">{kpi.sub}</div>
+    </div>
   );
 }
 
@@ -353,28 +375,19 @@ function TodoItem({
   return (
     <Link
       to={href}
-      className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors"
+      className="flex items-center gap-3 p-3 border border-[#171717] hover:bg-[#EEEDE9] transition-colors"
     >
-      <span
-        className={cn(
-          'w-8 h-8 rounded-md flex items-center justify-center',
-          TONE_DOT[dot].replace('bg-', 'bg-').replace('500', '100'),
-        )}
-      >
+      <span className="w-8 h-8 flex items-center justify-center border border-[#171717] bg-white">
         <span className={TONE_TEXT[dot]}>{icon}</span>
       </span>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-neutral-900 truncate">{title}</div>
-        <div className="text-xs text-neutral-600">{sub}</div>
+        <div className="text-sm font-black tracking-tight text-[#171717] truncate">{title}</div>
+        <div className="text-xs text-[#666666]">{sub}</div>
       </div>
       <span
         className={cn(
-          'inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded',
-          chipTone === 'warning' && 'bg-warning-100 text-warning-500',
-          chipTone === 'info' && 'bg-info-100 text-info-500',
-          chipTone === 'success' && 'bg-success-100 text-success-500',
-          chipTone === 'danger' && 'bg-danger-100 text-danger-500',
-          chipTone === 'neutral' && 'bg-neutral-100 text-neutral-600',
+          'inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-widest',
+          TONE_CHIP[chipTone],
         )}
       >
         {chip}
@@ -396,21 +409,23 @@ function SystemRow({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2 text-neutral-900">
-        <span className={cn('w-2 h-2 rounded-full', TONE_DOT[dot])} aria-hidden="true" />
+      <div className="flex items-center gap-2 text-[#171717]">
+        <span className={cn('w-2 h-2', TONE_DOT[dot])} aria-hidden="true" />
         <span>{name}</span>
       </div>
-      <span className={cn('font-mono text-xs', TONE_TEXT[tone])}>{value}</span>
+      <span className={cn('font-mono text-xs font-black uppercase tracking-widest', TONE_TEXT[tone])}>
+        {value}
+      </span>
     </div>
   );
 }
 
 function ChartSkeleton() {
   return (
-    <Card padding="md">
+    <div className="border-2 border-[#171717] bg-white p-6">
       <Skeleton className="h-3 w-1/4 mb-3" />
       <Skeleton variant="rectangle" className="h-32 w-full" />
-    </Card>
+    </div>
   );
 }
 
@@ -419,45 +434,60 @@ function ChartSkeleton() {
 // =============================================================
 function RevenueChart({ totalGmv }: { totalGmv: number }) {
   return (
-    <Card padding="md">
-      <h3 className="font-semibold text-sm text-neutral-900">今日收入</h3>
-      <p className="text-xs text-neutral-600 mt-0.5">按订单状态分布</p>
+    <div className="border-2 border-[#171717] bg-white p-6">
+      <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+        / Revenue
+      </div>
+      <h3 className="text-xs font-black uppercase tracking-widest">今日收入</h3>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
+        按订单状态分布
+      </p>
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div>
-          <div className="text-2xl font-bold font-mono text-neutral-900">
+          <div className="text-2xl font-black tracking-tighter text-[#171717] font-mono">
             ¥ {totalGmv.toLocaleString()}
           </div>
-          <div className="text-xs text-neutral-600 mt-1">今日已支付 GMV</div>
-        </div>
-        <div className="flex flex-col items-end justify-center gap-1 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-success-500" />
-            <span className="text-neutral-600">已支付</span>
+          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
+            今日已支付 GMV
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-warning-500" />
-            <span className="text-neutral-600">待支付</span>
+        </div>
+        <div className="flex flex-col items-end justify-center gap-1.5 text-[10px] font-black uppercase tracking-widest">
+          <div className="flex items-center gap-2 text-[#171717]">
+            <span className="w-2 h-2 bg-[#171717]" />
+            <span>已支付</span>
+          </div>
+          <div className="flex items-center gap-2 text-[#666666]">
+            <span className="w-2 h-2 border border-[#171717] bg-white" />
+            <span>待支付</span>
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
 function UserGrowthChart({ growth }: { growth: { date: string; count: number }[] }) {
   if (growth.length === 0) {
     return (
-      <Card padding="md">
-        <h3 className="font-semibold text-sm text-neutral-900">用户增长(30 天)</h3>
-        <p className="text-sm text-neutral-600 mt-6 text-center">暂无新增用户</p>
-      </Card>
+      <div className="border-2 border-[#171717] bg-white p-6">
+        <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+          / User Growth
+        </div>
+        <h3 className="text-xs font-black uppercase tracking-widest">用户增长(30 天)</h3>
+        <p className="text-sm text-[#666666] mt-6 text-center">暂无新增用户</p>
+      </div>
     );
   }
   const max = Math.max(...growth.map((g) => g.count), 1);
   return (
-    <Card padding="md">
-      <h3 className="font-semibold text-sm text-neutral-900">用户增长(30 天)</h3>
-      <p className="text-xs text-neutral-600 mt-0.5">共 {growth.reduce((s, g) => s + g.count, 0)} 人</p>
+    <div className="border-2 border-[#171717] bg-white p-6">
+      <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+        / User Growth
+      </div>
+      <h3 className="text-xs font-black uppercase tracking-widest">用户增长(30 天)</h3>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
+        共 {growth.reduce((s, g) => s + g.count, 0)} 人
+      </p>
       <svg viewBox="0 0 300 100" className="mt-4 w-full h-32" preserveAspectRatio="none">
         {growth.map((g, i) => {
           const x = (i / Math.max(growth.length - 1, 1)) * 300;
@@ -469,13 +499,13 @@ function UserGrowthChart({ growth }: { growth: { date: string; count: number }[]
               y={100 - h}
               width={8}
               height={h}
-              fill="var(--brand-500-rgb)"
-              opacity={0.6}
+              fill="#171717"
+              opacity={0.85}
             />
           );
         })}
       </svg>
-    </Card>
+    </div>
   );
 }
 
@@ -483,32 +513,35 @@ function FunnelChart({ active, completed }: { active: number; completed: number 
   const total = active + completed;
   const rate = total > 0 ? (completed / total) * 100 : 0;
   return (
-    <Card padding="md">
-      <h3 className="font-semibold text-sm text-neutral-900">报名完成率</h3>
-      <p className="text-xs text-neutral-600 mt-0.5">{total.toLocaleString()} 总报名</p>
+    <div className="border-2 border-[#171717] bg-white p-6">
+      <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+        / Completion Funnel
+      </div>
+      <h3 className="text-xs font-black uppercase tracking-widest">报名完成率</h3>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
+        {total.toLocaleString()} 总报名
+      </p>
       <div className="mt-4 space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-neutral-600">进行中</span>
-          <span className="font-mono text-neutral-900">{active.toLocaleString()}</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+            进行中
+          </span>
+          <span className="font-mono text-[#171717] font-black">{active.toLocaleString()}</span>
         </div>
-        <div className="h-3 rounded-full bg-neutral-100 overflow-hidden flex">
-          <div
-            className="h-full bg-success-500"
-            style={{ width: `${rate}%` }}
-          />
-          <div
-            className="h-full bg-warning-500"
-            style={{ width: `${100 - rate}%` }}
-          />
+        <div className="h-3 bg-[#EEEDE9] overflow-hidden flex border border-[#171717]">
+          <div className="h-full bg-[#171717]" style={{ width: `${rate}%` }} />
+          <div className="h-full bg-white" style={{ width: `${100 - rate}%` }} />
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-neutral-600">已完成</span>
-          <span className="font-mono text-neutral-900">
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+            已完成
+          </span>
+          <span className="font-mono text-[#171717] font-black">
             {completed.toLocaleString()} ({rate.toFixed(1)}%)
           </span>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -520,35 +553,42 @@ function DegreePieChart({
   const total = topCourses.reduce((s, c) => s + c.enrollmentCount, 0);
   if (total === 0) {
     return (
-      <Card padding="md">
-        <h3 className="font-semibold text-sm text-neutral-900">课程报名 Top</h3>
-        <p className="text-sm text-neutral-600 mt-6 text-center">暂无报名数据</p>
-      </Card>
+      <div className="border-2 border-[#171717] bg-white p-6">
+        <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+          / Top Courses
+        </div>
+        <h3 className="text-xs font-black uppercase tracking-widest">课程报名 Top</h3>
+        <p className="text-sm text-[#666666] mt-6 text-center">暂无报名数据</p>
+      </div>
     );
   }
   return (
-    <Card padding="md">
-      <h3 className="font-semibold text-sm text-neutral-900">课程报名 Top {topCourses.length}</h3>
-      <p className="text-xs text-neutral-600 mt-0.5">共 {total.toLocaleString()} 报名</p>
+    <div className="border-2 border-[#171717] bg-white p-6">
+      <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+        / Top Courses
+      </div>
+      <h3 className="text-xs font-black uppercase tracking-widest">
+        课程报名 Top {topCourses.length}
+      </h3>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
+        共 {total.toLocaleString()} 报名
+      </p>
       <div className="mt-4 space-y-1.5 text-xs">
         {topCourses.slice(0, 5).map((c) => {
           const pct = (c.enrollmentCount / total) * 100;
           return (
             <div key={c.id} className="flex items-center gap-2">
-              <div className="flex-1 min-w-0 truncate text-neutral-900">{c.title}</div>
-              <div className="w-20 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
-                <div
-                  className="h-full bg-brand-500"
-                  style={{ width: `${pct}%` }}
-                />
+              <div className="flex-1 min-w-0 truncate text-[#171717]">{c.title}</div>
+              <div className="w-20 h-1.5 bg-[#EEEDE9] overflow-hidden border border-[#171717]">
+                <div className="h-full bg-[#171717]" style={{ width: `${pct}%` }} />
               </div>
-              <div className="w-12 text-right font-mono text-neutral-600">
+              <div className="w-12 text-right font-mono text-[#666666] font-black">
                 {c.enrollmentCount}
               </div>
             </div>
           );
         })}
       </div>
-    </Card>
+    </div>
   );
 }

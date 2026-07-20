@@ -51,9 +51,6 @@ import {
   Unlock,
   ExternalLink,
 } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import api from '../../lib/api';
 import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
@@ -652,45 +649,43 @@ function InfoTab({ courseId }: { courseId: string }) {
 
   return (
     <div className="space-y-4">
-      <Card padding="md">
+      <div className="border-2 border-[#171717] bg-white p-6">
         <h3 className="text-sm font-semibold text-neutral-900 mb-4">主要信息</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
+          <BrutalField
             label="课程标题"
             value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            onChange={(v) => setForm({ ...form, title: v })}
             required
           />
-          <Input
+          <BrutalField
             label="讲师"
             value={form.instructor}
-            onChange={(e) => setForm({ ...form, instructor: e.target.value })}
+            onChange={(v) => setForm({ ...form, instructor: v })}
             required
           />
-          <div>
-            <label className="text-sm font-medium text-neutral-900 mb-1.5 block">难度</label>
-            <select
-              value={form.level}
-              onChange={(e) => setForm({ ...form, level: e.target.value })}
-              className="w-full h-10 px-3 rounded-md border border-neutral-200 bg-neutral-0 text-sm focus:outline-none focus:border-brand-500"
-            >
-              <option value="Beginner">入门</option>
-              <option value="Intermediate">进阶</option>
-              <option value="Advanced">高级</option>
-              <option value="Expert">专家</option>
-            </select>
-          </div>
-          <Input
+          <BrutalSelect
+            label="难度"
+            value={form.level}
+            onChange={(v) => setForm({ ...form, level: v })}
+            options={[
+              { value: 'Beginner', label: '入门' },
+              { value: 'Intermediate', label: '进阶' },
+              { value: 'Advanced', label: '高级' },
+              { value: 'Expert', label: '专家' },
+            ]}
+          />
+          <BrutalField
             label="总时长"
             value={form.duration}
-            onChange={(e) => setForm({ ...form, duration: e.target.value })}
+            onChange={(v) => setForm({ ...form, duration: v })}
             placeholder="如 6.5h"
           />
           <div className="md:col-span-2">
-            <Input
+            <BrutalField
               label="封面图 URL"
               value={form.thumbnail}
-              onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
+              onChange={(v) => setForm({ ...form, thumbnail: v })}
             />
           </div>
         </div>
@@ -700,24 +695,23 @@ function InfoTab({ courseId }: { courseId: string }) {
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={4}
-            className="w-full px-3 py-2 rounded-md border border-neutral-200 bg-neutral-0 text-sm focus:outline-none focus:border-brand-500 resize-none"
+            className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
           />
         </div>
         <div className="mt-4 flex items-center gap-2">
-          <Button
+          <BrutalButton
             variant="primary"
             size="sm"
             onClick={save}
             disabled={updateCourse.isPending}
-            leftIcon={<Save className="w-4 h-4" />}
           >
             {updateCourse.isPending ? '保存中…' : '保存修改'}
-          </Button>
+          </BrutalButton>
           {updateCourse.isSuccess && (
             <span className="text-xs text-success-500">已保存</span>
           )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
@@ -780,7 +774,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 border border-neutral-200 rounded-xl overflow-hidden bg-neutral-0 min-h-[500px]">
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 border-2 border-[#171717] bg-white overflow-hidden min-h-[500px]">
       <aside className="bg-neutral-0 border-r border-neutral-200 flex flex-col">
         <div className="p-3 border-b border-neutral-200">
           <h3 className="text-sm font-semibold text-neutral-900 mb-2">章节大纲</h3>
@@ -791,14 +785,14 @@ function ChaptersTab({ courseId }: { courseId: string }) {
               placeholder="新章节标题"
               className="flex-1 h-8 px-2 text-xs border border-neutral-200 focus:outline-none focus:border-brand-500"
             />
-            <Button
+            <BrutalButton
               variant="primary"
               size="sm"
               disabled={!newChapterTitle.trim() || createChapter.isPending}
               onClick={() => createChapter.mutate(newChapterTitle.trim())}
             >
               + 章节
-            </Button>
+            </BrutalButton>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -810,7 +804,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
           {chapters.map((c, idx) => {
             const isOpen = expanded[c.id] ?? idx === 0;
             return (
-              <div key={c.id} className="rounded-md">
+              <div key={c.id}>
                 <div className="flex items-center gap-1 p-1.5 hover:bg-neutral-50">
                   <button
                     type="button"
@@ -843,7 +837,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
                     {c.lessons.map((l) => (
                       <div
                         key={l.id}
-                        className={`flex items-center gap-1 p-1.5 rounded text-xs cursor-pointer transition-colors ${
+                        className={`flex items-center gap-1 p-1.5 text-xs cursor-pointer transition-colors ${
                           activeLesson?.lesson.id === l.id
                             ? 'bg-brand-50 text-brand-700 font-medium'
                             : 'hover:bg-neutral-50 text-neutral-700'
@@ -853,7 +847,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
                         <VideoIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                         <span className="flex-1 truncate" title={l.title}>{l.title}</span>
                         {l.isPreview && (
-                          <span className="text-[9px] font-medium text-success-500 bg-success-500/10 px-1 py-0.5 rounded">
+                          <span className="text-[9px] font-medium text-success-500 bg-success-500/10 px-1 py-0.5">
                             试看
                           </span>
                         )}
@@ -1007,14 +1001,14 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
   const resources = resourcesQuery.data ?? [];
 
   return (
-    <Card padding="md">
+    <div className="border-2 border-[#171717] bg-white p-6">
       <h3 className="text-sm font-semibold text-neutral-900 mb-4">课时详情</h3>
       <div className="space-y-3">
-        <Input label="标题" value={title} onChange={(e) => setTitle(e.target.value)} required />
-        <Input
+        <BrutalField label="标题" value={title} onChange={setTitle} required />
+        <BrutalField
           label="视频 URL"
           value={videoUrl}
-          onChange={(e) => setVideoUrl(e.target.value)}
+          onChange={setVideoUrl}
           placeholder="https://cdn.opencsg.ai/lessons/...mp4"
         />
         <div>
@@ -1023,7 +1017,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={6}
-            className="w-full px-3 py-2 rounded-md border border-neutral-200 bg-neutral-0 text-sm focus:outline-none focus:border-brand-500 resize-none"
+            className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
             placeholder="支持 Markdown（生产环境可接渲染器）"
           />
         </div>
@@ -1038,18 +1032,17 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
         </label>
       </div>
       <div className="mt-4 flex items-center gap-2 pt-4 border-t border-neutral-200">
-        <Button
+        <BrutalButton
           variant="primary"
           size="sm"
           onClick={() => save.mutate()}
           disabled={save.isPending}
-          leftIcon={<Save className="w-4 h-4" />}
         >
           {save.isPending ? '保存中…' : '保存课时'}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onDelete} leftIcon={<Trash2 className="w-4 h-4" />}>
+        </BrutalButton>
+        <BrutalButton variant="danger" size="sm" onClick={onDelete}>
           删除课时
-        </Button>
+        </BrutalButton>
         {save.isSuccess && <span className="text-xs text-success-500">已保存</span>}
         {save.isError && <span className="text-xs text-red-600">保存失败</span>}
       </div>
@@ -1059,14 +1052,13 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-semibold text-neutral-900">附加资源 · {resources.length}</h4>
           {!addingResource && (
-            <Button
+            <BrutalButton
               variant="secondary"
               size="sm"
-              leftIcon={<Plus className="w-3.5 h-3.5" />}
               onClick={() => setAddingResource(true)}
             >
               添加资源
-            </Button>
+            </BrutalButton>
           )}
         </div>
 
@@ -1099,16 +1091,16 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
               />
             </div>
             <div className="flex items-center gap-2">
-              <Button
+              <BrutalButton
                 variant="primary"
                 size="sm"
                 disabled={!newResource.title || !newResource.url || createResource.isPending}
                 onClick={() => createResource.mutate()}
               >
                 {createResource.isPending ? '保存中…' : '保存'}
-              </Button>
-              <Button
-                variant="ghost"
+              </BrutalButton>
+              <BrutalButton
+                variant="danger"
                 size="sm"
                 onClick={() => {
                   setAddingResource(false);
@@ -1116,7 +1108,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                 }}
               >
                 取消
-              </Button>
+              </BrutalButton>
             </div>
           </div>
         )}
@@ -1186,7 +1178,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -1198,15 +1190,15 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
 
 function ResourcesTab({ courseId: _courseId }: { courseId: string }) {
   return (
-    <Card padding="md">
-      <div className="border-2 border-dashed border-neutral-200 rounded-md p-12 text-center">
+    <div className="border-2 border-[#171717] bg-white p-6">
+      <div className="border-2 border-dashed border-[#171717] p-12 text-center">
         <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
         <p className="text-sm text-neutral-600">资源已迁到「章节大纲」tab</p>
         <p className="text-[10px] text-neutral-400 mt-1">
           在章节大纲里选中具体课时,在右侧课时详情面板的「附加资源」段管理
         </p>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -1244,7 +1236,7 @@ function PricingTab({ courseId }: { courseId: string }) {
 
   return (
     <div className="space-y-4">
-      <Card padding="md">
+      <div className="border-2 border-[#171717] bg-white p-6">
         <h3 className="text-sm font-semibold text-neutral-900 mb-1">价格模式</h3>
         <p className="text-xs text-neutral-600 mb-4">选择主要定价方式</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1253,7 +1245,7 @@ function PricingTab({ courseId }: { courseId: string }) {
             return (
               <label
                 key={p.id}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-colors ${
+                className={`p-4 border-2 cursor-pointer transition-colors ${
                   active ? 'border-brand-500 bg-brand-50' : 'border-neutral-200 hover:border-neutral-400'
                 }`}
               >
@@ -1273,24 +1265,24 @@ function PricingTab({ courseId }: { courseId: string }) {
             );
           })}
         </div>
-      </Card>
+      </div>
 
       {costType === 'paid' && (
-        <Card padding="md">
+        <div className="border-2 border-[#171717] bg-white p-6">
           <h3 className="text-sm font-semibold text-neutral-900 mb-4">买断定价</h3>
-          <Input
+          <BrutalField
             label="售价 (¥)"
             type="number"
             value={String(price)}
-            onChange={(e) => setPrice(Number(e.target.value))}
+            onChange={(v) => setPrice(Number(v))}
           />
-        </Card>
+        </div>
       )}
 
       <div className="flex items-center gap-2">
-        <Button variant="primary" size="sm" onClick={save} disabled={updateCourse.isPending} leftIcon={<Save className="w-4 h-4" />}>
+        <BrutalButton variant="primary" size="sm" onClick={save} disabled={updateCourse.isPending}>
           {updateCourse.isPending ? '保存中…' : '保存修改'}
-        </Button>
+        </BrutalButton>
         {updateCourse.isSuccess && <span className="text-xs text-success-500">已保存</span>}
       </div>
     </div>
@@ -1321,7 +1313,7 @@ function PublishTab({ courseId }: { courseId: string }) {
 
   return (
     <div className="space-y-4">
-      <Card padding="md">
+      <div className="border-2 border-[#171717] bg-white p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-semibold text-neutral-900">上下架状态</h3>
@@ -1345,11 +1337,11 @@ function PublishTab({ courseId }: { courseId: string }) {
             />
           </button>
         </div>
-      </Card>
+      </div>
       <div className="flex items-center gap-2">
-        <Button variant="primary" size="sm" onClick={save} disabled={updateCourse.isPending} leftIcon={<Send className="w-4 h-4" />}>
+        <BrutalButton variant="primary" size="sm" onClick={save} disabled={updateCourse.isPending}>
           {updateCourse.isPending ? '处理中…' : isPublished ? '发布课程' : '下架课程'}
-        </Button>
+        </BrutalButton>
         {updateCourse.isSuccess && <span className="text-xs text-success-500">已保存</span>}
       </div>
     </div>
@@ -1427,13 +1419,13 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button variant="secondary" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+            <BrutalButton variant="secondary" size="sm">
               预览
-            </Button>
+            </BrutalButton>
             <Link to={`/courses/${courseId}`} target="_blank">
-              <Button variant="secondary" size="sm">
+              <BrutalButton variant="secondary" size="sm">
                 查看公开页
-              </Button>
+              </BrutalButton>
             </Link>
           </div>
         </div>
@@ -1546,5 +1538,148 @@ function Field({
         />
       )}
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Brutalist 表单组件 — 跟 AdminBadgesPage / AdminDashboardPage 同风格
+// 黑白硬边、无圆角、统一 tracking-widest 标签
+// ──────────────────────────────────────────────────────────────────────
+
+function BrutalField({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  required,
+  multiline,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  required?: boolean;
+  multiline?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 flex items-center gap-1">
+        {label}
+        {required && <span className="text-red-600">*</span>}
+      </label>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          required={required}
+          placeholder={placeholder}
+          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
+        />
+      ) : (
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          placeholder={placeholder}
+          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+        />
+      )}
+    </div>
+  );
+}
+
+function BrutalSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <div>
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 block">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function BrutalButton({
+  children,
+  onClick,
+  variant = 'primary',
+  size = 'md',
+  disabled,
+  type,
+  className = '',
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md';
+  disabled?: boolean;
+  type?: 'button' | 'submit';
+  className?: string;
+}) {
+  const base = 'inline-flex items-center justify-center font-black uppercase tracking-widest transition-colors disabled:opacity-50';
+  const sizeCls = size === 'sm' ? 'px-4 py-2 text-[10px]' : 'px-6 py-3 text-xs';
+  const variantCls = {
+    primary: 'bg-[#171717] text-white hover:bg-[#262626]',
+    secondary: 'border border-[#171717] text-[#171717] hover:bg-[#EEEDE9]',
+    danger: 'border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white',
+  }[variant];
+  return (
+    <button
+      type={type ?? 'button'}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${base} ${sizeCls} ${variantCls} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function BrutalIconButton({
+  onClick,
+  children,
+  title,
+  className = '',
+  danger,
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+  title?: string;
+  className?: string;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`p-1.5 ${danger ? 'text-[#A3A3A3] hover:text-red-600 hover:bg-[#EEEDE9]' : 'text-[#A3A3A3] hover:text-[#171717] hover:bg-[#EEEDE9]'} transition-colors ${className}`}
+    >
+      {children}
+    </button>
   );
 }

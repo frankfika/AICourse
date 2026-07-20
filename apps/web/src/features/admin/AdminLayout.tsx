@@ -48,7 +48,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     <>
       {/* P1-3: < md 拦截,提示用桌面访问 */}
       <MobileBlocked />
-      <div className="hidden md:block max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300 text-neutral-900 dark:bg-neutral-950 rounded-xl">
+      <div className="hidden md:block max-w-7xl mx-auto px-6 py-8 animate-in fade-in duration-300 text-neutral-900 dark:bg-neutral-950">
       <div className="mb-8">
         <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 mb-2">
           / Admin Console

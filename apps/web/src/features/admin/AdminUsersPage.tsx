@@ -1,5 +1,5 @@
 /**
- * AdminUsersPage — P1-3 重写 (admin 用户管理)
+ * AdminUsersPage — P1-3 重写 (admin 用户管理) — brutalist 重构
  *
  * 功能:
  *   - 顶部:搜索框(邮箱/昵称 模糊)
@@ -18,13 +18,15 @@
  *     4) 封号:Phase 2+(schema 暂不支持)
  *     5) 删账号:硬删,二次确认
  *
- * 设计参考: review/mocks/mock-admin-users.html(暗色 token 化)
+ * 设计:brutalist — 跟 AdminBadgesPage / AdminCoursesPage / AdminReviewsPage 一致
+ *   - 黑白硬边、无圆角、无阴影、tracking-widest
+ *   - 不使用 dark mode 变体(其他 admin 页也是亮态)
+ *   - 不用 <Card> / <Button> / <Input> 基础组件,改 brutalist helpers
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search,
-  CheckCircle2,
   Eye,
   Shield,
   ShieldCheck,
@@ -33,8 +35,6 @@ import {
   Award,
   Coins,
   Calendar,
-  KeyRound,
-  Trash2,
   RefreshCw,
   Mail,
   User as UserIcon,
@@ -43,7 +43,6 @@ import api from '../../lib/api';
 import { useToast } from '../../components/auth/Toast';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Drawer } from '../../components/ui/Drawer';
-import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { cn } from '../../lib/cn';
 
@@ -103,12 +102,12 @@ interface UserDetail extends UserSummary {
 const ROLE_META: Record<string, { label: string; color: string; icon: typeof Shield }> = {
   student: {
     label: '学员',
-    color: 'border border-neutral-200 text-neutral-600 bg-neutral-50',
+    color: 'border border-[#171717] text-[#171717]',
     icon: UserIcon,
   },
   instructor: {
     label: '讲师',
-    color: 'border border-info-200 text-info-500 bg-info-50',
+    color: 'border border-[#171717] text-[#171717] bg-[#EEEDE9]',
     icon: GraduationCap,
   },
   admin: {
@@ -119,12 +118,12 @@ const ROLE_META: Record<string, { label: string; color: string; icon: typeof Shi
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: 'border-warning-500/30 text-warning-500 bg-warning-50',
-  paid: 'border-success-500/30 text-success-500 bg-success-50',
-  failed: 'border-danger-500/30 text-danger-500 bg-danger-50',
-  refunded: 'border-info-500/30 text-info-500 bg-info-50',
-  cancelled: 'border-neutral-200 text-neutral-600 bg-neutral-50',
-  expired: 'border-neutral-200 text-neutral-600 bg-neutral-50',
+  pending: 'border border-[#171717] text-[#171717]',
+  paid: 'bg-[#171717] text-white',
+  failed: 'border border-[#171717] text-[#171717] bg-[#F5F4F0]',
+  refunded: 'border border-[#171717] text-[#171717] bg-[#EEEDE9]',
+  cancelled: 'border border-[#171717] text-[#666666]',
+  expired: 'border border-[#171717] text-[#666666]',
 };
 
 function formatDate(iso?: string | null): string {
@@ -247,14 +246,14 @@ export function AdminUsersPage() {
             placeholder="搜索邮箱 / 昵称..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-100 border-2 border-[#171717] dark:border-neutral-200 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-200 transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border-2 border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
           />
         </div>
       </div>
 
       {/* 错误态 */}
       {isError && (
-        <div className="border-2 border-danger-500 bg-danger-50 text-danger-500 p-4 text-sm">
+        <div className="border-2 border-[#171717] bg-[#F5F4F0] text-[#171717] p-4 text-sm">
           加载用户列表失败
           <button onClick={() => refetch()} className="ml-2 underline">
             重试
@@ -263,8 +262,8 @@ export function AdminUsersPage() {
       )}
 
       {/* 表格 */}
-      <div className="border-2 border-[#171717] dark:border-neutral-200 bg-white dark:bg-neutral-100">
-        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] dark:border-neutral-200 text-[10px] font-black uppercase tracking-widest text-[#666666]">
+      <div className="border-2 border-[#171717] bg-white">
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
           <div className="md:col-span-1">#</div>
           <div className="md:col-span-4">User</div>
           <div className="md:col-span-4">Email</div>
@@ -286,15 +285,15 @@ export function AdminUsersPage() {
                 key={user.id}
                 className={cn(
                   'grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm',
-                  i < users.length - 1 && 'border-b border-[#EEEDE9] dark:border-neutral-200',
-                  'hover:bg-[#F5F4F0] dark:hover:bg-neutral-200 transition-colors',
+                  i < users.length - 1 && 'border-b border-[#EEEDE9]',
+                  'hover:bg-[#F5F4F0] transition-colors',
                 )}
               >
                 <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
                   {String(i + 1).padStart(2, '0')}
                 </div>
                 <div className="col-span-12 md:col-span-4 flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 bg-[#171717] dark:bg-neutral-200 text-white dark:text-neutral-50 text-sm font-black flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-[#171717] text-white text-sm font-black flex items-center justify-center shrink-0">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <span className="font-black tracking-tight truncate">{user.name}</span>
@@ -316,7 +315,7 @@ export function AdminUsersPage() {
                 <div className="col-span-12 md:col-span-1 text-right">
                   <button
                     onClick={() => setSelectedUserId(user.id)}
-                    className="inline-flex items-center gap-1 px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] dark:border-neutral-200 hover:bg-[#171717] hover:text-white dark:hover:bg-neutral-200 dark:hover:text-neutral-900 transition-colors"
+                    className="inline-flex items-center gap-1 px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white transition-colors"
                   >
                     <Eye className="w-3 h-3" /> 详情
                   </button>
@@ -401,7 +400,7 @@ function UserDetailContent({
   const RoleIcon = roleMeta.icon;
 
   return (
-    <div className="divide-y divide-neutral-200">
+    <div className="divide-y divide-[#EEEDE9]">
       {/* 1) 基本信息 */}
       <section className="p-5">
         <SectionTitle icon={UserIcon} title="基本信息" />
@@ -422,43 +421,43 @@ function UserDetailContent({
           <Field label="积分" value={`${detail.points} (Lv.${detail.level})`} />
           <Field label="需重置密码">
             {detail.passwordResetRequired ? (
-              <span className="text-warning-500 font-bold">是</span>
+              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-[#171717] text-white">
+                是
+              </span>
             ) : (
-              '否'
+              <span className="text-[#666666]">否</span>
             )}
           </Field>
         </div>
-        <div className="flex flex-wrap gap-2 mt-4">
+        <div className="flex flex-wrap items-center gap-2 mt-4">
           <select
             value={detail.role}
             onChange={(e) => onChangeRole(e.target.value)}
             disabled={isUpdating}
-            className="text-xs border border-neutral-200 px-2 py-1.5 bg-white dark:bg-neutral-100 focus:outline-none focus:ring-1 focus:ring-brand-500"
             aria-label="修改角色"
+            className="px-3 py-2 bg-white border border-[#171717] text-[10px] font-black uppercase tracking-widest focus:outline-none focus:bg-[#EEEDE9] disabled:opacity-50"
           >
             <option value="student">student</option>
             <option value="instructor">instructor</option>
             <option value="admin">admin</option>
           </select>
-          <Button
+          <BrutalButton
             size="sm"
             variant="secondary"
-            leftIcon={<KeyRound className="w-3.5 h-3.5" />}
+            disabled={isUpdating}
             onClick={onResetPassword}
-            isLoading={isUpdating}
           >
             重置密码
-          </Button>
-          <Button
+          </BrutalButton>
+          <BrutalButton
             size="sm"
             variant="danger"
-            leftIcon={<Trash2 className="w-3.5 h-3.5" />}
             onClick={onDelete}
           >
             删除账号
-          </Button>
+          </BrutalButton>
         </div>
-        <p className="text-[10px] text-neutral-400 mt-2">
+        <p className="text-[10px] text-[#666666] mt-2">
           提示:封号功能 Phase 2+(schema 暂不支持 banned 字段)
         </p>
       </section>
@@ -476,17 +475,19 @@ function UserDetailContent({
         </div>
         {detail.enrollments.length > 0 && (
           <div className="mt-4">
-            <h4 className="text-xs font-bold mb-2 text-neutral-600">最近报名 (前 20)</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+              最近报名 (前 20)
+            </h4>
             <ul className="space-y-1 text-xs">
               {detail.enrollments.slice(0, 10).map((e) => (
                 <li
                   key={e.id}
-                  className="flex items-center justify-between gap-2 py-1.5 px-2 bg-neutral-50 dark:bg-neutral-200"
+                  className="flex items-center justify-between gap-2 py-1.5 px-2 bg-[#F5F4F0]"
                 >
                   <span className="truncate">
                     {e.course?.title ?? e.degree?.title ?? '未知课程'}
                   </span>
-                  <span className="text-neutral-600 whitespace-nowrap">
+                  <span className="text-[#666666] whitespace-nowrap">
                     {formatDate(e.enrolledAt)}
                   </span>
                 </li>
@@ -500,21 +501,21 @@ function UserDetailContent({
       <section className="p-5">
         <SectionTitle icon={ShoppingBag} title={`订单 (${detail._count.orders})`} />
         {detail.orders.length === 0 ? (
-          <p className="text-xs text-neutral-400 mt-2">无订单</p>
+          <p className="text-xs text-[#666666] mt-2">无订单</p>
         ) : (
           <ul className="space-y-1.5 mt-3 text-xs">
             {detail.orders.slice(0, 10).map((o) => (
               <li
                 key={o.id}
-                className="flex items-center justify-between gap-2 py-1.5 px-2 bg-neutral-50 dark:bg-neutral-200"
+                className="flex items-center justify-between gap-2 py-1.5 px-2 bg-[#F5F4F0]"
               >
                 <div className="min-w-0">
                   <div className="font-mono">{o.id.slice(0, 8).toUpperCase()}</div>
-                  <div className="text-neutral-600">{o.type} · ¥{Number(o.amount).toFixed(2)}</div>
+                  <div className="text-[#666666]">{o.type} · ¥{Number(o.amount).toFixed(2)}</div>
                 </div>
                 <span
                   className={cn(
-                    'inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase border',
+                    'inline-flex items-center px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest',
                     STATUS_COLOR[o.status] ?? STATUS_COLOR.pending,
                   )}
                 >
@@ -530,19 +531,19 @@ function UserDetailContent({
       <section className="p-5">
         <SectionTitle icon={Award} title={`证书 (${detail._count.certificates})`} />
         {detail.certificates.length === 0 ? (
-          <p className="text-xs text-neutral-400 mt-2">未获证书</p>
+          <p className="text-xs text-[#666666] mt-2">未获证书</p>
         ) : (
           <ul className="space-y-1.5 mt-3 text-xs">
             {detail.certificates.slice(0, 10).map((c) => (
               <li
                 key={c.id}
-                className="flex items-center justify-between gap-2 py-1.5 px-2 bg-neutral-50 dark:bg-neutral-200"
+                className="flex items-center justify-between gap-2 py-1.5 px-2 bg-[#F5F4F0]"
               >
                 <div className="min-w-0">
                   <div className="font-medium truncate">{c.title}</div>
-                  <div className="font-mono text-[10px] text-neutral-600">{c.serialNumber}</div>
+                  <div className="font-mono text-[10px] text-[#666666]">{c.serialNumber}</div>
                 </div>
-                <span className="text-[10px] text-neutral-600 whitespace-nowrap">
+                <span className="text-[10px] text-[#666666] whitespace-nowrap">
                   {formatDate(c.issuedAt)}
                 </span>
               </li>
@@ -555,19 +556,19 @@ function UserDetailContent({
       <section className="p-5">
         <SectionTitle icon={Coins} title={`积分 (当前 ${detail.points})`} />
         {detail.pointTransactions.length === 0 ? (
-          <p className="text-xs text-neutral-400 mt-2">无流水</p>
+          <p className="text-xs text-[#666666] mt-2">无流水</p>
         ) : (
           <ul className="space-y-1 mt-3 text-xs">
             {detail.pointTransactions.slice(0, 10).map((p) => (
               <li
                 key={p.id}
-                className="flex items-center justify-between gap-2 py-1.5 px-2 bg-neutral-50 dark:bg-neutral-200"
+                className="flex items-center justify-between gap-2 py-1.5 px-2 bg-[#F5F4F0]"
               >
-                <span className="truncate text-neutral-600">{p.reason}</span>
+                <span className="truncate text-[#666666]">{p.reason}</span>
                 <span
                   className={cn(
-                    'font-bold tabular-nums',
-                    p.delta >= 0 ? 'text-success-500' : 'text-danger-500',
+                    'font-black tabular-nums',
+                    p.delta >= 0 ? 'text-[#171717]' : 'text-[#666666] line-through',
                   )}
                 >
                   {p.delta >= 0 ? '+' : ''}
@@ -583,28 +584,28 @@ function UserDetailContent({
       <section className="p-5">
         <SectionTitle icon={RefreshCw} title="授权课程" />
         {!showGrant ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setShowGrant(true)}
-            className="mt-3"
-            leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
-          >
-            授权新课程
-          </Button>
+          <div className="mt-3">
+            <BrutalButton
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowGrant(true)}
+            >
+              授权新课程
+            </BrutalButton>
+          </div>
         ) : (
-          <div className="mt-3 space-y-2">
-            <input
-              type="text"
+          <div className="mt-3 space-y-3">
+            <BrutalField
+              label="课程 ID(逗号分隔)"
               value={courseInput}
-              onChange={(e) => setCourseInput(e.target.value)}
-              placeholder="输入课程 ID,逗号分隔"
-              className="w-full px-3 py-2 text-sm border border-neutral-200 bg-white dark:bg-neutral-100 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              onChange={setCourseInput}
+              placeholder="例如:abc123, def456"
             />
             <div className="flex gap-2">
-              <Button
+              <BrutalButton
                 size="sm"
                 variant="primary"
+                disabled={isUpdating}
                 onClick={() => {
                   const ids = courseInput
                     .split(',')
@@ -618,11 +619,10 @@ function UserDetailContent({
                   setCourseInput('');
                   setShowGrant(false);
                 }}
-                isLoading={isUpdating}
               >
                 确认授权
-              </Button>
-              <Button
+              </BrutalButton>
+              <BrutalButton
                 size="sm"
                 variant="secondary"
                 onClick={() => {
@@ -631,7 +631,7 @@ function UserDetailContent({
                 }}
               >
                 取消
-              </Button>
+              </BrutalButton>
             </div>
           </div>
         )}
@@ -640,7 +640,7 @@ function UserDetailContent({
       {/* 7) 活动日志(Phase 2+) */}
       <section className="p-5">
         <SectionTitle icon={Calendar} title="活动日志" />
-        <p className="text-xs text-neutral-400 mt-2">Phase 2+ 接 audit-log 读 API</p>
+        <p className="text-xs text-[#666666] mt-2">Phase 2+ 接 audit-log 读 API</p>
       </section>
     </div>
   );
@@ -648,8 +648,8 @@ function UserDetailContent({
 
 function SectionTitle({ icon: Icon, title }: { icon: typeof UserIcon; title: string }) {
   return (
-    <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest">
-      <Icon className="w-4 h-4 text-brand-500" />
+    <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[#171717]">
+      <Icon className="w-4 h-4" />
       {title}
     </h3>
   );
@@ -658,7 +658,9 @@ function SectionTitle({ icon: Icon, title }: { icon: typeof UserIcon; title: str
 function Field({ label, children, value }: { label: string; children?: React.ReactNode; value?: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-widest text-neutral-600 mb-0.5">{label}</div>
+      <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-0.5">
+        {label}
+      </div>
       <div className="text-sm font-medium">{children ?? value}</div>
     </div>
   );
@@ -666,9 +668,128 @@ function Field({ label, children, value }: { label: string; children?: React.Rea
 
 function StatBox({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-200 p-3 text-center">
+    <div className="bg-[#F5F4F0] p-3 text-center">
       <div className="text-2xl font-black tabular-nums">{value}</div>
-      <div className="text-[10px] uppercase tracking-widest text-neutral-600 mt-1">{label}</div>
+      <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
+        {label}
+      </div>
     </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Brutalist 表单组件 — 跟 AdminBadgesPage / AdminCoursesPage 同风格
+// 黑白硬边、无圆角、统一 tracking-widest 标签
+// ──────────────────────────────────────────────────────────────────────
+
+function BrutalField({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  required,
+  multiline,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  required?: boolean;
+  multiline?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 flex items-center gap-1">
+        {label}
+        {required && <span className="text-red-600">*</span>}
+      </label>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          required={required}
+          placeholder={placeholder}
+          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
+        />
+      ) : (
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          placeholder={placeholder}
+          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+        />
+      )}
+    </div>
+  );
+}
+
+function BrutalButton({
+  children,
+  onClick,
+  variant = 'primary',
+  size = 'md',
+  disabled,
+  type,
+  className = '',
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary' | 'danger';
+  size?: 'sm' | 'md';
+  disabled?: boolean;
+  type?: 'button' | 'submit';
+  className?: string;
+}) {
+  const base =
+    'inline-flex items-center justify-center font-black uppercase tracking-widest transition-colors disabled:opacity-50';
+  const sizeCls = size === 'sm' ? 'px-4 py-2 text-[10px]' : 'px-6 py-3 text-xs';
+  const variantCls = {
+    primary: 'bg-[#171717] text-white hover:bg-[#262626]',
+    secondary: 'border border-[#171717] text-[#171717] hover:bg-[#EEEDE9]',
+    danger: 'border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white',
+  }[variant];
+  return (
+    <button
+      type={type ?? 'button'}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${base} ${sizeCls} ${variantCls} ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function BrutalIconButton({
+  onClick,
+  children,
+  title,
+  className = '',
+  danger,
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+  title?: string;
+  className?: string;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`p-1.5 ${
+        danger
+          ? 'text-[#A3A3A3] hover:text-red-600 hover:bg-[#EEEDE9]'
+          : 'text-[#A3A3A3] hover:text-[#171717] hover:bg-[#EEEDE9]'
+      } transition-colors ${className}`}
+    >
+      {children}
+    </button>
   );
 }
