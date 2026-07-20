@@ -81,7 +81,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="w-4 h-4" /> {label}
                   {comingSoon && (
-                    <span className="ml-auto text-[9px] font-bold text-warning-500 bg-warning-500/10 px-1.5 py-0.5 rounded-full normal-case">
+                    <span className="ml-auto text-[9px] font-black uppercase tracking-widest bg-[#171717] text-white px-1.5 py-0.5 normal-case">
                       即将推出
                     </span>
                   )}

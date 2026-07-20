@@ -480,7 +480,7 @@ function CourseListView() {
             key={course.id}
             className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
               i < (courses?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
-            } hover:bg-[#F5F4F0] transition-colors`}
+            } hover:bg-[#EEEDE9] transition-colors`}
           >
             <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
               {String(i + 1).padStart(2, '0')}
@@ -650,7 +650,7 @@ function InfoTab({ courseId }: { courseId: string }) {
   return (
     <div className="space-y-4">
       <div className="border-2 border-[#171717] bg-white p-6">
-        <h3 className="text-sm font-semibold text-neutral-900 mb-4">主要信息</h3>
+        <h3 className="text-sm font-semibold text-[#171717] mb-4">主要信息</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <BrutalField
             label="课程标题"
@@ -690,7 +690,7 @@ function InfoTab({ courseId }: { courseId: string }) {
           </div>
         </div>
         <div className="mt-4">
-          <label className="text-sm font-medium text-neutral-900 mb-1.5 block">课程描述</label>
+          <label className="text-sm font-medium text-[#171717] mb-1.5 block">课程描述</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -708,7 +708,7 @@ function InfoTab({ courseId }: { courseId: string }) {
             {updateCourse.isPending ? '保存中…' : '保存修改'}
           </BrutalButton>
           {updateCourse.isSuccess && (
-            <span className="text-xs text-success-500">已保存</span>
+            <span className="text-xs bg-[#171717] text-white px-2 py-0.5 font-black uppercase tracking-widest">已保存</span>
           )}
         </div>
       </div>
@@ -775,15 +775,15 @@ function ChaptersTab({ courseId }: { courseId: string }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 border-2 border-[#171717] bg-white overflow-hidden min-h-[500px]">
-      <aside className="bg-neutral-0 border-r border-neutral-200 flex flex-col">
-        <div className="p-3 border-b border-neutral-200">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-2">章节大纲</h3>
+      <aside className="bg-white border-r border-[#171717] flex flex-col">
+        <div className="p-3 border-b border-[#171717]">
+          <h3 className="text-sm font-semibold text-[#171717] mb-2">章节大纲</h3>
           <div className="flex items-center gap-1">
             <input
               value={newChapterTitle}
               onChange={(e) => setNewChapterTitle(e.target.value)}
               placeholder="新章节标题"
-              className="flex-1 h-8 px-2 text-xs border border-neutral-200 focus:outline-none focus:border-brand-500"
+              className="flex-1 h-8 px-2 text-xs border border-[#171717] focus:outline-none focus:border-[#171717]"
             />
             <BrutalButton
               variant="primary"
@@ -805,7 +805,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
             const isOpen = expanded[c.id] ?? idx === 0;
             return (
               <div key={c.id}>
-                <div className="flex items-center gap-1 p-1.5 hover:bg-neutral-50">
+                <div className="flex items-center gap-1 p-1.5 hover:bg-[#EEEDE9]">
                   <button
                     type="button"
                     onClick={() => setExpanded({ ...expanded, [c.id]: !isOpen })}
@@ -813,13 +813,13 @@ function ChaptersTab({ courseId }: { courseId: string }) {
                   >
                     {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                   </button>
-                  <span className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-neutral-200 text-neutral-600 shrink-0">
+                  <span className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-neutral-200 text-[#666666] shrink-0">
                     {idx + 1}
                   </span>
-                  <span className="flex-1 font-medium text-sm text-neutral-900 truncate" title={c.title}>
+                  <span className="flex-1 font-medium text-sm text-[#171717] truncate" title={c.title}>
                     {c.title}
                   </span>
-                  <span className="text-[10px] text-neutral-400 font-mono">{c.lessons.length}</span>
+                  <span className="text-[10px] text-[#666666] font-mono">{c.lessons.length}</span>
                   <button
                     onClick={() => {
                       if (confirm(`删除章节「${c.title}」？将级联软删其下 ${c.lessons.length} 个课时`)) {
@@ -833,21 +833,21 @@ function ChaptersTab({ courseId }: { courseId: string }) {
                   </button>
                 </div>
                 {isOpen && (
-                  <div className="ml-6 pl-2 border-l border-neutral-200 space-y-0.5 mt-1">
+                  <div className="ml-6 pl-2 border-l border-[#171717] space-y-0.5 mt-1">
                     {c.lessons.map((l) => (
                       <div
                         key={l.id}
                         className={`flex items-center gap-1 p-1.5 text-xs cursor-pointer transition-colors ${
                           activeLesson?.lesson.id === l.id
-                            ? 'bg-brand-50 text-brand-700 font-medium'
-                            : 'hover:bg-neutral-50 text-neutral-700'
+                            ? 'bg-[#EEEDE9] text-[#171717] font-medium'
+                            : 'hover:bg-[#EEEDE9] text-neutral-700'
                         }`}
                         onClick={() => setActiveLesson({ chapterId: c.id, lesson: l })}
                       >
-                        <VideoIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                        <VideoIcon className="w-3.5 h-3.5 text-[#666666] shrink-0" />
                         <span className="flex-1 truncate" title={l.title}>{l.title}</span>
                         {l.isPreview && (
-                          <span className="text-[9px] font-medium text-success-500 bg-success-500/10 px-1 py-0.5">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-[#171717] bg-[#EEEDE9] px-1 py-0.5">
                             试看
                           </span>
                         )}
@@ -860,12 +860,12 @@ function ChaptersTab({ courseId }: { courseId: string }) {
             );
           })}
         </div>
-        <div className="p-3 border-t border-neutral-200 text-xs text-neutral-600">
+        <div className="p-3 border-t border-[#171717] text-xs text-[#666666]">
           共 {chapters.length} 章 · {totalLessons} 课时
         </div>
       </aside>
 
-      <div className="bg-neutral-50 p-4">
+      <div className="bg-[#EEEDE9] p-4">
         {activeLesson ? (
           <LessonDetail
             lesson={activeLesson.lesson}
@@ -899,7 +899,7 @@ function NewLessonRow({ chapterId: _chapterId, onAdd }: { chapterId: string; onA
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full text-left p-1.5 text-xs text-neutral-400 hover:text-brand-500"
+        className="w-full text-left p-1.5 text-xs text-[#666666] hover:text-white hover:bg-[#171717] transition-colors"
       >
         + 添加课时
       </button>
@@ -922,7 +922,7 @@ function NewLessonRow({ chapterId: _chapterId, onAdd }: { chapterId: string; onA
           }
         }}
         placeholder="新课时标题"
-        className="flex-1 h-7 px-2 text-xs border border-neutral-300 focus:outline-none focus:border-brand-500"
+        className="flex-1 h-7 px-2 text-xs border border-[#171717] focus:outline-none focus:border-[#171717]"
       />
       <button
         onClick={() => {
@@ -1002,7 +1002,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
 
   return (
     <div className="border-2 border-[#171717] bg-white p-6">
-      <h3 className="text-sm font-semibold text-neutral-900 mb-4">课时详情</h3>
+      <h3 className="text-sm font-semibold text-[#171717] mb-4">课时详情</h3>
       <div className="space-y-3">
         <BrutalField label="标题" value={title} onChange={setTitle} required />
         <BrutalField
@@ -1012,7 +1012,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
           placeholder="https://cdn.opencsg.ai/lessons/...mp4"
         />
         <div>
-          <label className="text-sm font-medium text-neutral-900 mb-1.5 block">描述 / 笔记</label>
+          <label className="text-sm font-medium text-[#171717] mb-1.5 block">描述 / 笔记</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -1021,17 +1021,17 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
             placeholder="支持 Markdown（生产环境可接渲染器）"
           />
         </div>
-        <label className="flex items-center gap-2 text-sm cursor-pointer text-neutral-900">
+        <label className="flex items-center gap-2 text-sm cursor-pointer text-[#171717]">
           <input
             type="checkbox"
             checked={isPreview}
             onChange={(e) => setIsPreview(e.target.checked)}
-            className="w-4 h-4 accent-brand-500"
+            className="w-4 h-4 accent-[#171717]"
           />
           <span>设为试看课时（未报名可看）</span>
         </label>
       </div>
-      <div className="mt-4 flex items-center gap-2 pt-4 border-t border-neutral-200">
+      <div className="mt-4 flex items-center gap-2 pt-4 border-t border-[#171717]">
         <BrutalButton
           variant="primary"
           size="sm"
@@ -1043,14 +1043,14 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
         <BrutalButton variant="danger" size="sm" onClick={onDelete}>
           删除课时
         </BrutalButton>
-        {save.isSuccess && <span className="text-xs text-success-500">已保存</span>}
+        {save.isSuccess && <span className="text-xs bg-[#171717] text-white px-2 py-0.5 font-black uppercase tracking-widest">已保存</span>}
         {save.isError && <span className="text-xs text-red-600">保存失败</span>}
       </div>
 
       {/* 资源管理 v1.3.0 */}
-      <div className="mt-6 pt-4 border-t border-neutral-200">
+      <div className="mt-6 pt-4 border-t border-[#171717]">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-neutral-900">附加资源 · {resources.length}</h4>
+          <h4 className="text-sm font-semibold text-[#171717]">附加资源 · {resources.length}</h4>
           {!addingResource && (
             <BrutalButton
               variant="secondary"
@@ -1063,19 +1063,19 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
         </div>
 
         {addingResource && (
-          <div className="border border-neutral-200 bg-neutral-50 p-3 mb-3 space-y-2">
+          <div className="border border-[#171717] bg-[#EEEDE9] p-3 mb-3 space-y-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <input
                 autoFocus
                 value={newResource.title}
                 onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
                 placeholder="资源标题"
-                className="px-3 py-2 border border-neutral-200 text-sm bg-neutral-0 focus:outline-none focus:border-brand-500"
+                className="px-3 py-2 border border-[#171717] text-sm bg-white focus:outline-none focus:border-[#171717]"
               />
               <select
                 value={newResource.type}
                 onChange={(e) => setNewResource({ ...newResource, type: e.target.value as ResourceType })}
-                className="px-3 py-2 border border-neutral-200 text-sm bg-neutral-0 focus:outline-none focus:border-brand-500"
+                className="px-3 py-2 border border-[#171717] text-sm bg-white focus:outline-none focus:border-[#171717]"
               >
                 <option value="pdf">PDF</option>
                 <option value="code">代码</option>
@@ -1087,7 +1087,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                 value={newResource.url}
                 onChange={(e) => setNewResource({ ...newResource, url: e.target.value })}
                 placeholder="https://..."
-                className="px-3 py-2 border border-neutral-200 text-sm bg-neutral-0 focus:outline-none focus:border-brand-500 font-mono"
+                className="px-3 py-2 border border-[#171717] text-sm bg-white focus:outline-none focus:border-[#171717] font-mono"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -1114,7 +1114,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
         )}
 
         {resources.length === 0 && !addingResource ? (
-          <div className="border border-dashed border-neutral-200 rounded p-6 text-center text-xs text-neutral-500">
+          <div className="border border-dashed border-[#171717] rounded p-6 text-center text-xs text-[#666666]">
             暂无资源 · 点击「添加资源」挂 PDF / 代码 / 链接
           </div>
         ) : (
@@ -1122,7 +1122,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
             {resources.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center gap-2 p-2 border border-neutral-200 bg-neutral-0 group"
+                className="flex items-center gap-2 p-2 border border-[#171717] bg-white group"
               >
                 <span
                   className="inline-flex items-center justify-center w-7 h-7 bg-neutral-900 text-white text-[10px] font-black uppercase"
@@ -1131,23 +1131,23 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                   {r.type.slice(0, 3)}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-neutral-900 truncate" title={r.title}>
+                  <div className="text-sm font-medium text-[#171717] truncate" title={r.title}>
                     {r.title}
                   </div>
-                  <div className="text-[10px] font-mono text-neutral-500 truncate" title={r.url}>
+                  <div className="text-[10px] font-mono text-[#666666] truncate" title={r.url}>
                     {r.url}
                   </div>
                 </div>
                 {r.isLocked ? (
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border border-neutral-300 text-neutral-600"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border border-[#171717] text-[#666666]"
                     title="报名后解锁"
                   >
                     <Lock className="w-3 h-3" /> 锁
                   </span>
                 ) : (
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-success-500/10 text-success-500"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-[#EEEDE9] text-[#171717]"
                     title="公开"
                   >
                     <Unlock className="w-3 h-3" /> 公开
@@ -1157,7 +1157,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                   href={r.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                  className="p-1.5 text-[#666666] hover:bg-neutral-100 hover:text-[#171717]"
                   title="在新窗口打开"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -1168,7 +1168,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                       deleteResource.mutate(r.id);
                     }
                   }}
-                  className="p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-red-600"
+                  className="p-1.5 text-[#666666] hover:bg-neutral-100 hover:text-red-600"
                   title="删除"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -1193,8 +1193,8 @@ function ResourcesTab({ courseId: _courseId }: { courseId: string }) {
     <div className="border-2 border-[#171717] bg-white p-6">
       <div className="border-2 border-dashed border-[#171717] p-12 text-center">
         <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
-        <p className="text-sm text-neutral-600">资源已迁到「章节大纲」tab</p>
-        <p className="text-[10px] text-neutral-400 mt-1">
+        <p className="text-sm text-[#666666]">资源已迁到「章节大纲」tab</p>
+        <p className="text-[10px] text-[#666666] mt-1">
           在章节大纲里选中具体课时,在右侧课时详情面板的「附加资源」段管理
         </p>
       </div>
@@ -1237,8 +1237,8 @@ function PricingTab({ courseId }: { courseId: string }) {
   return (
     <div className="space-y-4">
       <div className="border-2 border-[#171717] bg-white p-6">
-        <h3 className="text-sm font-semibold text-neutral-900 mb-1">价格模式</h3>
-        <p className="text-xs text-neutral-600 mb-4">选择主要定价方式</p>
+        <h3 className="text-sm font-semibold text-[#171717] mb-1">价格模式</h3>
+        <p className="text-xs text-[#666666] mb-4">选择主要定价方式</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {plans.map((p) => {
             const active = costType === p.id;
@@ -1246,7 +1246,7 @@ function PricingTab({ courseId }: { courseId: string }) {
               <label
                 key={p.id}
                 className={`p-4 border-2 cursor-pointer transition-colors ${
-                  active ? 'border-brand-500 bg-brand-50' : 'border-neutral-200 hover:border-neutral-400'
+                  active ? 'border-[#171717] bg-[#EEEDE9]' : 'border-[#171717] hover:border-neutral-400'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -1255,12 +1255,12 @@ function PricingTab({ courseId }: { courseId: string }) {
                     name="plan"
                     checked={active}
                     onChange={() => setCostType(p.id)}
-                    className="w-4 h-4 accent-brand-500"
+                    className="w-4 h-4 accent-[#171717]"
                   />
-                  <span className="text-sm font-semibold text-neutral-900">{p.title}</span>
+                  <span className="text-sm font-semibold text-[#171717]">{p.title}</span>
                 </div>
-                <p className="mt-1 text-xs text-neutral-600">{p.sub}</p>
-                <p className="mt-2 text-base font-mono font-bold text-neutral-900">{p.priceHint}</p>
+                <p className="mt-1 text-xs text-[#666666]">{p.sub}</p>
+                <p className="mt-2 text-base font-mono font-bold text-[#171717]">{p.priceHint}</p>
               </label>
             );
           })}
@@ -1269,7 +1269,7 @@ function PricingTab({ courseId }: { courseId: string }) {
 
       {costType === 'paid' && (
         <div className="border-2 border-[#171717] bg-white p-6">
-          <h3 className="text-sm font-semibold text-neutral-900 mb-4">买断定价</h3>
+          <h3 className="text-sm font-semibold text-[#171717] mb-4">买断定价</h3>
           <BrutalField
             label="售价 (¥)"
             type="number"
@@ -1283,7 +1283,7 @@ function PricingTab({ courseId }: { courseId: string }) {
         <BrutalButton variant="primary" size="sm" onClick={save} disabled={updateCourse.isPending}>
           {updateCourse.isPending ? '保存中…' : '保存修改'}
         </BrutalButton>
-        {updateCourse.isSuccess && <span className="text-xs text-success-500">已保存</span>}
+        {updateCourse.isSuccess && <span className="text-xs bg-[#171717] text-white px-2 py-0.5 font-black uppercase tracking-widest">已保存</span>}
       </div>
     </div>
   );
@@ -1316,8 +1316,8 @@ function PublishTab({ courseId }: { courseId: string }) {
       <div className="border-2 border-[#171717] bg-white p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-sm font-semibold text-neutral-900">上下架状态</h3>
-            <p className="text-xs text-neutral-600 mt-1">
+            <h3 className="text-sm font-semibold text-[#171717]">上下架状态</h3>
+            <p className="text-xs text-[#666666] mt-1">
               {isPublished ? '课程已发布，正在招生中' : '课程未发布，只有内部可见'}
             </p>
           </div>
@@ -1325,7 +1325,7 @@ function PublishTab({ courseId }: { courseId: string }) {
             type="button"
             onClick={() => setIsPublished((p) => !p)}
             className={`relative w-12 h-7 rounded-full transition-colors ${
-              isPublished ? 'bg-brand-500' : 'bg-neutral-200'
+              isPublished ? 'bg-[#EEEDE9]0' : 'bg-neutral-200'
             }`}
             aria-pressed={isPublished}
             aria-label="上下架"
@@ -1342,7 +1342,7 @@ function PublishTab({ courseId }: { courseId: string }) {
         <BrutalButton variant="primary" size="sm" onClick={save} disabled={updateCourse.isPending}>
           {updateCourse.isPending ? '处理中…' : isPublished ? '发布课程' : '下架课程'}
         </BrutalButton>
-        {updateCourse.isSuccess && <span className="text-xs text-success-500">已保存</span>}
+        {updateCourse.isSuccess && <span className="text-xs bg-[#171717] text-white px-2 py-0.5 font-black uppercase tracking-widest">已保存</span>}
       </div>
     </div>
   );
@@ -1377,22 +1377,22 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
 
   return (
     <div className="-mx-6 -my-8">
-      <header className="bg-neutral-0 border-b border-neutral-200 sticky top-0 z-30">
+      <header className="bg-white border-b border-[#171717] sticky top-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <Link
               to="/admin/courses"
-              className="text-neutral-600 hover:text-brand-500 shrink-0"
+              className="text-[#666666] hover:text-[#171717] shrink-0"
               aria-label="返回课程列表"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <span className="text-neutral-300">/</span>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-neutral-900 truncate">
+              <div className="text-sm font-semibold text-[#171717] truncate">
                 {courseQuery.isLoading ? '加载中…' : course?.title ?? '未知课程'}
               </div>
-              <div className="text-xs text-neutral-600 flex items-center gap-2 flex-wrap">
+              <div className="text-xs text-[#666666] flex items-center gap-2 flex-wrap">
                 <span>
                   课程 ID: <span className="font-mono">{courseId}</span>
                 </span>
@@ -1402,13 +1402,13 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
                     <span
                       className={
                         course.status === 'published'
-                          ? 'text-success-500 flex items-center gap-0.5'
-                          : 'text-neutral-500'
+                          ? 'bg-[#171717] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-0.5'
+                          : 'border border-[#171717] text-[#666666] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-0.5'
                       }
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          course.status === 'published' ? 'bg-success-500' : 'bg-neutral-400'
+                          course.status === 'published' ? 'bg-[#171717]' : 'bg-white border border-[#171717]'
                         }`}
                       />
                       {course.status === 'published' ? '已发布' : '未发布'}
@@ -1439,12 +1439,12 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
                 onClick={() => setCurrentTab(t.id)}
                 className={`py-3 border-b-2 whitespace-nowrap transition-colors ${
                   active
-                    ? 'border-brand-500 text-brand-500 font-medium'
-                    : 'border-transparent text-neutral-600 hover:text-brand-500'
+                    ? 'border-[#171717] text-[#171717] font-medium'
+                    : 'border-transparent text-[#666666] hover:text-[#171717]'
                 }`}
               >
                 {t.label}
-                {t.count && <span className="ml-1 text-xs text-neutral-400">· {t.count}</span>}
+                {t.count && <span className="ml-1 text-xs text-[#666666]">· {t.count}</span>}
               </button>
             );
           })}
