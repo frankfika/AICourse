@@ -158,6 +158,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         className={cn(
           'relative w-full',
           'h-[100dvh] sm:h-auto',
+          'pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] sm:pt-0 sm:pb-0',
           'sm:max-w-[600px] md:max-w-[600px] lg:max-w-[720px]',
           'sm:max-h-[400px] md:max-h-[400px] lg:max-h-[440px]',
           'bg-neutral-0 dark:bg-neutral-100',
@@ -182,7 +183,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               'text-neutral-900 placeholder:text-neutral-400',
               'dark:text-neutral-900 dark:placeholder:text-neutral-600',
             )}
+            inputMode="search"
             autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            enterKeyHint="search"
             spellCheck={false}
             aria-label="搜索关键字"
           />

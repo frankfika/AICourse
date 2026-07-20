@@ -83,7 +83,9 @@ export class AiService {
   "tags": "string, 4-6 个英文或中文标签，逗号分隔",
   "thumbnail": "string, 一个 https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=AI%20course%20thumbnail&image_size=landscape_16_9 的占位图 URL",
   "costType": "free | paid | charity 之一",
-  "price": number, 0-9999
+  "price": number, 0-9999,
+  "courseType": "own | external 之一。如果题目或附加要求里出现'外部课'、'外链'、'参考课'、'配套视频'、含 http(s):// 链接,返回 external；否则 own",
+  "externalUrl": "string, 如果 courseType=external, 从题目或附加要求里抽取 http(s):// 开头的 URL；否则返回空字符串"
 }
 
 用户题目：${safeTopic}
@@ -117,6 +119,8 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
   // ==================== Gemini 调用 ====================
 
   private async callGemini<T>(prompt: string, fallback: T): Promise<T> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000);
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
       const res = await fetch(url, {
@@ -130,6 +134,7 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
             maxOutputTokens: 1024,
           },
         }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -149,7 +154,7 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
       // If the LLM produced something malicious or malformed, fall back instead
       // of trusting the partial result.
       const schema: z.ZodTypeAny =
-        (fallback as any)?.costType !== undefined && (fallback as any)?.level !== undefined
+        (fallback as any)?.courseType !== undefined || (fallback as any)?.instructor !== undefined
           ? CourseDraftSchema
           : DegreeDraftSchema;
       const parsed = schema.safeParse(json);
@@ -161,6 +166,8 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
     } catch (err) {
       this.logger.error('Gemini 调用异常', err as Error);
       return fallback;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -192,6 +199,8 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
     const level: CourseLevel = this.inferLevel(cleanTopic);
     const costType: CostType = this.inferCostType(cleanTopic, hint);
     const duration = this.inferDuration(level);
+    const courseType = this.inferCourseType(cleanTopic, hint);
+    const externalUrl = this.inferExternalUrl(cleanTopic, hint);
     const placeholderThumb = `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(
       `${cleanTopic} AI course thumbnail minimalist brutalist design`,
     )}&image_size=landscape_16_9`;
@@ -211,7 +220,9 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
       tags,
       thumbnail: placeholderThumb,
       costType,
-      price: costType === 'free' ? 0 : 199,
+      price: this.defaultPrice(costType, courseType),
+      courseType,
+      externalUrl,
     };
   }
 
@@ -286,6 +297,23 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
         return '2 小时';
     }
   }
+
+  private inferCourseType(topic: string, hint?: string): 'own' | 'external' {
+    const lower = `${topic} ${hint ?? ''}`.toLowerCase();
+    if (/(外部|外链|external|外链课|参考课|配套|视频课|录播)/i.test(lower)) return 'external';
+    return 'own';
+  }
+
+  private inferExternalUrl(topic: string, hint?: string): string {
+    const m = `${topic} ${hint ?? ''}`.match(/https?:\/\/[^\s)]+/i);
+    return m ? m[0] : '';
+  }
+
+  private defaultPrice(costType: CostType, courseType: 'own' | 'external'): number {
+    if (costType === CostType.free) return 0;
+    if (costType === CostType.charity) return 0; // charity 课程是公益导向，price=0 让 admin 自行决定捐赠金额
+    return courseType === 'external' ? 99 : 199;
+  }
 }
 
 export interface CourseDraft {
@@ -299,6 +327,8 @@ export interface CourseDraft {
   tags: string;
   costType: CostType;
   price: number;
+  courseType: 'own' | 'external';
+  externalUrl: string;
 }
 
 export interface DegreeDraft {
@@ -334,6 +364,8 @@ const CourseDraftSchema = z.object({
   tags: z.string().max(500),
   costType: z.enum(['free', 'paid', 'charity']),
   price: z.number().int().min(0).max(9999),
+  courseType: z.enum(['own', 'external']).optional().default('own'),
+  externalUrl: z.string().max(2000).optional().default(''),
 });
 
 const DegreeDraftSchema = z.object({

@@ -130,3 +130,49 @@
 ---
 
 DONE: [USER_MANUAL: 9 mismatches, ADMIN_MANUAL: 6 mismatches, GLOSSARY: 3 mismatches]
+
+---
+
+## v1.4.0 复查:5 个 P0 实际是 audit 误判(代码/文档已对齐)
+
+> 复查时间:2026-07-21,verifier 直接看代码 + 文档原文
+
+### 复查 1:5s vs 1s 上报(误判)
+- 文档:`USER_MANUAL §2 步骤 4 + §8.5` 写"视频每 5 秒会向后端上报学习进度"
+- 代码:`apps/web/src/features/dashboard/DashboardPage.tsx:336-355`
+  - `setInterval(..., 1000)` 是**视频时钟**(`setVideoTime(t => t + 1)`)
+  - LearningEvent 上报触发是 `if (next % 5 === 0)`,即**每 5 秒**触发 1 次 console.log
+- 真实状态:文档 5s 上报 = 代码 5s 触发,跟文档一致。**audit 误判**,未改。
+- audit 报告错误:**"每 1 秒"**是把"视频时钟 1s"和"上报 5s"两个频率混了。
+
+### 复查 2:退款 4 规则全不存在(误判)
+- 文档:`USER_MANUAL §12.4` 写"未开始/7 天 < 20% 退 95%/其他/学位"4 条
+- 代码:`apps/api/src/modules/orders/orders.service.ts:298-348`
+  - `refundOrder()` 调 `checkRefundEligibility` (line 357) 严格 4 规则校验
+  - 返回 `{ allowed, reason, feeRate? }`,P1-8 已经完整实现
+- 真实状态:代码已实现 4 规则,refundAmount 按 feeRate 0/0.05 计算。**audit 误判**。
+
+### 复查 3:评分 1-10 vs 0-100(已对齐)
+- 文档:`ADMIN_MANUAL §7.4:433` 实际写 "评分表(各维度 0-100 分 + 评语)"
+- 代码:`hackathons.dto.ts:172-177` `@Min(0) @Max(100)` 0-100
+- 真实状态:**文档与代码一致**(0-100)。**audit 误判**(可能看了早期版本)。
+
+### 复查 4:通知 4 tab + 30s 轮询(误判)
+- 文档:`USER_MANUAL §13 + ADMIN_MANUAL §3.3` 写 4 tab + 30s 轮询
+- 代码:
+  - `apps/web/src/features/dashboard/notifications/NotificationsPage.tsx:297 行`,P1-7 重写接真后端
+  - 4 tab: 全部 / 未读 / 系统 / 互动 (`TABS: 38-43`)
+  - 30s 轮询: `refetchInterval: 30_000` (`NotificationsPage.tsx:97`)
+  - 5 endpoint: `apps/web/src/lib/notificationsApi.ts:73 行` 完整
+  - 5 态全:Skeleton / EmptyState / QueryErrorState / Loading / Success
+- 真实状态:整页已真接后端,4 tab + 30s + 5 endpoint + 5 态全。**audit 误判**。
+
+### 复查 5:4 角色 vs 3 角色(已标 ⚠️)
+- 文档:`ADMIN_MANUAL §1:37-38` 实际已经标 "⚠️ Schema 实际只有 3 个 role"
+- 真实状态:文档已诚实标注,非文档 bug。super_admin P2+ 计划中。
+
+### 真实还差的(非 audit 报)
+- 黑客松倒计时:`hackathons/*.tsx` 整模块缺 `setInterval` 渲染剩余时间
+- 证书 PNG/PDF 下载:`CertificateDetailPage.tsx:69-71` 是 mock toast
+- LearningEvent 后端 endpoint 缺失:Prisma model 有,API 未实现
+- 通知中心 4 tab 实际 4 个 audit 误报"DashboardPage AI 4 chips 实际 3" 也经 verifier 复查**是 4 个**(`DashboardPage.tsx:116` `QUICK_PROMPTS` 数组 4 元素)

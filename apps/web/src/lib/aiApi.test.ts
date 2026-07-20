@@ -26,6 +26,8 @@ describe('aiApi', () => {
         thumbnail: 'https://example.com',
         costType: 'paid' as const,
         price: 199,
+        courseType: 'own' as const,
+        externalUrl: '',
       };
       (api.post as any).mockResolvedValue({ data: { draft: mockDraft } });
 
@@ -36,6 +38,29 @@ describe('aiApi', () => {
         hint: undefined,
       });
       expect(result).toEqual(mockDraft);
+    });
+
+    it('should return external courseType and externalUrl from external draft', async () => {
+      const mockDraft = {
+        title: 'OpenAI Cookbook 精读',
+        description: '外部参考课',
+        learningPoints: '看 cookbook',
+        instructor: 'OpenCSG',
+        level: 'Beginner' as const,
+        duration: '45 分钟',
+        tags: 'OpenAI,Cookbook',
+        thumbnail: 'https://example.com',
+        costType: 'free' as const,
+        price: 0,
+        courseType: 'external' as const,
+        externalUrl: 'https://cookbook.openai.com',
+      };
+      (api.post as any).mockResolvedValue({ data: { draft: mockDraft } });
+
+      const result = await aiApi.generateCourse('OpenAI Cookbook 外部课', 'https://cookbook.openai.com');
+
+      expect(result.courseType).toBe('external');
+      expect(result.externalUrl).toBe('https://cookbook.openai.com');
     });
 
     it('should pass hint when provided', async () => {

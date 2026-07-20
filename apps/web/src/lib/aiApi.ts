@@ -11,6 +11,8 @@ export interface CourseDraft {
   tags: string;
   costType: 'free' | 'paid' | 'charity';
   price: number;
+  courseType?: 'own' | 'external';
+  externalUrl?: string;
 }
 
 export interface DegreeDraft {

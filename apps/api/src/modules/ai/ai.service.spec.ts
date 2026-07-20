@@ -54,7 +54,12 @@ describe('AiService', () => {
       expect(result.level).toBe(CourseLevel.Beginner);
     });
 
-    it('should infer Expert level for 高阶 topic', async () => {
+    it('should infer Expert level for 高级 topic', async () => {
+      const result = await service.generateCourse('RAG 高级调优专家课');
+      expect(result.level).toBe(CourseLevel.Expert);
+    });
+
+    it('should infer Expert level for 高阶 topic (legacy keyword)', async () => {
       const result = await service.generateCourse('RAG 高阶调优专家课');
       expect(result.level).toBe(CourseLevel.Expert);
     });
@@ -62,6 +67,30 @@ describe('AiService', () => {
     it('should infer free costType when free in topic', async () => {
       const result = await service.generateCourse('RAG 入门免费课程');
       expect(result.costType).toBe(CostType.free);
+    });
+
+    it('should set price=0 for charity courses', async () => {
+      const result = await service.generateCourse('AI 公益课为乡村教师');
+      expect(result.costType).toBe(CostType.charity);
+      expect(result.price).toBe(0);
+    });
+
+    it('should default to own courseType for non-external hint', async () => {
+      const result = await service.generateCourse('RAG 系统');
+      expect(result.courseType).toBe('own');
+      expect(result.externalUrl).toBe('');
+    });
+
+    it('should infer external courseType when hint contains 外部 or URL', async () => {
+      const result = await service.generateCourse('OpenAI 配套视频课', '参考 https://cookbook.openai.com');
+      expect(result.courseType).toBe('external');
+      expect(result.externalUrl).toBe('https://cookbook.openai.com');
+    });
+
+    it('should set external courseType price to 99', async () => {
+      const result = await service.generateCourse('外部课', 'https://example.com');
+      expect(result.courseType).toBe('external');
+      expect(result.price).toBe(99);
     });
 
     it('should use advanced duration for Advanced level (实战 in topic)', async () => {

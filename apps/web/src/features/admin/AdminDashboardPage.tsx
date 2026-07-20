@@ -152,7 +152,8 @@ export function AdminDashboardPage() {
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label="切换主题"
+            aria-label={isDark ? '切换为亮色' : '切换为暗色'}
+            title={isDark ? '切换为亮色' : '切换为暗色'}
             className="px-4 py-2 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors inline-flex items-center gap-1.5"
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
