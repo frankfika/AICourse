@@ -43,7 +43,7 @@ export class ChaptersController {
   ) {}
 
   @Get(':courseId/chapters')
-  @ApiOperation({ summary: '列出课程章节(含 lessons)' })
+  @ApiOperation({ summary: '列出课程章节(含 lessons + resources)' })
   async list(@Param('courseId') courseId: string) {
     // 确认课程存在
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
@@ -55,6 +55,12 @@ export class ChaptersController {
         lessons: {
           where: { deletedAt: null },
           orderBy: { orderIndex: 'asc' },
+          include: {
+            resources: {
+              where: { deletedAt: null },
+              orderBy: { createdAt: 'asc' },
+            },
+          },
         },
       },
     });

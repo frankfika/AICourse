@@ -189,31 +189,25 @@ UPDATE users SET role = 'admin' WHERE email = '<email>';
 - 每个 lesson 有:标题 / 时长 / 视频 URL / 试看开关
 
 中间 **编辑器**:选中 lesson 后编辑
-右侧 **字段面板**:lesson 元数据(资源链接、配套作业、引用文献)
+右侧 **字段面板**:lesson 元数据(视频 URL、描述/笔记、试看、**附加资源**)
 
-> ⚠️ **当前版本**:章节树 CRUD 纯前端 mock。接 `/api/v1/courses/{id}/chapters` 待 P0-8 后端完成。
+**附加资源段(v1.3.0)**: 选中具体课时 → 右侧面板「附加资源」段
+- 5 种类型:PDF / 代码 / 链接 / 视频 / 音频
+- 每条资源:标题 + 类型 + URL + 锁/公开(默认锁 = 报名后下载)
+- 增 / 删 / 打开新窗口
+- 后端: `GET/POST /api/v1/lessons/:lessonId/resources` + `PATCH/DELETE /api/v1/resources/:id`
 
-#### Tab 3:resources — 资源
+> v1.3.0 整合:章节树一次拉取返回 lesson.resources(无需单独 query)。
 
-- 上传 PDF / 代码 / 链接
-- 每个资源:标题 + 类型 + URL/文件 + 排序
-- 支持批量拖拽排序
+#### Tab 3:pricing — 价格(原 Tab 4)
 
-> ⚠️ **v1.1.0**:资源管理后端 `POST /api/v1/courses/:id/resources` 端点待实现,当前 tab 显示
-> P2 占位。课时元数据(标题/描述/视频URL)已在「章节大纲」tab 编辑。
+3 选 1 radio card:免费 / 买断 / 订阅,接 PATCH `/api/v1/courses/:id`。
 
-#### Tab 4:pricing — 价格
-
-3 选 1 radio card:
-- **免费**:价格 = 0,任何用户可报名
-- **买断**:用户一次性付费,永久访问
-- **订阅**:月费 / 年费(Phase 2+)
-
-#### Tab 5:publish — 发布
+#### Tab 4:publish — 发布(原 Tab 5)
 
 - 状态 switch:草稿 ↔ 已发布 ↔ 已下架
 - 发布时间 picker(可预设未来自动发布)
-- SEO 卡片预览(OG 图 + title + description)
+- 接 PATCH `/api/v1/courses/:id` (status 字段)
 
 ### 4.4 从 URL 导入
 

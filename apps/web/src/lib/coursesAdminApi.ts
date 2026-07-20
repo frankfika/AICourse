@@ -1,8 +1,8 @@
 /**
- * coursesAdminApi — 课程 / 章节 / 课时 后台管理
+ * coursesAdminApi — 课程 / 章节 / 课时 / 资源 后台管理
  *
- * 后端: ChaptersController + LessonsController (admin only)
- *   GET    /api/v1/courses/:courseId/chapters           列表(含 lessons)
+ * 后端: ChaptersController + LessonsController + ResourcesController (admin only)
+ *   GET    /api/v1/courses/:courseId/chapters           列表(含 lessons + resources)
  *   POST   /api/v1/courses/:courseId/chapters           新建章节
  *   PATCH  /api/v1/chapters/:id                         改章节
  *   DELETE /api/v1/chapters/:id                         软删(级联 lessons)
@@ -14,9 +14,26 @@
  *   DELETE /api/v1/lessons/:id                           软删
  *   POST   /api/v1/chapters/:chapterId/lessons/reorder   批量重排
  *
+ *   GET    /api/v1/lessons/:lessonId/resources           列出课时资源
+ *   POST   /api/v1/lessons/:lessonId/resources           新建资源
+ *   PATCH  /api/v1/resources/:id                         改资源
+ *   DELETE /api/v1/resources/:id                         软删
+ *
  *   PATCH  /api/v1/courses/:id                           改课程主信息(info/pricing/publish tab)
  */
 import { api } from './api';
+
+export type ResourceType = 'pdf' | 'code' | 'link' | 'video' | 'audio';
+
+export interface ChapterResource {
+  id: string;
+  lessonId: string;
+  title: string;
+  url: string;
+  type: ResourceType;
+  isLocked: boolean;
+  createdAt: string;
+}
 
 export interface ChapterLesson {
   id: string;
@@ -27,6 +44,8 @@ export interface ChapterLesson {
   isPreview: boolean;
   orderIndex: number;
   chapterId: string;
+  /** v1.3.0 起:章节树拉取时一并返回(单次 query) */
+  resources?: ChapterResource[];
 }
 
 export interface Chapter {
@@ -138,6 +157,33 @@ export const coursesAdminApi = {
     },
   ): Promise<unknown> => {
     const { data } = await api.patch(`/api/v1/courses/${id}`, payload);
+    return data;
+  },
+
+  // ── 资源 (v1.3.0) ───────────────────────────────────────────────────
+  listResources: async (lessonId: string): Promise<ChapterResource[]> => {
+    const { data } = await api.get(`/api/v1/lessons/${lessonId}/resources`);
+    return data;
+  },
+
+  createResource: async (
+    lessonId: string,
+    payload: { title: string; url: string; type: ResourceType; isLocked?: boolean },
+  ): Promise<ChapterResource> => {
+    const { data } = await api.post(`/api/v1/lessons/${lessonId}/resources`, payload);
+    return data;
+  },
+
+  updateResource: async (
+    id: string,
+    payload: { title?: string; url?: string; type?: ResourceType; isLocked?: boolean },
+  ): Promise<ChapterResource> => {
+    const { data } = await api.patch(`/api/v1/resources/${id}`, payload);
+    return data;
+  },
+
+  deleteResource: async (id: string): Promise<{ ok: true }> => {
+    const { data } = await api.delete(`/api/v1/resources/${id}`);
     return data;
   },
 };

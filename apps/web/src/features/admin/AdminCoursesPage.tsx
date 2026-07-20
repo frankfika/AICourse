@@ -1,18 +1,19 @@
 /**
- * AdminCoursesPage — v1.2.0 全部接真后端(无 mock)
+ * AdminCoursesPage — v1.3.0 全部接真后端(无 mock)
  *
  * 两种模式(由 URL ?tab= 决定):
  *   1) /admin/courses           → 列表模式(保留原 AdminCoursesPage 的 list + 新增/导入)
- *   2) /admin/courses?tab=...   → 编辑模式(5 tab:info / chapters / resources / pricing / publish)
+ *   2) /admin/courses?tab=...   → 编辑模式(4 tab:info / chapters / pricing / publish)
  *
- * 5 tab 全部接真后端:
+ * 4 tab 全部接真后端:
  *   - info      PATCH /api/v1/courses/:id          基本信息
- *   - chapters  GET/POST/PATCH/DELETE /chapters + /lessons  章节树 + 课时 CRUD
- *   - resources P2 — 后端 POST /api/v1/courses/:id/resources 端点待补,显示占位
+ *   - chapters  GET/POST/PATCH/DELETE /chapters + /lessons + /resources
+ *                                                 章节树 + 课时 CRUD + 每课时资源 CRUD
  *   - pricing   PATCH /api/v1/courses/:id (costType + price)
  *   - publish   PATCH /api/v1/courses/:id (status)
  *
  * v1.2.0 起:无前端 mock,无 hardcode 数据,所有写操作走后端。
+ * v1.3.0 起:资源管理从「课程级 P2 占位 tab」迁到「课时面板内」,因为 Resource model 是 lesson 级。
  */
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -46,6 +47,9 @@ import {
   Sparkle,
   Pencil,
   Calendar,
+  Lock,
+  Unlock,
+  ExternalLink,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -53,7 +57,7 @@ import { Input } from '../../components/ui/Input';
 import api from '../../lib/api';
 import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
-import { coursesAdminApi, type Chapter, type ChapterLesson } from '../../lib/coursesAdminApi';
+import { coursesAdminApi, type Chapter, type ChapterLesson, type ChapterResource, type ResourceType } from '../../lib/coursesAdminApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -547,7 +551,7 @@ function CourseListView() {
 // 2) 编辑模式:5 tab(v1.1.0 全部接真后端,无 mock)
 // ──────────────────────────────────────────────────────────────────────────
 
-type Tab = 'info' | 'chapters' | 'resources' | 'pricing' | 'publish';
+type Tab = 'info' | 'chapters' | 'pricing' | 'publish';
 
 interface CourseForEdit {
   id: string;
@@ -949,10 +953,19 @@ function NewLessonRow({ chapterId: _chapterId, onAdd }: { chapterId: string; onA
 }
 
 function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: () => void }) {
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState(lesson.title);
   const [description, setDescription] = useState(lesson.description ?? '');
   const [videoUrl, setVideoUrl] = useState(lesson.videoUrl ?? '');
   const [isPreview, setIsPreview] = useState(lesson.isPreview);
+
+  // 资源管理(v1.3.0)
+  const [addingResource, setAddingResource] = useState(false);
+  const [newResource, setNewResource] = useState<{ title: string; url: string; type: ResourceType }>({
+    title: '',
+    url: '',
+    type: 'pdf',
+  });
 
   useEffect(() => {
     setTitle(lesson.title);
@@ -961,10 +974,37 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
     setIsPreview(lesson.isPreview);
   }, [lesson.id]);
 
+  // 资源:优先用 lesson.resources(章节树一次拉到位),否则单独拉
+  const resourcesQuery = useQuery({
+    queryKey: ['admin-lesson-resources', lesson.id],
+    queryFn: () => coursesAdminApi.listResources(lesson.id),
+    initialData: lesson.resources,
+  });
+
   const save = useMutation({
     mutationFn: () =>
       coursesAdminApi.updateLesson(lesson.id, { title, description, videoUrl, isPreview }),
   });
+
+  const createResource = useMutation({
+    mutationFn: () => coursesAdminApi.createResource(lesson.id, { ...newResource, isLocked: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-lesson-resources', lesson.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-course-chapters'] });
+      setAddingResource(false);
+      setNewResource({ title: '', url: '', type: 'pdf' });
+    },
+  });
+
+  const deleteResource = useMutation({
+    mutationFn: (id: string) => coursesAdminApi.deleteResource(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-lesson-resources', lesson.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-course-chapters'] });
+    },
+  });
+
+  const resources = resourcesQuery.data ?? [];
 
   return (
     <Card padding="md">
@@ -1008,32 +1048,162 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
           {save.isPending ? '保存中…' : '保存课时'}
         </Button>
         <Button variant="ghost" size="sm" onClick={onDelete} leftIcon={<Trash2 className="w-4 h-4" />}>
-          删除
+          删除课时
         </Button>
         {save.isSuccess && <span className="text-xs text-success-500">已保存</span>}
         {save.isError && <span className="text-xs text-red-600">保存失败</span>}
+      </div>
+
+      {/* 资源管理 v1.3.0 */}
+      <div className="mt-6 pt-4 border-t border-neutral-200">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-neutral-900">附加资源 · {resources.length}</h4>
+          {!addingResource && (
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => setAddingResource(true)}
+            >
+              添加资源
+            </Button>
+          )}
+        </div>
+
+        {addingResource && (
+          <div className="border border-neutral-200 bg-neutral-50 p-3 mb-3 space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <input
+                autoFocus
+                value={newResource.title}
+                onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
+                placeholder="资源标题"
+                className="px-3 py-2 border border-neutral-200 text-sm bg-neutral-0 focus:outline-none focus:border-brand-500"
+              />
+              <select
+                value={newResource.type}
+                onChange={(e) => setNewResource({ ...newResource, type: e.target.value as ResourceType })}
+                className="px-3 py-2 border border-neutral-200 text-sm bg-neutral-0 focus:outline-none focus:border-brand-500"
+              >
+                <option value="pdf">PDF</option>
+                <option value="code">代码</option>
+                <option value="link">链接</option>
+                <option value="video">视频</option>
+                <option value="audio">音频</option>
+              </select>
+              <input
+                value={newResource.url}
+                onChange={(e) => setNewResource({ ...newResource, url: e.target.value })}
+                placeholder="https://..."
+                className="px-3 py-2 border border-neutral-200 text-sm bg-neutral-0 focus:outline-none focus:border-brand-500 font-mono"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!newResource.title || !newResource.url || createResource.isPending}
+                onClick={() => createResource.mutate()}
+              >
+                {createResource.isPending ? '保存中…' : '保存'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAddingResource(false);
+                  setNewResource({ title: '', url: '', type: 'pdf' });
+                }}
+              >
+                取消
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {resources.length === 0 && !addingResource ? (
+          <div className="border border-dashed border-neutral-200 rounded p-6 text-center text-xs text-neutral-500">
+            暂无资源 · 点击「添加资源」挂 PDF / 代码 / 链接
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {resources.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center gap-2 p-2 border border-neutral-200 bg-neutral-0 group"
+              >
+                <span
+                  className="inline-flex items-center justify-center w-7 h-7 bg-neutral-900 text-white text-[10px] font-black uppercase"
+                  title={r.type}
+                >
+                  {r.type.slice(0, 3)}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-neutral-900 truncate" title={r.title}>
+                    {r.title}
+                  </div>
+                  <div className="text-[10px] font-mono text-neutral-500 truncate" title={r.url}>
+                    {r.url}
+                  </div>
+                </div>
+                {r.isLocked ? (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border border-neutral-300 text-neutral-600"
+                    title="报名后解锁"
+                  >
+                    <Lock className="w-3 h-3" /> 锁
+                  </span>
+                ) : (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-success-500/10 text-success-500"
+                    title="公开"
+                  >
+                    <Unlock className="w-3 h-3" /> 公开
+                  </span>
+                )}
+                <a
+                  href={r.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+                  title="在新窗口打开"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <button
+                  onClick={() => {
+                    if (confirm(`删除资源「${r.title}」?`)) {
+                      deleteResource.mutate(r.id);
+                    }
+                  }}
+                  className="p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-red-600"
+                  title="删除"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </Card>
   );
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// ResourcesTab — 资源管理(P2:后端 resource endpoint 待实现,先占位)
+// ResourcesTab — v1.3.0 起资源管理迁到 LessonDetail 内
+// (resource 是 lesson 级而非 course 级,放在课时面板更准确)
+// 保留函数兼容 router 引用,改返回 EmptyState 避免误点
 // ──────────────────────────────────────────────────────────────────────
 
 function ResourcesTab({ courseId: _courseId }: { courseId: string }) {
   return (
     <Card padding="md">
-      <h3 className="text-sm font-semibold text-neutral-900 mb-2">课程资源</h3>
-      <p className="text-xs text-neutral-600 mb-4">
-        资源上传 / 管理后端接口（<code>POST /api/v1/courses/:id/resources</code> +{' '}
-        <code>GET /api/v1/courses/:id/resources</code>）正在设计中。
-      </p>
       <div className="border-2 border-dashed border-neutral-200 rounded-md p-12 text-center">
         <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
-        <p className="text-sm text-neutral-600">P2 · 资源管理</p>
+        <p className="text-sm text-neutral-600">资源已迁到「章节大纲」tab</p>
         <p className="text-[10px] text-neutral-400 mt-1">
-          当前阶段课时元数据（标题/描述/视频URL）已在「章节大纲」tab 编辑
+          在章节大纲里选中具体课时,在右侧课时详情面板的「附加资源」段管理
         </p>
       </div>
     </Card>
@@ -1209,7 +1379,6 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
   const TABS_DYNAMIC: { id: Tab; label: string; count?: string }[] = [
     { id: 'info', label: '基本信息' },
     { id: 'chapters', label: '章节大纲', count: `${chapters.length} 章` },
-    { id: 'resources', label: '资源', count: 'P2' },
     { id: 'pricing', label: '价格 / 试看' },
     { id: 'publish', label: '发布设置' },
   ];
@@ -1301,7 +1470,6 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
           <>
             {currentTab === 'info' && <InfoTab courseId={courseId} />}
             {currentTab === 'chapters' && <ChaptersTab courseId={courseId} />}
-            {currentTab === 'resources' && <ResourcesTab courseId={courseId} />}
             {currentTab === 'pricing' && <PricingTab courseId={courseId} />}
             {currentTab === 'publish' && <PublishTab courseId={courseId} />}
           </>
@@ -1315,7 +1483,7 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
 // 路由层:根据 ?tab 决定走哪种 view
 // ──────────────────────────────────────────────────────────────────────────
 
-const VALID_TABS: Tab[] = ['info', 'chapters', 'resources', 'pricing', 'publish'];
+const VALID_TABS: Tab[] = ['info', 'chapters', 'pricing', 'publish'];
 
 export function AdminCoursesPage() {
   const [params] = useSearchParams();
