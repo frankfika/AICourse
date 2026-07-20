@@ -39,7 +39,7 @@ const TABS: { key: Tab; label: string }[] = [
 
 const TYPE_META: Record<string, { icon: typeof Bell; color: string; label: string; tab: 'system' | 'interaction' | null }> = {
   announcement: { icon: Megaphone, color: 'text-info-500 bg-info-100 dark:bg-info-500/20', label: '公告', tab: 'system' },
-  order: { icon: ShoppingBag, color: 'text-brand-500 bg-brand-100 dark:bg-brand-500/20', label: '订单', tab: 'system' },
+  order: { icon: ShoppingBag, color: 'text-[#171717] bg-[#EEEDE9]', label: '订单', tab: 'system' },
   comment: { icon: MessageCircle, color: 'text-success-500 bg-success-100 dark:bg-success-500/20', label: '互动', tab: 'interaction' },
   hackathon: { icon: Trophy, color: 'text-warning-500 bg-warning-100 dark:bg-warning-500/20', label: '黑客松', tab: 'interaction' },
 };
@@ -122,13 +122,13 @@ export function NotificationsPage() {
           <div className="flex items-center gap-3">
             <Link
               to="/dashboard"
-              className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
               aria-label="返回学习中心"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-brand-500" />
+              <Bell className="w-5 h-5 text-[#171717]" />
               <h1 className="text-2xl font-bold">通知中心</h1>
               {unreadCount > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-danger-500 text-white text-[10px] font-bold">
@@ -142,7 +142,7 @@ export function NotificationsPage() {
               <button
                 onClick={() => markAllMutation.mutate()}
                 disabled={markAllMutation.isPending}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-brand-500 hover:bg-brand-100 dark:hover:bg-brand-500/20 rounded-md transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#171717] hover:bg-[#EEEDE9] rounded-md transition-colors disabled:opacity-50"
               >
                 <CheckCheck className="w-4 h-4" />
                 全部已读
@@ -169,7 +169,7 @@ export function NotificationsPage() {
               className={cn(
                 'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
                 activeTab === t.key
-                  ? 'border-brand-500 text-brand-500'
+                  ? 'border-[#171717] text-[#171717]'
                   : 'border-transparent text-neutral-600 hover:text-neutral-900',
               )}
             >
@@ -214,7 +214,7 @@ export function NotificationsPage() {
                         <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-600">
                           {meta.label}
                         </span>
-                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-brand-500" aria-label="未读" />}
+                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[#171717]" aria-label="未读" />}
                       </div>
                       <span className="text-xs text-neutral-600 whitespace-nowrap shrink-0">
                         {relativeTime(n.createdAt)}
@@ -237,7 +237,7 @@ export function NotificationsPage() {
                   padding="none"
                   className={cn(
                     'overflow-hidden transition-colors',
-                    !n.read && 'border-l-4 border-l-brand-500',
+                    !n.read && 'border-l-4 border-l-[#171717]',
                   )}
                 >
                   {n.linkUrl ? (
@@ -258,7 +258,7 @@ export function NotificationsPage() {
                       <button
                         onClick={() => markReadMutation.mutate(n.id)}
                         disabled={markReadMutation.isPending}
-                        className="inline-flex items-center gap-1 text-xs text-brand-500 hover:underline disabled:opacity-50"
+                        className="inline-flex items-center gap-1 text-xs text-[#171717] hover:underline disabled:opacity-50"
                       >
                         <Check className="w-3 h-3" />
                         标已读

@@ -114,7 +114,7 @@ export function OrderDetailPage() {
           <p className="text-neutral-600 dark:text-neutral-600 mb-4">订单不存在</p>
           <Link
             to="/dashboard/orders"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626]"
           >
             <ArrowLeft className="w-4 h-4" />
             返回订单列表
@@ -136,13 +136,13 @@ export function OrderDetailPage() {
         <div className="flex items-center gap-3 mb-6">
           <Link
             to="/dashboard/orders"
-            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
             aria-label="返回订单列表"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-brand-500" />
+            <ShoppingBag className="w-5 h-5 text-[#171717]" />
             <h1 className="text-2xl font-bold">订单详情</h1>
             <span className="ml-2 text-sm text-neutral-600 dark:text-neutral-600">
               #{orderNo}
@@ -199,7 +199,7 @@ export function OrderDetailPage() {
                   <>
                     <button
                       onClick={() => payMutation.mutate(order.id)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 text-sm font-medium transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-sm font-medium transition-colors"
                     >
                       <CreditCard className="w-4 h-4" />
                       立即支付
@@ -267,7 +267,7 @@ export function OrderDetailPage() {
                 {order.type === 'course' && (
                   <Link
                     to={`/courses/${item.id}`}
-                    className="mt-3 inline-flex w-full justify-center items-center gap-1 px-3 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 text-xs font-medium transition-colors"
+                    className="mt-3 inline-flex w-full justify-center items-center gap-1 px-3 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-xs font-medium transition-colors"
                   >
                     查看课程
                   </Link>
@@ -275,7 +275,7 @@ export function OrderDetailPage() {
                 {order.type === 'degree' && (
                   <Link
                     to={`/degrees/${item.id}`}
-                    className="mt-3 inline-flex w-full justify-center items-center gap-1 px-3 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 text-xs font-medium transition-colors"
+                    className="mt-3 inline-flex w-full justify-center items-center gap-1 px-3 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-xs font-medium transition-colors"
                   >
                     查看学位
                   </Link>
@@ -307,7 +307,7 @@ function Field({
         className={cn(
           'flex-1 break-all',
           mono && 'font-mono text-xs',
-          highlight && 'text-xl font-bold text-brand-500',
+          highlight && 'text-xl font-bold text-[#171717]',
         )}
       >
         {value}

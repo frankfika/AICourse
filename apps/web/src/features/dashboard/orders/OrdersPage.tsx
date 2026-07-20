@@ -145,13 +145,13 @@ export function OrdersPage() {
         <div className="flex items-center gap-3 mb-6">
           <Link
             to="/dashboard"
-            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
             aria-label="返回学习中心"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-brand-500" />
+            <ShoppingBag className="w-5 h-5 text-[#171717]" />
             <h1 className="text-2xl font-bold">我的订单</h1>
             <span className="ml-2 text-sm text-neutral-600 dark:text-neutral-600">
               共 {orders.length} 笔
@@ -169,7 +169,7 @@ export function OrdersPage() {
                 className={cn(
                   'px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
                   activeTab === t.key
-                    ? 'border-brand-500 text-brand-500'
+                    ? 'border-[#171717] text-[#171717]'
                     : 'border-transparent text-neutral-600 hover:text-neutral-900',
                 )}
               >
@@ -199,7 +199,7 @@ export function OrdersPage() {
             action={
               <Link
                 to="/courses"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] transition-colors text-sm font-medium"
               >
                 <Search className="w-4 h-4" />
                 浏览课程
@@ -317,7 +317,7 @@ function OrderCard({
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between">
-            <div className="text-lg font-bold text-brand-500">
+            <div className="text-lg font-bold text-[#171717]">
               ¥{Number(order.amount).toFixed(2)}
             </div>
             <OrderActions order={order} onPay={onPay} onCancel={onCancel} onRefund={onRefund} compact isAnyPending={isAnyPending} />
@@ -382,7 +382,7 @@ function OrderTable({
                 <td className="px-4 py-3 max-w-[280px]">
                   <span className="font-medium truncate block">{itemTitle}</span>
                 </td>
-                <td className="px-4 py-3 text-right font-bold text-brand-500">
+                <td className="px-4 py-3 text-right font-bold text-[#171717]">
                   ¥{Number(o.amount).toFixed(2)}
                 </td>
                 <td className="px-4 py-3 text-center">
@@ -451,7 +451,7 @@ function OrderActions({
             disabled={isAnyPending}
             className={cn(
               baseBtn,
-              'bg-brand-500 text-neutral-0 hover:bg-brand-700',
+              'bg-[#171717] text-white hover:bg-[#262626]',
               'disabled:opacity-50 disabled:cursor-not-allowed',
             )}
             title="去支付"

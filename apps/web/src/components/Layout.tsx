@@ -91,7 +91,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 bg-neutral-50/95 backdrop-blur-md border-b border-neutral-200 dark:bg-neutral-950/95 dark:border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 font-black text-lg tracking-tighter">
-            <span className="w-7 h-7 bg-brand-500 flex items-center justify-center text-white rounded-md">
+            <span className="w-7 h-7 bg-[#171717] flex items-center justify-center text-white rounded-md">
               <GraduationCap className="w-4 h-4" />
             </span>
             <span className="uppercase text-neutral-900 dark:text-neutral-900">
@@ -104,7 +104,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className="px-3 py-2 text-neutral-600 hover:text-brand-500 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors uppercase tracking-wider text-[12px]"
+                className="px-3 py-2 text-neutral-600 hover:text-[#171717] hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors uppercase tracking-wider text-[12px]"
               >
                 {item.label}
               </Link>
@@ -122,7 +122,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               'rounded-md border border-neutral-200',
               'bg-neutral-100 dark:bg-neutral-100',
               'text-neutral-600 dark:text-neutral-600',
-              'hover:border-brand-500 hover:bg-neutral-0 dark:hover:bg-neutral-0',
+              'hover:border-[#171717] hover:bg-neutral-0 dark:hover:bg-neutral-0',
               'transition-colors text-left text-sm',
             )}
           >
@@ -142,7 +142,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   className="flex items-center gap-2 text-sm font-bold px-2 sm:px-3 py-2 min-h-[44px] hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
                   aria-label={`个人中心:${user.name}`}
                 >
-                  <div className="w-7 h-7 bg-brand-500 flex items-center justify-center text-white text-xs font-black rounded-md">
+                  <div className="w-7 h-7 bg-[#171717] flex items-center justify-center text-white text-xs font-black rounded-md">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <span className="hidden sm:inline text-neutral-900 dark:text-neutral-900">
@@ -169,7 +169,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             ) : (
               <Link
                 to="/login"
-                className="flex items-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-wider bg-brand-500 text-white px-3 sm:px-4 py-2 min-h-[44px] hover:bg-brand-700 transition-colors rounded-md"
+                className="flex items-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-wider bg-[#171717] text-white px-3 sm:px-4 py-2 min-h-[44px] hover:bg-[#262626] transition-colors rounded-md"
                 aria-label="登录"
               >
                 <UserIcon className="w-4 h-4" /> <span className="hidden xs:inline sm:hidden">登</span><span className="hidden sm:inline">登录</span>
@@ -201,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </button>
 
             <button
-              className="md:hidden p-2 hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
+              className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="菜单"
             >
@@ -216,7 +216,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className="block px-6 py-3 text-sm font-bold uppercase tracking-wider text-neutral-600 hover:text-brand-500 hover:bg-neutral-100 dark:hover:bg-neutral-100 border-b border-neutral-200"
+                className="block px-6 py-3 text-sm font-bold uppercase tracking-wider text-neutral-600 hover:text-[#171717] hover:bg-neutral-100 dark:hover:bg-neutral-100 border-b border-neutral-200"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {item.label}
@@ -226,7 +226,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 to="/login"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-6 py-3 text-sm font-bold uppercase tracking-wider text-brand-500 hover:bg-neutral-100 dark:hover:bg-neutral-100 border-b border-neutral-200"
+                className="block px-6 py-3 text-sm font-bold uppercase tracking-wider text-[#171717] hover:bg-neutral-100 dark:hover:bg-neutral-100 border-b border-neutral-200"
               >
                 登录
               </Link>
@@ -251,7 +251,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
             <div className="col-span-2">
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-8 h-8 rounded-md bg-[#171717] flex items-center justify-center text-white font-bold text-sm">
                   O
                 </div>
                 <span className="font-semibold text-neutral-900">OpenCSG Academy</span>
@@ -263,25 +263,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div>
               <h4 className="text-sm font-semibold mb-3 text-neutral-900">学习</h4>
               <ul className="space-y-2 text-sm text-neutral-600">
-                <li><Link to="/courses" className="hover:text-brand-500 transition">课程</Link></li>
-                <li><Link to="/degrees" className="hover:text-brand-500 transition">学位</Link></li>
-                <li><Link to="/hackathons" className="hover:text-brand-500 transition">黑客松</Link></li>
-                <li><Link to="/enterprise" className="hover:text-brand-500 transition">企业培训</Link></li>
+                <li><Link to="/courses" className="hover:text-[#171717] transition">课程</Link></li>
+                <li><Link to="/degrees" className="hover:text-[#171717] transition">学位</Link></li>
+                <li><Link to="/hackathons" className="hover:text-[#171717] transition">黑客松</Link></li>
+                <li><Link to="/enterprise" className="hover:text-[#171717] transition">企业培训</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-3 text-neutral-900">公司</h4>
               <ul className="space-y-2 text-sm text-neutral-600">
-                <li><a href="https://opencsg.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-500 transition">关于我们</a></li>
-                <li><Link to="/enterprise" className="hover:text-brand-500 transition">企业培训</Link></li>
-                <li><Link to="/courses" className="hover:text-brand-500 transition">价格</Link></li>
+                <li><a href="https://opencsg.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#171717] transition">关于我们</a></li>
+                <li><Link to="/enterprise" className="hover:text-[#171717] transition">企业培训</Link></li>
+                <li><Link to="/courses" className="hover:text-[#171717] transition">价格</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-3 text-neutral-900">法律</h4>
               <ul className="space-y-2 text-sm text-neutral-600">
-                <li><a href="#" className="hover:text-brand-500 transition">服务条款</a></li>
-                <li><a href="#" className="hover:text-brand-500 transition">隐私政策</a></li>
+                <li><a href="#" className="hover:text-[#171717] transition">服务条款</a></li>
+                <li><a href="#" className="hover:text-[#171717] transition">隐私政策</a></li>
               </ul>
             </div>
           </div>
@@ -300,7 +300,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
        * ============================================================ */}
       <Link
         to="/dashboard/learning"
-        className="fixed right-6 bottom-20 md:bottom-6 w-14 h-14 rounded-full bg-brand-500 text-white shadow-glow hover:bg-brand-700 transition-all hover:scale-105 flex items-center justify-center z-40"
+        className="fixed right-6 bottom-20 md:bottom-6 w-14 h-14 rounded-full bg-[#171717] text-white hover:bg-[#262626] transition-all hover:scale-105 flex items-center justify-center z-40"
         aria-label="打开 AI 助教"
         title="AI 助教"
       >
@@ -310,7 +310,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* ============================================================
        * 移动端 bottom tab(< 768px 显示)
        * 5 宫格:首页 / 课程 / 学位 / AI / 我的
-       * 当前路由高亮 brand-500
+       * 当前路由高亮 #171717 (brutalist 主色)
        * ============================================================ */}
       <nav
         className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-neutral-0/95 dark:bg-neutral-100/95 backdrop-blur border-t border-neutral-200"
@@ -370,8 +370,8 @@ function BottomTabLink({
       to={to}
       className={`flex flex-col items-center justify-center gap-0.5 min-h-[48px] min-w-[48px] py-1.5 px-2 transition-colors ${
         active
-          ? 'text-brand-500'
-          : 'text-neutral-600 dark:text-neutral-600 hover:text-brand-500'
+          ? 'text-[#171717]'
+          : 'text-neutral-600 dark:text-neutral-600 hover:text-[#171717]'
       }`}
       aria-current={active ? 'page' : undefined}
     >

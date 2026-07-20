@@ -36,7 +36,7 @@ interface CommandPaletteProps {
 
 // 每个 type 的视觉元数据
 const TYPE_META: Record<SearchResultType, { label: string; icon: typeof BookOpen; color: string }> = {
-  course: { label: '课程', icon: BookOpen, color: 'text-brand-500' },
+  course: { label: '课程', icon: BookOpen, color: 'text-[#171717]' },
   degree: { label: '学位', icon: GraduationCap, color: 'text-xp-500' },
   hackathon: { label: '黑客松', icon: Trophy, color: 'text-warning-500' },
   instructor: { label: '讲师', icon: UserIcon, color: 'text-info-500' },
@@ -194,7 +194,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           </kbd>
           <button
             onClick={onClose}
-            className="sm:hidden p-1 -mr-1 text-neutral-600 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-neutral-900"
+            className="sm:hidden p-1 -mr-1 min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-600 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-neutral-900"
             aria-label="关闭"
           >
             <X className="w-5 h-5" />
@@ -231,7 +231,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                       'px-3 py-1.5 rounded-full text-sm font-medium',
                       'bg-neutral-100 dark:bg-neutral-100',
                       'text-neutral-900 dark:text-neutral-900',
-                      'hover:bg-brand-100 dark:hover:bg-brand-100 hover:text-brand-700',
+                      'hover:bg-[#EEEDE9] dark:hover:bg-[#EEEDE9] hover:text-[#171717]',
                       'transition-colors',
                     )}
                   >
@@ -362,7 +362,7 @@ function ResultRow({
         'w-full text-left px-5 py-2.5 flex items-start gap-3',
         'transition-colors',
         selected
-          ? 'bg-brand-50 dark:bg-brand-900/30'
+          ? 'bg-[#EEEDE9] dark:bg-[#171717]/30'
           : 'hover:bg-neutral-50 dark:hover:bg-neutral-100',
       )}
     >
@@ -391,7 +391,7 @@ function ResultRow({
       <ArrowUpRight
         className={cn(
           'w-4 h-4 mt-0.5 shrink-0 transition-opacity',
-          selected ? 'opacity-100 text-brand-500' : 'opacity-0 text-neutral-400',
+          selected ? 'opacity-100 text-[#171717]' : 'opacity-0 text-neutral-400',
         )}
         aria-hidden="true"
       />

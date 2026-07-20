@@ -48,14 +48,14 @@ const TYPE_TABS: { key: SearchResultType | 'all'; label: string }[] = [
   { key: 'instructor', label: '讲师' },
 ];
 
-// 课程封面渐变(跟 HomePage 一致 — 按 tags 选色)
+// 课程封面渐变(跟 HomePage 一致 — brutalist 全黑白)
 function getCourseCoverGradient(tags: string | undefined): string {
   const t = (tags ?? '').toLowerCase();
-  if (t.includes('rag')) return 'from-xp-500 to-brand-500';
-  if (t.includes('mlops') || t.includes('deploy') || t.includes('vllm')) return 'from-info-500 to-xp-500';
-  if (t.includes('fine') || t.includes('tune') || t.includes('lora')) return 'from-cert-500 to-danger-500';
-  if (t.includes('llm') || t.includes('langchain')) return 'from-brand-500 to-brand-700';
-  return 'from-brand-500 to-xp-500';
+  if (t.includes('rag')) return 'from-[#171717] to-[#262626]';
+  if (t.includes('mlops') || t.includes('deploy') || t.includes('vllm')) return 'from-[#171717] to-[#262626]';
+  if (t.includes('fine') || t.includes('tune') || t.includes('lora')) return 'from-[#171717] to-[#262626]';
+  if (t.includes('llm') || t.includes('langchain')) return 'from-[#171717] to-[#262626]';
+  return 'from-[#171717] to-[#262626]';
 }
 
 export function SearchPage() {
@@ -135,7 +135,7 @@ export function SearchPage() {
           <h1 className="text-3xl md:text-display-md font-bold text-neutral-900 dark:text-neutral-900">
             {urlQ ? (
               <>
-                搜索: <span className="text-brand-500">「{urlQ}」</span>
+                搜索: <span className="text-[#171717] underline underline-offset-2">「{urlQ}」</span>
               </>
             ) : (
               '全站搜索'
@@ -187,7 +187,7 @@ export function SearchPage() {
                   className={cn(
                     'px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-colors rounded-md',
                     active
-                      ? 'bg-brand-500 text-white'
+                      ? 'bg-[#171717] text-white'
                       : 'bg-transparent text-neutral-600 dark:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-100',
                   )}
                 >
@@ -209,7 +209,7 @@ export function SearchPage() {
               className={cn(
                 'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                 sort === 'relevance'
-                  ? 'bg-brand-500 text-white'
+                  ? 'bg-[#171717] text-white'
                   : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-600 dark:text-neutral-600 hover:bg-neutral-200',
               )}
             >
@@ -220,7 +220,7 @@ export function SearchPage() {
               className={cn(
                 'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
                 sort === 'recent'
-                  ? 'bg-brand-500 text-white'
+                  ? 'bg-[#171717] text-white'
                   : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-600 dark:text-neutral-600 hover:bg-neutral-200',
               )}
             >
@@ -303,7 +303,7 @@ const TYPE_LABEL: Record<SearchResultType, string> = {
 };
 
 function TypeIcon({ type }: { type: SearchResultType }) {
-  const className = 'w-4 h-4 text-brand-500';
+  const className = 'w-4 h-4 text-[#171717]';
   switch (type) {
     case 'course':
       return <BookOpen className={className} />;
@@ -349,7 +349,7 @@ function CourseResultCard({ item }: { item: SearchResult }) {
   return (
     <Link
       to={item.href}
-      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden flex flex-col"
+      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-[#171717] hover:shadow-md transition overflow-hidden flex flex-col"
     >
       <div className={`aspect-video bg-gradient-to-br ${getCourseCoverGradient(tags)} relative`}>
         <span className="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium text-neutral-900">
@@ -371,7 +371,7 @@ function CourseResultCard({ item }: { item: SearchResult }) {
         )}
       </div>
       <div className="p-5 flex-1 flex flex-col">
-        <h3 className="font-semibold text-base group-hover:text-brand-500 transition line-clamp-1">
+        <h3 className="font-semibold text-base group-hover:text-[#171717] transition line-clamp-1">
           {item.title}
         </h3>
         {item.subtitle && (
@@ -395,10 +395,10 @@ function DegreeResultCard({ item }: { item: SearchResult }) {
   return (
     <Link
       to={item.href}
-      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-brand-500 hover:shadow-md transition p-5 flex flex-col"
+      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-[#171717] hover:shadow-md transition p-5 flex flex-col"
     >
       <div className="flex items-center gap-2 mb-3">
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-brand-100 text-brand-700 text-[10px] font-black uppercase tracking-widest rounded-full">
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#EEEDE9] text-[#171717] text-[10px] font-black uppercase tracking-widest rounded-full">
           <GraduationCap className="w-3 h-3" /> Nano Degree
         </span>
         {item.badge && (
@@ -412,7 +412,7 @@ function DegreeResultCard({ item }: { item: SearchResult }) {
           </span>
         )}
       </div>
-      <h3 className="font-semibold text-base group-hover:text-brand-500 transition line-clamp-1">
+      <h3 className="font-semibold text-base group-hover:text-[#171717] transition line-clamp-1">
         {item.title}
       </h3>
       {item.subtitle && (
@@ -436,7 +436,7 @@ function HackathonResultCard({ item }: { item: SearchResult }) {
   return (
     <Link
       to={item.href}
-      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-brand-500 hover:shadow-md transition p-5 flex flex-col"
+      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-[#171717] hover:shadow-md transition p-5 flex flex-col"
     >
       <div className="flex items-center gap-2 mb-3">
         <span
@@ -448,13 +448,13 @@ function HackathonResultCard({ item }: { item: SearchResult }) {
               ? 'bg-warning-500 text-white'
               : item.badge === '已结束'
               ? 'bg-neutral-200 text-neutral-600'
-              : 'bg-brand-100 text-brand-700',
+              : 'bg-[#EEEDE9] text-[#171717]',
           )}
         >
           <Trophy className="w-3 h-3" /> {item.badge ?? '即将开始'}
         </span>
       </div>
-      <h3 className="font-semibold text-base group-hover:text-brand-500 transition line-clamp-1">
+      <h3 className="font-semibold text-base group-hover:text-[#171717] transition line-clamp-1">
         {item.title}
       </h3>
       {item.subtitle && (
@@ -483,13 +483,13 @@ function InstructorResultCard({ item }: { item: SearchResult }) {
   return (
     <Link
       to={item.href}
-      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-brand-500 hover:shadow-md transition p-5 flex items-start gap-4"
+      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-[#171717] hover:shadow-md transition p-5 flex items-start gap-4"
     >
-      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-500 to-xp-500 flex items-center justify-center text-white text-xl font-black shrink-0">
+      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#171717] to-[#262626] flex items-center justify-center text-white text-xl font-black shrink-0">
         {initial}
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-base group-hover:text-brand-500 transition line-clamp-1">
+        <h3 className="font-semibold text-base group-hover:text-[#171717] transition line-clamp-1">
           {item.title}
         </h3>
         {item.subtitle && (
@@ -503,7 +503,7 @@ function InstructorResultCard({ item }: { item: SearchResult }) {
           </p>
         )}
       </div>
-      <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-brand-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0 mt-1" />
+      <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-[#171717] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0 mt-1" />
     </Link>
   );
 }

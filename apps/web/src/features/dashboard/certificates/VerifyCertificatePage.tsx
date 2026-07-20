@@ -84,7 +84,7 @@ export function VerifyCertificatePage() {
         {cert && (
           <Card padding="lg" variant="default">
             <div className="flex items-center gap-2 mb-4">
-              <Award className="w-5 h-5 text-brand-500" />
+              <Award className="w-5 h-5 text-[#171717]" />
               <h2 className="text-lg font-semibold">证书信息</h2>
             </div>
             <dl className="space-y-3 text-sm">
@@ -118,7 +118,7 @@ export function VerifyCertificatePage() {
         <div className="mt-8 text-center space-y-3">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 text-sm font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-sm font-medium transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             返回 OpenCSG Academy

@@ -91,11 +91,11 @@ export default function DesignSystemPage() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-neutral-0 font-bold text-sm">
+            <div className="w-8 h-8 rounded-md bg-[#171717] flex items-center justify-center text-neutral-0 font-bold text-sm">
               D
             </div>
             <span className="font-semibold text-lg">
-              Design System <span className="text-brand-500">v1</span>
+              Design System <span className="text-[#171717]">v1</span>
             </span>
           </div>
           <button

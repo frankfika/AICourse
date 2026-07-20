@@ -2,10 +2,10 @@
  * AuthShell — 登录/注册/忘记密码页面的外层布局
  *
  * 来自 mock-auth.html 的左右分屏:
- *   - 左侧:品牌宣言 + 渐变背景 + 数据 + 推荐语
+ *   - 左侧:品牌宣言 + brutalist 纯黑底 + 数据 + 推荐语
  *   - 右侧:实际表单
  *
- * 暗色: 左侧渐变不变(更暗的青绿),右侧 token 化
+ * 暗色: 左侧实心黑(全断点不变),右侧 token 化
  * 移动端:左栏隐藏,只显示表单
  */
 import type { ReactNode } from 'react';
@@ -44,11 +44,11 @@ export function AuthShell({ children }: { children: ReactNode }) {
       <header className="border-b border-neutral-200 dark:border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-brand-500 flex items-center justify-center text-neutral-0 font-bold text-sm">
+            <div className="w-8 h-8 rounded-md bg-[#171717] flex items-center justify-center text-neutral-0 font-bold text-sm">
               <GraduationCap className="w-4 h-4" />
             </div>
             <span className="font-semibold text-lg">
-              OpenCSG <span className="text-brand-500">Academy</span>
+              OpenCSG <span className="text-[#171717]">Academy</span>
             </span>
           </Link>
           <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
             </button>
             <Link
               to="/"
-              className="text-sm text-neutral-600 dark:text-neutral-600 hover:text-brand-500 transition-colors"
+              className="text-sm text-neutral-600 dark:text-neutral-600 hover:text-[#171717] transition-colors"
             >
               <ArrowLeft className="w-4 h-4 inline-block mr-1" />
               返回首页
@@ -78,13 +78,13 @@ export function AuthShell({ children }: { children: ReactNode }) {
       {/* 主体:左右分屏 */}
       <main className="min-h-[calc(100vh-4rem)] grid lg:grid-cols-2">
         {/* 左侧:品牌宣言 + 数据 */}
-        <section className="hidden lg:flex flex-col justify-between p-12 bg-gradient-to-br from-brand-500 via-brand-700 to-brand-900 text-neutral-0 relative overflow-hidden">
+        <section className="hidden lg:flex flex-col justify-between p-12 bg-[#171717] text-neutral-0 relative overflow-hidden">
           <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-xp-500/30 blur-3xl" />
-          <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-brand-300/20 blur-3xl" />
+          <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-[#EEEDE9]/20 blur-3xl" />
 
           <div className="relative">
             <Link to="/" className="inline-flex items-center gap-2 mb-12">
-              <div className="w-10 h-10 rounded-md bg-neutral-0 flex items-center justify-center text-brand-700 font-bold">
+              <div className="w-10 h-10 rounded-md bg-neutral-0 flex items-center justify-center text-[#171717] font-bold">
                 <GraduationCap className="w-5 h-5" />
               </div>
               <span className="font-semibold text-lg">OpenCSG Academy</span>
@@ -164,7 +164,7 @@ export function AuthTabSwitcher({
   const linkClass = (active: boolean) =>
     cn(
       'flex-1 py-2 rounded-md text-sm font-medium transition-all duration-150 text-center',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500',
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171717]',
       active
         ? 'bg-neutral-0 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 shadow-sm'
         : 'text-neutral-600 dark:text-neutral-600 hover:text-neutral-900 dark:hover:text-neutral-900',

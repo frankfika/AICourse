@@ -6,7 +6,7 @@
  *
  * 设计系统约定:
  *   - 居中布局
- *   - icon 容器用 brand-100 底 / brand-500 描边
+ *   - icon 容器:brutalist 调色板 — 亮色 bg-[#EEEDE9] / 暗色 bg-[#171717]/30,文字 #171717 / #EEEDE9
  *   - 文字走 token
  */
 import type { ReactNode } from 'react';
@@ -40,8 +40,8 @@ export function EmptyState({
         <div
           className={cn(
             'w-12 h-12 rounded-full flex items-center justify-center mb-4',
-            'bg-brand-100 text-brand-500',
-            'dark:bg-brand-900/30 dark:text-brand-300',
+            'bg-[#EEEDE9] text-[#171717]',
+            'dark:bg-[#171717]/30 dark:text-[#EEEDE9]',
           )}
           aria-hidden="true"
         >

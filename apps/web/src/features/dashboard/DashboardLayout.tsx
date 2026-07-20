@@ -44,7 +44,7 @@ export function DashboardLayout() {
           {/* 返回按钮 */}
           <Link
             to="/courses"
-            className="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-brand-500 transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-[#171717] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">返回课程</span>
@@ -53,7 +53,7 @@ export function DashboardLayout() {
           {/* 中:课程名 + 进度条 */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 truncate">
-              <GraduationCap className="w-3.5 h-3.5 shrink-0 text-brand-500" />
+              <GraduationCap className="w-3.5 h-3.5 shrink-0 text-[#171717]" />
               <span className="truncate font-medium">
                 {onLearning ? '我的学习 · 继续上次' : '用 LangChain 搭建第一个 Agent'}
               </span>
@@ -61,7 +61,7 @@ export function DashboardLayout() {
             {/* 进度条只在 sm+ 显示 */}
             <div className="hidden sm:block mt-1 h-1 rounded-full bg-neutral-200 dark:bg-neutral-200 overflow-hidden">
               <div
-                className="h-full bg-brand-500 transition-all"
+                className="h-full bg-[#171717] transition-all"
                 style={{ width: `${params.courseId ? 32 : 32}%` }}
               />
             </div>
@@ -78,7 +78,7 @@ export function DashboardLayout() {
               <span>🏆</span>
               <span className="font-mono font-medium">LV 4</span>
             </div>
-            <div className="flex items-center gap-1 text-brand-500">
+            <div className="flex items-center gap-1 text-[#171717]">
               <Sparkles className="w-3.5 h-3.5" />
               <span className="text-neutral-600 dark:text-neutral-600">AI 助教</span>
             </div>
@@ -135,7 +135,7 @@ function DashboardFallback() {
       className="flex-1 flex items-center justify-center text-neutral-400 dark:text-neutral-500"
     >
       <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#171717] border-t-transparent rounded-full animate-spin" />
         <span className="text-sm">加载中…</span>
       </div>
     </div>

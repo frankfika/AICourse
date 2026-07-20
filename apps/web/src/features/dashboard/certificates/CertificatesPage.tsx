@@ -4,9 +4,8 @@
  * 设计:
  *   - 顶部: 统计 (总数 / 课程 / 学位 / 黑客松)
  *   - 4 tab: 全部 / 课程 / 学位 / 黑客松
- *   - 证书卡片网格: 缩略图(渐变 + serial) + 标题 + 类型 + 编号 + 颁发时间 + 操作(查看/下载/验证)
- *   - 卡片 hover: 提升 shadow + 边框 brand-500
- *   - dark mode: 渐变背景用 brand-700 略深
+ *   - 证书卡片网格: 缩略图(brutalist 黑底 + serial) + 标题 + 类型 + 编号 + 颁发时间 + 操作(查看/下载/验证)
+ *   - 卡片 hover: 提升 shadow + 边框 #171717
  *
  * 响应式:
  *   - < sm: 1 列
@@ -57,12 +56,9 @@ const TYPE_LABEL: Record<CertificateType, string> = {
 };
 
 const TYPE_BG: Record<CertificateType, string> = {
-  course:
-    'from-brand-500 to-brand-700 dark:from-brand-700 dark:to-brand-900',
-  degree:
-    'from-cert-500 to-brand-500 dark:from-cert-500/80 dark:to-brand-700',
-  hackathon:
-    'from-warning-500 to-danger-500 dark:from-warning-500/80 dark:to-danger-500/80',
+  course: 'bg-gradient-to-br from-[#171717] to-[#262626]',
+  degree: 'bg-gradient-to-br from-[#171717] to-[#262626]',
+  hackathon: 'bg-gradient-to-br from-[#171717] to-[#262626]',
 };
 
 export function CertificatesPage() {
@@ -101,7 +97,7 @@ export function CertificatesPage() {
         <div className="flex items-center gap-3 mb-6">
           <Link
             to="/dashboard"
-            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
             aria-label="返回学习中心"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -130,7 +126,7 @@ export function CertificatesPage() {
                 className={cn(
                   'px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap inline-flex items-center gap-1.5',
                   activeTab === t.key
-                    ? 'border-brand-500 text-brand-500'
+                    ? 'border-[#171717] text-[#171717]'
                     : 'border-transparent text-neutral-600 hover:text-neutral-900',
                 )}
               >
@@ -161,7 +157,7 @@ export function CertificatesPage() {
             action={
               <Link
                 to="/courses"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] transition-colors text-sm font-medium"
               >
                 去完成课程
               </Link>
@@ -201,7 +197,7 @@ function StatCard({
       <div
         className={cn(
           'mt-1 text-3xl font-bold',
-          highlight ? 'text-brand-500' : 'text-neutral-900 dark:text-neutral-900',
+          highlight ? 'text-[#171717]' : 'text-neutral-900 dark:text-neutral-900',
         )}
       >
         {value}
@@ -273,7 +269,7 @@ function CertificateCard({
         <div className="mt-3 flex items-center gap-1.5">
           <Link
             to={`/dashboard/certificates/${cert.id}`}
-            className="flex-1 inline-flex items-center justify-center gap-1 h-8 px-2 text-xs font-medium rounded-md bg-brand-500 text-neutral-0 hover:bg-brand-700 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-1 h-8 px-2 text-xs font-medium rounded-md bg-[#171717] text-white hover:bg-[#262626] transition-colors"
           >
             <Eye className="w-3.5 h-3.5" />
             查看

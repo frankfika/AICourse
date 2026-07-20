@@ -2,8 +2,7 @@
  * CertificateDetailPage — P1-8 证书详情
  *
  * 设计:
- *   - 大证书视图(mock 证书样式, 渐变背景 + 装饰 + OpenCSG logo + 标题 + holder + serial + 颁发日期)
- *   - dark mode: 渐变用 brand-700 / cert-500
+ *   - 大证书视图(mock 证书样式, brutalist 黑底 + 装饰 + OpenCSG logo + 标题 + holder + serial + 颁发日期)
  *   - 底部操作: 下载(mock) + 验证(跳 /verify/:serial) + 返回
  *   - 公开页面(任何人都能看), 响应式
  */
@@ -40,12 +39,9 @@ const TYPE_ICON: Record<CertificateType, React.ReactNode> = {
 };
 
 const TYPE_GRADIENT: Record<CertificateType, string> = {
-  course:
-    'from-brand-500 via-brand-700 to-brand-900 dark:from-brand-700 dark:via-brand-900 dark:to-brand-900',
-  degree:
-    'from-cert-500 via-brand-500 to-brand-700 dark:from-cert-500/80 dark:via-brand-700 dark:to-brand-900',
-  hackathon:
-    'from-warning-500 via-danger-500 to-brand-700 dark:from-warning-500/80 dark:via-danger-500/80 dark:to-brand-700',
+  course: 'bg-[#171717]',
+  degree: 'bg-[#171717]',
+  hackathon: 'bg-[#171717]',
 };
 
 export function CertificateDetailPage() {
@@ -101,7 +97,7 @@ export function CertificateDetailPage() {
           <p className="text-neutral-600 dark:text-neutral-600 mb-4">证书不存在</p>
           <Link
             to="/dashboard/certificates"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626]"
           >
             <ArrowLeft className="w-4 h-4" />
             返回证书列表
@@ -126,7 +122,7 @@ export function CertificateDetailPage() {
         <div className="flex items-center gap-3 mb-6">
           <Link
             to="/dashboard/certificates"
-            className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
             aria-label="返回证书列表"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -142,7 +138,7 @@ export function CertificateDetailPage() {
           <div
             ref={certRef}
             className={cn(
-              'relative aspect-[16/10] sm:aspect-[16/9] bg-gradient-to-br text-white p-8 sm:p-12 flex flex-col items-center justify-center text-center',
+              'relative aspect-[16/10] sm:aspect-[16/9] text-white p-8 sm:p-12 flex flex-col items-center justify-center text-center',
               'print:aspect-auto print:min-h-[80vh] print:p-16',
               TYPE_GRADIENT[typeKey],
             )}
@@ -233,7 +229,7 @@ export function CertificateDetailPage() {
             <div className="flex flex-wrap items-center gap-2 pt-2 print:hidden">
               <button
                 onClick={handleDownloadPdf}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-neutral-0 rounded-md hover:bg-brand-700 text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-sm font-medium transition-colors"
               >
                 <Printer className="w-4 h-4" />
                 下载 PDF

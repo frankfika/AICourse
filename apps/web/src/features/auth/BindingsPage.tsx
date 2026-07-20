@@ -183,7 +183,7 @@ export function BindingsPage() {
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-xp-100 text-xp-500">
             已登录用户 · 账号绑定管理
           </span>
-          <h1 className="mt-3 text-3xl font-bold text-neutral-900 dark:text-neutral-900">
+          <h1 className="mt-3 text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-900">
             绑定第三方账号,登录更便捷
           </h1>
           <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-600">
@@ -229,7 +229,7 @@ export function BindingsPage() {
                     <div
                       className={
                         isPrimary
-                          ? 'w-10 h-10 rounded-lg bg-brand-500 text-neutral-0 flex items-center justify-center'
+                          ? 'w-10 h-10 rounded-lg bg-[#171717] text-neutral-0 flex items-center justify-center'
                           : 'w-10 h-10 rounded-lg border border-neutral-200 flex items-center justify-center text-neutral-600'
                       }
                     >
@@ -312,7 +312,7 @@ export function BindingsPage() {
               解绑会立即吊销对应 provider 的 refresh token。如发现异常登录,前往{' '}
               <a
                 href="/dashboard/settings/security"
-                className="text-brand-500 underline"
+                className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white"
               >
                 安全设置
               </a>{' '}

@@ -186,7 +186,7 @@ function ChapterOutline({
         </div>
         <div className="mt-2 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-200 overflow-hidden">
           <div
-            className="h-full bg-brand-500 transition-all"
+            className="h-full bg-[#171717] transition-all"
             style={{ width: `${percent}%` }}
           />
         </div>
@@ -218,7 +218,7 @@ function ChapterOutline({
                     isChapterDone
                       ? 'bg-success-500 text-neutral-0'
                       : isCurrentChapter
-                        ? 'bg-brand-500 text-neutral-0'
+                        ? 'bg-[#171717] text-white'
                         : 'bg-neutral-200 dark:bg-neutral-200 text-neutral-600 dark:text-neutral-600',
                   )}
                 >
@@ -252,7 +252,7 @@ function ChapterOutline({
                         className={cn(
                           'w-full flex items-center gap-2 p-2 rounded text-xs text-left transition-colors',
                           isCurrent
-                            ? 'bg-brand-500 text-neutral-0 hover:bg-brand-700'
+                            ? 'bg-[#171717] text-white hover:bg-[#262626]'
                             : isLocked
                               ? 'opacity-50 cursor-not-allowed text-neutral-600 dark:text-neutral-600'
                               : 'hover:bg-neutral-50 dark:hover:bg-neutral-50 text-neutral-900 dark:text-neutral-900',
@@ -267,7 +267,7 @@ function ChapterOutline({
                             )}
                           />
                         ) : isInProgress && !isCurrent ? (
-                          <span className="w-3.5 h-3.5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin shrink-0" />
+                          <span className="w-3.5 h-3.5 rounded-full border-2 border-[#171717] border-t-transparent animate-spin shrink-0" />
                         ) : isLocked ? (
                           <Lock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                         ) : (
@@ -372,7 +372,7 @@ function VideoCenter({
     <div className="flex flex-col h-full bg-neutral-50 dark:bg-neutral-50">
       {/* 视频区 16:9 */}
       <div className="aspect-video bg-black relative flex items-center justify-center text-white shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-900/40 to-xp-500/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#171717]/40 to-[#262626]/20" />
         <div className="relative text-center">
           <button
             className="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition mx-auto"
@@ -386,14 +386,14 @@ function VideoCenter({
         <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent">
           <div className="h-1 rounded-full bg-white/30 overflow-hidden mb-2">
             <div
-              className="h-full bg-brand-500 transition-all"
+              className="h-full bg-[#171717] transition-all"
               style={{
                 width: `${currentLesson.videoDuration ? (videoTime / currentLesson.videoDuration) * 100 : 0}%`,
               }}
             />
           </div>
           <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-            <button className="text-white hover:text-brand-300 transition-colors" aria-label="播放/暂停">
+            <button className="text-white hover:opacity-70 transition-opacity min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="播放/暂停">
               <PlayCircle className="w-5 h-5" />
             </button>
             <span className="font-mono text-[10px] sm:text-xs">
@@ -437,8 +437,8 @@ function VideoCenter({
             className={cn(
               'flex items-center gap-1.5 px-3 sm:px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
               centerTab === t.id
-                ? 'border-brand-500 text-brand-500'
-                : 'border-transparent text-neutral-600 dark:text-neutral-600 hover:text-brand-500',
+                ? 'border-[#171717] text-[#171717]'
+                : 'border-transparent text-neutral-600 dark:text-neutral-600 hover:text-[#171717]',
             )}
           >
             {t.icon}
@@ -452,7 +452,7 @@ function VideoCenter({
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-neutral-50 dark:bg-neutral-50">
         {centerTab === 'notes' && (
           <div className="space-y-3 max-w-3xl">
-            <div className="mb-4 p-3 sm:p-4 rounded-lg bg-brand-50 dark:bg-brand-50 border border-brand-100">
+            <div className="mb-4 p-3 sm:p-4 rounded-lg bg-[#EEEDE9] border border-[#171717]">
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-600">
                 💡 提示:在视频任意时间点按 <kbd className="px-1.5 py-0.5 rounded bg-neutral-0 dark:bg-neutral-100 border text-xs font-mono">N</kbd> 添加时间戳笔记
               </p>
@@ -483,7 +483,7 @@ function VideoCenter({
                 key={i}
                 className="p-3 sm:p-4 rounded-lg border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 flex gap-3"
               >
-                <span className="font-mono text-xs text-brand-500 shrink-0 pt-0.5">{line.time}</span>
+                <span className="font-mono text-xs text-[#171717] shrink-0 pt-0.5">{line.time}</span>
                 <p className="text-sm text-neutral-900 dark:text-neutral-900 leading-relaxed">{line.text}</p>
               </div>
             ))}
@@ -503,9 +503,9 @@ function VideoCenter({
                 key={i}
                 href="#"
                 onClick={(e) => e.preventDefault()}
-                className="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 hover:border-brand-500 transition-colors"
+                className="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 hover:border-[#171717] transition-colors"
               >
-                <span className="w-9 h-9 rounded-md bg-brand-100 text-brand-500 flex items-center justify-center text-xs font-bold shrink-0">
+                <span className="w-9 h-9 rounded-md bg-[#EEEDE9] text-[#171717] flex items-center justify-center text-xs font-bold shrink-0">
                   {r.type.toUpperCase()}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -514,7 +514,7 @@ function VideoCenter({
                   </div>
                   <div className="text-xs text-neutral-600 dark:text-neutral-600">{r.size}</div>
                 </div>
-                <span className="text-xs text-brand-500">下载</span>
+                <span className="text-xs text-[#171717]">下载</span>
               </a>
             ))}
           </div>
@@ -536,7 +536,7 @@ function VideoCenter({
         <button
           onClick={() => onNavigate('prev')}
           disabled={!hasPrev}
-          className="px-3 sm:px-4 py-2 rounded-md border border-neutral-200 dark:border-neutral-200 text-xs sm:text-sm hover:border-brand-500 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-900 flex items-center gap-1"
+          className="px-3 sm:px-4 py-2 rounded-md border border-neutral-200 dark:border-neutral-200 text-xs sm:text-sm hover:border-[#171717] disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-900 flex items-center gap-1"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">上一节</span>
@@ -547,7 +547,7 @@ function VideoCenter({
         <button
           onClick={() => onMarkComplete(currentLesson.id)}
           disabled={isCompleting || isCurrentCompleted}
-          className="px-3 sm:px-4 py-2 rounded-md bg-brand-500 text-white text-xs sm:text-sm font-medium hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-glow flex items-center gap-1"
+          className="px-3 sm:px-4 py-2 rounded-md bg-[#171717] text-white text-xs sm:text-sm font-medium hover:bg-[#262626] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1"
         >
           {isCurrentCompleted ? '已完成' : isCompleting ? '提交中…' : '标记完成'}
           <ArrowRight className="w-3.5 h-3.5" />
@@ -602,7 +602,7 @@ function AiAssistant({
     <div className="flex flex-col h-full bg-neutral-0 dark:bg-neutral-100">
       {/* 顶部:AI 助教 + 操作 */}
       <div className="p-4 border-b border-neutral-200 dark:border-neutral-200 flex items-center gap-2 shrink-0">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-xp-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#171717] to-[#262626] flex items-center justify-center text-white text-xs font-bold shrink-0">
           AI
         </div>
         <div className="min-w-0 flex-1">
@@ -613,21 +613,21 @@ function AiAssistant({
           </div>
         </div>
         <button
-          className="p-1.5 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 text-neutral-600 dark:text-neutral-600"
+          className="p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 text-neutral-600 dark:text-neutral-600"
           title="重新开始"
           onClick={() => setMessages([])}
         >
           <RefreshCw className="w-4 h-4" />
         </button>
         <button
-          className="p-1.5 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 text-neutral-600 dark:text-neutral-600"
+          className="p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 text-neutral-600 dark:text-neutral-600"
           title="设置"
         >
           <SettingsIcon className="w-4 h-4" />
         </button>
         {onClose && (
           <button
-            className="md:hidden p-1.5 rounded-md hover:bg-neutral-50 text-neutral-600"
+            className="md:hidden p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-50 text-neutral-600"
             title="关闭"
             onClick={onClose}
           >
@@ -642,7 +642,7 @@ function AiAssistant({
           <button
             key={p}
             onClick={() => handleQuick(p)}
-            className="px-2.5 py-1 rounded-full bg-neutral-50 dark:bg-neutral-50 text-xs text-neutral-900 dark:text-neutral-900 hover:bg-brand-100 transition-colors whitespace-nowrap border border-neutral-200 dark:border-neutral-200"
+            className="px-2.5 py-1 rounded-full bg-neutral-50 dark:bg-neutral-50 text-xs text-neutral-900 dark:text-neutral-900 hover:bg-[#EEEDE9] transition-colors whitespace-nowrap border border-neutral-200 dark:border-neutral-200"
           >
             {p}
           </button>
@@ -673,7 +673,7 @@ function AiAssistant({
               className={cn(
                 'text-sm rounded-lg p-3 max-w-[85%] sm:max-w-[80%]',
                 m.role === 'user'
-                  ? 'bg-brand-100 text-neutral-900 dark:text-neutral-900'
+                  ? 'bg-[#EEEDE9] text-neutral-900 dark:text-neutral-900'
                   : m.challenge
                     ? 'bg-xp-100 border border-xp-500/20'
                     : 'bg-neutral-50 dark:bg-neutral-50 text-neutral-900 dark:text-neutral-900',
@@ -707,7 +707,7 @@ function AiAssistant({
       <div className="p-3 border-t border-neutral-200 dark:border-neutral-200 shrink-0">
         <div className="flex items-end gap-2">
           <button
-            className="p-2 text-neutral-600 dark:text-neutral-600 hover:text-brand-500"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-600 dark:text-neutral-600 hover:text-[#171717]"
             title="附加资源"
           >
             <Paperclip className="w-4 h-4" />
@@ -723,12 +723,12 @@ function AiAssistant({
             }}
             placeholder="问 AI 助教... (Shift+Enter 换行)"
             rows={2}
-            className="flex-1 px-3 py-2 rounded-md bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 dark:border-neutral-200 text-sm resize-none focus:outline-none focus:border-brand-500 text-neutral-900 dark:text-neutral-900 placeholder:text-neutral-400"
+            className="flex-1 px-3 py-2 rounded-md bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 dark:border-neutral-200 text-base resize-none focus:outline-none focus:border-[#171717] text-neutral-900 dark:text-neutral-900 placeholder:text-neutral-400"
           />
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="p-2 rounded-md bg-brand-500 text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md bg-[#171717] text-white hover:bg-[#262626] disabled:opacity-50 disabled:cursor-not-allowed transition"
             aria-label="发送"
           >
             <Send className="w-4 h-4" />
@@ -863,7 +863,7 @@ export function DashboardPage() {
           action={
             <a
               href="/courses"
-              className="inline-flex items-center gap-2 bg-brand-500 text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-brand-700"
+              className="inline-flex items-center gap-2 bg-[#171717] text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-[#262626]"
             >
               浏览课程 <ArrowRight className="w-4 h-4" />
             </a>
@@ -888,7 +888,7 @@ export function DashboardPage() {
             className={cn(
               'flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors',
               mobileTab === t
-                ? 'border-brand-500 text-brand-500'
+                ? 'border-[#171717] text-[#171717]'
                 : 'border-transparent text-neutral-600 dark:text-neutral-600',
             )}
           >
@@ -963,7 +963,7 @@ export function DashboardPage() {
        * ============================================================ */}
       <button
         onClick={() => setAiDrawerOpen(true)}
-        className="hidden md:flex lg:hidden fixed right-4 bottom-4 w-12 h-12 rounded-full bg-gradient-to-br from-brand-500 to-xp-500 text-white shadow-glow hover:scale-105 transition-all items-center justify-center z-30"
+        className="hidden md:flex lg:hidden fixed right-4 bottom-4 w-12 h-12 rounded-full bg-gradient-to-br from-[#171717] to-[#262626] text-white hover:scale-105 transition-all items-center justify-center z-30"
         aria-label="打开 AI 助教"
       >
         <Sparkles className="w-5 h-5" />

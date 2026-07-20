@@ -71,7 +71,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           'bg-neutral-0 dark:bg-neutral-0',
           hasError
             ? 'border-danger-500 focus-within:ring-2 focus-within:ring-danger-500/30'
-            : 'border-neutral-200 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20',
+            : 'border-neutral-200 focus-within:border-[#171717] focus-within:ring-2 focus-within:ring-[#171717]/20',
           disabled && 'opacity-50 cursor-not-allowed',
         )}
       >

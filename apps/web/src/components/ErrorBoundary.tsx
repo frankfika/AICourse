@@ -88,7 +88,7 @@ function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
           <button
             type="button"
             onClick={reset}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-700 transition-colors text-sm font-medium"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] transition-colors text-sm font-medium min-h-[44px]"
           >
             <RotateCcw className="w-4 h-4" aria-hidden="true" />
             重试

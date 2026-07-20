@@ -154,7 +154,7 @@ export function ProviderButtons({
               'dark:border-neutral-200 dark:bg-neutral-100',
               'transition-all duration-150',
               !disabled &&
-                'hover:border-brand-500 hover:-translate-y-px hover:shadow-md',
+                'hover:border-[#171717] hover:-translate-y-px hover:shadow-md',
               disabled &&
                 'opacity-50 cursor-not-allowed',
             )}

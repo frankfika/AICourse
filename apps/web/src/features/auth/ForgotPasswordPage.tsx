@@ -71,7 +71,7 @@ export function ForgotPasswordPage() {
   if (sentTo) {
     return (
       <AuthShell>
-        <Card variant="default" padding="lg" className="text-center">
+        <Card variant="default" padding="md" className="text-center">
           <div className="flex justify-center mb-4">
             <div className="w-12 h-12 rounded-full bg-success-100 text-success-500 flex items-center justify-center">
               <CheckCircle2 className="h-6 w-6" />
@@ -120,7 +120,7 @@ export function ForgotPasswordPage() {
         </p>
       </header>
 
-      <Card variant="default" padding="lg" className="mt-6">
+      <Card variant="default" padding="md" className="mt-6">
         <form className="space-y-4" onSubmit={onSubmit} noValidate>
           <Input
             label="邮箱"
@@ -150,7 +150,7 @@ export function ForgotPasswordPage() {
         想起密码了?{' '}
         <Link
           to="/auth/login"
-          className="text-brand-500 font-medium hover:underline"
+          className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white font-medium"
         >
           返回登录
         </Link>

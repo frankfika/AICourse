@@ -234,7 +234,7 @@ export function RegisterPage() {
         已有账号?{' '}
         <Link
           to="/auth/login"
-          className="text-brand-500 font-medium hover:underline"
+          className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white font-medium"
         >
           直接登录 →
         </Link>

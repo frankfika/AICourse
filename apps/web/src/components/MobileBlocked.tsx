@@ -53,7 +53,7 @@ export function MobileBlocked({
         'bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50',
       )}
     >
-      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-500/20 text-brand-500 mb-6">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#EEEDE9] dark:bg-[#262626]/20 text-[#171717] mb-6">
         <Monitor className="w-8 h-8" aria-hidden="true" />
       </div>
       <h1 className="text-xl font-bold mb-2">{title}</h1>
@@ -62,7 +62,7 @@ export function MobileBlocked({
       </p>
       <button
         onClick={handleCopy}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-md hover:bg-brand-700 text-sm font-medium transition-colors"
+        className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-sm font-medium transition-colors min-h-[44px]"
       >
         {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
         {copied ? '已复制' : '复制当前链接到桌面浏览器'}

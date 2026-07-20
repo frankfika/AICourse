@@ -160,7 +160,7 @@ export function LoginPage() {
             </label>
             <Link
               to="/auth/forgot"
-              className="text-xs text-brand-500 hover:underline"
+              className="text-xs text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white"
             >
               忘记密码?
             </Link>
@@ -196,7 +196,7 @@ export function LoginPage() {
         <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 cursor-pointer select-none">
           <input
             type="checkbox"
-            className="rounded border-neutral-200 text-brand-500 focus:ring-brand-500"
+            className="rounded border-neutral-200 text-[#171717] focus:ring-[#171717]"
             {...register('remember')}
           />
           7 天内自动登录(仅本设备)
@@ -219,7 +219,7 @@ export function LoginPage() {
         还没有账号?{' '}
         <Link
           to="/auth/register"
-          className="text-brand-500 font-medium hover:underline"
+          className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white font-medium"
         >
           免费注册 →
         </Link>
