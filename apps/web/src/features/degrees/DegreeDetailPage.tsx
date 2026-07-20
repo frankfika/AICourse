@@ -150,7 +150,7 @@ export function DegreeDetailPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
             to="/degrees"
-            className="inline-flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 hover:text-brand-500 transition-colors"
+            className="inline-flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 hover:text-[#171717] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back To Degrees
           </Link>

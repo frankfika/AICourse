@@ -13,7 +13,7 @@
  *      - 评分(4.0+ / 3.0+ / 全部)
  *      - 清除全部筛选按钮
  *   3. 右侧:排序条(最新 / 最热门 / 评分)+ 计数
- *   4. 卡片:复用 P0-5 home 的 Card 风格(rounded-xl + hover brand-500)
+ *   4. 卡片:复用 P0-5 home 的 Card 风格(rounded-xl + hover #171717,brutalist 硬边)
  *   5. mobile:筛选侧栏折叠成顶部一行(可点开 filter sheet),排序条保留
  *   6. 暗色:全部走 token
  *
@@ -73,11 +73,11 @@ type SortKey = 'popular' | 'recent' | 'rating';
 // 卡片封面渐变(按 tags 选色 — 跟 SearchPage / HomePage 一致)
 function getCourseCoverGradient(tags: string | undefined): string {
   const t = (tags ?? '').toLowerCase();
-  if (t.includes('rag')) return 'from-xp-500 to-brand-500';
-  if (t.includes('mlops') || t.includes('deploy') || t.includes('vllm')) return 'from-info-500 to-xp-500';
-  if (t.includes('fine') || t.includes('tune') || t.includes('lora')) return 'from-cert-500 to-danger-500';
-  if (t.includes('llm') || t.includes('langchain')) return 'from-brand-500 to-brand-700';
-  return 'from-brand-500 to-xp-500';
+  if (t.includes('rag')) return 'from-[#171717] to-[#262626]';
+  if (t.includes('mlops') || t.includes('deploy') || t.includes('vllm')) return 'from-[#171717] to-[#262626]';
+  if (t.includes('fine') || t.includes('tune') || t.includes('lora')) return 'from-[#171717] to-[#262626]';
+  if (t.includes('llm') || t.includes('langchain')) return 'from-[#171717] to-[#262626]';
+  return 'from-[#171717] to-[#262626]';
 }
 
 // 时长档位(从 duration 字符串解析小时数 → 归类)
@@ -291,7 +291,7 @@ export function CourseListPage() {
               <button
                 key={kw}
                 onClick={() => setInput(kw)}
-                className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-brand-100 hover:text-brand-700 transition-colors"
+                className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-[#171717] hover:text-white transition-colors"
               >
                 {kw}
               </button>
@@ -331,7 +331,7 @@ export function CourseListPage() {
             {/* mobile 弹层关闭按钮 — lg 时 hidden */}
             <div className="flex items-center justify-between mb-4 lg:hidden">
               <h3 className="text-base font-bold flex items-center gap-2">
-                <FilterIcon className="w-4 h-4 text-brand-500" />
+                <FilterIcon className="w-4 h-4 text-[#171717]" />
                 筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
               </h3>
               <button
@@ -378,8 +378,8 @@ export function CourseListPage() {
                       className={cn(
                         'px-3 py-1.5 rounded-md text-xs transition-colors',
                         active
-                          ? 'bg-brand-500 text-white'
-                          : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-brand-100',
+                          ? 'bg-[#171717] text-white'
+                          : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-[#EEEDE9]',
                       )}
                     >
                       {LEVEL_LABELS[lv]}
@@ -509,7 +509,7 @@ export function CourseListPage() {
 
             <button
               onClick={clearAll}
-              className="w-full px-3 py-2 rounded-md text-sm border border-neutral-200 text-neutral-900 dark:text-neutral-900 hover:border-brand-500 hover:text-brand-500 transition-colors"
+              className="w-full px-3 py-2 rounded-md text-sm border border-neutral-200 text-neutral-900 dark:text-neutral-900 hover:border-[#171717] hover:text-[#171717] transition-colors"
             >
               清除全部筛选
             </button>
@@ -548,7 +548,7 @@ export function CourseListPage() {
                 </span>{' '}
                 门课程
                 {activeFilterCount > 0 && (
-                  <span className="ml-2 text-brand-500">
+                  <span className="ml-2 text-[#171717]">
                     ({activeFilterCount} 个筛选)
                   </span>
                 )}
@@ -568,8 +568,8 @@ export function CourseListPage() {
                       className={cn(
                         'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
                         active
-                          ? 'bg-brand-500 text-white'
-                          : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-brand-100',
+                          ? 'bg-[#171717] text-white'
+                          : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-[#EEEDE9]',
                       )}
                     >
                       {opt.label}
@@ -657,7 +657,7 @@ function CourseCardLink({ course }: { course: Course }) {
       to={course.externalUrl && course.courseType === 'third_party' ? course.externalUrl : `/courses/${course.id}`}
       target={course.externalUrl && course.courseType === 'third_party' ? '_blank' : undefined}
       rel={course.externalUrl && course.courseType === 'third_party' ? 'noopener noreferrer' : undefined}
-      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden flex flex-col"
+      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-[#171717] hover:shadow-md transition overflow-hidden flex flex-col"
     >
       <div
         className={`aspect-video bg-gradient-to-br ${getCourseCoverGradient(course.tags)} relative`}
@@ -682,7 +682,7 @@ function CourseCardLink({ course }: { course: Course }) {
         </span>
       </div>
       <div className="p-5 flex-1 flex flex-col">
-        <h3 className="font-semibold text-base group-hover:text-brand-500 transition line-clamp-1">
+        <h3 className="font-semibold text-base group-hover:text-[#171717] transition line-clamp-1">
           {course.title}
         </h3>
         <p className="mt-1.5 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">
@@ -707,7 +707,7 @@ function CourseCardLink({ course }: { course: Course }) {
         )}
         <div className="mt-auto pt-3 flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-600 border-t border-neutral-200">
           <div className="flex items-center gap-2 truncate">
-            <div className="w-5 h-5 rounded-full bg-brand-500 shrink-0" />
+            <div className="w-5 h-5 rounded-full bg-[#171717] shrink-0" />
             <span className="truncate">{course.instructor}</span>
           </div>
           <div className="flex items-center gap-3 shrink-0">

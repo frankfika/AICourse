@@ -92,8 +92,7 @@ interface Instructor {
   name: string;
   title: string;
   initials: string;
-  gradientFrom: string;
-  gradientTo: string;
+  cover: string;
   linkedin: string;
 }
 
@@ -142,15 +141,16 @@ function useCountdown(
 }
 
 // =============================================================
-// 课程封面渐变 fallback(按 tags 选色)
+// 课程封面 fallback(按 tags 选 brutalist 实心底)
+// brutalist 不要渐变,统一 #171717 / #262626 黑灰硬边
 // =============================================================
-function getCourseCoverGradient(tags: string | undefined): string {
+function getCourseCoverBg(tags: string | undefined): string {
   const t = (tags ?? '').toLowerCase();
-  if (t.includes('rag')) return 'from-xp-500 to-brand-500';
-  if (t.includes('mlops') || t.includes('deploy')) return 'from-info-500 to-xp-500';
-  if (t.includes('fine') || t.includes('tune')) return 'from-cert-500 to-danger-500';
-  if (t.includes('llm')) return 'from-brand-500 to-brand-700';
-  return 'from-brand-500 to-xp-500';
+  if (t.includes('rag')) return 'bg-[#171717]';
+  if (t.includes('mlops') || t.includes('deploy')) return 'bg-[#262626]';
+  if (t.includes('fine') || t.includes('tune')) return 'bg-[#171717]';
+  if (t.includes('llm')) return 'bg-[#171717]';
+  return 'bg-[#171717]';
 }
 
 // =============================================================
@@ -184,7 +184,7 @@ function CoursesSection() {
           </div>
           <Link
             to="/courses"
-            className="text-sm text-brand-500 hover:text-brand-700 font-medium hidden sm:inline-flex items-center gap-1"
+            className="text-sm text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white font-medium hidden sm:inline-flex items-center gap-1"
           >
             浏览全部 <ArrowUpRight className="w-4 h-4" />
           </Link>
@@ -220,10 +220,10 @@ function CoursesSection() {
                 <Link
                   key={course.id}
                   to={`/courses/${course.id}`}
-                  className="group block rounded-xl bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 hover:border-brand-500 hover:shadow-md transition overflow-hidden"
+                  className="group block rounded-xl bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 hover:border-[#171717] transition overflow-hidden"
                 >
                   <div
-                    className={`aspect-video bg-gradient-to-br ${getCourseCoverGradient(course.tags)} relative flex items-end p-4`}
+                    className={`aspect-video ${getCourseCoverBg(course.tags)} relative flex items-end p-4`}
                   >
                     <span className="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium text-neutral-900">
                       {course.tags || 'LLM 应用'}
@@ -233,7 +233,7 @@ function CoursesSection() {
                     </span>
                   </div>
                   <div className="p-5">
-                    <h3 className="font-semibold text-lg group-hover:text-brand-500 transition text-neutral-900 line-clamp-2">
+                    <h3 className="font-semibold text-lg text-neutral-900 line-clamp-2">
                       {course.title}
                     </h3>
                     <p className="mt-2 text-sm text-neutral-600 line-clamp-2">
@@ -266,7 +266,7 @@ function CoursesSection() {
                           ¥ {Number(course.price).toFixed(0)}
                         </span>
                       )}
-                      <span className="text-xs text-brand-500 font-medium inline-flex items-center gap-1">
+                      <span className="text-xs text-[#171717] underline underline-offset-2 font-medium inline-flex items-center gap-1">
                         立即试看 <ArrowUpRight className="w-3 h-3" />
                       </span>
                     </div>
@@ -316,7 +316,7 @@ function DegreesSection() {
           </div>
           <Link
             to="/degrees"
-            className="text-sm text-brand-500 hover:text-brand-700 font-medium hidden sm:inline-flex items-center gap-1"
+            className="text-sm text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white font-medium hidden sm:inline-flex items-center gap-1"
           >
             浏览全部 <ArrowUpRight className="w-4 h-4" />
           </Link>
@@ -355,8 +355,8 @@ function DegreesSection() {
                   to={`/degrees/${degree.id}`}
                   className={`block rounded-xl p-6 transition ${
                     isHot
-                      ? 'border-2 border-brand-500 shadow-glow'
-                      : 'border border-neutral-200 hover:border-brand-500'
+                      ? 'border-2 border-[#171717]'
+                      : 'border border-neutral-200 hover:border-[#171717]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -366,13 +366,13 @@ function DegreesSection() {
                           ? 'bg-xp-500 text-white'
                           : i === 2
                           ? 'bg-cert-100 text-cert-500'
-                          : 'bg-brand-100 text-brand-700'
+                          : 'bg-[#EEEDE9] text-[#171717]'
                       }`}
                     >
                       {String(i + 1).padStart(2, '0')}
                     </div>
                     {isHot && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500 text-white font-medium">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#171717] text-white font-medium">
                         最热门
                       </span>
                     )}
@@ -386,7 +386,7 @@ function DegreesSection() {
                       <li key={c.id} className="flex items-center gap-2 text-neutral-700">
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            isHot ? 'bg-brand-500' : i === 2 ? 'bg-cert-500' : 'bg-brand-500'
+                            isHot ? 'bg-[#171717]' : i === 2 ? 'bg-cert-500' : 'bg-[#171717]'
                           }`}
                         />
                         {c.title}
@@ -402,7 +402,7 @@ function DegreesSection() {
                     <span className="text-xs text-neutral-600">
                       {degree.stats?.courseCount ?? 0} 门课 · {degree.stats?.estimatedHours ?? 0} 小时
                     </span>
-                    <span className="text-sm text-brand-500 font-medium inline-flex items-center gap-1">
+                    <span className="text-sm text-[#171717] underline underline-offset-2 font-medium inline-flex items-center gap-1">
                       了解 <ArrowUpRight className="w-3 h-3" />
                     </span>
                   </div>
@@ -433,13 +433,11 @@ function HackathonCard({ h }: { h: Hackathon }) {
   return (
     <Link
       to={`/hackathons/${h.id}`}
-      className="group block rounded-xl border border-neutral-200 hover:border-brand-500 transition overflow-hidden"
+      className="group block rounded-xl border border-neutral-200 hover:border-[#171717] transition overflow-hidden"
     >
       <div
         className={`relative flex flex-col justify-end p-5 md:p-6 text-white ${
-          isActive
-            ? 'bg-gradient-to-br from-danger-500 via-xp-500 to-brand-500'
-            : 'bg-gradient-to-br from-info-500 to-brand-500'
+          isActive ? 'bg-[#171717]' : 'bg-[#262626]'
         }`}
       >
         <span className="text-xs font-medium opacity-80">
@@ -464,7 +462,7 @@ function HackathonCard({ h }: { h: Hackathon }) {
             <Trophy className="w-3 h-3" />
             {h._count?.registrations ?? 0} 人报名
           </span>
-          <span className="text-brand-500 font-medium inline-flex items-center gap-1">
+          <span className="text-[#171717] underline underline-offset-2 font-medium inline-flex items-center gap-1">
             立即报名 <ArrowUpRight className="w-3 h-3" />
           </span>
         </div>
@@ -511,7 +509,7 @@ function HackathonsSection() {
           </div>
           <Link
             to="/hackathons"
-            className="text-sm text-brand-500 hover:text-brand-700 font-medium hidden sm:inline-flex items-center gap-1"
+            className="text-sm text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white font-medium hidden sm:inline-flex items-center gap-1"
           >
             全部赛事 <ArrowUpRight className="w-4 h-4" />
           </Link>
@@ -541,9 +539,9 @@ function HackathonsSection() {
             {/* 主卡 */}
             <Link
               to={`/hackathons/${main.id}`}
-              className="lg:col-span-2 block rounded-xl border border-neutral-200 overflow-hidden group hover:border-brand-500 transition"
+              className="lg:col-span-2 block rounded-xl border border-neutral-200 overflow-hidden group hover:border-[#171717] transition"
             >
-              <div className="aspect-[2/1] bg-gradient-to-br from-danger-500 via-xp-500 to-brand-500 p-6 md:p-8 flex flex-col justify-end text-white">
+              <div className="aspect-[2/1] bg-[#171717] p-6 md:p-8 flex flex-col justify-end text-white">
                 <span className="text-xs font-medium opacity-80">
                   {mainCountdown.phase === 'upcoming' && '⏰ '}
                   {mainCountdown.phase === 'active' && '🔴 LIVE · '}
@@ -569,7 +567,7 @@ function HackathonsSection() {
                     </span>
                   )}
                 </div>
-                <span className="text-sm px-4 py-2 rounded-md bg-brand-500 text-white font-medium group-hover:bg-brand-700 transition">
+                <span className="text-sm px-4 py-2 rounded-md bg-[#171717] text-white font-medium group-hover:bg-[#262626] transition">
                   立即报名
                 </span>
               </div>
@@ -608,10 +606,10 @@ function AiTutorSection() {
   return (
     <section className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-2xl bg-gradient-to-br from-brand-500 to-brand-900 p-8 md:p-16 text-white relative overflow-hidden">
+        <div className="rounded-2xl bg-[#171717] p-8 md:p-16 text-white relative overflow-hidden">
           {/* 装饰圆 */}
           <div
-            className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-xp-500/30 blur-3xl pointer-events-none"
+            className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-[#A3A3A3]/20 blur-3xl pointer-events-none"
             aria-hidden="true"
           />
           <div className="relative grid md:grid-cols-2 gap-8 items-center">
@@ -626,22 +624,22 @@ function AiTutorSection() {
                 每节课、每个项目、每个问题旁边都有它 —— 知道你在学什么,能引用你学过的内容,会用苏格拉底式反问而不只是给答案。
               </p>
               <Link to="/dashboard/learning" className="inline-block mt-6">
-                <span className="px-6 py-3 rounded-md bg-white text-brand-700 font-medium hover:bg-neutral-100 transition inline-flex items-center gap-2">
+                <span className="px-6 py-3 rounded-md bg-white text-[#171717] font-medium hover:bg-neutral-100 transition inline-flex items-center gap-2">
                   体验 AI 助教 <ArrowUpRight className="w-4 h-4" />
                 </span>
               </Link>
             </div>
             {/* 聊天气泡 mock */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20">
-              <div className="text-xs opacity-70 font-mono mb-3">
+            <div className="bg-white rounded-xl p-5 border border-[#171717]">
+              <div className="text-xs opacity-70 font-mono mb-3 text-[#666666]">
                 LESSON · 用 LangChain 搭建第一个 Agent
               </div>
               <div className="space-y-3">
                 <div className="flex gap-2 items-start">
-                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-[#171717] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                     我
                   </div>
-                  <div className="text-sm bg-white/10 rounded-lg p-3">
+                  <div className="text-sm bg-[#EEEDE9] rounded-lg p-3 text-[#171717]">
                     ReAct 和 Tool Use 到底有什么区别?
                   </div>
                 </div>
@@ -649,9 +647,9 @@ function AiTutorSection() {
                   <div className="w-7 h-7 rounded-full bg-cert-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
                     AI
                   </div>
-                  <div className="text-sm bg-white/10 rounded-lg p-3">
+                  <div className="text-sm bg-[#EEEDE9] rounded-lg p-3 text-[#171717]">
                     <p>ReAct 是"推理-行动"循环的模式,Tool Use 是其中"行动"环节的具体实现。类比:ReAct 像算法,Tool Use 像函数调用。</p>
-                    <p className="mt-2 opacity-70 text-xs">📎 引用:Lesson 2.3 · 00:04:12</p>
+                    <p className="mt-2 text-[#666666] text-xs">📎 引用:Lesson 2.3 · 00:04:12</p>
                   </div>
                 </div>
               </div>
@@ -683,10 +681,10 @@ function InstructorsSection() {
     if (!courses) return [];
     const seen = new Set<string>();
     const palette = [
-      { gradientFrom: 'from-brand-500', gradientTo: 'to-xp-500' },
-      { gradientFrom: 'from-xp-500', gradientTo: 'to-cert-500' },
-      { gradientFrom: 'from-info-500', gradientTo: 'to-brand-500' },
-      { gradientFrom: 'from-cert-500', gradientTo: 'to-danger-500' },
+      { cover: 'bg-[#171717]' },
+      { cover: 'bg-[#262626]' },
+      { cover: 'bg-[#171717]' },
+      { cover: 'bg-[#262626]' },
     ];
     const result: Instructor[] = [];
     for (let i = 0; i < courses.length && result.length < 4; i++) {
@@ -699,8 +697,7 @@ function InstructorsSection() {
         name,
         title: '课程讲师', // 后端目前没有 instructor.title 字段,统一占位
         initials: name.charAt(0),
-        gradientFrom: palette[result.length].gradientFrom,
-        gradientTo: palette[result.length].gradientTo,
+        cover: palette[result.length].cover,
         linkedin: '#',
       });
     }
@@ -737,16 +734,16 @@ function InstructorsSection() {
               className="text-center group relative"
             >
               <div
-                className={`w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full bg-gradient-to-br ${inst.gradientFrom} ${inst.gradientTo} flex items-center justify-center text-white text-2xl font-bold`}
+                className={`w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full ${inst.cover} flex items-center justify-center text-white text-2xl font-bold`}
               >
                 {inst.initials}
               </div>
-              <h3 className="mt-3 font-semibold group-hover:text-brand-500 transition text-neutral-900">
+              <h3 className="mt-3 font-semibold text-neutral-900">
                 {inst.name}
               </h3>
               <p className="text-xs text-neutral-600 mt-1">{inst.title}</p>
               <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-brand-100 text-brand-700">
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#171717] text-white">
                   <Linkedin className="w-4 h-4" />
                 </span>
               </div>
@@ -775,21 +772,21 @@ export function HomePage() {
         className="relative overflow-hidden"
         style={{
           background:
-            'radial-gradient(ellipse at top, rgba(29,140,128,0.12), transparent 60%), radial-gradient(ellipse at bottom right, rgba(139,92,246,0.08), transparent 50%)',
+            'radial-gradient(ellipse at top, rgba(23,23,23,0.06), transparent 60%), radial-gradient(ellipse at bottom right, rgba(163,163,163,0.08), transparent 50%)',
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* 左侧文字 */}
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 text-brand-700 text-xs font-medium mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEDE9] text-[#171717] text-xs font-medium mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#171717]" />
                 2026 春季 · 第 14 期 · 现已开放报名
               </div>
               <h1 className="text-4xl md:text-display-lg font-bold tracking-tight leading-[1.1] text-neutral-900">
                 学完仍然不会做?
                 <br />
-                <span className="text-brand-500">让 AI 时代的能力</span>
+                <span className="underline underline-offset-4 decoration-4">让 AI 时代的能力</span>
                 <br />
                 可被看见。
               </h1>
@@ -830,7 +827,7 @@ export function HomePage() {
                 className="absolute inset-0 rounded-2xl blur-2xl"
                 style={{
                   background:
-                    'linear-gradient(135deg, rgba(29,140,128,0.12), rgba(139,92,246,0.12))',
+                    'linear-gradient(135deg, rgba(23,23,23,0.06), rgba(163,163,163,0.08))',
                 }}
                 aria-hidden="true"
               />
@@ -847,37 +844,37 @@ export function HomePage() {
                   <div className="p-3 rounded-lg bg-neutral-50">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="text-xs text-brand-500 font-medium">
+                        <div className="text-xs text-[#666666] font-medium">
                           CHAPTER 03 · LESSONS 04 / 12
                         </div>
                         <div className="mt-1 font-medium text-neutral-900 truncate">
                           用 LangChain 搭建第一个 Agent
                         </div>
                       </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-success-500/15 text-success-500 whitespace-nowrap">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#171717] text-white whitespace-nowrap">
                         已完成
                       </span>
                     </div>
                     <div className="mt-2 h-1 rounded-full bg-neutral-200 overflow-hidden">
-                      <div className="h-full w-2/3 bg-brand-500" />
+                      <div className="h-full w-2/3 bg-[#171717]" />
                     </div>
                   </div>
-                  <div className="p-3 rounded-lg bg-neutral-50 border-2 border-brand-500">
+                  <div className="p-3 rounded-lg bg-neutral-50 border-2 border-[#171717]">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="text-xs text-brand-500 font-medium">
+                        <div className="text-xs text-[#666666] font-medium">
                           CHAPTER 04 · LESSONS 01 / 08
                         </div>
                         <div className="mt-1 font-medium text-neutral-900 truncate">
                           RAG 检索增强生成实战
                         </div>
                       </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-500 whitespace-nowrap">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#171717] text-white whitespace-nowrap">
                         进行中
                       </span>
                     </div>
                     <div className="mt-2 h-1 rounded-full bg-neutral-200 overflow-hidden">
-                      <div className="h-full w-1/4 bg-brand-500 animate-pulse" />
+                      <div className="h-full w-1/4 bg-[#171717] animate-pulse" />
                     </div>
                   </div>
                   <div className="p-3 rounded-lg bg-neutral-50 opacity-60">
@@ -894,9 +891,9 @@ export function HomePage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 p-3 rounded-lg bg-brand-50 border border-brand-100">
+                <div className="mt-4 p-3 rounded-lg bg-[#EEEDE9] border border-[#171717]">
                   <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                    <div className="w-6 h-6 rounded-full bg-[#171717] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                       AI
                     </div>
                     <div className="text-sm text-neutral-900">
