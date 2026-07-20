@@ -1,5 +1,9 @@
 # OpenCSG Academy
 
+> **v1.4.0** (2026-07-21) — AI 智能填充完善 + Brutalist 黑白设计语言统一 + 全量 mobile 适配收口
+>
+> 113 → 134 测试全过(99 jest + 35 vitest) · 0 tsc / 0 build 错
+
 OpenCSG Academy 是一个现代化的在线教育平台，专注于 AI 和大模型技术培训。
 
 ---
@@ -13,6 +17,8 @@ OpenCSG Academy 是一个现代化的在线教育平台，专注于 AI 和大模
 > **如果遇到 AI / LLM 术语不懂**:[术语表](./docs/GLOSSARY.md) 速查
 >
 > **如果你是开发者**:往下读「项目架构」「快速开始」章节
+>
+> **如果是项目维护者**:`review/` 目录有完整的审计报告(UX 状态机 / 功能完整性 / 移动 + 暗色 / 文档对齐 / AI 专题),每条带源码行号
 
 ---
 
@@ -123,11 +129,12 @@ pnpm dev:web
 
 ### 6. 访问应用
 
-- 前端：http://localhost:3000
+- 前端：http://localhost:5500(Vite 默认 3000,本地 5500)
 - 后端 API：http://localhost:8080/api
-- API 文档：http://localhost:8080/api/docs
+- API 文档(Swagger)：http://localhost:8080/api/docs
 - Prisma Studio：`pnpm db:studio`
 - MinIO Console：http://localhost:9011 (admin/minioadmin)
+- MySQL：localhost:3307 · Redis：localhost:6380 · MinIO API：localhost:9010
 
 ---
 
@@ -285,8 +292,11 @@ TypeScript 类型定义，供前后端共享：
 
 | 角色 | 邮箱 | 密码 | 说明 |
 |------|------|------|------|
-| 管理员 | admin@opencsg.com | admin123 | 可访问管理后台 |
-| 学员 | 自行注册 | 自定义 | 普通学员账号 |
+| 管理员 | admin@opencsg.com | admin123 | 可访问管理后台 `/admin/*` |
+| 学员 | student@test.com | 123456 | 完整前台体验,可报名课程 / 提交黑客松 |
+| 学员 | 自行注册 | 自定义 | 普通新用户走完整注册流程 |
+
+> ⚠️ **dev 沙箱专用**:`admin@opencsg.com` / `student@test.com` 都在 `apps/api/prisma/seed.ts` 自动 seed,生产环境必须删掉这两个账号 + 改所有默认密码。
 
 ---
 
@@ -347,6 +357,24 @@ vercel --prod
 | [API 文档](http://localhost:8080/api/docs) | Swagger 自动生成的 API 文档 |
 | [Prisma Schema](./prisma/schema.prisma) | 数据库模型定义 |
 | [部署指南](./apps/web/docs/部署指南.md) | 详细部署说明 |
+| [安全审查报告](./security_best_practices_report.md) | 速率限制 / 安全响应头 / 部署 checklist |
+
+### 🛠 审计报告(`review/` 目录)
+
+每次重大改动都跑 sub-agent 独立审计,报告带 `file:line` 引用:
+
+| 报告 | 范围 | 当前状态 |
+|------|------|---------|
+| [audit-ux-states-result.md](./review/audit-ux-states-result.md) | 12 页 × 5 态(Loading / Empty / Error / Success / Confirm) | 8 gap 已知 |
+| [audit-feature-completeness-result.md](./review/audit-feature-completeness-result.md) | 30 功能 vs USER/ADMIN 手册 | 12 完整 / 11 部分 / 5 缺失 / 2 整页 mock |
+| [audit-mobile-darkmode-result.md](./review/audit-mobile-darkmode-result.md) | 11 页 × 移动 / 暗色 / a11y | 10 gap,已标真问题 vs audit 误判 |
+| [audit-docs-vs-reality-result.md](./review/audit-docs-vs-reality-result.md) | 文档 vs 实际代码一致性 | 5 P0 复查,全部 audit 误判(代码/文档已对齐) |
+| [audit-ai-features-result.md](./review/audit-ai-features-result.md) | AI 前后台专题 | 3 P0 + 3 P1,v1.4.0 已修 |
+| [p0-redesign-report.md](./review/p0-redesign-report.md) | v1.3.x 6 plan 持久战 | ✅ 完成 |
+| [p1-redesign-report.md](./review/p1-redesign-report.md) | v1.3.5-1.3.7 资源 / 订单 / 证书 | ✅ 完成 |
+| [p1-audit-fixes-report.md](./review/p1-audit-fixes-report.md) | v1.3.5-1.3.7 配套修 | ✅ 完成 |
+
+> 审计原则:**只观察 + 缺口描述**,不在 audit 报告里写"建议"。Synthesis(设计方案)分两段任务做,先 audit 后 synthesis。
 
 ---
 
@@ -357,6 +385,92 @@ vercel --prod
 3. 提交改动：`git commit -m 'Add some AmazingFeature'`
 4. 推送到分支：`git push origin feature/AmazingFeature`
 5. 提交 Pull Request
+
+---
+
+## 🎨 设计语言:Brutalist 黑白
+
+整个 UI 走 **瑞士国际主义 / Brutalism** 设计语言,刻意去除 OpenCSG 品牌青绿色,统一黑白调性:
+
+- **核心调色板** (4 色 + 1 渐变):
+  - `text/bg-[#171717]` — 实心黑
+  - `bg-[#262626]` — 次黑(hover 态)
+  - `bg-[#EEEDE9]` — 浅暖(背景 / focus)
+  - `border-[#171717]` — 边线
+  - `text-[#171717]` / `text-[#666666]` — 主 / 次文字
+  - `from-[#171717] to-[#262626]` — 唯一允许的渐变
+- **几何语言**:
+  - 卡片:`border-2 border-[#171717] bg-white p-6` — 2px 硬边 + 无圆角
+  - 标签:`text-[10px] font-black uppercase tracking-widest` — 全大写 + 紧字距
+  - 状态 chip 反相:`bg-[#171717] text-white` 或描边
+- **明确禁止**:
+  - ❌ `rounded-xl` / `rounded-2xl` 圆角(只允许 brutalist 必要场合)
+  - ❌ `shadow-sm/md/lg` 阴影(硬边是品牌)
+  - ❌ `text-brand-*` / `bg-brand-*` / `from-brand-*` 品牌色(v1.3.1-1.3.4 全量清除)
+  - ❌ 渐变(除黑→次黑唯一一处)
+  - ❌ `opacity-50` 之外的 disabled 半透(状态用反相表达)
+
+> Brutalist 不只是视觉风格,也是 **可访问性承诺** — 高对比、硬边界、屏幕阅读器友好。
+
+---
+
+## 🤖 AI 智能填充(Admin 专属)
+
+v1.4.0 起,管理员可在新建课程 / 学位时用 AI 一键生成元数据草稿。
+
+### 后端
+
+`apps/api/src/modules/ai/` 模块:
+- `POST /api/v1/ai/generate-course` (admin)
+- `POST /api/v1/ai/generate-degree` (admin)
+- 底层 Google Gemini(`GEMINI_API_KEY` + `GEMINI_MODEL`,默认 `gemini-2.0-flash`)
+- 失败兜底:无 API key / 5xx / 超时 / 输出未通过 zod schema 时自动降级到**规则化生成**,前端永远能拿到可用草稿
+- 安全:输入 `sanitize()` 去控制符 + 零宽字符,防 prompt injection;输出 zod schema 校验,防 LLM 注入 javascript: URL / 超长字段 / 错类型
+- 30 秒 AbortController 超时,前端不再卡死
+
+### 前端
+
+`apps/web/src/components/AiGeneratePanel.tsx`:
+- 通用组件,接受 `type='course' | 'degree'` + `onGenerate(topic, hint?)` + `onApply(draft)`
+- 完整 5 态:Loading(Loader2) / Error(red box) / Empty(button) / Success(草稿预览) / Applied(✓ 已应用)
+- 错误脱敏 `extractFriendlyError` 5 类归类(网络 / 超时 / 401 / 403 / 5xx)
+- 完整 mobile 适配:44px 触摸 / 16px 字号(iOS 不 zoom) / 响应式容器 / DraftRow flex-col sm:flex-row
+
+### 集成点
+
+- `AdminCoursesPage` 新建课程弹窗
+- `AdminDegreesPage` 新建学位弹窗
+- 草稿可**应用**到表单后继续手改,或**重新生成**
+
+### 字段覆盖(v1.4.0 新增)
+
+`CourseDraft` 新加:
+- `courseType: 'own' | 'external'` — 题目含"外部"/"外链"/"参考课"/URL 时自动判 external
+- `externalUrl: string` — 从 hint 抽取 http(s):// 链接
+- `price` 规则:
+  - `costType='free'` → 0
+  - `costType='charity'` → 0(公益导向,admin 自行决定捐赠)
+  - `courseType='external'` → 99
+  - 其他 → 199
+
+---
+
+## 📋 版本历史
+
+| 版本 | 日期 | 主要改动 |
+|------|------|---------|
+| **v1.4.0** | 2026-07-21 | AI 智能填充完善 + 整体 mobile 适配收口 + 5 audit 报告 |
+| v1.3.4 | 2026-07-15 | 全项目去 brand-* 残留(155 处) + 16 处 mobile 触摸目标 + iOS 16px 适配 |
+| v1.3.3 | 2026-07-14 | 公开页(HomePage/CourseList/DegreeDetail)去 OpenCSG 品牌色 |
+| v1.3.2 | 2026-07-13 | admin 残留青绿色 22 处清理 |
+| v1.3.1 | 2026-07-13 | 4 个 admin 页 brutalist 一致性 + BrutalField/BrutalButton helpers |
+| v1.3.0 | 2026-07-12 | `ResourcesController` 资源管理接真后端 + LessonDetail 资源段 + 15 jest test |
+| v1.2.1 | 2026-07-12 | `ReviewsModule` 注册漏修 + reviews.helpful 列漂移修复 |
+| v1.2.0 | 2026-07-11 | 公开页 + search 全量去 mock(HomePage 4 段 / searchApi / DegreeDetailPage 重写) |
+| v1.1.0 | 2026-07-10 | 全量去 mock — 后端 + 前端 + 测试 + 文档(31 files,34 jest test) |
+| v1.0.0 | 2026-07-08 | 首次正式发布(Auth + 课程 + 学位 + 黑客松 + 订单) |
+
+> 每次 release 都跑 `pnpm test` + `pnpm build` 全过 + tsc 双 0 错 才打 tag。
 
 ---
 
