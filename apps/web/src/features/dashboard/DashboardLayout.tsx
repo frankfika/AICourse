@@ -19,7 +19,12 @@
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon, Bell, ShoppingBag } from 'lucide-react';
 import { Suspense } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme, useThemeStore } from '../../stores/themeStore';
+import { pointsApi } from '../../lib/pointsApi';
+import { progressApi } from '../../lib/progressApi';
+import { useAuthStore } from '../../stores/authStore';
+import api from '../../lib/api';
 
 // P1-2 修复:不再用 useDashboardTheme 独立复刻,改用全局 themeStore
 // 跟 Layout / AdminDashboardPage 共享同一份状态,icon 切换跟实际 class 永远一致
@@ -30,9 +35,55 @@ export function DashboardLayout() {
   const toggleTheme = useThemeStore((s) => s.toggle);
   const location = useLocation();
   const params = useParams<{ courseId?: string }>();
+  const user = useAuthStore((s) => s.user);
 
   // 当前激活的路径(`/dashboard` 还是 `/dashboard/learning` 等),用于面包屑逻辑
   const onLearning = location.pathname.includes('/learning');
+
+  // 课程名: 优先用 URL 的 courseId 拿, 否则拉最近一个 enrollment
+  const { data: courseFromUrl } = useQuery({
+    queryKey: ['course', params.courseId],
+    queryFn: async () => {
+      if (!params.courseId) return null;
+      const { data } = await api.get<{ id: string; title: string }>(`/api/v1/courses/${params.courseId}`);
+      return data;
+    },
+    enabled: !!params.courseId,
+    staleTime: 60_000,
+  });
+
+  const { data: myEnrollments } = useQuery({
+    queryKey: ['home', 'my-enrollment', user?.id],
+    queryFn: async () => {
+      const { data } = await api.get<Array<{ course: { id: string; title: string } | null }>>(
+        '/api/v1/enrollments/me',
+      );
+      return data;
+    },
+    enabled: !!user && !params.courseId,
+    staleTime: 60_000,
+  });
+
+  // 课程进度: 来自 progressApi (只在选了课的 context 用)
+  const { data: courseProgress } = useQuery({
+    queryKey: ['progress', 'course', params.courseId, user?.id],
+    queryFn: () => progressApi.getCourseProgress(params.courseId!),
+    enabled: !!user && !!params.courseId,
+    staleTime: 30_000,
+  });
+
+  // 积分 + 等级
+  const { data: userPoints } = useQuery({
+    queryKey: ['points', 'me', user?.id],
+    queryFn: () => pointsApi.getMyPoints(),
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+
+  // 推导标题: 优先 URL > 最近 enrollment > 学习中心
+  const courseTitle = courseFromUrl?.title
+    ?? (myEnrollments?.[0]?.course?.title ?? null);
+  const progressPercent = courseProgress?.percent ?? 0;
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans dark:bg-neutral-950 dark:text-neutral-900 flex flex-col">
@@ -55,14 +106,20 @@ export function DashboardLayout() {
             <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 truncate">
               <GraduationCap className="w-3.5 h-3.5 shrink-0 text-[#171717]" />
               <span className="truncate font-medium">
-                {onLearning ? '我的学习 · 继续上次' : '用 LangChain 搭建第一个 Agent'}
+                {onLearning
+                  ? '我的学习 · 继续上次'
+                  : courseTitle
+                  ? courseTitle
+                  : user
+                  ? '选课开始学习'
+                  : '学习中心'}
               </span>
             </div>
             {/* 进度条只在 sm+ 显示 */}
             <div className="hidden sm:block mt-1 h-1 rounded-full bg-neutral-200 dark:bg-neutral-200 overflow-hidden">
               <div
                 className="h-full bg-[#171717] transition-all"
-                style={{ width: `${params.courseId ? 32 : 32}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
               />
             </div>
           </div>
@@ -71,12 +128,16 @@ export function DashboardLayout() {
           <div className="hidden md:flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1 text-xp-500">
               <span>⚡</span>
-              <span className="font-mono font-medium">2,840</span>
+              <span className="font-mono font-medium">
+                {userPoints ? userPoints.points.toLocaleString() : '—'}
+              </span>
               <span className="text-neutral-400">积分</span>
             </div>
             <div className="flex items-center gap-1 text-cert-500">
               <span>🏆</span>
-              <span className="font-mono font-medium">LV 4</span>
+              <span className="font-mono font-medium">
+                LV {userPoints?.level ?? '—'}
+              </span>
             </div>
             <div className="flex items-center gap-1 text-[#171717]">
               <Sparkles className="w-3.5 h-3.5" />

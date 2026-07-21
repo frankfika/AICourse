@@ -24,6 +24,7 @@ import { CertificatesModule } from './modules/certificates/certificates.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { LearningEventsModule } from './modules/learning-events/learning-events.module';
+import { SiteModule } from './modules/site/site.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { LearningEventsModule } from './modules/learning-events/learning-events.
     AdminModule,
     ReviewsModule,
     LearningEventsModule,
+    SiteModule,
   ],
   controllers: [AppController],
   providers: [

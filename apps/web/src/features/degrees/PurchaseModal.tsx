@@ -155,7 +155,7 @@ export function PurchaseModal({
             <Loader2 className="w-10 h-10 animate-spin mx-auto text-[#171717] mb-4" />
             <div className="font-black text-lg tracking-tight">支付中…</div>
             <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-2">
-              Mock Pay · 实际未发生扣款
+              支付通道待接入 · 当前为测试环境
             </div>
           </div>
         )}

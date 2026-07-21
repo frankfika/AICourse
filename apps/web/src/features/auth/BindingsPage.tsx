@@ -22,7 +22,7 @@
  * 不依赖真实 session,便于离线截图验证
  */
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import {
   Mail,
   Lock,
@@ -40,6 +40,7 @@ import { useToast } from '../../components/auth/Toast';
 import { useAuth } from '../../lib/auth/AuthProvider';
 import { ApiError } from '../../lib/apiError';
 import type { Identity } from '../../lib/auth/types';
+import { useAuthStore } from '../../stores/authStore';
 
 /**
  * Provider 视觉元数据
@@ -75,7 +76,9 @@ function formatDate(iso: string | undefined): string {
 }
 
 export function BindingsPage() {
-  const { user, identities, isAuthenticating, unbindProvider } = useAuth();
+  const { identities, isAuthenticating, unbindProvider } = useAuth();
+  // user 直接从 store 读, 不走 context, 跟其他页面(Layout, PurchaseModal)一致
+  const user = useAuthStore((s) => s.user);
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [params] = useSearchParams();
@@ -115,22 +118,10 @@ export function BindingsPage() {
     );
   }
 
-  // demo 模式:不强制要求 user,渲染示例视图
+  // 未登录且非 demo 模式:硬重定向到登录页(带 ?next= 登录后回弹)
+  // 原 EmptyState + 按钮改为 <Navigate>, 避免给未登录访客看到 "请先登录" 卡片
   if (!user && !showWithGoogleDemo) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 p-6">
-        <EmptyState
-          icon={<ShieldCheck className="h-6 w-6" />}
-          title="请先登录"
-          description="登录后可管理账号绑定"
-          action={
-            <Link to="/auth/login">
-              <Button variant="primary">去登录</Button>
-            </Link>
-          }
-        />
-      </div>
-    );
+    return <Navigate to="/auth/login?next=/dashboard/settings/bindings" replace />;
   }
 
   const handleUnbind = async (id: Identity) => {

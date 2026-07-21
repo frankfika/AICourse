@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Building2,
   ArrowUpRight,
@@ -15,6 +16,28 @@ import {
   Briefcase,
 } from 'lucide-react';
 import api from '../../lib/api';
+
+// 复用 site/stats 的 KPI,4 个 slot 都从真实数据映射, 避免假数字
+interface SiteStats {
+  activeLearners: number;
+  totalCourses: number;
+  totalProjects: number;
+  totalDegrees: number;
+  activeHackathonCount: number;
+  currentTermLabel: string;
+}
+
+function formatStatNumber(n: number | undefined | null): string {
+  if (n == null) return '—';
+  if (n >= 10000) {
+    const v = n / 10000;
+    return `${v >= 10 ? v.toFixed(0) : v.toFixed(1)}万`;
+  }
+  if (n >= 1000) {
+    return n.toLocaleString('en-US');
+  }
+  return n.toString();
+}
 
 interface InquiryForm {
   name: string;
@@ -43,6 +66,23 @@ export function EnterprisePage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 公开站点统计(后端 GET /api/v1/site/stats 已就绪)
+  const { data: stats } = useQuery({
+    queryKey: ['site', 'stats'],
+    queryFn: async () => {
+      const { data } = await api.get<SiteStats>('/api/v1/site/stats');
+      return data;
+    },
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+
+  // 联系信息走 env 注入, 没设时:email 兜底到 enterprise@opencsg.com,
+  // phone 不设则不显示该行(避免假电话 +86 400-xxx-xxxx)
+  const enterpriseEmail =
+    import.meta.env.VITE_PUBLIC_ENTERPRISE_EMAIL ?? 'enterprise@opencsg.com';
+  const enterprisePhone = import.meta.env.VITE_PUBLIC_ENTERPRISE_PHONE?.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,14 +136,21 @@ export function EnterprisePage() {
         </div>
       </section>
 
-      {/* ==================== STATS BAR ==================== */}
+      {/* ==================== STATS BAR (来自 GET /api/v1/site/stats) ====================
+          原硬编码 "50+ Enterprise Clients / 10K+ Trained Engineers / 98% / 12+"
+          没有任何后端 source-of-truth, 全部改为 SiteStats 真实 KPI + 重新映射标签:
+            activeLearners   → 累计培训学员
+            totalCourses     → 已上线系统化课程
+            totalProjects    · 已交付实践项目
+            totalDegrees     → 学位项目数
+          加载中显示 '—' */}
       <section className="border-b border-[#171717] bg-white">
         <div className="grid grid-cols-2 md:grid-cols-4">
           {[
-            { num: '50+', label: 'Enterprise Clients' },
-            { num: '10K+', label: 'Trained Engineers' },
-            { num: '98%', label: 'Satisfaction Rate' },
-            { num: '12+', label: 'Industries Covered' },
+            { num: formatStatNumber(stats?.activeLearners), label: '累计培训学员' },
+            { num: formatStatNumber(stats?.totalCourses), label: '系统化课程' },
+            { num: formatStatNumber(stats?.totalProjects), label: '已交付项目' },
+            { num: formatStatNumber(stats?.totalDegrees), label: '学位项目' },
           ].map((s, i) => (
             <div
               key={s.label}
@@ -201,8 +248,14 @@ export function EnterprisePage() {
                 Trusted By
               </h2>
             </div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
-              Industries We Serve
+            <div className="flex flex-col items-end gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#171717]">
+                <span className="w-1.5 h-1.5 bg-[#171717]" />
+                示例 · 行业范围
+              </span>
+              <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+                Industries We Serve
+              </div>
             </div>
           </div>
 
@@ -252,12 +305,25 @@ export function EnterprisePage() {
             <div className="space-y-4 border-t border-white/20 pt-8">
               <div className="flex items-center gap-4 text-sm font-medium text-white/70">
                 <Mail className="w-4 h-4 text-white/50" />
-                <span>enterprise@opencsg.com</span>
+                <a
+                  href={`mailto:${enterpriseEmail}`}
+                  className="hover:text-white transition-colors underline underline-offset-4"
+                >
+                  {enterpriseEmail}
+                </a>
               </div>
-              <div className="flex items-center gap-4 text-sm font-medium text-white/70">
-                <Phone className="w-4 h-4 text-white/50" />
-                <span>+86 400-xxx-xxxx</span>
-              </div>
+              {enterprisePhone ? (
+                <div className="flex items-center gap-4 text-sm font-medium text-white/70">
+                  <Phone className="w-4 h-4 text-white/50" />
+                  <span>{enterprisePhone}</span>
+                </div>
+              ) : (
+                // env 未设时不展示电话行(原 "+86 400-xxx-xxxx" 是假数据)
+                <div className="flex items-center gap-4 text-sm font-medium text-white/40 italic">
+                  <Phone className="w-4 h-4 text-white/30" />
+                  <span>电话可通过邮件联系获取</span>
+                </div>
+              )}
               <div className="flex items-center gap-4 text-sm font-medium text-white/70">
                 <Building2 className="w-4 h-4 text-white/50" />
                 <span>OpenCSG · Beijing · Shanghai · Shenzhen</span>

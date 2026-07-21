@@ -12,7 +12,29 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, Moon, Sun, ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '../../lib/cn';
+import api from '../../lib/api';
+
+interface SiteStats {
+  activeLearners: number;
+  totalCourses: number;
+  totalProjects: number;
+  totalDegrees: number;
+  activeHackathonCount: number;
+  currentTermLabel: string;
+}
+
+function formatStatNumber(n: number): string {
+  if (n >= 10000) {
+    const v = n / 10000;
+    return `${v >= 10 ? v.toFixed(0) : v.toFixed(1)}万`;
+  }
+  if (n >= 1000) {
+    return n.toLocaleString('en-US');
+  }
+  return n.toString();
+}
 
 type Theme = 'light' | 'dark';
 
@@ -37,6 +59,16 @@ function useThemeToggle(): [Theme, () => void] {
 
 export function AuthShell({ children }: { children: ReactNode }) {
   const [theme, toggle] = useThemeToggle();
+  // 公开站点统计 — 来自 /api/v1/site/stats
+  const { data: stats } = useQuery({
+    queryKey: ['site', 'stats'],
+    queryFn: async () => {
+      const { data } = await api.get<SiteStats>('/api/v1/site/stats');
+      return data;
+    },
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900">
@@ -97,26 +129,39 @@ export function AuthShell({ children }: { children: ReactNode }) {
               可被看见。
             </h1>
             <p className="mt-6 text-lg opacity-90 max-w-md">
-              12,400 名工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。
+              {stats
+                ? `${formatStatNumber(stats.activeLearners)} 名工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。`
+                : '工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。'}
             </p>
           </div>
 
           <div className="relative space-y-6">
             <div className="grid grid-cols-3 gap-6 max-w-md">
               <div>
-                <div className="text-3xl font-bold font-mono">12.4K</div>
+                <div className="text-3xl font-bold font-mono">
+                  {stats ? formatStatNumber(stats.activeLearners) : '—'}
+                </div>
                 <div className="text-xs opacity-80 mt-1">在读学员</div>
               </div>
               <div>
-                <div className="text-3xl font-bold font-mono">86</div>
+                <div className="text-3xl font-bold font-mono">
+                  {stats ? formatStatNumber(stats.totalCourses) : '—'}
+                </div>
                 <div className="text-xs opacity-80 mt-1">系统化课程</div>
               </div>
               <div>
-                <div className="text-3xl font-bold font-mono">2.4K</div>
+                <div className="text-3xl font-bold font-mono">
+                  {stats ? formatStatNumber(stats.totalProjects) : '—'}
+                </div>
                 <div className="text-xs opacity-80 mt-1">完成项目</div>
               </div>
             </div>
             <blockquote className="p-5 rounded-xl bg-neutral-0/10 backdrop-blur-sm border border-neutral-0/20">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-mono uppercase tracking-widest opacity-50">
+                  学员故事 · 占位示例
+                </p>
+              </div>
               <p className="text-sm leading-relaxed">
                 "我以为 RAG 就是把文档塞进向量库。学完才发现 prompt
                 模板、reranking、citation、evaluation
@@ -129,7 +174,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
                 </div>
                 <div>
                   <div className="font-medium">K. Chen</div>
-                  <div className="opacity-70">LLM 应用工程师学位 · 已毕业</div>
+                  <div className="opacity-70">LLM 应用工程师学位 · 占位示例</div>
                 </div>
               </div>
             </blockquote>

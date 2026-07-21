@@ -28,20 +28,16 @@ import {
   Sparkles,
   ArrowUpRight,
   Star,
-  Lock,
   Trophy,
-  Calendar,
   MapPin,
-  Award,
   BookOpen,
   GraduationCap,
-  Search,
-  MessageCircle,
-  Linkedin,
+  PlayCircle,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import api from '../../lib/api';
 import { hackathonsApi } from '../../lib/hackathonsApi';
+import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -93,7 +89,56 @@ interface Instructor {
   title: string;
   initials: string;
   cover: string;
-  linkedin: string;
+  // linkedin 字段移除(后端无 source-of-truth, 之前硬编码 '#' 点了不跳转)
+}
+
+// =============================================================
+// Site Stats (来自 GET /api/v1/site/stats — 公开 endpoint, 不用鉴权)
+// =============================================================
+interface SiteStats {
+  activeLearners: number;
+  totalCourses: number;
+  totalProjects: number;
+  totalDegrees: number;
+  activeHackathonCount: number;
+  currentTermLabel: string;
+  featuredCourse: {
+    id: string;
+    title: string;
+    description: string;
+    level: string;
+    duration: string;
+    instructor: string;
+    tags: string;
+    thumbnail: string;
+    enrollmentCount: number;
+    chapterCount: number;
+  } | null;
+}
+
+interface MyEnrollment {
+  id: string;
+  enrolledAt: string;
+  course: {
+    id: string;
+    title: string;
+    thumbnail: string;
+    duration: string;
+    instructor: string;
+    level: string;
+  } | null;
+}
+
+// 格式化大数字: 12400 -> "1.2万", 2400 -> "2,400"
+function formatStatNumber(n: number): string {
+  if (n >= 10000) {
+    const v = n / 10000;
+    return `${v >= 10 ? v.toFixed(0) : v.toFixed(1)}万`;
+  }
+  if (n >= 1000) {
+    return n.toLocaleString('en-US');
+  }
+  return n.toString();
 }
 
 // =============================================================
@@ -629,10 +674,15 @@ function AiTutorSection() {
                 </span>
               </Link>
             </div>
-            {/* 聊天气泡 mock */}
+            {/* 聊天气泡 — 明确标注"产品示例"避免误导 */}
             <div className="bg-white rounded-xl p-5 border border-[#171717]">
-              <div className="text-xs opacity-70 font-mono mb-3 text-[#666666]">
-                LESSON · 用 LangChain 搭建第一个 Agent
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs opacity-70 font-mono text-[#666666]">
+                  LESSON · Agent 基础
+                </div>
+                <span className="text-[10px] font-mono text-[#999999] uppercase tracking-widest">
+                  产品示例
+                </span>
               </div>
               <div className="space-y-3">
                 <div className="flex gap-2 items-start">
@@ -640,7 +690,7 @@ function AiTutorSection() {
                     我
                   </div>
                   <div className="text-sm bg-[#EEEDE9] rounded-lg p-3 text-[#171717]">
-                    ReAct 和 Tool Use 到底有什么区别?
+                    这节课的 ReAct 循环,哪一步最容易出 bug?
                   </div>
                 </div>
                 <div className="flex gap-2 items-start">
@@ -648,11 +698,14 @@ function AiTutorSection() {
                     AI
                   </div>
                   <div className="text-sm bg-[#EEEDE9] rounded-lg p-3 text-[#171717]">
-                    <p>ReAct 是"推理-行动"循环的模式,Tool Use 是其中"行动"环节的具体实现。类比:ReAct 像算法,Tool Use 像函数调用。</p>
-                    <p className="mt-2 text-[#666666] text-xs">📎 引用:Lesson 2.3 · 00:04:12</p>
+                    <p>通常是"观察"那一步:Agent 拿到工具结果后,容易直接答而不是先判断要不要再调一次工具。</p>
+                    <p className="mt-2 text-[#666666] text-xs">📎 引用:这节课 Lesson 2 · ReAct 循环</p>
                   </div>
                 </div>
               </div>
+              <p className="mt-3 text-[10px] text-[#999999] text-center">
+                — 示例对话,真实聊天登录后即可使用 —
+              </p>
             </div>
           </div>
         </div>
@@ -698,7 +751,6 @@ function InstructorsSection() {
         title: '课程讲师', // 后端目前没有 instructor.title 字段,统一占位
         initials: name.charAt(0),
         cover: palette[result.length].cover,
-        linkedin: '#',
       });
     }
     return result;
@@ -728,11 +780,7 @@ function InstructorsSection() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {instructors.map((inst) => (
-            <a
-              key={inst.id}
-              href={inst.linkedin}
-              className="text-center group relative"
-            >
+            <div key={inst.id} className="text-center group relative">
               <div
                 className={`w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full ${inst.cover} flex items-center justify-center text-white text-2xl font-bold`}
               >
@@ -742,12 +790,7 @@ function InstructorsSection() {
                 {inst.name}
               </h3>
               <p className="text-xs text-neutral-600 mt-1">{inst.title}</p>
-              <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#171717] text-white">
-                  <Linkedin className="w-4 h-4" />
-                </span>
-              </div>
-            </a>
+            </div>
           ))}
         </div>
       </div>
@@ -762,9 +805,190 @@ function InstructorsSection() {
 // 注:SiteFooter 已提升到 main Layout (components/Layout.tsx),
 //     所有页共享同一个 footer, 不再在 HomePage 单独渲染。
 // =============================================================
+// HERO 段: 站点统计 + 当前 term + 课程预览(分登录态)
+// =============================================================
+function useSiteStats() {
+  return useQuery({
+    queryKey: ['site', 'stats'],
+    queryFn: async () => {
+      const { data } = await api.get<SiteStats>('/api/v1/site/stats');
+      return data;
+    },
+    staleTime: 5 * 60_000, // 5 min — 站点统计不必每分钟拉
+    retry: 1,
+  });
+}
+
+function useMyEnrollment() {
+  const user = useAuthStore((s) => s.user);
+  return useQuery({
+    queryKey: ['home', 'my-enrollment', user?.id],
+    queryFn: async () => {
+      const { data } = await api.get<MyEnrollment[]>('/api/v1/enrollments/me');
+      return data;
+    },
+    enabled: !!user,
+    retry: 1,
+    staleTime: 60_000,
+  });
+}
+
+function HeroPreviewCard() {
+  // 已登录: 显示用户真实学习进度(取最近一个 enrollment)
+  const user = useAuthStore((s) => s.user);
+  const { data: enrollments, isLoading: eLoading } = useMyEnrollment();
+  const { data: stats } = useSiteStats();
+
+  // 未登录: 显示 featured course + "产品示例"标注
+  if (!user) {
+    const c = stats?.featuredCourse;
+    if (!c) {
+      // skeleton 状态
+      return (
+        <Card variant="elevated" padding="md" className="relative">
+          <Skeleton variant="text" className="w-32 h-3" />
+          <div className="mt-4 space-y-3">
+            <Skeleton variant="rectangle" className="h-16 w-full" />
+            <Skeleton variant="rectangle" className="h-16 w-full" />
+          </div>
+        </Card>
+      );
+    }
+    return (
+      <Card variant="elevated" padding="md" className="relative">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-2 h-2 rounded-full bg-danger-500" />
+          <div className="w-2 h-2 rounded-full bg-warning-500" />
+          <div className="w-2 h-2 rounded-full bg-success-500" />
+          <span className="ml-2 text-xs text-neutral-600 font-mono">
+            academy.opencsg / learn
+          </span>
+        </div>
+        <div className="text-[10px] font-mono text-neutral-500 mb-2 uppercase tracking-widest">
+          产品示例 · Featured course
+        </div>
+        <div className="space-y-3">
+          <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-200">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-xs text-[#666666] font-medium">
+                  {c.level.toUpperCase()} · {c.duration}
+                </div>
+                <div className="mt-1 font-medium text-neutral-900 truncate">
+                  {c.title}
+                </div>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[#171717] text-white whitespace-nowrap">
+                {c.enrollmentCount} 人已报名
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-neutral-600 line-clamp-2">{c.description}</p>
+          </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between">
+          <Link
+            to={`/courses/${c.id}`}
+            className="text-sm text-[#171717] underline underline-offset-2 font-medium inline-flex items-center gap-1"
+          >
+            立即试看 <ArrowUpRight className="w-3 h-3" />
+          </Link>
+          <Link
+            to="/login"
+            className="text-xs text-neutral-500 hover:text-neutral-700"
+          >
+            登录查看你的进度
+          </Link>
+        </div>
+      </Card>
+    );
+  }
+
+  // 已登录: 显示最近一个 enrollment 真实进度
+  if (eLoading) {
+    return (
+      <Card variant="elevated" padding="md" className="relative">
+        <Skeleton variant="text" className="w-32 h-3" />
+        <div className="mt-4 space-y-3">
+          <Skeleton variant="rectangle" className="h-16 w-full" />
+          <Skeleton variant="rectangle" className="h-16 w-full" />
+        </div>
+      </Card>
+    );
+  }
+
+  const recent = enrollments?.[0];
+  if (!recent || !recent.course) {
+    return (
+      <Card variant="elevated" padding="md" className="relative">
+        <div className="text-center py-6">
+          <div className="text-sm text-neutral-600 mb-3">还没有选课,先去逛逛吧</div>
+          <Link to="/courses">
+            <Button variant="primary" size="sm">浏览课程</Button>
+          </Link>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card variant="elevated" padding="md" className="relative">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-2 h-2 rounded-full bg-success-500" />
+        <span className="ml-2 text-xs text-neutral-600 font-mono">
+          academy.opencsg / my-learning
+        </span>
+      </div>
+      <div className="text-[10px] font-mono text-neutral-500 mb-2 uppercase tracking-widest">
+        继续上次 · {recent.course.level}
+      </div>
+      <Link
+        to={`/courses/${recent.course.id}`}
+        className="block p-3 rounded-lg bg-neutral-50 border border-neutral-200 hover:border-[#171717] transition"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-xs text-[#666666] font-medium">
+              {recent.course.instructor} · {recent.course.duration}
+            </div>
+            <div className="mt-1 font-medium text-neutral-900 truncate">
+              {recent.course.title}
+            </div>
+          </div>
+          <PlayCircle className="w-5 h-5 text-[#171717] flex-shrink-0" />
+        </div>
+      </Link>
+      <div className="mt-3 p-3 rounded-lg bg-[#EEEDE9] border border-[#171717]">
+        <div className="flex items-start gap-2">
+          <div className="w-6 h-6 rounded-full bg-[#171717] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            AI
+          </div>
+          <div className="text-sm text-neutral-900">
+            <div className="text-xs text-neutral-600 mb-1">AI 助教 · 准备就绪</div>
+            想从上次的位置继续? 或者直接提问。
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 // 主页面
 // =============================================================
 export function HomePage() {
+  // 站点统计: 用于 hero KPI + term label
+  const { data: stats } = useSiteStats();
+  const heroStats = useMemo(
+    () => [
+      { num: formatStatNumber(stats?.activeLearners ?? 0), label: '在读学员' },
+      { num: formatStatNumber(stats?.totalCourses ?? 0), label: '系统化课程' },
+      { num: formatStatNumber(stats?.totalProjects ?? 0), label: '已完成项目' },
+      { num: formatStatNumber(stats?.totalDegrees ?? 0), label: '学位' },
+    ],
+    [stats],
+  );
+  const termLabel = stats?.currentTermLabel ?? '';
+  const hackathonCount = stats?.activeHackathonCount ?? 0;
+
   return (
     <div className="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 transition-colors">
       {/* 1 段:HERO */}
@@ -781,7 +1005,9 @@ export function HomePage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEDE9] text-[#171717] text-xs font-medium mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#171717]" />
-                2026 春季 · 第 14 期 · 现已开放报名
+                {termLabel
+                  ? `${termLabel} · ${hackathonCount > 0 ? `${hackathonCount} 场黑客松进行中` : '开放报名'}`
+                  : '2026 夏季 · 开放报名'}
               </div>
               <h1 className="text-4xl md:text-display-lg font-bold tracking-tight leading-[1.1] text-neutral-900">
                 学完仍然不会做?
@@ -806,12 +1032,7 @@ export function HomePage() {
                 </Link>
               </div>
               <div className="mt-10 md:mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 max-w-xl">
-                {[
-                  { num: '12.4K', label: '在读学员' },
-                  { num: '86', label: '系统化课程' },
-                  { num: '2,400+', label: '已完成项目' },
-                  { num: '24', label: '学位' },
-                ].map((s) => (
+                {heroStats.map((s) => (
                   <div key={s.label}>
                     <div className="text-2xl md:text-3xl font-bold font-mono text-neutral-900">
                       {s.num}
@@ -821,7 +1042,7 @@ export function HomePage() {
                 ))}
               </div>
             </div>
-            {/* 右侧:课程预览 mock 卡片(纯 lucide 拼) */}
+            {/* 右侧:登录态分支 — 未登录看 featured course, 登录后看真实学习进度 */}
             <div className="relative">
               <div
                 className="absolute inset-0 rounded-2xl blur-2xl"
@@ -831,80 +1052,7 @@ export function HomePage() {
                 }}
                 aria-hidden="true"
               />
-              <Card variant="elevated" padding="md" className="relative">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-danger-500" />
-                  <div className="w-2 h-2 rounded-full bg-warning-500" />
-                  <div className="w-2 h-2 rounded-full bg-success-500" />
-                  <span className="ml-2 text-xs text-neutral-600 font-mono">
-                    academy.opencsg / learn
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  <div className="p-3 rounded-lg bg-neutral-50">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-xs text-[#666666] font-medium">
-                          CHAPTER 03 · LESSONS 04 / 12
-                        </div>
-                        <div className="mt-1 font-medium text-neutral-900 truncate">
-                          用 LangChain 搭建第一个 Agent
-                        </div>
-                      </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#171717] text-white whitespace-nowrap">
-                        已完成
-                      </span>
-                    </div>
-                    <div className="mt-2 h-1 rounded-full bg-neutral-200 overflow-hidden">
-                      <div className="h-full w-2/3 bg-[#171717]" />
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-neutral-50 border-2 border-[#171717]">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-xs text-[#666666] font-medium">
-                          CHAPTER 04 · LESSONS 01 / 08
-                        </div>
-                        <div className="mt-1 font-medium text-neutral-900 truncate">
-                          RAG 检索增强生成实战
-                        </div>
-                      </div>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#171717] text-white whitespace-nowrap">
-                        进行中
-                      </span>
-                    </div>
-                    <div className="mt-2 h-1 rounded-full bg-neutral-200 overflow-hidden">
-                      <div className="h-full w-1/4 bg-[#171717] animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-neutral-50 opacity-60">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="text-xs text-neutral-600 font-medium">
-                          CHAPTER 05 · LOCKED
-                        </div>
-                        <div className="mt-1 font-medium text-neutral-900 truncate">
-                          Function Calling 与工具集成
-                        </div>
-                      </div>
-                      <Lock className="w-4 h-4 text-neutral-400 flex-shrink-0" />
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4 p-3 rounded-lg bg-[#EEEDE9] border border-[#171717]">
-                  <div className="flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-full bg-[#171717] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      AI
-                    </div>
-                    <div className="text-sm text-neutral-900">
-                      <div className="text-xs text-neutral-600 mb-1">
-                        AI 助教 · 2 分钟前
-                      </div>
-                      你在 Lesson 4 卡了 12 秒,要先回顾下向量数据库的余弦相似度吗?
-                    </div>
-                  </div>
-                </div>
-              </Card>
+              <HeroPreviewCard />
             </div>
           </div>
         </div>
@@ -921,7 +1069,4 @@ export function HomePage() {
 }
 
 // 显式避免未使用的引用警告(在某些 strict 模式下)
-void Search;
-void Calendar;
-void Award;
-void MessageCircle;
+// (none — all imports used)

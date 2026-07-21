@@ -286,7 +286,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-neutral-200 text-xs text-neutral-600 flex flex-wrap items-center justify-between gap-4">
-            <span>© 2026 OpenCSG · 备案号 京 ICP 备 2026000000 号</span>
+            {(() => {
+              // 备案号走 env 注入, 避免硬编码假 ICP 引发合规风险
+              // 设了 VITE_ICP 就显示, 没设就显示"备案号待补"(绝不展示假数字)
+              const platformName =
+                import.meta.env.VITE_PUBLIC_PLATFORM_NAME ?? 'OpenCSG Academy';
+              const icp = import.meta.env.VITE_ICP?.trim();
+              return (
+                <span>
+                  © 2026 {platformName}
+                  {icp ? ` · 备案号 ${icp}` : ' · 备案号待补'}
+                </span>
+              );
+            })()}
             <span className="font-mono">v0.5.0 · built for AI era</span>
           </div>
         </div>

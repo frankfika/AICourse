@@ -481,52 +481,47 @@ function VideoCenter({
         )}
 
         {centerTab === 'cc' && (
-          <div className="max-w-3xl space-y-3">
-            {[
-              { time: '00:00', text: '欢迎来到第一节课。今天我们要用 LangChain 搭建一个最小的 Agent。' },
-              { time: '00:15', text: '先确认你的环境:Python 3.10+,pip install langchain langchain-openai。' },
-              { time: '00:42', text: '一个 Agent 至少需要三样东西:Prompt、Tool schema、以及一个循环。' },
-              { time: '01:30', text: '我们先写一个最朴素的 ReAct 循环 —— 没有 LangChain,只用 OpenAI SDK。' },
-              { time: '02:15', text: '注意这里的 stop sequence,它是让 LLM 输出结构化 action 的关键。' },
-            ].map((line, i) => (
-              <div
-                key={i}
-                className="p-3 sm:p-4 rounded-lg border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 flex gap-3"
-              >
-                <span className="font-mono text-xs text-[#171717] shrink-0 pt-0.5">{line.time}</span>
-                <p className="text-sm text-neutral-900 dark:text-neutral-900 leading-relaxed">{line.text}</p>
-              </div>
-            ))}
+          <div className="max-w-3xl">
+            <EmptyState
+              icon={<FileText className="w-5 h-5" />}
+              title="字幕暂未提供"
+              description="本节字幕由讲师或社区提供,目前还没有上传。你可以先看视频或切换到「笔记」做记录。"
+            />
           </div>
         )}
 
         {centerTab === 'resources' && (
           <div className="max-w-3xl space-y-2">
-            {[
-              { name: 'lesson-1.3-starter.zip', size: '12 KB', type: 'code' },
-              { name: 'langchain-agent-cheatsheet.pdf', size: '240 KB', type: 'pdf' },
-              { name: 'official docs: agents', size: 'link', type: 'link' },
-              { name: 'demo: minimal agent run', size: '8:15', type: 'video' },
-              { name: 'audio recap (中文)', size: '6:30', type: 'audio' },
-            ].map((r, i) => (
-              <a
-                key={i}
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                className="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 hover:border-[#171717] transition-colors"
-              >
-                <span className="w-9 h-9 rounded-md bg-[#EEEDE9] text-[#171717] flex items-center justify-center text-xs font-bold shrink-0">
-                  {r.type.toUpperCase()}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate text-neutral-900 dark:text-neutral-900">
-                    {r.name}
+            {currentLesson.resources && currentLesson.resources.length > 0 ? (
+              currentLesson.resources.map((r) => (
+                <a
+                  key={r.id}
+                  href={r.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 hover:border-[#171717] transition-colors"
+                >
+                  <span className="w-9 h-9 rounded-md bg-[#EEEDE9] text-[#171717] flex items-center justify-center text-xs font-bold shrink-0">
+                    {r.type.toUpperCase()}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate text-neutral-900 dark:text-neutral-900">
+                      {r.title}
+                    </div>
+                    <div className="text-xs text-neutral-600 dark:text-neutral-600 truncate">
+                      {r.url}
+                    </div>
                   </div>
-                  <div className="text-xs text-neutral-600 dark:text-neutral-600">{r.size}</div>
-                </div>
-                <span className="text-xs text-[#171717]">下载</span>
-              </a>
-            ))}
+                  <span className="text-xs text-[#171717]">打开</span>
+                </a>
+              ))
+            ) : (
+              <EmptyState
+                icon={<Paperclip className="w-5 h-5" />}
+                title="本节暂无资源"
+                description="讲师还没上传配套资料"
+              />
+            )}
           </div>
         )}
 
@@ -552,7 +547,7 @@ function VideoCenter({
           <span className="hidden sm:inline">上一节</span>
         </button>
         <span className="text-[10px] sm:text-xs text-neutral-600 dark:text-neutral-600 hidden md:inline">
-          完成本节获得 +50 积分 + 进度推进
+          完成本节获得积分 + 进度推进
         </span>
         <button
           onClick={() => onMarkComplete(currentLesson.id)}
@@ -598,7 +593,7 @@ function AiAssistant({
         {
           id: `a-${Date.now()}`,
           role: 'ai',
-          content: 'AI 助教即将推出。后端 chat module 上线后,我能基于你正在学的课程回答问题、给代码挑战、引用具体时间戳。',
+          content: 'AI 助教暂未上线。chat module 接入后,这里会基于课程内容回答你的问题。',
         },
       ]);
     }, 400);
@@ -617,9 +612,8 @@ function AiAssistant({
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-900">AI 助教</div>
-          <div className="text-xs text-success-500 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-success-500 shrink-0" />
-            <span className="truncate">在线 · 知道你在学 {currentLessonTitle}</span>
+          <div className="text-xs text-neutral-500 flex items-center gap-1">
+            <span className="truncate">{currentLessonTitle ? `当前: ${currentLessonTitle}` : '尚未接入 · 等待 chat module'}</span>
           </div>
         </div>
         <button
