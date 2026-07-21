@@ -139,7 +139,7 @@ export function AdminBadgesPage() {
     <div>
       <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-2">
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2">
             / Admin · Badges
           </div>
           <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">徽章管理</h2>
@@ -158,9 +158,9 @@ export function AdminBadgesPage() {
       {isCreating && (
         <form
           onSubmit={handleSubmit}
-          className="border-2 border-[#171717] bg-white p-6 mb-8"
+          className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6 mb-8"
         >
-          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-4">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-4">
             {editingId ? `/ Edit Badge · ${form.code}` : '/ New Badge'}
           </div>
 
@@ -191,14 +191,14 @@ export function AdminBadgesPage() {
           </div>
 
           {/* P1-3 嵌套规则切换 */}
-          <div className="mt-4 p-3 border border-[#171717] bg-[#F5F4F0] flex items-center justify-between gap-3">
+          <div className="mt-4 p-3 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-[#F5F4F0] dark:bg-neutral-800 dark:bg-neutral-800 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4" />
               <div>
                 <div className="text-xs font-black uppercase tracking-widest">
                   高级 · 嵌套条件 DSL
                 </div>
-                <div className="text-[10px] text-[#666666] mt-0.5">
+                <div className="text-[10px] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mt-0.5">
                   AND / OR / NOT 组合多条件 · 提交时自动覆盖单条件
                 </div>
               </div>
@@ -242,7 +242,7 @@ export function AdminBadgesPage() {
             </div>
           ) : (
             <div className="mt-4">
-              <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 block">
+              <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2 block">
                 嵌套规则
               </label>
               <RuleBuilder
@@ -281,7 +281,7 @@ export function AdminBadgesPage() {
               type="checkbox"
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-              className="w-4 h-4 border-2 border-[#171717] accent-[#171717]"
+              className="w-4 h-4 border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 accent-[#171717]"
             />
             <span className="font-black uppercase tracking-widest text-[10px]">启用</span>
           </label>
@@ -295,7 +295,7 @@ export function AdminBadgesPage() {
             <button
               type="button"
               onClick={resetForm}
-              className="px-6 py-3 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
+              className="px-6 py-3 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors"
             >
               取消
             </button>
@@ -303,8 +303,8 @@ export function AdminBadgesPage() {
         </form>
       )}
 
-      <div className="border-2 border-[#171717] bg-white">
-        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+      <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100">
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
           <div className="col-span-12 md:col-span-1">#</div>
           <div className="col-span-12 md:col-span-4">Badge</div>
           <div className="col-span-12 md:col-span-2">Condition</div>
@@ -317,7 +317,7 @@ export function AdminBadgesPage() {
             key={badge.id}
             className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
               i < (badges?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
-            } hover:bg-[#F5F4F0] transition-colors`}
+            } hover:bg-[#F5F4F0] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors`}
           >
             <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
               {String(i + 1).padStart(2, '0')}
@@ -328,7 +328,7 @@ export function AdminBadgesPage() {
               </div>
               <div className="min-w-0">
                 <div className="font-black tracking-tight truncate">{badge.name}</div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
                   {badge.code}
                 </div>
               </div>
@@ -342,7 +342,7 @@ export function AdminBadgesPage() {
                 className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${
                   badge.isActive
                     ? 'bg-[#171717] text-white'
-                    : 'border border-[#171717] text-[#171717]'
+                    : 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50'
                 }`}
               >
                 {badge.isActive ? 'Active' : 'Disabled'}
@@ -367,7 +367,7 @@ export function AdminBadgesPage() {
           </div>
         ))}
         {(!badges || badges.length === 0) && (
-          <div className="p-16 text-center text-sm text-[#666666]">暂无徽章</div>
+          <div className="p-16 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">暂无徽章</div>
         )}
       </div>
     </div>
@@ -393,7 +393,7 @@ function BrutalField({
 }) {
   return (
     <div>
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 flex items-center gap-1">
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2 flex items-center gap-1">
         {label}
         {required && <span className="text-red-600">*</span>}
       </label>
@@ -404,7 +404,7 @@ function BrutalField({
           rows={3}
           required={required}
           disabled={disabled}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none disabled:opacity-50"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors resize-none disabled:opacity-50"
         />
       ) : (
         <input
@@ -413,7 +413,7 @@ function BrutalField({
           onChange={(e) => onChange(e.target.value)}
           required={required}
           disabled={disabled}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors disabled:opacity-50"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors disabled:opacity-50"
         />
       )}
     </div>
@@ -433,13 +433,13 @@ function BrutalSelect({
 }) {
   return (
     <div>
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 block">
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2 block">
         {label}
       </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+        className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -494,14 +494,14 @@ function RuleBuilder({
     // 组合节点
     return (
       <div
-        className="border border-[#171717] bg-white"
+        className="border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100"
         style={{ marginLeft: depth * 12 }}
       >
-        <div className="flex items-center gap-2 p-2 bg-[#F5F4F0] border-b border-[#171717]">
+        <div className="flex items-center gap-2 p-2 bg-[#F5F4F0] dark:bg-neutral-800 dark:bg-neutral-800 border-b border-[#171717] dark:border-neutral-50 dark:border-neutral-50">
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="p-0.5 hover:bg-[#EEEDE9]"
+            className="p-0.5 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800"
           >
             {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
@@ -510,7 +510,7 @@ function RuleBuilder({
             onChange={(e) =>
               onChange({ ...rule, op: e.target.value as BadgeCriteriaOp })
             }
-            className="px-2 py-1 border border-[#171717] text-xs font-black uppercase tracking-widest bg-white"
+            className="px-2 py-1 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-xs font-black uppercase tracking-widest bg-white dark:bg-neutral-100 dark:bg-neutral-100"
           >
             {OP_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -518,7 +518,7 @@ function RuleBuilder({
               </option>
             ))}
           </select>
-          <span className="text-[10px] text-[#666666] font-mono">
+          <span className="text-[10px] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 font-mono">
             {rule.rules.length} 子规则
           </span>
           <div className="ml-auto flex items-center gap-1">
@@ -530,7 +530,7 @@ function RuleBuilder({
                   rules: [...rule.rules, emptyLeaf()],
                 })
               }
-              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white transition-colors"
+              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 hover:bg-[#171717] hover:text-white transition-colors"
               title="加叶子"
             >
               + 叶子
@@ -543,7 +543,7 @@ function RuleBuilder({
                   rules: [...rule.rules, { op: 'and', rules: [] }],
                 })
               }
-              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white transition-colors"
+              className="px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 hover:bg-[#171717] hover:text-white transition-colors"
               title="加组合"
             >
               + 组合
@@ -576,7 +576,7 @@ function RuleBuilder({
                     const next = rule.rules.filter((_, i) => i !== idx);
                     onChange({ ...rule, rules: next });
                   }}
-                  className="p-1 mt-1 text-[#A3A3A3] hover:text-[#171717] hover:bg-[#EEEDE9]"
+                  className="p-1 mt-1 text-[#A3A3A3] hover:text-[#171717] dark:text-neutral-50 dark:hover:text-neutral-50 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800"
                   title="删除"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -592,10 +592,10 @@ function RuleBuilder({
   // 叶子节点
   return (
     <div
-      className="border border-[#171717] bg-white p-2 flex items-center gap-2"
+      className="border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-2 flex items-center gap-2"
       style={{ marginLeft: depth * 12 }}
     >
-      <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+      <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
         叶子
       </span>
       <select
@@ -603,7 +603,7 @@ function RuleBuilder({
         onChange={(e) =>
           onChange({ ...rule, type: e.target.value as BadgeCriteriaType })
         }
-        className="flex-1 px-2 py-1 border border-[#171717] text-xs bg-white focus:outline-none focus:bg-[#EEEDE9]"
+        className="flex-1 px-2 py-1 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-xs bg-white dark:bg-neutral-100 dark:bg-neutral-100 focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 dark:focus:bg-neutral-800"
       >
         {criteriaTypeOptions.map((o) => (
           <option key={o.value} value={o.value}>
@@ -611,14 +611,14 @@ function RuleBuilder({
           </option>
         ))}
       </select>
-      <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+      <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
         阈值
       </span>
       <input
         type="number"
         value={rule.value ?? 1}
         onChange={(e) => onChange({ ...rule, value: Number(e.target.value) })}
-        className="w-20 px-2 py-1 border border-[#171717] text-xs focus:outline-none focus:bg-[#EEEDE9]"
+        className="w-20 px-2 py-1 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-xs focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 dark:focus:bg-neutral-800"
       />
     </div>
   );

@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { progressApi } from '../../lib/progressApi';
+import { createEventBuffer, learningEventsApi } from '../../lib/learningEventsApi';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { cn } from '../../lib/cn';
@@ -329,8 +330,20 @@ function VideoCenter({
 }) {
   const [centerTab, setCenterTab] = useState<CenterTab>('notes');
   const [videoTime, setVideoTime] = useState(0);
-  // LearningEvent 内存计数(后端未建,标 TODO)
-  const eventCountRef = useRef(0);
+
+  // v1.4.1: LearningEvent 上报 — 用缓冲器每 5s push,30s flush 一次
+  // 改用真实后端 /api/v1/learning-events/batch,跨设备同步
+  const eventBufferRef = useRef<ReturnType<typeof createEventBuffer> | null>(null);
+
+  useEffect(() => {
+    const buf = createEventBuffer(30_000);
+    buf.start();
+    eventBufferRef.current = buf;
+    return () => {
+      buf.stop();
+      eventBufferRef.current = null;
+    };
+  }, []);
 
   // 模拟视频播放(每秒 +1,做进度条视觉)
   useEffect(() => {
@@ -338,16 +351,13 @@ function VideoCenter({
     const interval = setInterval(() => {
       setVideoTime((t) => {
         const next = t + 1;
-        // TODO(后端):LearningEvent 上报后端未建,先 console.log + 内存计数
+        // 每 5s 入队一条 progress 事件,30s flush 到后端
         if (next % 5 === 0) {
-          eventCountRef.current += 1;
-          // eslint-disable-next-line no-console
-          console.log('[LearningEvent TODO]', {
-            type: 'progress',
-            courseId: course.id,
+          eventBufferRef.current?.push({
+            eventType: 'play',
             lessonId: currentLesson.id,
-            position: next,
-            count: eventCountRef.current,
+            positionSec: next,
+            metadata: { courseId: course.id },
           });
         }
         return next >= currentLesson.videoDuration ? currentLesson.videoDuration : next;
@@ -807,9 +817,19 @@ export function DashboardPage() {
   // === 4) 标记完成 mutation ===
   const completeLessonMutation = useMutation({
     mutationFn: (lessonId: string) => progressApi.completeLesson(lessonId),
-    onSuccess: () => {
+    onSuccess: (_, lessonId) => {
       queryClient.invalidateQueries({ queryKey: ['dashboard-progress'] });
       queryClient.invalidateQueries({ queryKey: ['my-progress'] });
+      // v1.4.1: 立刻上报 complete 事件(走 immediate 单条,不等 30s flush)
+      // positionSec 由 VideoCenter 在切课时或刷新时上报,这里只标 complete
+      learningEventsApi
+        .createOne({
+          eventType: 'complete',
+          lessonId,
+        })
+        .catch(() => {
+          /* noop */
+        });
     },
   });
 

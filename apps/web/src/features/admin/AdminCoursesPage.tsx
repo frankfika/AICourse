@@ -218,9 +218,9 @@ function CourseListView() {
     switch (t) {
       case 'own': return 'bg-[#171717] text-white';
       case 'partner': return 'bg-[#4B5563] text-white';
-      case 'public': return 'border border-[#171717] text-[#171717]';
-      case 'third_party': return 'bg-[#EEEDE9] text-[#171717] border border-[#171717]';
-      default: return 'border border-[#171717]';
+      case 'public': return 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50';
+      case 'third_party': return 'bg-[#EEEDE9] dark:bg-neutral-800 dark:bg-neutral-800 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50';
+      default: return 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50';
     }
   };
 
@@ -229,7 +229,7 @@ function CourseListView() {
       {/* Header */}
       <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-2">
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2">
             / Admin · Courses
           </div>
           <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">课程管理</h2>
@@ -242,18 +242,18 @@ function CourseListView() {
         </button>
         <button
           onClick={() => setIsImporting(!isImporting)}
-          className="inline-flex items-center gap-2 px-5 py-3 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#171717] hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-3 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 text-xs font-black uppercase tracking-widest hover:bg-[#171717] hover:text-white transition-colors"
         >
           <Link2 className="w-4 h-4" /> 从 URL 导入
         </button>
       </div>
 
       {isImporting && (
-        <div className="border-2 border-[#171717] bg-white p-6 mb-8">
-          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+        <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6 mb-8">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2">
             / Import Course From URL
           </div>
-          <p className="text-xs text-[#666666] mb-4 leading-relaxed">
+          <p className="text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-4 leading-relaxed">
             支持 YouTube（youtube.com / youtu.be）和 Bilibili（bilibili.com）公开视频。
             系统会自动抓取标题、封面、作者，并通过 AI 生成描述、学习要点、难度和标签，作为草稿保存，需审核后发布。
           </p>
@@ -263,7 +263,7 @@ function CourseListView() {
               value={importUrl}
               onChange={(e) => setImportUrl(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
-              className="flex-1 px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9]"
+              className="flex-1 px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800"
               autoFocus
             />
             <button
@@ -279,7 +279,7 @@ function CourseListView() {
                 setIsImporting(false);
                 setImportUrl('');
               }}
-              className="px-6 py-3 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
+              className="px-6 py-3 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors"
             >
               取消
             </button>
@@ -293,7 +293,7 @@ function CourseListView() {
           )}
 
           <div className="mt-6 pt-6 border-t border-[#EEEDE9]">
-            <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+            <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2">
               / Batch Import（一次最多 20 条）
             </div>
             <textarea
@@ -301,7 +301,7 @@ function CourseListView() {
               onChange={(e) => setBatchUrls(e.target.value)}
               placeholder={'https://www.youtube.com/watch?v=...\nhttps://www.bilibili.com/video/BV...\n（每行一条 URL）'}
               rows={4}
-              className="w-full px-4 py-3 bg-white border border-[#171717] text-xs font-mono focus:outline-none focus:bg-[#EEEDE9] resize-none"
+              className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-xs font-mono focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 resize-none"
             />
             <div className="flex gap-2 mt-2">
               <button
@@ -314,7 +314,7 @@ function CourseListView() {
               <button
                 type="button"
                 onClick={() => setBatchUrls('')}
-                className="px-6 py-3 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
+                className="px-6 py-3 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors"
               >
                 清空
               </button>
@@ -331,8 +331,8 @@ function CourseListView() {
       )}
 
       {isCreating && (
-        <form onSubmit={handleSubmit} className="border-2 border-[#171717] bg-white p-6 mb-8">
-          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-4">
+        <form onSubmit={handleSubmit} className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6 mb-8">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-4">
             / New Course
           </div>
 
@@ -367,7 +367,7 @@ function CourseListView() {
               <select
                 value={form.level}
                 onChange={(e) => setForm({ ...form, level: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9]"
+                className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800"
               >
                 <option value="Beginner">入门</option>
                 <option value="Intermediate">进阶</option>
@@ -381,7 +381,7 @@ function CourseListView() {
               <select
                 value={form.costType}
                 onChange={(e) => setForm({ ...form, costType: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9]"
+                className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800"
               >
                 <option value="free">免费</option>
                 <option value="paid">付费</option>
@@ -393,7 +393,7 @@ function CourseListView() {
               <select
                 value={form.courseType}
                 onChange={(e) => setForm({ ...form, courseType: e.target.value })}
-                className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9]"
+                className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800"
               >
                 <option value="own">自有课程</option>
                 <option value="partner">合作课程</option>
@@ -456,7 +456,7 @@ function CourseListView() {
             <button
               type="button"
               onClick={() => setIsCreating(false)}
-              className="px-6 py-3 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
+              className="px-6 py-3 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors"
             >
               取消
             </button>
@@ -465,8 +465,8 @@ function CourseListView() {
       )}
 
       {/* Course list */}
-      <div className="border-2 border-[#171717] bg-white">
-        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+      <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100">
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
           <div className="col-span-12 md:col-span-1">#</div>
           <div className="col-span-12 md:col-span-4">Title</div>
           <div className="col-span-12 md:col-span-2">Instructor</div>
@@ -480,7 +480,7 @@ function CourseListView() {
             key={course.id}
             className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
               i < (courses?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
-            } hover:bg-[#EEEDE9] transition-colors`}
+            } hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors`}
           >
             <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
               {String(i + 1).padStart(2, '0')}
@@ -493,15 +493,15 @@ function CourseListView() {
                 {course.title}
               </Link>
             </div>
-            <div className="col-span-12 md:col-span-2 text-[#666666] text-xs">{course.instructor}</div>
+            <div className="col-span-12 md:col-span-2 text-[#666666] dark:text-neutral-400 dark:text-neutral-400 text-xs">{course.instructor}</div>
             <div className="col-span-12 md:col-span-1 text-xs">
               <span
                 className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${
                   course.costType === 'free'
                     ? 'bg-[#171717] text-white'
                     : course.costType === 'charity'
-                    ? 'border border-[#171717]'
-                    : 'border border-[#171717]'
+                    ? 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50'
+                    : 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50'
                 }`}
               >
                 {course.costType}
@@ -536,7 +536,7 @@ function CourseListView() {
         {(!courses || courses.length === 0) && (
           <div className="p-16 text-center">
             <Sparkles className="w-6 h-6 mx-auto mb-3 text-[#A3A3A3]" />
-            <p className="text-sm text-[#666666]">暂无课程，点击"新增课程"或使用 AI 智能填充快速创建</p>
+            <p className="text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">暂无课程，点击"新增课程"或使用 AI 智能填充快速创建</p>
           </div>
         )}
       </div>
@@ -630,7 +630,7 @@ function InfoTab({ courseId }: { courseId: string }) {
   }, [course?.id, course?.title, course?.description, course?.instructor, course?.level, course?.duration, course?.thumbnail]);
 
   if (courseQuery.isLoading) {
-    return <div className="p-8 text-center text-sm text-[#666666]">加载中…</div>;
+    return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载中…</div>;
   }
   if (courseQuery.isError) {
     return (
@@ -649,8 +649,8 @@ function InfoTab({ courseId }: { courseId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="border-2 border-[#171717] bg-white p-6">
-        <h3 className="text-sm font-semibold text-[#171717] mb-4">主要信息</h3>
+      <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
+        <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-4">主要信息</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <BrutalField
             label="课程标题"
@@ -690,12 +690,12 @@ function InfoTab({ courseId }: { courseId: string }) {
           </div>
         </div>
         <div className="mt-4">
-          <label className="text-sm font-medium text-[#171717] mb-1.5 block">课程描述</label>
+          <label className="text-sm font-medium text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-1.5 block">课程描述</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={4}
-            className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
+            className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors resize-none"
           />
         </div>
         <div className="mt-4 flex items-center gap-2">
@@ -763,7 +763,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
   });
 
   if (chaptersQuery.isLoading) {
-    return <div className="p-8 text-center text-sm text-[#666666]">加载章节中…</div>;
+    return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载章节中…</div>;
   }
   if (chaptersQuery.isError) {
     return (
@@ -773,17 +773,20 @@ function ChaptersTab({ courseId }: { courseId: string }) {
     );
   }
 
+  const [mobileChaptersOpen, setMobileChaptersOpen] = useState(false);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 border-2 border-[#171717] bg-white overflow-hidden min-h-[500px]">
-      <aside className="bg-white border-r border-[#171717] flex flex-col">
-        <div className="p-3 border-b border-[#171717]">
-          <h3 className="text-sm font-semibold text-[#171717] mb-2">章节大纲</h3>
+    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 overflow-hidden min-h-[500px]">
+      {/* 章节树 — < lg 默认 hidden,点 mobile 按钮后显示在 lesson 编辑区上方 */}
+      <aside className={`bg-white dark:bg-neutral-100 dark:bg-neutral-100 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 flex flex-col ${mobileChaptersOpen ? 'border-2' : 'hidden lg:flex border-r-0 lg:border-r-2'}`}>
+        <div className="p-3 border-b border-[#171717] dark:border-neutral-50 dark:border-neutral-50">
+          <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-2">章节大纲</h3>
           <div className="flex items-center gap-1">
             <input
               value={newChapterTitle}
               onChange={(e) => setNewChapterTitle(e.target.value)}
               placeholder="新章节标题"
-              className="flex-1 h-8 px-2 text-xs border border-[#171717] focus:outline-none focus:border-[#171717]"
+              className="flex-1 h-8 px-2 text-xs border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 focus:outline-none focus:border-[#171717] dark:border-neutral-50"
             />
             <BrutalButton
               variant="primary"
@@ -805,7 +808,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
             const isOpen = expanded[c.id] ?? idx === 0;
             return (
               <div key={c.id}>
-                <div className="flex items-center gap-1 p-1.5 hover:bg-[#EEEDE9]">
+                <div className="flex items-center gap-1 p-1.5 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800">
                   <button
                     type="button"
                     onClick={() => setExpanded({ ...expanded, [c.id]: !isOpen })}
@@ -813,41 +816,44 @@ function ChaptersTab({ courseId }: { courseId: string }) {
                   >
                     {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                   </button>
-                  <span className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-neutral-200 text-[#666666] shrink-0">
+                  <span className="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center bg-neutral-200 text-[#666666] dark:text-neutral-400 dark:text-neutral-400 shrink-0">
                     {idx + 1}
                   </span>
-                  <span className="flex-1 font-medium text-sm text-[#171717] truncate" title={c.title}>
+                  <span className="flex-1 font-medium text-sm text-[#171717] dark:text-neutral-50 dark:text-neutral-50 truncate" title={c.title}>
                     {c.title}
                   </span>
-                  <span className="text-[10px] text-[#666666] font-mono">{c.lessons.length}</span>
+                  <span className="text-[10px] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 font-mono">{c.lessons.length}</span>
                   <button
                     onClick={() => {
                       if (confirm(`删除章节「${c.title}」？将级联软删其下 ${c.lessons.length} 个课时`)) {
                         deleteChapter.mutate(c.id);
                       }
                     }}
-                    className="p-1 text-[#A3A3A3] hover:text-[#171717] hover:bg-[#EEEDE9]"
+                    className="p-1 text-[#A3A3A3] hover:text-[#171717] dark:text-neutral-50 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800"
                     title="删除"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 {isOpen && (
-                  <div className="ml-6 pl-2 border-l border-[#171717] space-y-0.5 mt-1">
+                  <div className="ml-6 pl-2 border-l border-[#171717] dark:border-neutral-50 dark:border-neutral-50 space-y-0.5 mt-1">
                     {c.lessons.map((l) => (
                       <div
                         key={l.id}
                         className={`flex items-center gap-1 p-1.5 text-xs cursor-pointer transition-colors ${
                           activeLesson?.lesson.id === l.id
-                            ? 'bg-[#EEEDE9] text-[#171717] font-medium'
-                            : 'hover:bg-[#EEEDE9] text-neutral-700'
+                            ? 'bg-[#EEEDE9] dark:bg-neutral-800 dark:bg-neutral-800 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 font-medium'
+                            : 'hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 text-neutral-700'
                         }`}
-                        onClick={() => setActiveLesson({ chapterId: c.id, lesson: l })}
+                        onClick={() => {
+                          setActiveLesson({ chapterId: c.id, lesson: l });
+                          setMobileChaptersOpen(false);
+                        }}
                       >
-                        <VideoIcon className="w-3.5 h-3.5 text-[#666666] shrink-0" />
+                        <VideoIcon className="w-3.5 h-3.5 text-[#666666] dark:text-neutral-400 dark:text-neutral-400 shrink-0" />
                         <span className="flex-1 truncate" title={l.title}>{l.title}</span>
                         {l.isPreview && (
-                          <span className="text-[9px] font-black uppercase tracking-widest text-[#171717] bg-[#EEEDE9] px-1 py-0.5">
+                          <span className="text-[9px] font-black uppercase tracking-widest text-[#171717] dark:text-neutral-50 dark:text-neutral-50 bg-[#EEEDE9] dark:bg-neutral-800 dark:bg-neutral-800 px-1 py-0.5">
                             试看
                           </span>
                         )}
@@ -860,12 +866,28 @@ function ChaptersTab({ courseId }: { courseId: string }) {
             );
           })}
         </div>
-        <div className="p-3 border-t border-[#171717] text-xs text-[#666666]">
+        <div className="p-3 border-t border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
           共 {chapters.length} 章 · {totalLessons} 课时
         </div>
       </aside>
 
-      <div className="bg-[#EEEDE9] p-4">
+      <div className="bg-[#EEEDE9] dark:bg-neutral-800 dark:bg-neutral-800 p-4">
+        {/* mobile 章节树 toggle — < lg 显示,≥ lg 隐藏 */}
+        <div className="lg:hidden mb-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMobileChaptersOpen(!mobileChaptersOpen)}
+            aria-expanded={mobileChaptersOpen}
+            className="inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors"
+          >
+            {mobileChaptersOpen ? '收起章节' : `章节(${chapters.length})`}
+          </button>
+          {activeLesson && (
+            <span className="text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400 truncate">
+              当前编辑:{activeLesson.lesson.title}
+            </span>
+          )}
+        </div>
         {activeLesson ? (
           <LessonDetail
             lesson={activeLesson.lesson}
@@ -879,7 +901,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
             }}
           />
         ) : (
-          <div className="h-full flex items-center justify-center text-sm text-[#666666]">
+          <div className="h-full flex items-center justify-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
             <div className="text-center">
               <VideoIcon className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
               点击左侧课时查看 / 编辑元数据
@@ -899,7 +921,7 @@ function NewLessonRow({ chapterId: _chapterId, onAdd }: { chapterId: string; onA
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full text-left p-1.5 text-xs text-[#666666] hover:text-white hover:bg-[#171717] transition-colors"
+        className="w-full text-left p-1.5 text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400 hover:text-white hover:bg-[#171717] transition-colors"
       >
         + 添加课时
       </button>
@@ -922,7 +944,7 @@ function NewLessonRow({ chapterId: _chapterId, onAdd }: { chapterId: string; onA
           }
         }}
         placeholder="新课时标题"
-        className="flex-1 h-7 px-2 text-xs border border-[#171717] focus:outline-none focus:border-[#171717]"
+        className="flex-1 h-7 px-2 text-xs border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 focus:outline-none focus:border-[#171717] dark:border-neutral-50"
       />
       <button
         onClick={() => {
@@ -938,7 +960,7 @@ function NewLessonRow({ chapterId: _chapterId, onAdd }: { chapterId: string; onA
       </button>
       <button
         onClick={() => { setOpen(false); setTitle(''); }}
-        className="px-1 h-7 text-[#A3A3A3] hover:text-[#171717]"
+        className="px-1 h-7 text-[#A3A3A3] hover:text-[#171717] dark:text-neutral-50"
       >
         <X className="w-3 h-3" />
       </button>
@@ -1001,8 +1023,8 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
   const resources = resourcesQuery.data ?? [];
 
   return (
-    <div className="border-2 border-[#171717] bg-white p-6">
-      <h3 className="text-sm font-semibold text-[#171717] mb-4">课时详情</h3>
+    <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
+      <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-4">课时详情</h3>
       <div className="space-y-3">
         <BrutalField label="标题" value={title} onChange={setTitle} required />
         <BrutalField
@@ -1012,16 +1034,16 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
           placeholder="https://cdn.opencsg.ai/lessons/...mp4"
         />
         <div>
-          <label className="text-sm font-medium text-[#171717] mb-1.5 block">描述 / 笔记</label>
+          <label className="text-sm font-medium text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-1.5 block">描述 / 笔记</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={6}
-            className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
+            className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors resize-none"
             placeholder="支持 Markdown（生产环境可接渲染器）"
           />
         </div>
-        <label className="flex items-center gap-2 text-sm cursor-pointer text-[#171717]">
+        <label className="flex items-center gap-2 text-sm cursor-pointer text-[#171717] dark:text-neutral-50 dark:text-neutral-50">
           <input
             type="checkbox"
             checked={isPreview}
@@ -1031,7 +1053,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
           <span>设为试看课时（未报名可看）</span>
         </label>
       </div>
-      <div className="mt-4 flex items-center gap-2 pt-4 border-t border-[#171717]">
+      <div className="mt-4 flex items-center gap-2 pt-4 border-t border-[#171717] dark:border-neutral-50 dark:border-neutral-50">
         <BrutalButton
           variant="primary"
           size="sm"
@@ -1048,9 +1070,9 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
       </div>
 
       {/* 资源管理 v1.3.0 */}
-      <div className="mt-6 pt-4 border-t border-[#171717]">
+      <div className="mt-6 pt-4 border-t border-[#171717] dark:border-neutral-50 dark:border-neutral-50">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-[#171717]">附加资源 · {resources.length}</h4>
+          <h4 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50">附加资源 · {resources.length}</h4>
           {!addingResource && (
             <BrutalButton
               variant="secondary"
@@ -1063,19 +1085,19 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
         </div>
 
         {addingResource && (
-          <div className="border border-[#171717] bg-[#EEEDE9] p-3 mb-3 space-y-2">
+          <div className="border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-[#EEEDE9] dark:bg-neutral-800 dark:bg-neutral-800 p-3 mb-3 space-y-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <input
                 autoFocus
                 value={newResource.title}
                 onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
                 placeholder="资源标题"
-                className="px-3 py-2 border border-[#171717] text-sm bg-white focus:outline-none focus:border-[#171717]"
+                className="px-3 py-2 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm bg-white dark:bg-neutral-100 dark:bg-neutral-100 focus:outline-none focus:border-[#171717] dark:border-neutral-50"
               />
               <select
                 value={newResource.type}
                 onChange={(e) => setNewResource({ ...newResource, type: e.target.value as ResourceType })}
-                className="px-3 py-2 border border-[#171717] text-sm bg-white focus:outline-none focus:border-[#171717]"
+                className="px-3 py-2 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm bg-white dark:bg-neutral-100 dark:bg-neutral-100 focus:outline-none focus:border-[#171717] dark:border-neutral-50"
               >
                 <option value="pdf">PDF</option>
                 <option value="code">代码</option>
@@ -1087,7 +1109,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                 value={newResource.url}
                 onChange={(e) => setNewResource({ ...newResource, url: e.target.value })}
                 placeholder="https://..."
-                className="px-3 py-2 border border-[#171717] text-sm bg-white focus:outline-none focus:border-[#171717] font-mono"
+                className="px-3 py-2 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm bg-white dark:bg-neutral-100 dark:bg-neutral-100 focus:outline-none focus:border-[#171717] dark:border-neutral-50 font-mono"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -1114,7 +1136,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
         )}
 
         {resources.length === 0 && !addingResource ? (
-          <div className="border border-dashed border-[#171717] rounded p-6 text-center text-xs text-[#666666]">
+          <div className="border border-dashed border-[#171717] dark:border-neutral-50 dark:border-neutral-50 rounded p-6 text-center text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
             暂无资源 · 点击「添加资源」挂 PDF / 代码 / 链接
           </div>
         ) : (
@@ -1122,7 +1144,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
             {resources.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center gap-2 p-2 border border-[#171717] bg-white group"
+                className="flex items-center gap-2 p-2 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 group"
               >
                 <span
                   className="inline-flex items-center justify-center w-7 h-7 bg-neutral-900 text-white text-[10px] font-black uppercase"
@@ -1131,23 +1153,23 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                   {r.type.slice(0, 3)}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-[#171717] truncate" title={r.title}>
+                  <div className="text-sm font-medium text-[#171717] dark:text-neutral-50 dark:text-neutral-50 truncate" title={r.title}>
                     {r.title}
                   </div>
-                  <div className="text-[10px] font-mono text-[#666666] truncate" title={r.url}>
+                  <div className="text-[10px] font-mono text-[#666666] dark:text-neutral-400 dark:text-neutral-400 truncate" title={r.url}>
                     {r.url}
                   </div>
                 </div>
                 {r.isLocked ? (
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border border-[#171717] text-[#666666]"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#666666] dark:text-neutral-400 dark:text-neutral-400"
                     title="报名后解锁"
                   >
                     <Lock className="w-3 h-3" /> 锁
                   </span>
                 ) : (
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-[#EEEDE9] text-[#171717]"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-[#EEEDE9] dark:bg-neutral-800 dark:bg-neutral-800 text-[#171717] dark:text-neutral-50 dark:text-neutral-50"
                     title="公开"
                   >
                     <Unlock className="w-3 h-3" /> 公开
@@ -1157,7 +1179,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                   href={r.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1.5 text-[#666666] hover:bg-neutral-100 hover:text-[#171717]"
+                  className="p-1.5 text-[#666666] dark:text-neutral-400 dark:text-neutral-400 hover:bg-neutral-100 hover:text-[#171717] dark:text-neutral-50"
                   title="在新窗口打开"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -1168,7 +1190,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                       deleteResource.mutate(r.id);
                     }
                   }}
-                  className="p-1.5 text-[#666666] hover:bg-neutral-100 hover:text-red-600"
+                  className="p-1.5 text-[#666666] dark:text-neutral-400 dark:text-neutral-400 hover:bg-neutral-100 hover:text-red-600"
                   title="删除"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -1190,11 +1212,11 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
 
 function ResourcesTab({ courseId: _courseId }: { courseId: string }) {
   return (
-    <div className="border-2 border-[#171717] bg-white p-6">
-      <div className="border-2 border-dashed border-[#171717] p-12 text-center">
+    <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
+      <div className="border-2 border-dashed border-[#171717] dark:border-neutral-50 dark:border-neutral-50 p-12 text-center">
         <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
-        <p className="text-sm text-[#666666]">资源已迁到「章节大纲」tab</p>
-        <p className="text-[10px] text-[#666666] mt-1">
+        <p className="text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">资源已迁到「章节大纲」tab</p>
+        <p className="text-[10px] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mt-1">
           在章节大纲里选中具体课时,在右侧课时详情面板的「附加资源」段管理
         </p>
       </div>
@@ -1219,7 +1241,7 @@ function PricingTab({ courseId }: { courseId: string }) {
     }
   }, [course?.id, course?.costType, course?.price]);
 
-  if (courseQuery.isLoading) return <div className="p-8 text-center text-sm text-[#666666]">加载中…</div>;
+  if (courseQuery.isLoading) return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载中…</div>;
 
   const save = () => {
     updateCourse.mutate(
@@ -1236,9 +1258,9 @@ function PricingTab({ courseId }: { courseId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="border-2 border-[#171717] bg-white p-6">
-        <h3 className="text-sm font-semibold text-[#171717] mb-1">价格模式</h3>
-        <p className="text-xs text-[#666666] mb-4">选择主要定价方式</p>
+      <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
+        <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-1">价格模式</h3>
+        <p className="text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-4">选择主要定价方式</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {plans.map((p) => {
             const active = costType === p.id;
@@ -1246,7 +1268,7 @@ function PricingTab({ courseId }: { courseId: string }) {
               <label
                 key={p.id}
                 className={`p-4 border-2 cursor-pointer transition-colors ${
-                  active ? 'border-[#171717] bg-[#EEEDE9]' : 'border-[#171717] hover:border-neutral-400'
+                  active ? 'border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-[#EEEDE9] dark:bg-neutral-800 dark:bg-neutral-800' : 'border-[#171717] dark:border-neutral-50 dark:border-neutral-50 hover:border-neutral-400'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -1257,10 +1279,10 @@ function PricingTab({ courseId }: { courseId: string }) {
                     onChange={() => setCostType(p.id)}
                     className="w-4 h-4 accent-[#171717]"
                   />
-                  <span className="text-sm font-semibold text-[#171717]">{p.title}</span>
+                  <span className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50">{p.title}</span>
                 </div>
-                <p className="mt-1 text-xs text-[#666666]">{p.sub}</p>
-                <p className="mt-2 text-base font-mono font-bold text-[#171717]">{p.priceHint}</p>
+                <p className="mt-1 text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400">{p.sub}</p>
+                <p className="mt-2 text-base font-mono font-bold text-[#171717] dark:text-neutral-50 dark:text-neutral-50">{p.priceHint}</p>
               </label>
             );
           })}
@@ -1268,8 +1290,8 @@ function PricingTab({ courseId }: { courseId: string }) {
       </div>
 
       {costType === 'paid' && (
-        <div className="border-2 border-[#171717] bg-white p-6">
-          <h3 className="text-sm font-semibold text-[#171717] mb-4">买断定价</h3>
+        <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
+          <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-4">买断定价</h3>
           <BrutalField
             label="售价 (¥)"
             type="number"
@@ -1302,7 +1324,7 @@ function PublishTab({ courseId }: { courseId: string }) {
     if (course) setIsPublished(course.status === 'published');
   }, [course?.id, course?.status]);
 
-  if (courseQuery.isLoading) return <div className="p-8 text-center text-sm text-[#666666]">加载中…</div>;
+  if (courseQuery.isLoading) return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载中…</div>;
 
   const save = () => {
     updateCourse.mutate(
@@ -1313,11 +1335,11 @@ function PublishTab({ courseId }: { courseId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="border-2 border-[#171717] bg-white p-6">
+      <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="text-sm font-semibold text-[#171717]">上下架状态</h3>
-            <p className="text-xs text-[#666666] mt-1">
+            <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50">上下架状态</h3>
+            <p className="text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mt-1">
               {isPublished ? '课程已发布，正在招生中' : '课程未发布，只有内部可见'}
             </p>
           </div>
@@ -1325,13 +1347,13 @@ function PublishTab({ courseId }: { courseId: string }) {
             type="button"
             onClick={() => setIsPublished((p) => !p)}
             className={`relative w-12 h-7 rounded-full transition-colors ${
-              isPublished ? 'bg-[#EEEDE9]0' : 'bg-neutral-200'
+              isPublished ? 'bg-[#EEEDE9] dark:bg-neutral-8000' : 'bg-neutral-200'
             }`}
             aria-pressed={isPublished}
             aria-label="上下架"
           >
             <span
-              className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+              className={`absolute top-0.5 w-6 h-6 bg-white dark:bg-neutral-100 dark:bg-neutral-100 rounded-full shadow transition-transform ${
                 isPublished ? 'translate-x-5' : 'translate-x-0.5'
               }`}
             />
@@ -1362,7 +1384,7 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
 
   if (!courseId) {
     return (
-      <div className="p-12 text-center text-sm text-[#666666]">
+      <div className="p-12 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
         请在 URL 中提供 <code>?id=...</code> 参数
       </div>
     );
@@ -1377,22 +1399,22 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
 
   return (
     <div className="-mx-6 -my-8">
-      <header className="bg-white border-b border-[#171717] sticky top-0 z-30">
+      <header className="bg-white dark:bg-neutral-100 dark:bg-neutral-100 border-b border-[#171717] dark:border-neutral-50 dark:border-neutral-50 sticky top-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <Link
               to="/admin/courses"
-              className="text-[#666666] hover:text-[#171717] shrink-0"
+              className="text-[#666666] dark:text-neutral-400 dark:text-neutral-400 hover:text-[#171717] dark:text-neutral-50 shrink-0"
               aria-label="返回课程列表"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <span className="text-neutral-300">/</span>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-[#171717] truncate">
+              <div className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 truncate">
                 {courseQuery.isLoading ? '加载中…' : course?.title ?? '未知课程'}
               </div>
-              <div className="text-xs text-[#666666] flex items-center gap-2 flex-wrap">
+              <div className="text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400 flex items-center gap-2 flex-wrap">
                 <span>
                   课程 ID: <span className="font-mono">{courseId}</span>
                 </span>
@@ -1403,12 +1425,12 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
                       className={
                         course.status === 'published'
                           ? 'bg-[#171717] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-0.5'
-                          : 'border border-[#171717] text-[#666666] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-0.5'
+                          : 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#666666] dark:text-neutral-400 dark:text-neutral-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-0.5'
                       }
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          course.status === 'published' ? 'bg-[#171717]' : 'bg-white border border-[#171717]'
+                          course.status === 'published' ? 'bg-[#171717]' : 'bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50'
                         }`}
                       />
                       {course.status === 'published' ? '已发布' : '未发布'}
@@ -1439,12 +1461,12 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
                 onClick={() => setCurrentTab(t.id)}
                 className={`py-3 border-b-2 whitespace-nowrap transition-colors ${
                   active
-                    ? 'border-[#171717] text-[#171717] font-medium'
-                    : 'border-transparent text-[#666666] hover:text-[#171717]'
+                    ? 'border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 font-medium'
+                    : 'border-transparent text-[#666666] dark:text-neutral-400 dark:text-neutral-400 hover:text-[#171717] dark:text-neutral-50'
                 }`}
               >
                 {t.label}
-                {t.count && <span className="ml-1 text-xs text-[#666666]">· {t.count}</span>}
+                {t.count && <span className="ml-1 text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400">· {t.count}</span>}
               </button>
             );
           })}
@@ -1453,7 +1475,7 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
 
       <div className="px-4 sm:px-6 py-6 pb-12">
         {courseQuery.isLoading && currentTab !== 'chapters' ? (
-          <div className="p-8 text-center text-sm text-[#666666]">加载课程中…</div>
+          <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载课程中…</div>
         ) : courseQuery.isError ? (
           <div className="p-8 text-center text-sm text-red-600">
             加载失败：{(courseQuery.error as any)?.message ?? '未知错误'}
@@ -1493,7 +1515,7 @@ export function AdminCoursesPage() {
 // ── 列表模式用到的 Field / Label 组件(原 AdminCoursesPage 已有) ──
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 block">
+    <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2 block">
       {children}
     </label>
   );
@@ -1526,7 +1548,7 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           required={required}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] resize-none"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 resize-none"
         />
       ) : (
         <input
@@ -1534,7 +1556,7 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required={required}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9]"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800"
         />
       )}
     </div>
@@ -1565,7 +1587,7 @@ function BrutalField({
 }) {
   return (
     <div>
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 flex items-center gap-1">
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2 flex items-center gap-1">
         {label}
         {required && <span className="text-red-600">*</span>}
       </label>
@@ -1576,7 +1598,7 @@ function BrutalField({
           rows={3}
           required={required}
           placeholder={placeholder}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors resize-none"
         />
       ) : (
         <input
@@ -1585,7 +1607,7 @@ function BrutalField({
           onChange={(e) => onChange(e.target.value)}
           required={required}
           placeholder={placeholder}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors"
         />
       )}
     </div>
@@ -1605,13 +1627,13 @@ function BrutalSelect({
 }) {
   return (
     <div>
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 block">
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2 block">
         {label}
       </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+        className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -1644,8 +1666,8 @@ function BrutalButton({
   const sizeCls = size === 'sm' ? 'px-4 py-2 text-[10px]' : 'px-6 py-3 text-xs';
   const variantCls = {
     primary: 'bg-[#171717] text-white hover:bg-[#262626]',
-    secondary: 'border border-[#171717] text-[#171717] hover:bg-[#EEEDE9]',
-    danger: 'border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white',
+    secondary: 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800',
+    danger: 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 hover:bg-[#171717] hover:text-white',
   }[variant];
   return (
     <button
@@ -1677,7 +1699,7 @@ function BrutalIconButton({
       type="button"
       onClick={onClick}
       title={title}
-      className={`p-1.5 ${danger ? 'text-[#A3A3A3] hover:text-red-600 hover:bg-[#EEEDE9]' : 'text-[#A3A3A3] hover:text-[#171717] hover:bg-[#EEEDE9]'} transition-colors ${className}`}
+      className={`p-1.5 ${danger ? 'text-[#A3A3A3] hover:text-red-600 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800' : 'text-[#A3A3A3] hover:text-[#171717] dark:text-neutral-50 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800'} transition-colors ${className}`}
     >
       {children}
     </button>

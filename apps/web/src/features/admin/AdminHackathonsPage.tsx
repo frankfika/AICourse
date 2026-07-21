@@ -148,7 +148,7 @@ export function AdminHackathonsPage() {
     <div>
       <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-2 flex items-center gap-2">
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] dark:text-neutral-400 mb-2 flex items-center gap-2">
             <Rocket className="w-3 h-3" /> / Admin · Hackathons
           </div>
           <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">黑客松管理</h2>
@@ -165,8 +165,8 @@ export function AdminHackathonsPage() {
       </div>
 
       {isCreating && (
-        <form onSubmit={handleSubmit} className="border-2 border-[#171717] bg-white p-6 mb-8">
-          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-4">
+        <form onSubmit={handleSubmit} className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 p-6 mb-8">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 mb-4">
             {editingId ? `/ Edit · ${form.title}` : '/ New Hackathon'}
           </div>
 
@@ -264,7 +264,7 @@ export function AdminHackathonsPage() {
             <button
               type="button"
               onClick={resetForm}
-              className="px-6 py-3 border border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
+              className="px-6 py-3 border border-[#171717] dark:border-neutral-50 text-[#171717] dark:text-neutral-50 text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors"
             >
               取消
             </button>
@@ -272,8 +272,8 @@ export function AdminHackathonsPage() {
         </form>
       )}
 
-      <div className="border-2 border-[#171717] bg-white">
-        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+      <div className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100">
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400">
           <div className="col-span-12 md:col-span-1">#</div>
           <div className="col-span-12 md:col-span-4">Title</div>
           <div className="col-span-12 md:col-span-2">Status</div>
@@ -282,14 +282,14 @@ export function AdminHackathonsPage() {
           <div className="col-span-12 md:col-span-1 text-right">Action</div>
         </div>
         {isLoading ? (
-          <div className="p-12 text-center text-sm text-[#666666]">加载中...</div>
+          <div className="p-12 text-center text-sm text-[#666666] dark:text-neutral-400">加载中...</div>
         ) : (
           hackathons?.map((h, i) => (
             <div
               key={h.id}
               className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm ${
                 i < (hackathons?.length ?? 0) - 1 ? 'border-b border-[#EEEDE9]' : ''
-              } hover:bg-[#F5F4F0] transition-colors`}
+              } hover:bg-[#F5F4F0] dark:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors`}
             >
               <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
                 {String(i + 1).padStart(2, '0')}
@@ -298,12 +298,12 @@ export function AdminHackathonsPage() {
               <div className="col-span-12 md:col-span-2">
                 <HackathonStatusBadge status={h.status} />
               </div>
-              <div className="col-span-12 md:col-span-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
+              <div className="col-span-12 md:col-span-2 text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400">
                 {new Date(h.startDate).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
                 {' - '}
                 {new Date(h.endDate).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
               </div>
-              <div className="col-span-12 md:col-span-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
+              <div className="col-span-12 md:col-span-2 text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400">
                 {h.minTeamSize}-{h.maxTeamSize} 人
               </div>
               <div className="col-span-12 md:col-span-1 flex items-center justify-end gap-1">
@@ -326,7 +326,7 @@ export function AdminHackathonsPage() {
           ))
         )}
         {!isLoading && (!hackathons || hackathons.length === 0) && (
-          <div className="p-16 text-center text-sm text-[#666666]">暂无黑客松</div>
+          <div className="p-16 text-center text-sm text-[#666666] dark:text-neutral-400">暂无黑客松</div>
         )}
       </div>
     </div>
@@ -350,7 +350,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 flex items-center gap-1">
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 mb-2 flex items-center gap-1">
         {label}
         {required && <span className="text-red-600">*</span>}
       </label>
@@ -360,7 +360,7 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           required={required}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors resize-none"
         />
       ) : (
         <input
@@ -368,7 +368,7 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required={required}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors"
         />
       )}
     </div>
@@ -388,13 +388,13 @@ function Select({
 }) {
   return (
     <div>
-      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2 block">
+      <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 mb-2 block">
         {label}
       </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+        className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

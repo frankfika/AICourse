@@ -48,21 +48,21 @@ export function AdminEnterprisePage() {
     <div>
       <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-2">
+          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] dark:text-neutral-400 mb-2">
             / Admin · Enterprise
           </div>
           <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">企业咨询</h2>
         </div>
 
         {/* Filter */}
-        <div className="flex border border-[#171717]">
+        <div className="flex border border-[#171717] dark:border-neutral-50">
           {(['all', ...STATUS_OPTIONS] as const).map((s, i) => (
             <button
               key={s}
               onClick={() => setFilter(s)}
               className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest ${
-                filter === s ? 'bg-[#171717] text-white' : 'bg-white text-[#171717] hover:bg-[#EEEDE9]'
-              } ${i < STATUS_OPTIONS.length ? 'border-r border-[#171717]' : ''}`}
+                filter === s ? 'bg-[#171717] text-white' : 'bg-white dark:bg-neutral-100 text-[#171717] dark:text-neutral-50 hover:bg-[#EEEDE9] dark:hover:bg-neutral-800'
+              } ${i < STATUS_OPTIONS.length ? 'border-r border-[#171717] dark:border-neutral-50' : ''}`}
             >
               {s === 'all' ? '全部' : s}
             </button>
@@ -70,8 +70,8 @@ export function AdminEnterprisePage() {
         </div>
       </div>
 
-      <div className="border-2 border-[#171717] bg-white">
-        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
+      <div className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100">
+        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400">
           <div className="col-span-12 md:col-span-1">#</div>
           <div className="col-span-12 md:col-span-3">Company</div>
           <div className="col-span-12 md:col-span-2">Contact</div>
@@ -84,7 +84,7 @@ export function AdminEnterprisePage() {
           <div
             key={inq.id}
             className={`border-b border-[#EEEDE9] ${
-              expanded === inq.id ? 'bg-[#F5F4F0]' : 'hover:bg-[#F5F4F0]'
+              expanded === inq.id ? 'bg-[#F5F4F0] dark:bg-neutral-800' : 'hover:bg-[#F5F4F0] dark:hover:bg-neutral-800'
             } transition-colors`}
           >
             <div
@@ -99,9 +99,9 @@ export function AdminEnterprisePage() {
               </div>
               <div className="col-span-12 md:col-span-2 text-xs">
                 <div className="font-bold">{inq.name}</div>
-                <div className="text-[#666666]">{inq.email}</div>
+                <div className="text-[#666666] dark:text-neutral-400">{inq.email}</div>
               </div>
-              <div className="col-span-12 md:col-span-2 text-xs text-[#666666] truncate">{inq.topic}</div>
+              <div className="col-span-12 md:col-span-2 text-xs text-[#666666] dark:text-neutral-400 truncate">{inq.topic}</div>
               <div className="col-span-12 md:col-span-1 text-[10px] font-black uppercase tracking-widest">
                 {inq.teamSize}
               </div>
@@ -111,7 +111,7 @@ export function AdminEnterprisePage() {
                   onChange={(e) =>
                     updateMutation.mutate({ id: inq.id, status: e.target.value as Inquiry['status'] })
                   }
-                  className={`px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] bg-white ${
+                  className={`px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 ${
                     inq.status === 'pending' ? '' : ''
                   }`}
                 >
@@ -138,49 +138,49 @@ export function AdminEnterprisePage() {
               <div className="px-6 pb-6 border-t border-[#EEEDE9]">
                 <div className="grid md:grid-cols-2 gap-6 mt-4 text-sm">
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 mb-2">
                       / Contact
                     </div>
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-[#666666] w-16 text-[10px] font-black uppercase tracking-widest">姓名</span>
+                        <span className="text-[#666666] dark:text-neutral-400 w-16 text-[10px] font-black uppercase tracking-widest">姓名</span>
                         <span className="font-bold">{inq.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[#666666] w-16 text-[10px] font-black uppercase tracking-widest">邮箱</span>
+                        <span className="text-[#666666] dark:text-neutral-400 w-16 text-[10px] font-black uppercase tracking-widest">邮箱</span>
                         <a href={`mailto:${inq.email}`} className="font-medium hover:underline flex items-center gap-1">
                           <Mail className="w-3 h-3" /> {inq.email}
                         </a>
                       </div>
                       {inq.phone && (
                         <div className="flex items-center gap-2">
-                          <span className="text-[#666666] w-16 text-[10px] font-black uppercase tracking-widest">电话</span>
+                          <span className="text-[#666666] dark:text-neutral-400 w-16 text-[10px] font-black uppercase tracking-widest">电话</span>
                           <a href={`tel:${inq.phone}`} className="font-medium hover:underline flex items-center gap-1">
                             <Phone className="w-3 h-3" /> {inq.phone}
                           </a>
                         </div>
                       )}
                       <div className="flex items-center gap-2">
-                        <span className="text-[#666666] w-16 text-[10px] font-black uppercase tracking-widest">公司</span>
+                        <span className="text-[#666666] dark:text-neutral-400 w-16 text-[10px] font-black uppercase tracking-widest">公司</span>
                         <span className="font-bold">{inq.company}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[#666666] w-16 text-[10px] font-black uppercase tracking-widest">团队</span>
+                        <span className="text-[#666666] dark:text-neutral-400 w-16 text-[10px] font-black uppercase tracking-widest">团队</span>
                         <span className="font-bold">{inq.teamSize} 人</span>
                       </div>
                     </div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 mb-2">
                       / Topic
                     </div>
                     <div className="font-bold mb-3">{inq.topic}</div>
                     {inq.description && (
                       <>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 mb-2">
                           / Description
                         </div>
-                        <p className="text-[#666666] leading-relaxed whitespace-pre-wrap">{inq.description}</p>
+                        <p className="text-[#666666] dark:text-neutral-400 leading-relaxed whitespace-pre-wrap">{inq.description}</p>
                       </>
                     )}
                   </div>
@@ -193,7 +193,7 @@ export function AdminEnterprisePage() {
           </div>
         ))}
         {(!filtered || filtered.length === 0) && (
-          <div className="p-16 text-center text-sm text-[#666666]">暂无企业咨询</div>
+          <div className="p-16 text-center text-sm text-[#666666] dark:text-neutral-400">暂无企业咨询</div>
         )}
       </div>
     </div>

@@ -246,7 +246,7 @@ export function AdminUsersPage() {
             placeholder="搜索邮箱 / 昵称..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border-2 border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-100 border-2 border-[#171717] dark:border-neutral-50 text-sm text-[#171717] dark:text-neutral-50 focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 transition-colors"
           />
         </div>
       </div>
@@ -262,7 +262,7 @@ export function AdminUsersPage() {
       )}
 
       {/* 表格 */}
-      <div className="border-2 border-[#171717] bg-white">
+      <div className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100">
         <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#666666]">
           <div className="md:col-span-1">#</div>
           <div className="md:col-span-4">User</div>
@@ -435,7 +435,7 @@ function UserDetailContent({
             onChange={(e) => onChangeRole(e.target.value)}
             disabled={isUpdating}
             aria-label="修改角色"
-            className="px-3 py-2 bg-white border border-[#171717] text-[10px] font-black uppercase tracking-widest focus:outline-none focus:bg-[#EEEDE9] disabled:opacity-50"
+            className="px-3 py-2 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 disabled:opacity-50"
           >
             <option value="student">student</option>
             <option value="instructor">instructor</option>
@@ -712,7 +712,7 @@ function BrutalField({
           rows={3}
           required={required}
           placeholder={placeholder}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-sm text-[#171717] dark:text-neutral-50 focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 transition-colors resize-none"
         />
       ) : (
         <input
@@ -721,7 +721,7 @@ function BrutalField({
           onChange={(e) => onChange(e.target.value)}
           required={required}
           placeholder={placeholder}
-          className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+          className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-sm text-[#171717] dark:text-neutral-50 focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 transition-colors"
         />
       )}
     </div>
