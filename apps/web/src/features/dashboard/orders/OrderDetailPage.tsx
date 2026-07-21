@@ -27,8 +27,9 @@ import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
 import type { OrderStatus, OrderType } from '@opencsg/shared-types';
 import { cn } from '../../../lib/cn';
+import { useEnum } from '../../../lib/cms';
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
+const FALLBACK_STATUS_LABEL: Record<OrderStatus, string> = {
   pending: '待支付',
   paid: '已支付',
   failed: '支付失败',
@@ -44,7 +45,7 @@ const STATUS_ICON: Record<OrderStatus, React.ReactNode> = {
   refunded: <RotateCcw className="w-5 h-5" />,
 };
 
-const STATUS_CHIP_CLASS: Record<OrderStatus, string> = {
+const FALLBACK_STATUS_CHIP_CLASS: Record<OrderStatus, string> = {
   pending: 'bg-warning-100 text-warning-500 dark:bg-warning-500/20 dark:text-warning-500',
   paid: 'bg-success-100 text-success-500 dark:bg-success-500/20 dark:text-success-500',
   failed: 'bg-danger-100 text-danger-500 dark:bg-danger-500/20 dark:text-danger-500',
@@ -61,6 +62,7 @@ export function OrderDetailPage() {
   const { id = '' } = useParams<{ id: string }>();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
+  const { getLabel, getColor } = useEnum('order_status');
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['orders', id],
@@ -128,6 +130,8 @@ export function OrderDetailPage() {
   const orderNo = order.id.slice(0, 8).toUpperCase();
   const createdDate = new Date(order.createdAt).toLocaleString('zh-CN');
   const paidDate = order.paidAt ? new Date(order.paidAt).toLocaleString('zh-CN') : null;
+  const statusLabel = getLabel(order.status) || FALLBACK_STATUS_LABEL[order.status];
+  const statusClass = getColor(order.status) || FALLBACK_STATUS_CHIP_CLASS[order.status];
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900">
@@ -158,13 +162,13 @@ export function OrderDetailPage() {
                 <div
                   className={cn(
                     'flex items-center justify-center w-10 h-10 rounded-full',
-                    STATUS_CHIP_CLASS[order.status],
+                    statusClass,
                   )}
                 >
                   {STATUS_ICON[order.status]}
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">{STATUS_LABEL[order.status]}</h2>
+                  <h2 className="text-lg font-semibold">{statusLabel}</h2>
                   <p className="text-xs text-neutral-600 dark:text-neutral-600">
                     {TYPE_LABEL[order.type]}订单
                   </p>

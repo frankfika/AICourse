@@ -31,6 +31,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import {
   Search as SearchIcon,
   Star,
@@ -49,6 +50,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { cn } from '../../lib/cn';
+import { useEnum, useList, usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
 // =============================================================
 // 类型(与 API 实际返回对齐)
@@ -98,17 +100,26 @@ const DURATION_LABELS: Record<ReturnType<typeof durationBucket>, string> = {
   gt12: '12 小时以上',
 };
 
-const CATEGORIES = [
-  { key: 'LLM 应用', label: 'LLM 应用' },
-  { key: 'RAG', label: 'RAG / 检索' },
-  { key: 'Agent', label: 'Agent' },
-  { key: 'MLOps', label: 'MLOps / 部署' },
-  { key: 'Fine-tuning', label: 'Fine-tuning' },
-  { key: '基础', label: '基础理论' },
+// CMS-driven 6 分类(后端 course_categories 表 + LIST_FALLBACK)
+// 原始硬编码 CATEGORIES 数组(6 项)由 useCategories() 替
+const FALLBACK_CATEGORIES = [
+  { key: 'llm_app', label: 'LLM 应用' },
+  { key: 'rag', label: 'RAG / 检索' },
+  { key: 'agent', label: 'Agent' },
+  { key: 'mlops', label: 'MLOps / 部署' },
+  { key: 'fine_tune', label: 'Fine-tuning' },
+  { key: 'theory', label: '基础理论' },
 ];
+function useCategories() {
+  const { data } = useList<{ key: string; label: string; isActive?: boolean }>('course-categories');
+  if (data && data.length > 0) {
+    return data.filter((c) => c.isActive !== false).map((c) => ({ key: c.key, label: c.label }));
+  }
+  return FALLBACK_CATEGORIES;
+}
 
 const LEVELS: Array<Course['level']> = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
-const LEVEL_LABELS: Record<Course['level'], string> = {
+const FALLBACK_LEVEL_LABELS: Record<Course['level'], string> = {
   Beginner: '入门',
   Intermediate: '进阶',
   Advanced: '高级',
@@ -121,6 +132,27 @@ const LEVEL_LABELS: Record<Course['level'], string> = {
 export function CourseListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlQ = searchParams.get('q') ?? '';
+  const { getLabel: getLevelLabel } = useEnum('course_level');
+  const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || FALLBACK_LEVEL_LABELS[lv];
+
+  // CMS-driven copy
+  const CATEGORIES = useCategories();
+  const { data: hotKws } = useList<{ keyword: string; scope?: string; isActive?: boolean }>('hot-keywords');
+  const hotKeywords = useMemo(() => {
+    if (hotKws && hotKws.length > 0) {
+      return hotKws
+        .filter((k) => (k.scope ?? 'courses') === 'courses' && k.isActive !== false)
+        .map((k) => k.keyword);
+    }
+    return ['LangChain', 'RAG', 'Agent', 'vLLM', 'Fine-tuning'];
+  }, [hotKws]);
+  const { data: pageData } = usePageSettings('courses', [
+    'list.h1', 'list.sub_template', 'list.search_placeholder',
+    'list.hot_label', 'list.sort_label', 'list.empty_title',
+    'list.empty_title_template', 'list.empty_desc', 'list.clear_filters', 'list.loading',
+  ]);
+  const { t } = useI18n();
+  const coursesH1 = pickPage(pageData, 'list.h1', 'zh-CN', t('courses.list.h1', '课程大厅'));
 
   const [input, setInput] = useState(urlQ);
   const [debouncedQ, setDebouncedQ] = useState(urlQ);
@@ -242,14 +274,21 @@ export function CourseListPage() {
 
   return (
     <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen">
+      <Helmet>
+        <title>{`${coursesH1} · OpenCSG Academy`}</title>
+        <meta name="description" content="从系统化课程中找到你的下一步" />
+      </Helmet>
       {/* Header banner */}
       <section className="border-b border-neutral-200 bg-neutral-0 dark:bg-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12">
           <h1 className="text-3xl md:text-display-md font-bold text-neutral-900 dark:text-neutral-900">
-            课程大厅
+            {coursesH1}
           </h1>
           <p className="mt-2 text-sm md:text-base text-neutral-600 dark:text-neutral-600">
-            {courses ? `从 ${courses.length} 门系统化课程中找到你的下一步` : '加载课程中...'}
+            {courses
+              ? pickPage(pageData, 'list.sub_template', 'zh-CN', t('courses.list.sub', '从 {count} 门系统化课程中找到你的下一步'))
+                  .replace('{count}', String(courses.length))
+              : pickPage(pageData, 'list.loading', 'zh-CN', t('common.loading', '加载课程中...'))}
           </p>
 
           {/* 搜索框(URL 同步) */}
@@ -262,7 +301,7 @@ export function CourseListPage() {
               size="lg"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="搜索课程 / 讲师 / 技能,如 LangChain / RAG / Agent"
+              placeholder={pickPage(pageData, 'list.search_placeholder', 'zh-CN', t('courses.list.search_placeholder', '搜索课程 / 讲师 / 技能,如 LangChain / RAG / Agent'))}
               leftIcon={<SearchIcon className="w-4 h-4" />}
               rightIcon={
                 input ? (
@@ -286,8 +325,8 @@ export function CourseListPage() {
 
           {/* 热门关键词 chips */}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-neutral-600 dark:text-neutral-600">热门:</span>
-            {['LangChain', 'RAG', 'Agent', 'vLLM', 'Fine-tuning'].map((kw) => (
+            <span className="text-xs text-neutral-600 dark:text-neutral-600">{pickPage(pageData, 'list.hot_label', 'zh-CN', t('courses.list.hot_label', '热门:'))}</span>
+            {hotKeywords.map((kw) => (
               <button
                 key={kw}
                 onClick={() => setInput(kw)}
@@ -313,7 +352,7 @@ export function CourseListPage() {
             筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
           </Button>
           <div className="text-sm text-neutral-600 dark:text-neutral-600">
-            {isLoading ? '加载中…' : `共 ${sorted.length} 门课程`}
+            {isLoading ? t('common.loading.dots', '加载中…') : `${t('common.found.label', '共找到')} ${sorted.length} ${t('common.units.courses', '门课程')}`}
           </div>
         </div>
 
@@ -382,7 +421,7 @@ export function CourseListPage() {
                           : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-[#EEEDE9]',
                       )}
                     >
-                      {LEVEL_LABELS[lv]}
+                      {levelLabel(lv)}
                     </button>
                   );
                 })}
@@ -428,7 +467,7 @@ export function CourseListPage() {
                       }}
                     />
                     <span>
-                      {k === 'free' ? '免费' : k === 'paid' ? '付费' : '公益'}
+                      {k === 'free' ? t('course.cost.free', '免费') : k === 'paid' ? t('course.cost.paid', '付费') : t('course.cost.charity', '公益')}
                     </span>
                   </label>
                 );
@@ -511,7 +550,7 @@ export function CourseListPage() {
               onClick={clearAll}
               className="w-full px-3 py-2 rounded-md text-sm border border-neutral-200 text-neutral-900 dark:text-neutral-900 hover:border-[#171717] hover:text-[#171717] transition-colors"
             >
-              清除全部筛选
+              {t('courses.list.clear_all', '清除全部筛选')}
             </button>
 
             {/* mobile 完成按钮 — lg 隐藏 */}
@@ -522,7 +561,7 @@ export function CourseListPage() {
                 className="w-full mt-4 lg:hidden"
                 onClick={() => setMobileFiltersOpen(false)}
               >
-                查看 {sorted.length} 门课程
+                {t('courses.list.view_n_courses', '查看 {count} 门课程').replace('{count}', String(sorted.length))}
               </Button>
             )}
           </aside>
@@ -542,19 +581,19 @@ export function CourseListPage() {
             {/* 顶部排序条 + 计数(desktop) */}
             <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 mb-6">
               <div className="text-sm text-neutral-600 dark:text-neutral-600">
-                共找到{' '}
+                {t('common.found.label', '共找到')}{' '}
                 <span className="font-mono font-medium text-neutral-900 dark:text-neutral-900">
                   {sorted.length}
                 </span>{' '}
-                门课程
+                {t('common.units.courses', '门课程')}
                 {activeFilterCount > 0 && (
                   <span className="ml-2 text-[#171717]">
-                    ({activeFilterCount} 个筛选)
+                    ({activeFilterCount} {t('common.filter_count', '个筛选')})
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-600 dark:text-neutral-600">排序:</span>
+                <span className="text-xs text-neutral-600 dark:text-neutral-600">{pickPage(pageData, 'list.sort_label', 'zh-CN', t('courses.list.sort_label', '排序:'))}</span>
                 {[
                   { v: 'popular', label: '最热门' },
                   { v: 'recent', label: '最新' },
@@ -597,11 +636,14 @@ export function CourseListPage() {
             ) : sorted.length === 0 ? (
               <EmptyState
                 icon={<SearchIcon className="w-6 h-6" />}
-                title={debouncedQ ? `没找到「${debouncedQ}」相关课程` : '没有匹配的课程'}
-                description="试试调整筛选条件,或清空后重新搜索"
+                title={debouncedQ
+                  ? pickPage(pageData, 'list.empty_title_template', 'zh-CN', t('courses.list.empty_title_template', '没找到「{query}」相关课程'))
+                      .replace('{query}', debouncedQ)
+                  : pickPage(pageData, 'list.empty_title', 'zh-CN', t('courses.list.empty_title', '没有匹配的课程'))}
+                description={pickPage(pageData, 'list.empty_desc', 'zh-CN', t('courses.list.empty_desc', '试试调整筛选条件,或清空后重新搜索'))}
                 action={
                   <Button variant="primary" size="md" onClick={clearAll}>
-                    清除筛选
+                    {pickPage(pageData, 'list.clear_filters', 'zh-CN', t('courses.list.clear_filters', '清除筛选'))}
                   </Button>
                 }
               />
@@ -652,6 +694,8 @@ function FilterSection({
 function CourseCardLink({ course }: { course: Course }) {
   const isFree = course.costType === 'free';
   const isCharity = course.costType === 'charity';
+  const { getLabel: getLevelLabel } = useEnum('course_level');
+  const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || FALLBACK_LEVEL_LABELS[lv];
   return (
     <Link
       to={course.externalUrl && course.courseType === 'third_party' ? course.externalUrl : `/courses/${course.id}`}
@@ -666,7 +710,7 @@ function CourseCardLink({ course }: { course: Course }) {
           {course.tags || 'LLM 应用'}
         </span>
         <span className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full bg-cert-500 text-white font-medium">
-          {LEVEL_LABELS[course.level]}
+          {levelLabel(course.level)}
         </span>
         <span
           className={cn(

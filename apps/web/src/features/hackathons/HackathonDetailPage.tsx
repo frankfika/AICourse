@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft,
   Calendar,
@@ -23,6 +24,7 @@ import { AnnouncementList } from './AnnouncementList';
 import { TeamPanel } from './TeamPanel';
 import { SubmissionPanel } from './SubmissionPanel';
 import type { HackathonWithDetails } from '@opencsg/shared-types';
+import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
 const TABS = [
   { key: 'overview', label: '概览', icon: ScrollText },
@@ -52,9 +54,20 @@ export function HackathonDetailPage() {
 
   const formatDate = (d: Date | string) => new Date(d).toLocaleDateString('zh-CN');
 
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: pageData } = usePageSettings('hackathons', [
+    'detail.back', 'detail.countdown_template', 'detail.panel_label_desc', 'detail.panel_label_rules', 'detail.empty_judges',
+  ]);
+  const back = pickPage(pageData, 'detail.back', 'zh-CN', t('hackathon.detail.back', 'Back To Hackathons'));
+  const countdownTpl = pickPage(pageData, 'detail.countdown_template', 'zh-CN', t('hackathon.countdown.template', '还有 {days} 天开始'));
+  const panelDesc = pickPage(pageData, 'detail.panel_label_desc', 'zh-CN', t('hackathon.panel.desc', '01 / Description'));
+  const panelRules = pickPage(pageData, 'detail.panel_label_rules', 'zh-CN', t('hackathon.panel.rules', '02 / Rules'));
+  const emptyJudges = pickPage(pageData, 'detail.empty_judges', 'zh-CN', t('hackathon.panel.empty_judges', '评委待定'));
+
   if (isLoading) {
     return (
-      <div className="text-center py-32 text-[#666666]">加载中...</div>
+      <div className="text-center py-32 text-[#666666]">{t('common.loading', '加载中...')}</div>
     );
   }
 
@@ -64,7 +77,7 @@ export function HackathonDetailPage() {
         <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
           / 404
         </div>
-        <p className="text-2xl font-black tracking-tighter">黑客松不存在</p>
+        <p className="text-2xl font-black tracking-tighter">{t('hackathon.not_found', '黑客松不存在')}</p>
       </div>
     );
   }
@@ -79,6 +92,10 @@ export function HackathonDetailPage() {
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
+      <Helmet>
+        <title>{`${hackathon.title} · OpenCSG Academy`}</title>
+        <meta name="description" content={hackathon.description?.slice(0, 200) ?? '黑客松详情'} />
+      </Helmet>
       {/* Top action bar */}
       <section className="border-b border-[#171717] bg-white">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -86,7 +103,7 @@ export function HackathonDetailPage() {
             to="/hackathons"
             className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#666666] hover:text-[#171717]"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back To Hackathons
+            <ArrowLeft className="w-3.5 h-3.5" /> {back}
           </Link>
         </div>
       </section>
@@ -109,7 +126,7 @@ export function HackathonDetailPage() {
               <HackathonStatusBadge status={hackathon.status} className="border-white text-white bg-white text-[#171717]" />
               {isOrganizer && (
                 <span className="inline-flex items-center px-2 py-0.5 border border-white/30 text-white text-[10px] font-black uppercase tracking-widest">
-                  Organizer
+                  {t('hackathon.organizer.label', 'Organizer')}
                 </span>
               )}
             </div>
@@ -121,27 +138,27 @@ export function HackathonDetailPage() {
             <div className="grid grid-cols-2 gap-0 border border-white/20 mb-8">
               <div className="p-4 border-r border-b border-white/20">
                 <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> Start
+                  <Calendar className="w-3 h-3" /> {t('hackathon.stat.start', 'Start')}
                 </div>
                 <div className="text-sm font-black tracking-tight">{formatDate(startDate)}</div>
               </div>
               <div className="p-4 border-b border-white/20">
                 <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> End
+                  <Calendar className="w-3 h-3" /> {t('hackathon.stat.end', 'End')}
                 </div>
                 <div className="text-sm font-black tracking-tight">{formatDate(endDate)}</div>
               </div>
               {hackathon.location && (
                 <div className="p-4 border-r border-white/20">
                   <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1 flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> Location
+                    <MapPin className="w-3 h-3" /> {t('hackathon.stat.location', 'Location')}
                   </div>
                   <div className="text-sm font-black tracking-tight truncate">{hackathon.location}</div>
                 </div>
               )}
               <div className="p-4">
                 <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1 flex items-center gap-1">
-                  <Users className="w-3 h-3" /> Team Size
+                  <Users className="w-3 h-3" /> {t('hackathon.stat.team_size', 'Team Size')}
                 </div>
                 <div className="text-sm font-black tracking-tight">
                   {hackathon.minTeamSize}-{hackathon.maxTeamSize}
@@ -156,7 +173,7 @@ export function HackathonDetailPage() {
                   to="/login"
                   className="inline-flex items-center justify-between gap-6 bg-white text-[#171717] px-6 py-4 font-black uppercase tracking-wider text-sm hover:bg-[#EEEDE9] transition-colors"
                 >
-                  <span>Login to Join</span>
+                  <span>{t('hackathon.cta.login', 'Login to Join')}</span>
                   <ArrowUpRight className="w-4 h-4" />
                 </Link>
               )}
@@ -165,14 +182,14 @@ export function HackathonDetailPage() {
                   to={`/admin/hackathons?edit=${hackathon.id}`}
                   className="inline-flex items-center gap-2 border border-white/30 text-white px-4 py-2.5 text-xs font-black uppercase tracking-widest hover:bg-white/10"
                 >
-                  <Edit className="w-3.5 h-3.5" /> Admin
+                  <Edit className="w-3.5 h-3.5" /> {t('hackathon.admin.label', 'Admin')}
                 </Link>
               )}
             </div>
 
             {days > 0 && hackathon.status === 'upcoming' && (
               <div className="mt-4 text-[10px] font-black uppercase tracking-widest text-white/50 flex items-center gap-2">
-                <Clock className="w-3 h-3" /> 还有 {days} 天开始
+                <Clock className="w-3 h-3" /> {countdownTpl.replace('{days}', String(days))}
               </div>
             )}
           </div>
@@ -207,11 +224,11 @@ export function HackathonDetailPage() {
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <BrutalPanel label="01 / Description" title="活动介绍">
+                <BrutalPanel label={panelDesc} title={t('hackathon.panel.desc.title', '活动介绍')}>
                   <p className="text-[#171717] whitespace-pre-line leading-relaxed">{hackathon.description}</p>
                 </BrutalPanel>
                 {hackathon.rules && (
-                  <BrutalPanel label="02 / Rules" title="比赛规则">
+                  <BrutalPanel label={panelRules} title={t('hackathon.panel.rules.title', '比赛规则')}>
                     <p className="text-[#171717] whitespace-pre-line leading-relaxed">{hackathon.rules}</p>
                   </BrutalPanel>
                 )}
@@ -221,7 +238,7 @@ export function HackathonDetailPage() {
                   <div className="border-2 border-[#171717] bg-white">
                     <div className="bg-[#171717] text-white p-4 flex items-center gap-2">
                       <Trophy className="w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Prizes</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{t('hackathon.prizes.label', 'Prizes')}</span>
                     </div>
                     <div className="p-5">
                       <p className="text-[#171717] whitespace-pre-line leading-relaxed">{hackathon.prizes}</p>
@@ -230,7 +247,7 @@ export function HackathonDetailPage() {
                 )}
                 <div className="border-2 border-[#171717] bg-white">
                   <div className="bg-[#171717] text-white p-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest">Judges</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{t('hackathon.judges.label', 'Judges')}</span>
                   </div>
                   <div className="p-5">
                     {hackathon.judges?.length ? (
@@ -244,7 +261,7 @@ export function HackathonDetailPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-[#666666]">评委待定</p>
+                      <p className="text-xs text-[#666666]">{emptyJudges}</p>
                     )}
                   </div>
                 </div>

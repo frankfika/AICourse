@@ -41,13 +41,14 @@ import { useAuth } from '../../lib/auth/AuthProvider';
 import { ApiError } from '../../lib/apiError';
 import type { Identity } from '../../lib/auth/types';
 import { useAuthStore } from '../../stores/authStore';
+import { useList, usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
 /**
  * Provider 视觉元数据
- * (id → 名称 / logo / 主色)
- * 跟 ProviderButtons 保持一致
+ * 跟 ProviderButtons 共用 LIST_FALLBACK['auth-providers'] 兜底(7 项)
+ * (id → 名称 / 缩写 logo / 主色)
  */
-const PROVIDER_META: Record<
+const FALLBACK_PROVIDER_META: Record<
   string,
   { label: string; icon: React.ReactNode; isPrimary?: boolean }
 > = {
@@ -63,6 +64,29 @@ const PROVIDER_META: Record<
   feishu: { label: '飞书', icon: <span className="font-bold text-sm">飞</span> },
   apple: { label: 'Apple', icon: <span className="font-bold text-sm"></span> },
 };
+
+/**
+ * 提供 meta helper: 优先用 LIST_FALLBACK[auth-providers] (hook 拿不到时),
+ * 再次用 FALLBACK_PROVIDER_META (默认 6 + 1)
+ */
+function useProviderMeta(): Record<string, { label: string; icon: React.ReactNode; isPrimary?: boolean }> {
+  const { data } = useList<{ id: string; label: string; icon: string; isActive?: boolean }>('auth-providers');
+  if (data && data.length > 0) {
+    const map: Record<string, { label: string; icon: React.ReactNode; isPrimary?: boolean }> = {};
+    for (const p of data) {
+      if (p.isActive === false) continue;
+      // 缩写: 取 label 第 1 个字符
+      const firstChar = (p.label || p.id).charAt(0);
+      map[p.id] = { label: p.label, icon: <span className="font-bold text-sm">{firstChar}</span> };
+    }
+    // local 是 primary,后端不一定返回;补回去
+    if (!map.local) {
+      map.local = FALLBACK_PROVIDER_META.local;
+    }
+    return map;
+  }
+  return FALLBACK_PROVIDER_META;
+}
 
 /** ISO 时间 → "2025.08.14" 形式(跟 mock 一致) */
 function formatDate(iso: string | undefined): string {
@@ -106,6 +130,13 @@ export function BindingsPage() {
     return identities;
   }, [showWithGoogleDemo, identities, user?.email]);
 
+  // CMS-driven provider meta(从 auth-providers 列表拿 label/icon)
+  // 必须在所有 early return 之前调用
+  const providerMeta = useProviderMeta();
+  const { t } = useI18n();
+  const { data: pageData } = usePageSettings('auth', ['h1_bindings']);
+  const bindingsH1 = pickPage(pageData, 'h1_bindings', 'zh-CN', t('auth.h1_bindings', '绑定第三方账号,登录更便捷'));
+
   if (isAuthenticating) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 py-8">
@@ -125,9 +156,9 @@ export function BindingsPage() {
   }
 
   const handleUnbind = async (id: Identity) => {
-    const meta = PROVIDER_META[id.provider];
+    const meta = providerMeta[id.provider];
     if (id.provider === 'local') {
-      showToast('本地账号是主登录,无法解绑', 'warning');
+      showToast(t('auth.toast.local_primary', '本地账号是主登录,无法解绑'), 'warning');
       return;
     }
     if (!window.confirm(`解绑 ${meta?.label ?? id.provider} 后,你将无法再用此账号登录。确定?`)) {
@@ -136,14 +167,14 @@ export function BindingsPage() {
     setBusyId(id.id);
     try {
       await unbindProvider(id.id);
-      showToast('已解绑', 'success');
+      showToast(t('auth.toast.unbind', '已解绑'), 'success');
     } catch (err) {
       const msg =
         err instanceof ApiError
           ? err.message
           : err instanceof Error
             ? err.message
-            : '解绑失败';
+            : t('auth.toast.unbind_fail', '解绑失败');
       showToast(msg, 'error', 4000);
     } finally {
       setBusyId(null);
@@ -175,10 +206,10 @@ export function BindingsPage() {
             已登录用户 · 账号绑定管理
           </span>
           <h1 className="mt-3 text-2xl md:text-3xl font-bold text-neutral-900 dark:text-neutral-900">
-            绑定第三方账号,登录更便捷
+            {bindingsH1}
           </h1>
           <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-600">
-            设置页路径:
+            {t('auth.bindings.path', '设置页路径:')}
             <code className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-100 font-mono text-xs mx-1">
               /dashboard/settings/bindings
             </code>
@@ -192,7 +223,7 @@ export function BindingsPage() {
               已绑定的登录方式
             </h2>
             <span className="text-xs text-neutral-600 dark:text-neutral-600">
-              {totalCount} 种 · 至少保留 1 种
+              {t('auth.bindings.count', '{count} 种 · 至少保留 1 种').replace('{count}', String(totalCount))}
             </span>
           </div>
 
@@ -200,14 +231,14 @@ export function BindingsPage() {
             <div className="p-6">
               <EmptyState
                 icon={<ShieldCheck className="h-6 w-6" />}
-                title="还没有绑定任何登录方式"
+                title={t('auth.identity.empty.title', '还没有绑定任何登录方式')}
                 description={`${displayUser.email} 还没有绑定任何第三方登录方式`}
               />
             </div>
           ) : (
             <ul role="list" className="divide-y divide-neutral-200">
               {displayedIdentities.map((id) => {
-                const meta = PROVIDER_META[id.provider] ?? {
+                const meta = providerMeta[id.provider] ?? {
                   label: id.provider,
                   icon: <Lock className="h-5 w-5" />,
                 };
@@ -296,11 +327,11 @@ export function BindingsPage() {
           <div>
             <p className="text-sm font-medium text-neutral-900 dark:text-neutral-900">
               {nonPrimaryCount === 0
-                ? '至少保留一种登录方式'
-                : '安全提醒'}
+                ? t('auth.identity.keep_one', '至少保留一种登录方式')
+                : t('auth.identity.warning_title', '安全提醒')}
             </p>
             <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-600">
-              解绑会立即吊销对应 provider 的 refresh token。如发现异常登录,前往{' '}
+              {t('auth.identity.warning_desc', '解绑会立即吊销对应 provider 的 refresh token。')} {t('auth.identity.security_link_prefix', '如发现异常登录,前往')}{' '}
               <a
                 href="/dashboard/settings/security"
                 className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white"

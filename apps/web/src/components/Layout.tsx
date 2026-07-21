@@ -34,9 +34,62 @@ import { useTheme, useThemeStore } from '../stores/themeStore';
 import { CommandPalette } from './CommandPalette';
 import { cn } from '../lib/cn';
 import { Skeleton } from './ui/Skeleton';
+import { useList, useSiteSettings, useI18n, pickSite } from '../lib/cms';
 
 // initThemeFromStorage 重新导出,保持 index.tsx 的导入路径不变
 export { initThemeFromStorage } from '../stores/themeStore';
+
+/**
+ * useNavItems — 顶部 nav 4 项 (CMS 驱动,fallback LIST_FALLBACK.top-nav)
+ */
+function useNavItems(): Array<{ label: string; path: string }> {
+  const { data } = useList<{ label: string; path: string; isActive?: boolean }>('top-nav');
+  if (data && data.length > 0) {
+    return data.filter((it) => it.isActive !== false).map((it) => ({ label: it.label, path: it.path }));
+  }
+  return [
+    { label: '课程', path: '/courses' },
+    { label: '学位', path: '/degrees' },
+    { label: '黑客松', path: '/hackathons' },
+    { label: '企业培训', path: '/enterprise' },
+  ];
+}
+
+/**
+ * useFooterColumns — footer 4 列 (CMS 驱动,fallback LIST_FALLBACK.footer-columns)
+ */
+function useFooterColumns(): Array<{ title: string; links: Array<{ label: string; path: string }> }> {
+  const { data } = useList<{ title: string; links: Array<{ label: string; path: string }>; isActive?: boolean }>('footer-columns');
+  if (data && data.length > 0) {
+    return data.filter((c) => c.isActive !== false).map((c) => ({ title: c.title, links: c.links }));
+  }
+  return [
+    {
+      title: '学习',
+      links: [
+        { label: '课程', path: '/courses' },
+        { label: '学位', path: '/degrees' },
+        { label: '黑客松', path: '/hackathons' },
+        { label: '企业培训', path: '/enterprise' },
+      ],
+    },
+    {
+      title: '公司',
+      links: [
+        { label: '关于我们', path: 'https://opencsg.com' },
+        { label: '企业培训', path: '/enterprise' },
+        { label: '价格', path: '/courses' },
+      ],
+    },
+    {
+      title: '法律',
+      links: [
+        { label: '服务条款', path: '/terms' },
+        { label: '隐私政策', path: '/privacy' },
+      ],
+    },
+  ];
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -65,12 +118,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  const navItems = [
-    { label: '课程', path: '/courses' },
-    { label: '学位', path: '/degrees' },
-    { label: '黑客松', path: '/hackathons' },
-    { label: '企业培训', path: '/enterprise' },
-  ];
+  const navItems = useNavItems();
 
   const handleLogout = () => {
     clearAuth();
@@ -177,6 +225,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {/* P1-2: mobile 搜索图标按钮(md 以下点击也调出 CommandPalette) */}
+
+            {/* P1-2: mobile 搜索图标按钮(md 以下点击也调出 CommandPalette) */}
             <button
               onClick={() => setIsSearchOpen(true)}
               className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
@@ -246,63 +296,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* ============================================================
        * 公共 footer (P1 统一: 从 HomePage SiteFooter 提升, 所有页共享)
        * ============================================================ */}
-      <footer className="py-12 border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-            <div className="col-span-2">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-md bg-[#171717] flex items-center justify-center text-white font-bold text-sm">
-                  O
-                </div>
-                <span className="font-semibold text-neutral-900">OpenCSG Academy</span>
-              </div>
-              <p className="text-sm text-neutral-600 max-w-xs">
-                学完仍然不会做?让 AI 时代的能力可被看见。
-              </p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-3 text-neutral-900">学习</h4>
-              <ul className="space-y-2 text-sm text-neutral-600">
-                <li><Link to="/courses" className="hover:text-[#171717] transition">课程</Link></li>
-                <li><Link to="/degrees" className="hover:text-[#171717] transition">学位</Link></li>
-                <li><Link to="/hackathons" className="hover:text-[#171717] transition">黑客松</Link></li>
-                <li><Link to="/enterprise" className="hover:text-[#171717] transition">企业培训</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-3 text-neutral-900">公司</h4>
-              <ul className="space-y-2 text-sm text-neutral-600">
-                <li><a href="https://opencsg.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#171717] transition">关于我们</a></li>
-                <li><Link to="/enterprise" className="hover:text-[#171717] transition">企业培训</Link></li>
-                <li><Link to="/courses" className="hover:text-[#171717] transition">价格</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-3 text-neutral-900">法律</h4>
-              <ul className="space-y-2 text-sm text-neutral-600">
-                <li><a href="#" className="hover:text-[#171717] transition">服务条款</a></li>
-                <li><a href="#" className="hover:text-[#171717] transition">隐私政策</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-neutral-200 text-xs text-neutral-600 flex flex-wrap items-center justify-between gap-4">
-            {(() => {
-              // 备案号走 env 注入, 避免硬编码假 ICP 引发合规风险
-              // 设了 VITE_ICP 就显示, 没设就显示"备案号待补"(绝不展示假数字)
-              const platformName =
-                import.meta.env.VITE_PUBLIC_PLATFORM_NAME ?? 'OpenCSG Academy';
-              const icp = import.meta.env.VITE_ICP?.trim();
-              return (
-                <span>
-                  © 2026 {platformName}
-                  {icp ? ` · 备案号 ${icp}` : ' · 备案号待补'}
-                </span>
-              );
-            })()}
-            <span className="font-mono">v0.5.0 · built for AI era</span>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
+
 
       {/* ============================================================
        * AI 助教 FAB(P0-5 placeholder → 跳 /dashboard/learning)
@@ -410,5 +405,96 @@ function RouteFallback() {
         <Skeleton variant="rectangle" className="h-48" />
       </div>
     </div>
+  );
+}
+
+/**
+ * SiteFooter — CMS-driven 公共 footer
+ *  - brand statement / version: site_settings.brand.footer.*
+ *  - 3 列: useList('footer-columns')
+ */
+function SiteFooter() {
+  const columns = useFooterColumns();
+  const { data: siteData } = useSiteSettings([
+    'brand.footer.tagline',
+    'brand.footer.version_tag',
+  ]);
+  const tagline = pickSite(
+    siteData,
+    'brand.footer.tagline',
+    'zh-CN',
+    '学完仍然不会做?让 AI 时代的能力可被看见。',
+  );
+  const versionTag = pickSite(
+    siteData,
+    'brand.footer.version_tag',
+    'zh-CN',
+    'v0.5.0 · built for AI era',
+  );
+  return (
+    <footer className="py-12 border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+          <div className="col-span-2">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-md bg-[#171717] flex items-center justify-center text-white font-bold text-sm">
+                O
+              </div>
+              <span className="font-semibold text-neutral-900">OpenCSG Academy</span>
+            </div>
+            <p className="text-sm text-neutral-600 max-w-xs">
+              {tagline}
+            </p>
+          </div>
+          {columns.map((col) => (
+            <div key={col.title}>
+              <h4 className="text-sm font-semibold mb-3 text-neutral-900">{col.title}</h4>
+              <ul className="space-y-2 text-sm text-neutral-600">
+                {col.links.map((link) => {
+                  // 外链 (http/https) 用 <a>,内链用 <Link>
+                  if (link.path.startsWith('http')) {
+                    return (
+                      <li key={link.path}>
+                        <a
+                          href={link.path}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-[#171717] transition"
+                        >
+                          {link.label}
+                        </a>
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={link.label + link.path}>
+                      <Link to={link.path} className="hover:text-[#171717] transition">
+                        {link.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 pt-8 border-t border-neutral-200 text-xs text-neutral-600 flex flex-wrap items-center justify-between gap-4">
+          {(() => {
+            // 备案号走 env 注入, 避免硬编码假 ICP 引发合规风险
+            // 设了 VITE_ICP 就显示, 没设就显示"备案号待补"(绝不展示假数字)
+            const platformName =
+              import.meta.env.VITE_PUBLIC_PLATFORM_NAME ?? 'OpenCSG Academy';
+            const icp = import.meta.env.VITE_ICP?.trim();
+            return (
+              <span>
+                © 2026 {platformName}
+                {icp ? ` · 备案号 ${icp}` : ' · 备案号待补'}
+              </span>
+            );
+          })()}
+          <span className="font-mono">{versionTag}</span>
+        </div>
+      </div>
+    </footer>
   );
 }

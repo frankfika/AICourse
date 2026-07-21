@@ -844,3 +844,210 @@ model AiUsage {
 // 之前 dev DB 的 reviews 表跟 schema 重复, 但 prisma migrate deploy 会处理 (用 P1-3 那一份).
 
 // ==================== P1-3 评价: 完整 Review model 已合并, 这里是 P2 chat/learning event 附加 ====================
+
+// ==================== CMS 基础设施 (2026-07-21) ====================
+// 把所有 UI 硬编码 (文案 / 列表 / enum label / 业务规则) 迁到后台可配置
+// 见 review/cms-design.md §1 schema 约定
+
+// §1.1 核心 3 张表
+
+// 全局 key-value 配置 (duration_buckets / number_format / ai.quick_prompts 等)
+model AppSetting {
+  key         String   @id
+  valueJson   Json     @map("value_json")
+  scope       String   @default("global")
+  description String?  @db.Text
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
+// 枚举 i18n (label + color + icon), 组合主键 (enumType, enumValue, locale)
+model EnumTranslation {
+  enumType   String  @map("enum_type")
+  enumValue  String  @map("enum_value")
+  locale     String  @default("zh-CN")
+  label      String
+  colorClass String? @map("color_class")
+  icon       String?
+  sortOrder  Int     @default(0) @map("sort_order")
+
+  @@id([enumType, enumValue, locale])
+  @@index([enumType, locale])
+  @@map("enum_translations")
+}
+
+// 日期/时间格式模板
+model DateFormatTemplate {
+  scope    String
+  locale   String  @default("zh-CN")
+  template String
+
+  @@id([scope, locale])
+  @@map("date_format_templates")
+}
+
+// §1.2 品牌文案 2 张
+
+// 全局品牌文案 (hero / footer / auth shell / nav)
+model SiteSetting {
+  key         String   @id
+  value       Json
+  scope       String   @default("global")
+  description String?  @db.Text
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}
+
+// 页面级文案 (按路由)
+model PageSetting {
+  page        String
+  key         String
+  value       Json
+  description String?  @db.Text
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@id([page, key])
+  @@index([page])
+  @@map("page_settings")
+}
+
+// §1.3 结构化列表 10 张
+
+// 行业 (金融 / 电商 / ...)
+model Industry {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  description String?  @db.Text
+  icon        String?
+  methodology Json?
+  isActive    Boolean  @default(true) @map("is_active")
+  orderIndex  Int      @default(0) @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("industries")
+}
+
+// 企业方法论 (3 步法)
+model EnterpriseMethod {
+  id         String  @id @default(cuid())
+  num        String
+  title      String
+  desc       String  @db.Text
+  bullets    Json
+  isActive   Boolean @default(true) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("enterprise_methods")
+}
+
+// 学员故事 / 证言
+model Testimonial {
+  id         String  @id @default(cuid())
+  name       String
+  title      String
+  quote      String  @db.Text
+  avatar     String?
+  isActive   Boolean @default(true) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("testimonials")
+}
+
+// AI 快捷 prompt (dashboard 助手 / lesson 内)
+model QuickPrompt {
+  id         String  @id @default(cuid())
+  emoji      String  @default("💡")
+  label      String
+  promptText String  @map("prompt_text") @db.Text
+  scope      String  @default("lesson")
+  isActive   Boolean @default(true) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("quick_prompts")
+}
+
+// 课程分类 (LLM 应用 / RAG / Agent / ...)
+model CourseCategory {
+  id         String  @id @default(cuid())
+  key        String  @unique
+  label      String
+  isActive   Boolean @default(true) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("course_categories")
+}
+
+// 热门搜索词 (含点击数)
+model PopularSearch {
+  id         String  @id @default(cuid())
+  keyword    String  @unique
+  clickCount Int     @default(0) @map("click_count")
+  isActive   Boolean @default(true) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("popular_searches")
+}
+
+// 热词 (按 scope: courses / home / search)
+model HotKeyword {
+  id         String  @id @default(cuid())
+  keyword    String
+  scope      String  @default("courses")
+  isActive   Boolean @default(true) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("hot_keywords")
+}
+
+// 第三方登录 provider (Google / GitHub / 微信 / ...)
+model AuthProvider {
+  id         String  @id
+  label      String
+  icon       String
+  isActive   Boolean @default(false) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+  config     Json?
+
+  @@map("auth_providers")
+}
+
+// 顶部导航项
+model TopNavItem {
+  id         String  @id @default(cuid())
+  label      String
+  path       String
+  icon       String?
+  isActive   Boolean @default(true) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("top_nav_items")
+}
+
+// Footer 列
+model FooterColumn {
+  id         String  @id @default(cuid())
+  title      String
+  links      Json
+  isActive   Boolean @default(true) @map("is_active")
+  orderIndex Int     @default(0) @map("order_index")
+
+  @@map("footer_columns")
+}
+
+// §1.4 i18n 1 张
+
+// 通用文案 (key 模式, 按 locale)
+model I18nMessage {
+  key      String @db.VarChar(255)
+  locale   String @default("zh-CN")
+  value    String @db.Text
+  category String @default("common")
+
+  @@id([key, locale])
+  @@index([category])
+  @@map("i18n_messages")
+}

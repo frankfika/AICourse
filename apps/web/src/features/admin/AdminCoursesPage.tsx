@@ -56,6 +56,7 @@ import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
 import { coursesAdminApi, type Chapter, type ChapterLesson, type ChapterResource, type ResourceType } from '../../lib/coursesAdminApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEnum } from '../../lib/cms';
 
 // ──────────────────────────────────────────────────────────────────────────
 // 1) 列表模式(原 AdminCoursesPage,几乎原样保留)
@@ -607,6 +608,7 @@ function useCourseEdit(courseId: string | undefined) {
 function InfoTab({ courseId }: { courseId: string }) {
   const { courseQuery, updateCourse } = useCourseEdit(courseId);
   const course = courseQuery.data;
+  const { getLabel: getLevelLabel } = useEnum('course_level');
   const [form, setForm] = useState<{
     title: string;
     description: string;
@@ -669,10 +671,10 @@ function InfoTab({ courseId }: { courseId: string }) {
             value={form.level}
             onChange={(v) => setForm({ ...form, level: v })}
             options={[
-              { value: 'Beginner', label: '入门' },
-              { value: 'Intermediate', label: '进阶' },
-              { value: 'Advanced', label: '高级' },
-              { value: 'Expert', label: '专家' },
+              { value: 'Beginner', label: getLevelLabel('Beginner') || '入门' },
+              { value: 'Intermediate', label: getLevelLabel('Intermediate') || '进阶' },
+              { value: 'Advanced', label: getLevelLabel('Advanced') || '高级' },
+              { value: 'Expert', label: getLevelLabel('Expert') || '专家' },
             ]}
           />
           <BrutalField

@@ -35,6 +35,7 @@ import { Card } from '../../../components/ui/Card';
 import { QueryErrorState } from '../../../components/QueryErrorState';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { cn } from '../../../lib/cn';
+import { useEnum } from '../../../lib/cms';
 
 type TabKey = 'all' | 'pending' | 'paid' | 'cancelled' | 'refunded';
 
@@ -53,7 +54,8 @@ const TABS: TabDef[] = [
   { key: 'refunded', label: '已退款', match: (s) => s === 'refunded' },
 ];
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
+// Fallback(API 失败时) —— 跟原硬编码一致
+const FALLBACK_STATUS_LABEL: Record<OrderStatus, string> = {
   pending: '待支付',
   paid: '已支付',
   failed: '支付失败',
@@ -61,14 +63,11 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   refunded: '已退款',
 };
 
-const STATUS_CHIP_CLASS: Record<OrderStatus, string> = {
-  // 走 token: warning-100 / success-100 / neutral-200 / info-100 / danger-100
-  pending:
-    'bg-warning-100 text-warning-500 dark:bg-warning-500/20 dark:text-warning-500',
+const FALLBACK_STATUS_CHIP_CLASS: Record<OrderStatus, string> = {
+  pending: 'bg-warning-100 text-warning-500 dark:bg-warning-500/20 dark:text-warning-500',
   paid: 'bg-success-100 text-success-500 dark:bg-success-500/20 dark:text-success-500',
   failed: 'bg-danger-100 text-danger-500 dark:bg-danger-500/20 dark:text-danger-500',
-  expired:
-    'bg-neutral-200 text-neutral-600 dark:bg-neutral-200 dark:text-neutral-600',
+  expired: 'bg-neutral-200 text-neutral-600 dark:bg-neutral-200 dark:text-neutral-600',
   refunded: 'bg-info-100 text-info-500 dark:bg-info-500/20 dark:text-info-500',
 };
 
@@ -276,6 +275,9 @@ function OrderCard({
   onRefund: (id: string) => void;
   isAnyPending?: boolean;
 }) {
+  const { getLabel, getColor } = useEnum('order_status');
+  const statusLabel = (s: OrderStatus) => getLabel(s) || FALLBACK_STATUS_LABEL[s];
+  const statusClass = (s: OrderStatus) => getColor(s) || FALLBACK_STATUS_CHIP_CLASS[s];
   const item = order.course ?? order.degree;
   const itemTitle = item?.title ?? '未知商品';
   const itemThumb = item?.thumbnail ?? null;
@@ -310,10 +312,10 @@ function OrderCard({
             <span
               className={cn(
                 'px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap',
-                STATUS_CHIP_CLASS[order.status],
+                statusClass(order.status),
               )}
             >
-              {STATUS_LABEL[order.status]}
+              {statusLabel(order.status)}
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between">
@@ -345,6 +347,9 @@ function OrderTable({
   onRefund: (id: string) => void;
   isAnyPending?: boolean;
 }) {
+  const { getLabel, getColor } = useEnum('order_status');
+  const statusLabel = (s: OrderStatus) => getLabel(s) || FALLBACK_STATUS_LABEL[s];
+  const statusClass = (s: OrderStatus) => getColor(s) || FALLBACK_STATUS_CHIP_CLASS[s];
   return (
     <div className="hidden lg:block bg-neutral-0 dark:bg-neutral-100 rounded-xl border border-neutral-200 overflow-hidden">
       <table className="w-full text-sm">
@@ -389,10 +394,10 @@ function OrderTable({
                   <span
                     className={cn(
                       'px-2 py-0.5 rounded-full text-xs font-medium',
-                      STATUS_CHIP_CLASS[o.status],
+                      statusClass(o.status),
                     )}
                   >
-                    {STATUS_LABEL[o.status]}
+                    {statusLabel(o.status)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-xs text-neutral-600">{orderDate}</td>

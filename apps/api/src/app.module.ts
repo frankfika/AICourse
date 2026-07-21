@@ -25,6 +25,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { LearningEventsModule } from './modules/learning-events/learning-events.module';
 import { SiteModule } from './modules/site/site.module';
+import { CmsModule } from './modules/cms/cms.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { SiteModule } from './modules/site/site.module';
     ReviewsModule,
     LearningEventsModule,
     SiteModule,
+    CmsModule,
   ],
   controllers: [AppController],
   providers: [

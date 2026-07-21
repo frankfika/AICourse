@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import {
   Building2,
   ArrowUpRight,
@@ -16,6 +17,7 @@ import {
   Briefcase,
 } from 'lucide-react';
 import api from '../../lib/api';
+import { useList, usePageSettings, useSiteSettings, useI18n, pickPage, pickSite } from '../../lib/cms';
 
 // 复用 site/stats 的 KPI,4 个 slot 都从真实数据映射, 避免假数字
 interface SiteStats {
@@ -78,6 +80,100 @@ export function EnterprisePage() {
     retry: 1,
   });
 
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: entPages } = usePageSettings('enterprise', [
+    'hero.eyebrow', 'hero.headline', 'hero.sub', 'hero.cta_primary', 'hero.cta_secondary',
+    'inquiry.eyebrow', 'inquiry.headline', 'inquiry.sub',
+    'method.eyebrow', 'method.headline',
+    'cases.eyebrow', 'cases.headline', 'cases.tag', 'cases.eyebrow_us',
+  ]);
+  const { data: industriesData } = useList<{
+    id: string; key: string; label: string; description?: string | null;
+    methodology?: { num: string; icon: string; title: string; desc: string; bullets: string[] }[];
+    isActive?: boolean; orderIndex: number;
+  }>('industries');
+  const { data: methodsData } = useList<{
+    id: string; num: string; title: string; desc: string; bullets: string[];
+    isActive?: boolean; orderIndex: number;
+  }>('enterprise-methods');
+  const { data: siteData } = useSiteSettings(['brand.company.addresses']);
+
+  // 把 industries 8 宫格拉成 list
+  const industries = industriesData && industriesData.length > 0
+    ? industriesData.filter((i) => i.isActive !== false).map((i) => ({ label: i.label, desc: i.description ?? '' }))
+    : [
+        { label: '金融 / Fintech', desc: '风控、量化、智能客服' },
+        { label: '电商 / Retail', desc: '推荐系统、搜索、营销' },
+        { label: '制造 / Manufacturing', desc: '质检、排产、预测维护' },
+        { label: '医疗 / Healthcare', desc: '影像诊断、临床辅助' },
+        { label: '教育 / Education', desc: '个性化学习、智能评测' },
+        { label: '政企 / Government', desc: '文档处理、数据分析' },
+        { label: '汽车 / Auto', desc: '自动驾驶、智能座舱' },
+        { label: '媒体 / Media', desc: '内容生成、推荐分发' },
+      ];
+
+  // 把 3 步法拉成 list
+  const FALLBACK_ICONS = [Target, GraduationCap, Briefcase];
+  const methods = methodsData && methodsData.length > 0
+    ? methodsData.filter((m) => m.isActive !== false).map((m, i) => ({
+        num: m.num,
+        icon: FALLBACK_ICONS[i] ?? Target,
+        title: m.title,
+        desc: m.desc,
+        bullets: m.bullets ?? [],
+      }))
+    : [
+        {
+          num: '01',
+          icon: Target,
+          title: '战略对齐',
+          desc: '深入理解业务目标与团队现状,识别 AI 应用的高价值场景,输出定制化能力地图。',
+          bullets: ['业务场景调研', 'AI 能力评估', 'ROI 测算', '实施路线图'],
+        },
+        {
+          num: '02',
+          icon: GraduationCap,
+          title: '路径设计',
+          desc: '基于岗位与职级,定制从入门到专家的培养路径,理论与实战项目深度结合。',
+          bullets: ['岗位能力模型', '课程组合设计', '实战项目选题', '考核评估机制'],
+        },
+        {
+          num: '03',
+          icon: Briefcase,
+          title: '实战交付',
+          desc: '用真实业务问题驱动学习,导师全程陪跑,交付可量化的业务成果。',
+          bullets: ['1v1 导师陪跑', '项目代码评审', '业务指标达成', '长期社区支持'],
+        },
+      ];
+
+  // Hero copy
+  const heroEyebrow = pickPage(entPages, 'hero.eyebrow', 'zh-CN', t('enterprise.eyebrow.hero', '/ Enterprise Training'));
+  const heroHeadline = pickPage(entPages, 'hero.headline', 'zh-CN', t('enterprise.headline.hero', 'Build\nYour\nAI Team.'));
+  const heroSub = pickPage(entPages, 'hero.sub', 'zh-CN', t('enterprise.sub.hero', '1v1 咨询 + 定制化课程路径。从战略对齐到实战交付,我们与你的团队并肩作战,把 AI 真正变成生产力。'));
+  const heroCtaPrimary = pickPage(entPages, 'hero.cta_primary', 'zh-CN', t('enterprise.cta.primary', 'Book 1v1 Consultation'));
+  const heroCtaSecondary = pickPage(entPages, 'hero.cta_secondary', 'zh-CN', t('enterprise.cta.secondary', 'View Cases'));
+  const heroLines = heroHeadline.split('\n');
+  // Method copy
+  const methodEyebrow = pickPage(entPages, 'method.eyebrow', 'zh-CN', t('enterprise.eyebrow.method', '/ 01 Method'));
+  const methodHeadline = pickPage(entPages, 'method.headline', 'zh-CN', t('enterprise.headline.method', 'How We\nWork'));
+  const methodLines = methodHeadline.split('\n');
+  // Cases copy
+  const casesEyebrow = pickPage(entPages, 'cases.eyebrow', 'zh-CN', t('enterprise.eyebrow.cases', '/ 02 Cases'));
+  const casesHeadline = pickPage(entPages, 'cases.headline', 'zh-CN', t('enterprise.headline.cases', 'Trusted By'));
+  const casesTag = pickPage(entPages, 'cases.tag', 'zh-CN', t('enterprise.cases.tag', '示例 · 行业范围'));
+  const casesEyebrowUs = pickPage(entPages, 'cases.eyebrow_us', 'zh-CN', t('enterprise.cases.eyebrow_us', 'Industries We Serve'));
+  // Inquiry copy
+  const inquiryEyebrow = pickPage(entPages, 'inquiry.eyebrow', 'zh-CN', t('enterprise.eyebrow.inquiry.short', 'Get In Touch'));
+  const inquiryEyebrowFull = pickPage(entPages, 'inquiry.eyebrow', 'zh-CN', t('enterprise.eyebrow.inquiry', 'Get In Touch'));
+  const inquiryHeadline = pickPage(entPages, 'inquiry.headline', 'zh-CN', t('enterprise.headline.inquiry', 'Start\nThe\nConversation'));
+  const inquiryHeadlineLines = inquiryHeadline.split('\n');
+  const inquirySub = pickPage(entPages, 'inquiry.sub', 'zh-CN', t('enterprise.inquiry.sub', '填写右侧表单,我们的解决方案顾问会在 1 个工作日内联系你,提供 1v1 定制咨询。'));
+  // Address line
+  const addressCities = (siteData?.['brand.company.addresses'] && Array.isArray(siteData['brand.company.addresses'])
+    ? siteData['brand.company.addresses']
+    : ['Beijing', 'Shanghai', 'Shenzhen']) as string[];
+
   // 联系信息走 env 注入, 没设时:email 兜底到 enterprise@opencsg.com,
   // phone 不设则不显示该行(避免假电话 +86 400-xxx-xxxx)
   const enterpriseEmail =
@@ -93,7 +189,7 @@ export function EnterprisePage() {
       setSuccess(true);
       setForm(initialForm);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? '提交失败，请稍后再试');
+      setError(err?.response?.data?.message ?? t('company.contact.error', '提交失败，请稍后再试'));
     } finally {
       setSubmitting(false);
     }
@@ -101,35 +197,39 @@ export function EnterprisePage() {
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717]">
+      <Helmet>
+        <title>{heroHeadline.replace(/\n/g, ' ')} · OpenCSG Academy</title>
+        <meta name="description" content={heroSub} />
+      </Helmet>
       {/* ==================== HERO (FULL BLACK) ==================== */}
       <section className="border-b border-[#171717] bg-[#171717] text-white">
         <div className="max-w-7xl mx-auto px-6 py-20 md:py-32">
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-4 flex items-center gap-2">
-            <Building2 className="w-3.5 h-3.5" /> / Enterprise Training
+            <Building2 className="w-3.5 h-3.5" /> {heroEyebrow}
           </div>
           <h1 className="text-5xl md:text-7xl lg:text-[8rem] font-black tracking-tighter uppercase leading-[0.9] mb-8">
-            Build
+            {heroLines[0] ?? heroHeadline}
             <br />
-            Your
+            {heroLines[1] ?? ''}
             <br />
-            <span className="text-white/40">AI Team.</span>
+            <span className="text-white/40">{heroLines[2] ?? ''}</span>
           </h1>
           <p className="text-white/60 text-lg md:text-xl leading-relaxed max-w-3xl mb-12">
-            1v1 咨询 + 定制化课程路径。从战略对齐到实战交付，我们与你的团队并肩作战，把 AI 真正变成生产力。
+            {heroSub}
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <a
               href="#inquiry"
               className="inline-flex items-center justify-between gap-6 bg-white text-[#171717] px-6 py-5 font-black uppercase tracking-wider text-sm hover:bg-[#EEEDE9] transition-colors"
             >
-              <span>Book 1v1 Consultation</span>
+              <span>{heroCtaPrimary}</span>
               <ArrowUpRight className="w-5 h-5" />
             </a>
             <a
               href="#cases"
               className="inline-flex items-center justify-between gap-6 border border-white/30 text-white px-6 py-5 font-black uppercase tracking-wider text-sm hover:bg-white/10 transition-colors"
             >
-              <span>View Cases</span>
+              <span>{heroCtaSecondary}</span>
               <ArrowUpRight className="w-5 h-5" />
             </a>
           </div>
@@ -171,36 +271,15 @@ export function EnterprisePage() {
       <section className="border-b border-[#171717]">
         <div className="max-w-7xl mx-auto px-6 py-16 md:py-24">
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
-            / 01 Method
+            {methodEyebrow}
           </div>
           <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-none mb-12">
-            How We<br />Work
+            {methodLines[0] ?? methodHeadline}
+            <br />{methodLines[1] ?? ''}
           </h2>
 
           <div className="border-t border-l border-[#171717]">
-            {[
-              {
-                num: '01',
-                icon: Target,
-                title: '战略对齐',
-                desc: '深入理解业务目标与团队现状，识别 AI 应用的高价值场景，输出定制化能力地图。',
-                bullets: ['业务场景调研', 'AI 能力评估', 'ROI 测算', '实施路线图'],
-              },
-              {
-                num: '02',
-                icon: GraduationCap,
-                title: '路径设计',
-                desc: '基于岗位与职级，定制从入门到专家的培养路径，理论与实战项目深度结合。',
-                bullets: ['岗位能力模型', '课程组合设计', '实战项目选题', '考核评估机制'],
-              },
-              {
-                num: '03',
-                icon: Briefcase,
-                title: '实战交付',
-                desc: '用真实业务问题驱动学习，导师全程陪跑，交付可量化的业务成果。',
-                bullets: ['1v1 导师陪跑', '项目代码评审', '业务指标达成', '长期社区支持'],
-              },
-            ].map(({ num, icon: Icon, title, desc, bullets }) => (
+            {methods.map(({ num, icon: Icon, title, desc, bullets }) => (
               <div
                 key={num}
                 className="grid grid-cols-1 md:grid-cols-12 border-b border-r border-[#171717] hover:bg-[#EEEDE9] transition-colors"
@@ -242,34 +321,25 @@ export function EnterprisePage() {
           <div className="flex items-end justify-between flex-wrap gap-4 mb-12">
             <div>
               <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
-                / 02 Cases
+                {casesEyebrow}
               </div>
               <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-none">
-                Trusted By
+                {casesHeadline}
               </h2>
             </div>
             <div className="flex flex-col items-end gap-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-[#171717] text-[10px] font-black uppercase tracking-widest text-[#171717]">
                 <span className="w-1.5 h-1.5 bg-[#171717]" />
-                示例 · 行业范围
+                {casesTag}
               </span>
               <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
-                Industries We Serve
+                {casesEyebrowUs}
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 border-t border-l border-[#171717]">
-            {[
-              { label: '金融 / Fintech', desc: '风控、量化、智能客服' },
-              { label: '电商 / Retail', desc: '推荐系统、搜索、营销' },
-              { label: '制造 / Manufacturing', desc: '质检、排产、预测维护' },
-              { label: '医疗 / Healthcare', desc: '影像诊断、临床辅助' },
-              { label: '教育 / Education', desc: '个性化学习、智能评测' },
-              { label: '政企 / Government', desc: '文档处理、数据分析' },
-              { label: '汽车 / Auto', desc: '自动驾驶、智能座舱' },
-              { label: '媒体 / Media', desc: '内容生成、推荐分发' },
-            ].map(({ label, desc }) => (
+            {industries.map(({ label, desc }) => (
               <div
                 key={label}
                 className="p-6 border-b border-r border-[#171717] hover:bg-[#EEEDE9] transition-colors"
@@ -292,14 +362,16 @@ export function EnterprisePage() {
             <div className="inline-flex items-center gap-2 mb-8 w-fit">
               <span className="w-2 h-2 bg-white" />
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">
-                Get In Touch
+                {inquiryEyebrowFull}
               </span>
             </div>
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.95] mb-6">
-              Start<br />The<br />Conversation
+              {inquiryHeadlineLines[0] ?? inquiryHeadline}
+              <br />{inquiryHeadlineLines[1] ?? ''}
+              <br />{inquiryHeadlineLines[2] ?? ''}
             </h2>
             <p className="text-white/60 text-lg leading-relaxed mb-10 max-w-md">
-              填写右侧表单，我们的解决方案顾问会在 1 个工作日内联系你，提供 1v1 定制咨询。
+              {inquirySub}
             </p>
 
             <div className="space-y-4 border-t border-white/20 pt-8">
@@ -321,12 +393,12 @@ export function EnterprisePage() {
                 // env 未设时不展示电话行(原 "+86 400-xxx-xxxx" 是假数据)
                 <div className="flex items-center gap-4 text-sm font-medium text-white/40 italic">
                   <Phone className="w-4 h-4 text-white/30" />
-                  <span>电话可通过邮件联系获取</span>
+                  <span>{t('company.address.placeholder', '电话可通过邮件联系获取')}</span>
                 </div>
               )}
               <div className="flex items-center gap-4 text-sm font-medium text-white/70">
                 <Building2 className="w-4 h-4 text-white/50" />
-                <span>OpenCSG · Beijing · Shanghai · Shenzhen</span>
+                <span>OpenCSG · {addressCities.join(' · ')}</span>
               </div>
             </div>
           </div>
@@ -338,15 +410,15 @@ export function EnterprisePage() {
                 <div className="w-16 h-16 bg-[#171717] text-white flex items-center justify-center mb-6">
                   <Check className="w-8 h-8" strokeWidth={3} />
                 </div>
-                <h3 className="text-3xl font-black tracking-tighter mb-3 break-words">收到！</h3>
+                <h3 className="text-3xl font-black tracking-tighter mb-3 break-words">{t('company.contact.success.title', '收到!')}</h3>
                 <p className="text-[#666666] mb-8 max-w-md">
-                  我们的解决方案顾问会在 1 个工作日内通过邮件或电话联系你。
+                  {t('company.contact.success.desc', '我们的解决方案顾问会在 1 个工作日内通过邮件或电话联系你。')}
                 </p>
                 <button
                   onClick={() => setSuccess(false)}
                   className="text-[10px] font-black uppercase tracking-widest text-[#171717] hover:underline"
                 >
-                  再次提交 →
+                  {t('company.contact.success.again', '再次提交 →')}
                 </button>
               </div>
             ) : (
@@ -354,7 +426,7 @@ export function EnterprisePage() {
                 <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-6">
                   / 03 Inquiry
                 </div>
-                <h3 className="text-3xl font-black tracking-tighter mb-8 break-words">告诉我们你的需求</h3>
+                <h3 className="text-3xl font-black tracking-tighter mb-8 break-words">{t('company.contact.form.title', '告诉我们你的需求')}</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field
@@ -442,7 +514,7 @@ export function EnterprisePage() {
                   disabled={submitting}
                   className="w-full inline-flex items-center justify-between gap-6 bg-[#171717] text-white px-6 py-5 font-black uppercase tracking-wider text-sm hover:bg-[#262626] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span>{submitting ? '提交中...' : '提交咨询'}</span>
+                  <span>{submitting ? t('company.contact.submitting', '提交中...') : t('company.contact.submit', '提交咨询')}</span>
                   <Send className="w-5 h-5" />
                 </button>
 

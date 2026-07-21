@@ -1,0 +1,270 @@
+/**
+ * CmsContentService — 10 个 list resource 的纯 Prisma 封装
+ *
+ * 覆盖: industries / enterprise_methods / testimonials / quick_prompts
+ *       course_categories / popular_searches / hot_keywords
+ *       auth_providers / top_nav_items / footer_columns
+ */
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+
+@Injectable()
+export class CmsContentService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  // ---- industries ----
+
+  listIndustries(scope?: { isActive?: boolean }) {
+    return this.prisma.industry.findMany({
+      where: scope?.isActive !== undefined ? { isActive: scope.isActive } : {},
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getIndustry(id: string) {
+    return this.prisma.industry.findUnique({ where: { id } });
+  }
+
+  createIndustry(data: Prisma.IndustryCreateInput) {
+    return this.prisma.industry.create({ data });
+  }
+
+  updateIndustry(id: string, data: Prisma.IndustryUpdateInput) {
+    return this.prisma.industry.update({ where: { id }, data });
+  }
+
+  deleteIndustry(id: string) {
+    return this.prisma.industry.delete({ where: { id } });
+  }
+
+  // ---- enterprise_methods ----
+
+  listEnterpriseMethods(scope?: { isActive?: boolean }) {
+    return this.prisma.enterpriseMethod.findMany({
+      where: scope?.isActive !== undefined ? { isActive: scope.isActive } : {},
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getEnterpriseMethod(id: string) {
+    return this.prisma.enterpriseMethod.findUnique({ where: { id } });
+  }
+
+  createEnterpriseMethod(data: Prisma.EnterpriseMethodCreateInput) {
+    return this.prisma.enterpriseMethod.create({ data });
+  }
+
+  updateEnterpriseMethod(id: string, data: Prisma.EnterpriseMethodUpdateInput) {
+    return this.prisma.enterpriseMethod.update({ where: { id }, data });
+  }
+
+  deleteEnterpriseMethod(id: string) {
+    return this.prisma.enterpriseMethod.delete({ where: { id } });
+  }
+
+  // ---- testimonials ----
+
+  listTestimonials(scope?: { isActive?: boolean }) {
+    return this.prisma.testimonial.findMany({
+      where: scope?.isActive !== undefined ? { isActive: scope.isActive } : {},
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getTestimonial(id: string) {
+    return this.prisma.testimonial.findUnique({ where: { id } });
+  }
+
+  createTestimonial(data: Prisma.TestimonialCreateInput) {
+    return this.prisma.testimonial.create({ data });
+  }
+
+  updateTestimonial(id: string, data: Prisma.TestimonialUpdateInput) {
+    return this.prisma.testimonial.update({ where: { id }, data });
+  }
+
+  deleteTestimonial(id: string) {
+    return this.prisma.testimonial.delete({ where: { id } });
+  }
+
+  // ---- quick_prompts ----
+
+  listQuickPrompts(scope?: { isActive?: boolean; promptScope?: string }) {
+    const where: Prisma.QuickPromptWhereInput = {};
+    if (scope?.isActive !== undefined) where.isActive = scope.isActive;
+    if (scope?.promptScope) where.scope = scope.promptScope;
+    return this.prisma.quickPrompt.findMany({
+      where,
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getQuickPrompt(id: string) {
+    return this.prisma.quickPrompt.findUnique({ where: { id } });
+  }
+
+  createQuickPrompt(data: Prisma.QuickPromptCreateInput) {
+    return this.prisma.quickPrompt.create({ data });
+  }
+
+  updateQuickPrompt(id: string, data: Prisma.QuickPromptUpdateInput) {
+    return this.prisma.quickPrompt.update({ where: { id }, data });
+  }
+
+  deleteQuickPrompt(id: string) {
+    return this.prisma.quickPrompt.delete({ where: { id } });
+  }
+
+  // ---- course_categories ----
+
+  listCourseCategories(scope?: { isActive?: boolean }) {
+    return this.prisma.courseCategory.findMany({
+      where: scope?.isActive !== undefined ? { isActive: scope.isActive } : {},
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getCourseCategory(id: string) {
+    return this.prisma.courseCategory.findUnique({ where: { id } });
+  }
+
+  createCourseCategory(data: Prisma.CourseCategoryCreateInput) {
+    return this.prisma.courseCategory.create({ data });
+  }
+
+  updateCourseCategory(id: string, data: Prisma.CourseCategoryUpdateInput) {
+    return this.prisma.courseCategory.update({ where: { id }, data });
+  }
+
+  deleteCourseCategory(id: string) {
+    return this.prisma.courseCategory.delete({ where: { id } });
+  }
+
+  // ---- popular_searches ----
+
+  listPopularSearches(scope?: { isActive?: boolean }) {
+    return this.prisma.popularSearch.findMany({
+      where: scope?.isActive !== undefined ? { isActive: scope.isActive } : {},
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getPopularSearch(id: string) {
+    return this.prisma.popularSearch.findUnique({ where: { id } });
+  }
+
+  createPopularSearch(data: Prisma.PopularSearchCreateInput) {
+    return this.prisma.popularSearch.create({ data });
+  }
+
+  updatePopularSearch(id: string, data: Prisma.PopularSearchUpdateInput) {
+    return this.prisma.popularSearch.update({ where: { id }, data });
+  }
+
+  deletePopularSearch(id: string) {
+    return this.prisma.popularSearch.delete({ where: { id } });
+  }
+
+  // ---- hot_keywords ----
+
+  listHotKeywords(scope?: { isActive?: boolean; keywordScope?: string }) {
+    const where: Prisma.HotKeywordWhereInput = {};
+    if (scope?.isActive !== undefined) where.isActive = scope.isActive;
+    if (scope?.keywordScope) where.scope = scope.keywordScope;
+    return this.prisma.hotKeyword.findMany({
+      where,
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getHotKeyword(id: string) {
+    return this.prisma.hotKeyword.findUnique({ where: { id } });
+  }
+
+  createHotKeyword(data: Prisma.HotKeywordCreateInput) {
+    return this.prisma.hotKeyword.create({ data });
+  }
+
+  updateHotKeyword(id: string, data: Prisma.HotKeywordUpdateInput) {
+    return this.prisma.hotKeyword.update({ where: { id }, data });
+  }
+
+  deleteHotKeyword(id: string) {
+    return this.prisma.hotKeyword.delete({ where: { id } });
+  }
+
+  // ---- auth_providers ----
+
+  listAuthProviders() {
+    return this.prisma.authProvider.findMany({
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getAuthProvider(id: string) {
+    return this.prisma.authProvider.findUnique({ where: { id } });
+  }
+
+  createAuthProvider(data: Prisma.AuthProviderCreateInput) {
+    return this.prisma.authProvider.create({ data });
+  }
+
+  updateAuthProvider(id: string, data: Prisma.AuthProviderUpdateInput) {
+    return this.prisma.authProvider.update({ where: { id }, data });
+  }
+
+  deleteAuthProvider(id: string) {
+    return this.prisma.authProvider.delete({ where: { id } });
+  }
+
+  // ---- top_nav_items ----
+
+  listTopNavItems(scope?: { isActive?: boolean }) {
+    return this.prisma.topNavItem.findMany({
+      where: scope?.isActive !== undefined ? { isActive: scope.isActive } : {},
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getTopNavItem(id: string) {
+    return this.prisma.topNavItem.findUnique({ where: { id } });
+  }
+
+  createTopNavItem(data: Prisma.TopNavItemCreateInput) {
+    return this.prisma.topNavItem.create({ data });
+  }
+
+  updateTopNavItem(id: string, data: Prisma.TopNavItemUpdateInput) {
+    return this.prisma.topNavItem.update({ where: { id }, data });
+  }
+
+  deleteTopNavItem(id: string) {
+    return this.prisma.topNavItem.delete({ where: { id } });
+  }
+
+  // ---- footer_columns ----
+
+  listFooterColumns(scope?: { isActive?: boolean }) {
+    return this.prisma.footerColumn.findMany({
+      where: scope?.isActive !== undefined ? { isActive: scope.isActive } : {},
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  getFooterColumn(id: string) {
+    return this.prisma.footerColumn.findUnique({ where: { id } });
+  }
+
+  createFooterColumn(data: Prisma.FooterColumnCreateInput) {
+    return this.prisma.footerColumn.create({ data });
+  }
+
+  updateFooterColumn(id: string, data: Prisma.FooterColumnUpdateInput) {
+    return this.prisma.footerColumn.update({ where: { id }, data });
+  }
+
+  deleteFooterColumn(id: string) {
+    return this.prisma.footerColumn.delete({ where: { id } });
+  }
+}

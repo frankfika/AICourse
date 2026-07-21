@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, Trash2, Mail, Phone } from 'lucide-react';
 import api from '../../lib/api';
+import { useEnum } from '../../lib/cms';
 
 interface Inquiry {
   id: string;
@@ -22,6 +23,7 @@ export function AdminEnterprisePage() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Inquiry['status'] | 'all'>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { getLabel: getInquiryLabel } = useEnum('inquiry_status');
 
   const { data: inquiries } = useQuery({
     queryKey: ['admin-enterprise'],
@@ -64,7 +66,7 @@ export function AdminEnterprisePage() {
                 filter === s ? 'bg-[#171717] text-white' : 'bg-white dark:bg-neutral-100 text-[#171717] dark:text-neutral-50 hover:bg-[#EEEDE9] dark:hover:bg-neutral-800'
               } ${i < STATUS_OPTIONS.length ? 'border-r border-[#171717] dark:border-neutral-50' : ''}`}
             >
-              {s === 'all' ? '全部' : s}
+              {s === 'all' ? '全部' : getInquiryLabel(s)}
             </button>
           ))}
         </div>
@@ -117,7 +119,7 @@ export function AdminEnterprisePage() {
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {getInquiryLabel(s)}
                     </option>
                   ))}
                 </select>

@@ -13,8 +13,10 @@ import { Link } from 'react-router-dom';
 import { GraduationCap, Moon, Sun, ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import { cn } from '../../lib/cn';
 import api from '../../lib/api';
+import { useSiteSettings, pickSite } from '../../lib/cms';
 
 interface SiteStats {
   activeLearners: number;
@@ -70,8 +72,56 @@ export function AuthShell({ children }: { children: ReactNode }) {
     retry: 1,
   });
 
+  // CMS-driven brand copy (shell headline / sub / testimonial)
+  const { data: siteData } = useSiteSettings([
+    'brand.auth.shell_headline',
+    'brand.auth.shell_sub_template',
+    'brand.auth.testimonial',
+  ]);
+  const shellHeadline = pickSite(
+    siteData,
+    'brand.auth.shell_headline',
+    'zh-CN',
+    '学完仍然不会做?\n让 AI 时代的能力\n可被看见。',
+  );
+  const shellSubTpl = pickSite(
+    siteData,
+    'brand.auth.shell_sub_template',
+    'zh-CN',
+    '{count} 名工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。',
+  );
+  const shellSub = stats
+    ? shellSubTpl.replace('{count}', formatStatNumber(stats.activeLearners))
+    : shellSubTpl.replace('{count}', '工程师、创业者、CTO');
+  const testimonialData = siteData?.['brand.auth.testimonial'];
+  const testimonialLabel = pickSite(
+    { 'brand.auth.testimonial': testimonialData?.label },
+    'brand.auth.testimonial',
+    'zh-CN',
+    '学员故事',
+  );
+  const testimonialQuote = pickSite(
+    { 'brand.auth.testimonial': testimonialData?.quote },
+    'brand.auth.testimonial',
+    'zh-CN',
+    '我以为 RAG 就是把文档塞进向量库。学完才发现 prompt 模板、reranking、citation、evaluation 才是真正决定效果的地方。AI 助教在我卡壳时直接引用课里第几节第几分几秒 —— 救了我 3 个通宵。',
+  );
+  const testimonialName = testimonialData?.name ?? 'K. Chen';
+  const testimonialTitle = testimonialData?.title ?? 'LLM 应用工程师学位';
+  const testimonialPlaceholder = testimonialData?.placeholder ?? '占位示例';
+
+  // 把 shellHeadline 切成 3 行(line2 加下划线)
+  const headlineLines = shellHeadline.split('\n');
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-900">
+      <Helmet>
+        <title>{shellHeadline.replace(/\n/g, ' ')}</title>
+        <meta name="description" content={shellSub} />
+        <meta property="og:title" content={shellHeadline.replace(/\n/g, ' ')} />
+        <meta property="og:description" content={shellSub} />
+        <meta property="og:type" content="website" />
+      </Helmet>
       {/* 顶部导航(精简) */}
       <header className="border-b border-neutral-200 dark:border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -101,7 +151,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
               className="text-sm text-neutral-600 dark:text-neutral-600 hover:text-[#171717] transition-colors"
             >
               <ArrowLeft className="w-4 h-4 inline-block mr-1" />
-              返回首页
+              {pickSite(siteData, 'brand.nav.back_home', 'zh-CN', '返回首页')}
             </Link>
           </div>
         </div>
@@ -122,16 +172,14 @@ export function AuthShell({ children }: { children: ReactNode }) {
               <span className="font-semibold text-lg">OpenCSG Academy</span>
             </Link>
             <h1 className="text-4xl xl:text-display-lg font-bold leading-[1.1]">
-              学完仍然不会做?
+              {headlineLines[0] ?? shellHeadline}
               <br />
-              <span className="opacity-90">让 AI 时代的能力</span>
+              <span className="opacity-90">{headlineLines[1] ?? ''}</span>
               <br />
-              可被看见。
+              {headlineLines[2] ?? ''}
             </h1>
             <p className="mt-6 text-lg opacity-90 max-w-md">
-              {stats
-                ? `${formatStatNumber(stats.activeLearners)} 名工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。`
-                : '工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。'}
+              {shellSub}
             </p>
           </div>
 
@@ -159,22 +207,19 @@ export function AuthShell({ children }: { children: ReactNode }) {
             <blockquote className="p-5 rounded-xl bg-neutral-0/10 backdrop-blur-sm border border-neutral-0/20">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] font-mono uppercase tracking-widest opacity-50">
-                  学员故事 · 占位示例
+                  {testimonialLabel} · {testimonialPlaceholder}
                 </p>
               </div>
               <p className="text-sm leading-relaxed">
-                "我以为 RAG 就是把文档塞进向量库。学完才发现 prompt
-                模板、reranking、citation、evaluation
-                才是真正决定效果的地方。AI 助教在我卡壳时直接引用课里第几节第几分几秒
-                —— 救了我 3 个通宵。"
+                "{testimonialQuote}"
               </p>
               <div className="mt-3 flex items-center gap-2 text-xs">
                 <div className="w-7 h-7 rounded-full bg-cert-500 text-neutral-0 flex items-center justify-center font-bold text-xs">
-                  K
+                  {testimonialName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div className="font-medium">K. Chen</div>
-                  <div className="opacity-70">LLM 应用工程师学位 · 占位示例</div>
+                  <div className="font-medium">{testimonialName}</div>
+                  <div className="opacity-70">{testimonialTitle} · {testimonialPlaceholder}</div>
                 </div>
               </div>
             </blockquote>

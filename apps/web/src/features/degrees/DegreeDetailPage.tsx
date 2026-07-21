@@ -21,6 +21,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft,
   BookOpen,
@@ -43,6 +44,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { PurchaseModal } from './PurchaseModal';
+import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
 const P2_PLACEHOLDERS = [
   { icon: Layers, title: '路径阶段图', sub: '后端 stage API 设计中' },
@@ -56,6 +58,13 @@ export function DegreeDetailPage() {
   const { user } = useAuthStore();
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'courses'>('overview');
+
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: pageData } = usePageSettings('degrees', [
+    'detail.back', 'detail.tabs', 'detail.section_eyebrows', 'detail.sidebar_hours_label', 'detail.empty_courses',
+  ]);
+  const back = pickPage(pageData, 'detail.back', 'zh-CN', t('degree.detail.back', 'Back To Degrees'));
 
   const { data: degree, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['degree', id],
@@ -95,12 +104,12 @@ export function DegreeDetailPage() {
       <div className="bg-neutral-50 dark:bg-neutral-50 min-h-screen">
         <div className="max-w-2xl mx-auto px-4 py-32 text-center">
           <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-900 mb-2">
-            学位加载失败
+            {t('degree.error.load', '学位加载失败')}
           </h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-600 mb-6">
             {status === 404
-              ? '该学位不存在或已下架'
-              : `网络错误${(error as any)?.message ? `: ${(error as any).message}` : ''}`}
+              ? t('degree.error.404', '该学位不存在或已下架')
+              : `${t('common.error.network', '网络错误')}${(error as any)?.message ? `: ${(error as any).message}` : ''}`}
           </p>
           <div className="flex items-center justify-center gap-3">
             <Button variant="primary" size="md" onClick={() => refetch()}>
@@ -120,10 +129,10 @@ export function DegreeDetailPage() {
       <div className="bg-neutral-50 dark:bg-neutral-50 min-h-screen">
         <div className="max-w-2xl mx-auto px-4 py-32 text-center">
           <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-900 mb-2">
-            学位不存在
+            {t('degree.not_found', '学位不存在')}
           </h2>
           <p className="text-sm text-neutral-600 dark:text-neutral-600 mb-6">
-            可能链接已失效,回到学位列表看看其他选择。
+            {t('degree.not_found.desc', '可能链接已失效,回到学位列表看看其他选择。')}
           </p>
           <Link to="/degrees">
             <Button variant="primary" size="md">回到学位列表</Button>
@@ -145,6 +154,10 @@ export function DegreeDetailPage() {
 
   return (
     <div className="bg-neutral-50 dark:bg-neutral-50 min-h-screen text-neutral-900 dark:text-neutral-900">
+      <Helmet>
+        <title>{degree ? `${degree.title} · OpenCSG Academy` : '学位详情 · OpenCSG Academy'}</title>
+        <meta name="description" content={degree?.description ?? '学位详情页'} />
+      </Helmet>
       {/* Top action bar */}
       <section className="bg-neutral-0 dark:bg-neutral-100 border-b border-neutral-200 dark:border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -152,7 +165,7 @@ export function DegreeDetailPage() {
             to="/degrees"
             className="inline-flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 hover:text-[#171717] transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back To Degrees
+            <ArrowLeft className="w-3.5 h-3.5" /> {back}
           </Link>
         </div>
       </section>
@@ -187,19 +200,19 @@ export function DegreeDetailPage() {
 
             <div className="grid grid-cols-4 border-t border-neutral-200 dark:border-neutral-200">
               <div className="py-5 border-r border-neutral-200 dark:border-neutral-200">
-                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">Courses</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">{t('degree.stats.courses', 'Courses')}</div>
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.courseCount ?? degree.courses.length}</div>
               </div>
               <div className="py-5 border-r border-neutral-200 dark:border-neutral-200">
-                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">Chapters</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">{t('degree.stats.chapters', 'Chapters')}</div>
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.totalChapters ?? 0}</div>
               </div>
               <div className="py-5 border-r border-neutral-200 dark:border-neutral-200">
-                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">Learners</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">{t('degree.stats.learners', 'Learners')}</div>
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.totalLearners ?? 0}</div>
               </div>
               <div className="py-5">
-                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">Hours</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">{t('degree.stats.hours', 'Hours')}</div>
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.estimatedHours ?? 0}</div>
               </div>
             </div>
@@ -223,14 +236,14 @@ export function DegreeDetailPage() {
             <div className="p-8 md:p-12 flex flex-col gap-4">
               {enrolled ? (
                 <div className="inline-flex items-center justify-between gap-3 border border-white px-6 py-4 font-black uppercase tracking-widest text-sm">
-                  <CheckCircle2 className="w-4 h-4" /> 已报名,继续学习
+                  <CheckCircle2 className="w-4 h-4" /> {t('degree.enrolled', '已报名,继续学习')}
                 </div>
               ) : user ? (
                 <button
                   onClick={() => setPurchaseOpen(true)}
                   className="inline-flex items-center justify-between gap-3 bg-white text-neutral-900 px-6 py-4 font-black uppercase tracking-widest text-sm hover:bg-neutral-100 transition-colors"
                 >
-                  <span>{isFree ? 'Free Enroll' : `Buy ¥${degree.price}`}</span>
+                  <span>{isFree ? t('degree.cta.enroll', 'Free Enroll') : t('degree.cta.buy', 'Buy ¥{price}').replace('{price}', String(degree.price))}</span>
                   <ArrowUpRight className="w-4 h-4" />
                 </button>
               ) : (
@@ -238,7 +251,7 @@ export function DegreeDetailPage() {
                   to="/login"
                   className="inline-flex items-center justify-between gap-3 bg-white text-neutral-900 px-6 py-4 font-black uppercase tracking-widest text-sm hover:bg-neutral-100 transition-colors"
                 >
-                  <span>Login to Enroll</span>
+                  <span>{t('degree.cta.login', 'Login to Enroll')}</span>
                   <ArrowUpRight className="w-4 h-4" />
                 </Link>
               )}
@@ -254,8 +267,8 @@ export function DegreeDetailPage() {
       <section className="border-b border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto scrollbar-hide">
           {[
-            { key: 'overview', label: '学位概览', icon: BookOpen },
-            { key: 'courses', label: `课程 (${degree.courses.length})`, icon: PlayCircle },
+            { key: 'overview', label: t('degrees.detail.tabs.overview', '学位概览'), icon: BookOpen },
+            { key: 'courses', label: `${t('degrees.detail.tabs.courses', '课程')} (${degree.courses.length})`, icon: PlayCircle },
           ].map(({ key, label, icon: Icon }, i, arr) => {
             const active = activeTab === key;
             return (
@@ -340,7 +353,7 @@ export function DegreeDetailPage() {
               <div>
                 <div className="border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100">
                   <div className="p-4 border-b border-neutral-200 dark:border-neutral-200">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600">学位时长</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600">{t('degree.sidebar.hours', '学位时长')}</div>
                     <div className="text-lg font-black mt-1">{degree.stats?.estimatedHours ?? 0} 小时</div>
                   </div>
                   <div>
@@ -374,7 +387,7 @@ export function DegreeDetailPage() {
               {degree.courses.length === 0 ? (
                 <div className="text-center py-24 text-neutral-600 dark:text-neutral-600">
                   <BookOpen className="w-10 h-10 mx-auto mb-2 text-neutral-300" />
-                  该学位下暂无课程
+                  {t('degrees.detail.empty_courses', '该学位下暂无课程')}
                 </div>
               ) : (
                 <div className="border border-neutral-200 dark:border-neutral-200">

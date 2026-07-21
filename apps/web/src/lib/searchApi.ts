@@ -231,8 +231,12 @@ function matchQuery(text: string, q: string): boolean {
 
 // =============================================================
 // 热门搜索(空查询时显示)
+// 来源: backend GET /api/v1/popular-searches(本文件不直接 fetch,组件层用 useList)
+// 这里只给个 fallback, 跟 useList('popular-searches') 同源
 // =============================================================
-export const HOT_SEARCHES = ['LangChain', 'RAG', 'Agent', 'vLLM'];
+export const FALLBACK_HOT_SEARCHES = ['LangChain', 'RAG', 'Agent', 'vLLM'];
+/** @deprecated use useList('popular-searches') from lib/cms instead */
+export const HOT_SEARCHES = FALLBACK_HOT_SEARCHES;
 
 // =============================================================
 // 分组工具(给 CommandPalette + SearchPage 用)
@@ -244,17 +248,21 @@ export interface SearchGroup {
   items: SearchResult[];
 }
 
-export function groupResults(results: SearchResult[]): SearchGroup[] {
+export function groupResults(
+  results: SearchResult[],
+  labels?: Record<SearchResultType, string>,
+): SearchGroup[] {
   const order: SearchResultType[] = ['course', 'degree', 'hackathon', 'instructor'];
-  const labels: Record<SearchResultType, string> = {
+  const fallbackLabels: Record<SearchResultType, string> = {
     course: '课程',
     degree: '学位',
     hackathon: '黑客松',
     instructor: '讲师',
   };
+  const finalLabels = labels ?? fallbackLabels;
   return order.map((t) => ({
     type: t,
-    label: labels[t],
+    label: finalLabels[t],
     items: results.filter((r) => r.type === t),
   }));
 }

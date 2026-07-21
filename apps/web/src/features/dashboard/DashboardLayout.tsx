@@ -25,6 +25,7 @@ import { pointsApi } from '../../lib/pointsApi';
 import { progressApi } from '../../lib/progressApi';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../lib/api';
+import { usePageSettings, useI18n, pickPage, pickI18n } from '../../lib/cms';
 
 // P1-2 修复:不再用 useDashboardTheme 独立复刻,改用全局 themeStore
 // 跟 Layout / AdminDashboardPage 共享同一份状态,icon 切换跟实际 class 永远一致
@@ -85,6 +86,13 @@ export function DashboardLayout() {
     ?? (myEnrollments?.[0]?.course?.title ?? null);
   const progressPercent = courseProgress?.percent ?? 0;
 
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: pageData } = usePageSettings('dashboard', ['layout.my_learning', 'layout.no_enrollment', 'layout.learning_center']);
+  const myLearning = pickPage(pageData, 'layout.my_learning', 'zh-CN', t('dashboard.layout.my_learning', '我的学习 · 继续上次'));
+  const noEnrollment = pickPage(pageData, 'layout.no_enrollment', 'zh-CN', t('dashboard.layout.no_enrollment', '选课开始学习'));
+  const learningCenter = pickPage(pageData, 'layout.learning_center', 'zh-CN', t('dashboard.layout.learning_center', '学习中心'));
+
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans dark:bg-neutral-950 dark:text-neutral-900 flex flex-col">
       {/* ============================================================
@@ -98,7 +106,7 @@ export function DashboardLayout() {
             className="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-[#171717] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">返回课程</span>
+            <span className="hidden sm:inline">{t('common.back_to_courses', '返回课程')}</span>
           </Link>
 
           {/* 中:课程名 + 进度条 */}
@@ -107,12 +115,12 @@ export function DashboardLayout() {
               <GraduationCap className="w-3.5 h-3.5 shrink-0 text-[#171717]" />
               <span className="truncate font-medium">
                 {onLearning
-                  ? '我的学习 · 继续上次'
+                  ? myLearning
                   : courseTitle
                   ? courseTitle
                   : user
-                  ? '选课开始学习'
-                  : '学习中心'}
+                  ? noEnrollment
+                  : learningCenter}
               </span>
             </div>
             {/* 进度条只在 sm+ 显示 */}
@@ -131,7 +139,7 @@ export function DashboardLayout() {
               <span className="font-mono font-medium">
                 {userPoints ? userPoints.points.toLocaleString() : '—'}
               </span>
-              <span className="text-neutral-400">积分</span>
+              <span className="text-neutral-400">{t('dashboard.points.label', '积分')}</span>
             </div>
             <div className="flex items-center gap-1 text-cert-500">
               <span>🏆</span>
@@ -141,7 +149,7 @@ export function DashboardLayout() {
             </div>
             <div className="flex items-center gap-1 text-[#171717]">
               <Sparkles className="w-3.5 h-3.5" />
-              <span className="text-neutral-600 dark:text-neutral-600">AI 助教</span>
+              <span className="text-neutral-600 dark:text-neutral-600">{t('dashboard.ai.label', 'AI 助教')}</span>
             </div>
           </div>
 
@@ -197,7 +205,7 @@ function DashboardFallback() {
     >
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-[#171717] border-t-transparent rounded-full animate-spin" />
-        <span className="text-sm">加载中…</span>
+        <span className="text-sm">{pickI18n('common.loading.dots', '加载中…')}</span>
       </div>
     </div>
   );

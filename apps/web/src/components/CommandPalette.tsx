@@ -27,7 +27,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from './ui/Skeleton';
 import { EmptyState } from './ui/EmptyState';
 import { cn } from '../lib/cn';
-import { searchAll, groupResults, HOT_SEARCHES, type SearchResult, type SearchResultType } from '../lib/searchApi';
+import { searchAll, groupResults, FALLBACK_HOT_SEARCHES, HOT_SEARCHES, type SearchResult, type SearchResultType } from '../lib/searchApi';
+import { useList, useI18n } from '../lib/cms';
 
 interface CommandPaletteProps {
   open: boolean;
@@ -65,6 +66,18 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     enabled: open,
     staleTime: 30_000,
   });
+
+  // CMS-driven hot searches(useList('popular-searches') 或 fallback 到 FALLBACK_HOT_SEARCHES)
+  const { data: hotData } = useList<{ keyword: string; isActive?: boolean }>('popular-searches');
+  const hotSearches = useMemo(() => {
+    if (hotData && hotData.length > 0) {
+      return hotData.filter((s) => s.isActive !== false).map((s) => s.keyword);
+    }
+    return FALLBACK_HOT_SEARCHES;
+  }, [hotData]);
+
+  // i18n
+  const { t } = useI18n();
 
   // 拼出"扁平 + 分组"两份数据,给键盘导航 + 渲染共用
   const groups = useMemo(() => {
@@ -222,10 +235,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           {!debouncedQuery && (
             <div className="p-5 sm:p-6">
               <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-3">
-                热门搜索
+                {t('common.search.hot', '热门搜索')}
               </div>
               <div className="flex flex-wrap gap-2">
-                {HOT_SEARCHES.map((h) => (
+                {hotSearches.map((h) => (
                   <button
                     key={h}
                     onClick={() => {

@@ -22,6 +22,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {
   Clock,
   User as UserIcon,
@@ -42,6 +43,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { useSiteSettings, usePageSettings, useI18n, pickSite, pickPage, pickI18n } from '../../lib/cms';
 
 // =============================================================
 // 公共类型(贴近后端 schema,但不引 shared-types 避免循环依赖)
@@ -212,6 +214,10 @@ function CoursesSection() {
     staleTime: 60_000,
   });
 
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: homePages } = usePageSettings('home', ['courses_subhead']);
+
   // 失败 / 空 → 渲染 EmptyState(无 mock fallback)
   const courses = data ?? [];
 
@@ -221,10 +227,10 @@ function CoursesSection() {
         <div className="flex items-end justify-between mb-8 md:mb-10 gap-4">
           <div>
             <h2 className="text-3xl md:text-display-md font-bold text-neutral-900 dark:text-neutral-900">
-              热门课程
+              {t('section.courses.title', '热门课程')}
             </h2>
             <p className="mt-2 text-neutral-600 dark:text-neutral-600 text-sm md:text-base">
-              每门课 4-8 周,学完一个可被验证的能力
+              {pickPage(homePages, 'courses_subhead', 'zh-CN', t('section.courses.sub', '每门课 4-8 周,学完一个可被验证的能力'))}
             </p>
           </div>
           <Link
@@ -250,11 +256,11 @@ function CoursesSection() {
         ) : courses.length === 0 ? (
           <EmptyState
             icon={<BookOpen className="w-6 h-6" />}
-            title="暂无课程"
-            description="课程正在准备中,稍后再来看看吧。"
+            title={t('course.empty.title', '暂无课程')}
+            description={t('course.empty.desc', '课程正在准备中,稍后再来看看吧。')}
             action={
               <Link to="/courses">
-                <Button variant="primary" size="md">浏览全部课程</Button>
+                <Button variant="primary" size="md">{t('course.card.browse_all', '浏览全部课程')}</Button>
               </Link>
             }
           />
@@ -321,7 +327,7 @@ function CoursesSection() {
             </div>
             {isError && (
               <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
-                课程数据加载失败{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
+                {t('common.error.course_load', '课程数据加载失败')}{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
               </p>
             )}
           </>
@@ -345,6 +351,10 @@ function DegreesSection() {
     staleTime: 60_000,
   });
 
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: homePages } = usePageSettings('home', ['degrees_subhead']);
+
   const degrees = data ?? [];
 
   return (
@@ -353,10 +363,10 @@ function DegreesSection() {
         <div className="mb-8 md:mb-10 flex items-end justify-between gap-4">
           <div>
             <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">
-              学位路径
+              {t('section.degrees.title', '学位路径')}
             </h2>
             <p className="mt-2 text-neutral-600 text-sm md:text-base">
-              不是又一张证书,是可被验证的能力图谱
+              {pickPage(homePages, 'degrees_subhead', 'zh-CN', t('section.degrees.sub', '不是又一张证书,是可被验证的能力图谱'))}
             </p>
           </div>
           <Link
@@ -382,11 +392,11 @@ function DegreesSection() {
         ) : degrees.length === 0 ? (
           <EmptyState
             icon={<GraduationCap className="w-6 h-6" />}
-            title="暂无学位"
-            description="学位路径正在准备中。"
+            title={t('degree.empty.title', '暂无学位')}
+            description={t('degree.empty.desc', '学位路径正在准备中。')}
             action={
               <Link to="/degrees">
-                <Button variant="primary" size="md">了解学位</Button>
+                <Button variant="primary" size="md">{t('degree.empty.cta', '了解学位')}</Button>
               </Link>
             }
           />
@@ -458,7 +468,7 @@ function DegreesSection() {
         )}
         {isError && (
           <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
-            数据加载失败{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
+            {t('common.error.data_load', '数据加载失败')}{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
           </p>
         )}
       </div>
@@ -531,6 +541,10 @@ function HackathonsSection() {
     staleTime: 60_000,
   });
 
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: homePages } = usePageSettings('home', ['hackathons_subhead']);
+
   const hackathons = data ?? [];
 
   const main = hackathons[0];
@@ -546,10 +560,10 @@ function HackathonsSection() {
         <div className="flex items-end justify-between mb-8 md:mb-10 gap-4">
           <div>
             <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">
-              黑客松进行中
+              {t('section.hackathons.title', '黑客松进行中')}
             </h2>
             <p className="mt-2 text-neutral-600 text-sm md:text-base">
-              社区、竞赛、激励 —— 让你的能力被看见
+              {pickPage(homePages, 'hackathons_subhead', 'zh-CN', t('section.hackathons.sub', '社区、竞赛、激励 —— 让你的能力被看见'))}
             </p>
           </div>
           <Link
@@ -576,8 +590,8 @@ function HackathonsSection() {
         ) : hackathons.length === 0 ? (
           <EmptyState
             icon={<Trophy className="w-6 h-6" />}
-            title="暂无黑客松"
-            description="下一场黑客松正在筹备中,敬请期待。"
+            title={t('hackathon.empty.title', '暂无黑客松')}
+            description={t('hackathon.empty.desc', '下一场黑客松正在筹备中,敬请期待。')}
           />
         ) : (
           <div className="grid lg:grid-cols-3 gap-6">
@@ -631,7 +645,7 @@ function HackathonsSection() {
         )}
         {isError && (
           <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
-            数据加载失败{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
+            {t('common.error.data_load', '数据加载失败')}{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
           </p>
         )}
       </div>
@@ -648,6 +662,9 @@ function UsersMini() {
 // 7 段:AI 助教 CTA
 // =============================================================
 function AiTutorSection() {
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: homePages } = usePageSettings('home', ['aitutor_subhead', 'aitutor_chip']);
   return (
     <section className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -660,13 +677,13 @@ function AiTutorSection() {
           <div className="relative grid md:grid-cols-2 gap-8 items-center">
             <div>
               <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 text-white font-medium">
-                贯穿全程
+                {pickPage(homePages, 'aitutor_chip', 'zh-CN', t('section.ai.chip', '贯穿全程'))}
               </span>
               <h2 className="mt-4 text-3xl md:text-display-md font-bold">
-                AI 助教,不在抽屉里
+                {t('section.ai.title', 'AI 助教,不在抽屉里')}
               </h2>
               <p className="mt-4 opacity-90 leading-relaxed">
-                每节课、每个项目、每个问题旁边都有它 —— 知道你在学什么,能引用你学过的内容,会用苏格拉底式反问而不只是给答案。
+                {pickPage(homePages, 'aitutor_subhead', 'zh-CN', t('section.ai.sub', '每节课、每个项目、每个问题旁边都有它 —— 知道你在学什么,能引用你学过的内容,会用苏格拉底式反问而不只是给答案。'))}
               </p>
               <Link to="/dashboard/learning" className="inline-block mt-6">
                 <span className="px-6 py-3 rounded-md bg-white text-[#171717] font-medium hover:bg-neutral-100 transition inline-flex items-center gap-2">
@@ -729,6 +746,10 @@ function InstructorsSection() {
     staleTime: 60_000,
   });
 
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: homePages } = usePageSettings('home', ['instructors_subhead']);
+
   // 按 instructor 字段去重,保留前 4 个
   const instructors: Instructor[] = useMemo(() => {
     if (!courses) return [];
@@ -760,8 +781,8 @@ function InstructorsSection() {
     return (
       <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">来自一线的讲师</h2>
-          <p className="mt-2 text-neutral-600 text-sm md:text-base">讲师信息将在课程上线后展示</p>
+          <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">{t('section.instructors.title', '来自一线的讲师')}</h2>
+          <p className="mt-2 text-neutral-600 text-sm md:text-base">{t('section.instructors.empty.sub', '讲师信息将在课程上线后展示')}</p>
         </div>
       </section>
     );
@@ -772,10 +793,10 @@ function InstructorsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 md:mb-10">
           <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">
-            来自一线的讲师
+            {t('section.instructors.title', '来自一线的讲师')}
           </h2>
           <p className="mt-2 text-neutral-600 text-sm md:text-base">
-            不是 PPT 复读机,是正在写代码、正在做产品的人
+            {pickPage(homePages, 'instructors_subhead', 'zh-CN', t('section.instructors.sub', '不是 PPT 复读机,是正在写代码、正在做产品的人'))}
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -989,8 +1010,48 @@ export function HomePage() {
   const termLabel = stats?.currentTermLabel ?? '';
   const hackathonCount = stats?.activeHackathonCount ?? 0;
 
+  // CMS-driven copy (site_settings.brand.hero.* + page_settings.home.*)
+  // 全部 hook,API 失败 fallback 到 I18N_FALLBACK
+  const { data: heroSite } = useSiteSettings([
+    'brand.hero.headline',
+    'brand.hero.subheadline',
+    'brand.hero.term_default',
+    'brand.hero.cta_primary',
+    'brand.hero.cta_secondary',
+    'brand.hero.badge_template',
+  ]);
+  const { data: homePages } = usePageSettings('home', [
+    'courses_subhead',
+    'degrees_subhead',
+    'hackathons_subhead',
+    'aitutor_subhead',
+    'aitutor_chip',
+    'instructors_subhead',
+  ]);
+  const { t } = useI18n();
+  const headline = pickSite(heroSite, 'brand.hero.headline', 'zh-CN', '学完仍然不会做?\n让 AI 时代的能力\n可被看见。');
+  const subheadline = pickSite(heroSite, 'brand.hero.subheadline', 'zh-CN', '课程 + 学位 + 实践项目 + 黑客松 + AI 助教 —— 一条连续的学习回路,不是又一个视频站。');
+  const termDefault = pickSite(heroSite, 'brand.hero.term_default', 'zh-CN', '2026 夏季 · 开放报名');
+  const ctaPrimary = pickSite(heroSite, 'brand.hero.cta_primary', 'zh-CN', '免费开始');
+  const ctaSecondary = pickSite(heroSite, 'brand.hero.cta_secondary', 'zh-CN', '了解学位路径');
+  // 把 headline 切成 3 行(line1 / line2 / line3),line2 加下划线
+  const headlineLines = headline.split('\n');
+  // 构造 badge 字符串
+  const badgeLive = pickSite(heroSite, 'brand.hero.badge_template', 'zh-CN', '{count} 场黑客松进行中')
+    .replace('{count}', String(hackathonCount));
+  const badgeText = termLabel
+    ? `${termLabel} · ${hackathonCount > 0 ? badgeLive : '开放报名'}`
+    : termDefault;
+
   return (
     <div className="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 transition-colors">
+      <Helmet>
+        <title>{pickSite(heroSite, 'brand.hero.headline', 'zh-CN', 'OpenCSG Academy — AI 时代的能力可被看见').replace(/\n/g, ' ')}</title>
+        <meta name="description" content={subheadline.replace(/\n/g, ' ')} />
+        <meta property="og:title" content="OpenCSG Academy" />
+        <meta property="og:description" content={subheadline.replace(/\n/g, ' ')} />
+        <meta property="og:type" content="website" />
+      </Helmet>
       {/* 1 段:HERO */}
       <section
         className="relative overflow-hidden"
@@ -1005,29 +1066,27 @@ export function HomePage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEDE9] text-[#171717] text-xs font-medium mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#171717]" />
-                {termLabel
-                  ? `${termLabel} · ${hackathonCount > 0 ? `${hackathonCount} 场黑客松进行中` : '开放报名'}`
-                  : '2026 夏季 · 开放报名'}
+                {badgeText}
               </div>
               <h1 className="text-4xl md:text-display-lg font-bold tracking-tight leading-[1.1] text-neutral-900">
-                学完仍然不会做?
+                {headlineLines[0] ?? headline}
                 <br />
-                <span className="underline underline-offset-4 decoration-4">让 AI 时代的能力</span>
+                <span className="underline underline-offset-4 decoration-4">{headlineLines[1] ?? ''}</span>
                 <br />
-                可被看见。
+                {headlineLines[2] ?? ''}
               </h1>
               <p className="mt-6 text-lg text-neutral-600 max-w-xl">
-                课程 + 学位 + 实践项目 + 黑客松 + AI 助教 —— 一条连续的学习回路,不是又一个视频站。
+                {subheadline}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link to="/courses">
                   <Button variant="primary" size="lg" leftIcon={<Sparkles className="w-5 h-5" />}>
-                    免费开始
+                    {ctaPrimary}
                   </Button>
                 </Link>
                 <Link to="/degrees">
                   <Button variant="secondary" size="lg" rightIcon={<ArrowUpRight className="w-5 h-5" />}>
-                    了解学位路径
+                    {ctaSecondary}
                   </Button>
                 </Link>
               </div>

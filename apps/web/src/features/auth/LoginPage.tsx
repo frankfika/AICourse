@@ -14,6 +14,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '../../lib/zodResolver';
+import { Helmet } from 'react-helmet-async';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -22,6 +23,7 @@ import { ProviderButtons } from '../../components/auth/ProviderButtons';
 import { AuthShell, AuthTabSwitcher } from '../../components/auth/AuthShell';
 import { useToast } from '../../components/auth/Toast';
 import { useAuth } from '../../lib/auth/AuthProvider';
+import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
 const loginSchema = z.object({
   email: z.string().email('请输入有效邮箱'),
@@ -109,14 +111,8 @@ export function LoginPage() {
         registerHref="/auth/register"
       />
 
-      <header>
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-900">
-          欢迎回来
-        </h1>
-        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-600">
-          继续你的 AI 时代学习路径
-        </p>
-      </header>
+      {/* CMS-driven copy (page_settings.auth.{h1_login, sub_login}) */}
+      <AuthHeader page="login" />
 
       {/* 第三方登录 6 宫格(灰度) */}
       <section className="mt-6">
@@ -125,7 +121,7 @@ export function LoginPage() {
           onProviderClick={handleGrayscaleProviderClick}
         />
         <p className="mt-2 text-[10px] text-center text-neutral-400">
-          已登录过 OpenCSG?系统会自动合并到你的账号
+          {useI18n().t('auth.merged_hint', '已登录过 OpenCSG?系统会自动合并到你的账号')}
         </p>
       </section>
 
@@ -141,7 +137,7 @@ export function LoginPage() {
         <Input
           label="邮箱"
           type="email"
-          placeholder="you@company.com"
+          placeholder={useI18n().t('auth.placeholder.email', 'you@company.com')}
           autoComplete="email"
           required
           fullWidth
@@ -162,13 +158,13 @@ export function LoginPage() {
               to="/auth/forgot"
               className="text-xs text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white"
             >
-              忘记密码?
+              {useI18n().t('auth.forgot', '忘记密码?')}
             </Link>
           </div>
           <Input
             id="login-password"
             type={showPassword ? 'text' : 'password'}
-            placeholder="••••••••"
+            placeholder={useI18n().t('auth.placeholder.password', '••••••••')}
             autoComplete="current-password"
             required
             fullWidth
@@ -216,26 +212,58 @@ export function LoginPage() {
 
       {/* 切换链接 */}
       <p className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-600">
-        还没有账号?{' '}
+        {useI18n().t('auth.no_account', '还没有账号?')}{' '}
         <Link
           to="/auth/register"
           className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white font-medium"
         >
-          免费注册 →
+          {useI18n().t('auth.signup_link', '免费注册 →')}
         </Link>
       </p>
 
       {/* 法律 */}
       <p className="mt-4 text-center text-[10px] text-neutral-400">
-        继续即表示你同意我们的{' '}
+        {useI18n().t('auth.legal_prefix', '继续即表示你同意我们的')}{' '}
         <a href="/terms" className="underline hover:text-neutral-600">
-          服务条款
+          {useI18n().t('auth.legal.terms', '服务条款')}
         </a>{' '}
-        和{' '}
+        {useI18n().t('auth.legal_and', '和')}{' '}
         <a href="/privacy" className="underline hover:text-neutral-600">
-          隐私政策
+          {useI18n().t('auth.legal.privacy', '隐私政策')}
         </a>
       </p>
     </AuthShell>
+  );
+}
+
+/**
+ * AuthHeader — 共享给 LoginPage / RegisterPage 的 CMS-driven h1 + sub
+ * 用 page_settings.auth.{h1_login|sub_login|h1_register|sub_register}
+ * fallback 跟原硬编码值一致
+ */
+function AuthHeader({ page }: { page: 'login' | 'register' }) {
+  const { data } = usePageSettings('auth', page === 'login' ? ['h1_login', 'sub_login'] : ['h1_register', 'sub_register']);
+  const { t } = useI18n();
+  const h1 = pickPage(
+    data,
+    page === 'login' ? 'h1_login' : 'h1_register',
+    'zh-CN',
+    t(page === 'login' ? 'auth.title.login' : 'auth.title.register', page === 'login' ? '欢迎回来' : '创建账号'),
+  );
+  const sub = pickPage(
+    data,
+    page === 'login' ? 'sub_login' : 'sub_register',
+    'zh-CN',
+    t(page === 'login' ? 'auth.sub_login' : 'auth.sub_register', page === 'login' ? '继续你的 AI 时代学习路径' : '注册后立即开始学习 AI 课程'),
+  );
+  return (
+    <header>
+      <Helmet>
+        <title>{h1} · OpenCSG Academy</title>
+        <meta name="description" content={sub} />
+      </Helmet>
+      <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-900">{h1}</h1>
+      <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-600">{sub}</p>
+    </header>
   );
 }

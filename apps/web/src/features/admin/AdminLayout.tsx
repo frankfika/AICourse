@@ -40,8 +40,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     // v1.1.0: 接 AuditLogController + ReviewsController,真后端
     { path: '/admin/reviews', label: '评价管理', icon: Star },
     { path: '/admin/audit', label: '审计日志', icon: ScrollText },
-    // P0-7 占位,系统设置后端 module 暂未提供
-    { path: '/admin/system', label: '系统设置', icon: Settings, comingSoon: true },
+    // CMS: 13 tab 统一管理 (cms-design §4)
+    { path: '/admin/settings', label: '系统设置', icon: Settings },
   ];
 
   return (

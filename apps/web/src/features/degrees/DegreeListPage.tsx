@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { BookOpen, GraduationCap, Sparkles, ArrowUpRight } from 'lucide-react';
 import api from '../../lib/api';
 import type { NanoDegreeWithPath } from '@opencsg/shared-types';
+import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
 export function DegreeListPage() {
   const { data: degrees, isLoading } = useQuery({
@@ -13,19 +15,32 @@ export function DegreeListPage() {
     },
   });
 
+  // CMS-driven copy
+  const { t } = useI18n();
+  const { data: pageData } = usePageSettings('degrees', ['list.eyebrow', 'list.headline', 'list.sub']);
+  const eyebrow = pickPage(pageData, 'list.eyebrow', 'zh-CN', t('degree.eyebrow.list', '/ 02 Nano Degrees'));
+  const headline = pickPage(pageData, 'list.headline', 'zh-CN', t('degree.headline.list', 'LEARNING\nPATHS'));
+  const sub = pickPage(pageData, 'list.sub', 'zh-CN', t('degree.list.sub', '体系化课程路径，从入门到进阶一站式打通，拿下 OpenCSG 认证学位。'));
+  const headlineLines = headline.split('\n');
+
   return (
     <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
+      <Helmet>
+        <title>{`${headline.replace(/\n/g, ' ')} · OpenCSG Academy`}</title>
+        <meta name="description" content={sub} />
+      </Helmet>
       {/* Header banner */}
       <section className="border-b border-[#171717] bg-[#171717] text-white">
         <div className="max-w-7xl mx-auto px-6 py-16 md:py-24">
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-4">
-            / 02 Nano Degrees
+            {eyebrow}
           </div>
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase leading-[0.9] mb-6">
-            LEARNING<br />PATHS
+            {headlineLines[0] ?? headline}
+            <br />{headlineLines[1] ?? ''}
           </h1>
           <p className="text-white/60 text-lg max-w-2xl leading-relaxed">
-            体系化课程路径，从入门到进阶一站式打通，拿下 OpenCSG 认证学位。
+            {sub}
           </p>
         </div>
       </section>
@@ -34,7 +49,7 @@ export function DegreeListPage() {
       <section className="border-b border-[#171717]">
         {isLoading ? (
           <div className="max-w-7xl mx-auto px-6 py-32 text-center text-[#666666] font-medium">
-            加载中...
+            {t('common.loading', '加载中...')}
           </div>
         ) : (
           <div>
@@ -60,7 +75,7 @@ export function DegreeListPage() {
                     <div className="lg:col-span-7 p-8 border-b lg:border-b-0 lg:border-r border-[#171717]">
                       <div className="flex items-center gap-2 mb-4">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest">
-                          <Sparkles className="w-3 h-3" /> Nano Degree
+                          <Sparkles className="w-3 h-3" /> {t('degree.badge', 'Nano Degree')}
                         </span>
                         {isFree ? (
                           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-[#171717] text-[#171717] text-[10px] font-black uppercase tracking-widest">

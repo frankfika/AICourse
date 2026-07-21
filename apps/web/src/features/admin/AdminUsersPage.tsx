@@ -45,6 +45,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Drawer } from '../../components/ui/Drawer';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { cn } from '../../lib/cn';
+import { useEnum } from '../../lib/cms';
 
 interface UserSummary {
   id: string;
@@ -117,7 +118,8 @@ const ROLE_META: Record<string, { label: string; color: string; icon: typeof Shi
   },
 };
 
-const STATUS_COLOR: Record<string, string> = {
+// Fallback: order_status 颜色硬编码(API 失败时),AdminUsersPage 在订单列里用
+const FALLBACK_STATUS_COLOR: Record<string, string> = {
   pending: 'border border-[#171717] text-[#171717]',
   paid: 'bg-[#171717] text-white',
   failed: 'border border-[#171717] text-[#171717] bg-[#F5F4F0]',
@@ -395,9 +397,13 @@ function UserDetailContent({
 }) {
   const [courseInput, setCourseInput] = useState('');
   const [showGrant, setShowGrant] = useState(false);
+  const { getColor: getOrderStatusColor } = useEnum('order_status');
 
   const roleMeta = ROLE_META[detail.role] ?? ROLE_META.student;
   const RoleIcon = roleMeta.icon;
+  // 优先 API colorClass, fallback 走原硬编码
+  const orderStatusClass = (s: string) =>
+    getOrderStatusColor(s) || FALLBACK_STATUS_COLOR[s] || FALLBACK_STATUS_COLOR.pending;
 
   return (
     <div className="divide-y divide-[#EEEDE9]">
@@ -516,7 +522,7 @@ function UserDetailContent({
                 <span
                   className={cn(
                     'inline-flex items-center px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest',
-                    STATUS_COLOR[o.status] ?? STATUS_COLOR.pending,
+                    orderStatusClass(o.status),
                   )}
                 >
                   {o.status}
