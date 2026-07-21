@@ -47,6 +47,7 @@ export function LoginPage() {
   const from = params.get('from') ?? '/';
   const { signIn, user, isAuthenticating } = useAuth();
   const { showToast } = useToast();
+  const { t } = useI18n();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -121,7 +122,7 @@ export function LoginPage() {
           onProviderClick={handleGrayscaleProviderClick}
         />
         <p className="mt-2 text-[10px] text-center text-neutral-400">
-          {useI18n().t('auth.merged_hint', '已登录过 OpenCSG?系统会自动合并到你的账号')}
+          {t('auth.merged_hint', '已登录过 OpenCSG?系统会自动合并到你的账号')}
         </p>
       </section>
 
@@ -137,7 +138,7 @@ export function LoginPage() {
         <Input
           label="邮箱"
           type="email"
-          placeholder={useI18n().t('auth.placeholder.email', 'you@company.com')}
+          placeholder={t('auth.placeholder.email', 'you@company.com')}
           autoComplete="email"
           required
           fullWidth
@@ -158,13 +159,13 @@ export function LoginPage() {
               to="/auth/forgot"
               className="text-xs text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white"
             >
-              {useI18n().t('auth.forgot', '忘记密码?')}
+              {t('auth.forgot', '忘记密码?')}
             </Link>
           </div>
           <Input
             id="login-password"
             type={showPassword ? 'text' : 'password'}
-            placeholder={useI18n().t('auth.placeholder.password', '••••••••')}
+            placeholder={t('auth.placeholder.password', '••••••••')}
             autoComplete="current-password"
             required
             fullWidth
@@ -212,24 +213,24 @@ export function LoginPage() {
 
       {/* 切换链接 */}
       <p className="mt-6 text-center text-sm text-neutral-600 dark:text-neutral-600">
-        {useI18n().t('auth.no_account', '还没有账号?')}{' '}
+        {t('auth.no_account', '还没有账号?')}{' '}
         <Link
           to="/auth/register"
           className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white font-medium"
         >
-          {useI18n().t('auth.signup_link', '免费注册 →')}
+          {t('auth.signup_link', '免费注册 →')}
         </Link>
       </p>
 
       {/* 法律 */}
       <p className="mt-4 text-center text-[10px] text-neutral-400">
-        {useI18n().t('auth.legal_prefix', '继续即表示你同意我们的')}{' '}
+        {t('auth.legal_prefix', '继续即表示你同意我们的')}{' '}
         <a href="/terms" className="underline hover:text-neutral-600">
-          {useI18n().t('auth.legal.terms', '服务条款')}
+          {t('auth.legal.terms', '服务条款')}
         </a>{' '}
-        {useI18n().t('auth.legal_and', '和')}{' '}
+        {t('auth.legal_and', '和')}{' '}
         <a href="/privacy" className="underline hover:text-neutral-600">
-          {useI18n().t('auth.legal.privacy', '隐私政策')}
+          {t('auth.legal.privacy', '隐私政策')}
         </a>
       </p>
     </AuthShell>
