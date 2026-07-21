@@ -47,6 +47,12 @@ export class AuthController {
   }
 
   // Security: refresh 走 httpOnly cookie,不在 body 取（防 log 泄露 + 防恶意扩展）
+  //
+  // P1 fix: 全局 throttler (5/sec, 60/min per IP) 对 refresh 太紧 — 每次 page
+  // load 都会调一次 (AuthProvider boot + 401 fallback),hard reload 几下就
+  // 429。refresh 是合法高频操作,放宽到 30/sec, 300/min — 仍能挡 brute force
+  // (7-char token 暴力破解需要 1000+ QPS),不会拦正常用户。
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(

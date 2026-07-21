@@ -81,10 +81,15 @@ export interface AuthAdapter {
    * 列当前用户的所有 Identity(provider 绑定的)
    * 后端 spec §9.3: GET /auth/identities
    *
-   * Phase 1 状态: 后端未实现,LocalAuthAdapter 兜底返回空数组(只含 local)
+   * P1 fix: 接受 user 参数(由 AuthProvider 从 session 传入),不再内部调
+   *   refresh()。原因:旧实现 listMyIdentities 自己再 refresh 一次,
+   *   跟 AuthProvider boot 的 refresh 重复 → 全局 5/sec 限流被打爆,
+   *   hard reload 全部 429。
+   *
+   * Phase 1 状态: 后端未实现,LocalAuthAdapter 兜底返回 [local identity]
    * 见 LocalAuthAdapter.listMyIdentities
    */
-  listMyIdentities(): Promise<Identity[]>;
+  listMyIdentities(user: AuthUser | null): Promise<Identity[]>;
 
   /** 解绑某个 Identity — 后端 DELETE /auth/identities/:id */
   unbindProvider(identityId: string): Promise<void>;

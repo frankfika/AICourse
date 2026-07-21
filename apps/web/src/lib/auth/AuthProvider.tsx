@@ -41,6 +41,7 @@ import { useAuthStore } from '../../stores/authStore';
 import type {
   AuthAdapter,
   AuthSession,
+  AuthUser,
   Identity,
   ProviderInfo,
   SignInInput,
@@ -98,10 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const adapter = adapterRef.current;
 
   /**
-   * 启动:探活 + 拉 providers
+   * 启动:探活 + 拉 providers + 拉 identities
    *
    * 注: spec §9.4 说用 GET /auth/me,但后端 P0-1 未实现
    * 这里用 /auth/refresh(cookie 自动带)代替 — 200 说明有 session,401 说明没
+   *
+   * P1 fix: 顺序
+   *   1) refresh() 一次 (Promise.all + listProviders 并发,不重复 refresh)
+   *   2) 如果 session 拿到 → setAuth(user, token) 写到 store
+   *   3) listMyIdentities 复用已拿到的 user,不再内部 refresh (旧实现每次 list 又
+   *      refresh 一次 → 5/sec 全局限流被打爆 → 后续 hard reload 全部 429)
    */
   useEffect(() => {
     let cancelled = false;
@@ -112,11 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           adapter.listProviders(),
         ]);
         if (cancelled) return;
+        let activeUser: AuthUser | null = null;
         if (session) {
           setAuth(session.user, session.accessToken);
-          // 拉 identities (Phase 1: 只返回 local)
-          const idents = await adapter.listMyIdentities();
-          if (!cancelled) setIdentities(idents);
+          activeUser = session.user;
         } else {
           // refresh 失败 (401 = 未登录) — 但如果 store 已经有 user (上次登录遗留),
           // 保留 user, 仅清 identities (避免每次 mount 把已登录用户踢出)
@@ -125,8 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!useAuthStore.getState().user) {
             clearAuth();
           }
-          setIdentities([]);
+          activeUser = useAuthStore.getState().user;
         }
+        // 拉 identities — 传入 activeUser,避免 listMyIdentities 内部再 refresh
+        const idents = await adapter.listMyIdentities(activeUser);
+        if (!cancelled) setIdentities(idents);
         setProviders(providerList);
       } catch (err) {
         if (cancelled) return;
@@ -150,9 +159,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (input: SignInInput) => {
       const session = await adapter.signIn(input);
       setAuth(session.user, session.accessToken);
-      // 登录后立即拉 identities
+      // 登录后立即拉 identities(传入 user,不再内部 refresh)
       try {
-        const idents = await adapter.listMyIdentities();
+        const idents = await adapter.listMyIdentities(session.user);
         setIdentities(idents);
       } catch {
         /* ignore */

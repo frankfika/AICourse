@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
+import { useAuth } from '../lib/auth/AuthProvider';
 import { useTheme, useThemeStore } from '../stores/themeStore';
 import { CommandPalette } from './CommandPalette';
 import { cn } from '../lib/cn';
@@ -97,7 +98,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const toggleTheme = useThemeStore((s) => s.toggle);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  // P1 fix: 走 signOut() (POST /auth/logout + 清 httpOnly cookie),不是只 clearAuth
+  // 旧实现只清内存/sessionStorage,cookie 留着 → 刷新后 AuthProvider 探活又登录回来
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -120,8 +123,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navItems = useNavItems();
 
-  const handleLogout = () => {
-    clearAuth();
+  const handleLogout = async () => {
+    // signOut 内部: await adapter.signOut() (POST /auth/logout 清 cookie) → setAccessToken(null) → clearAuth
+    // await 让 logout 请求飞完再 navigate,否则 navigate 触发 unmount 会 cancel
+    await signOut();
     navigate('/');
   };
 

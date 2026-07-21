@@ -139,20 +139,25 @@ export class LocalAuthAdapter implements AuthAdapter {
    *   - 后端有 cookie → 兜底返回 [local identity] (Phase 1 本地账号永远存在)
    *   - 后端没 cookie / 401 → 返回 []
    *
+   * P1 fix: 不再内部调 this.refresh(),改由调用方(AuthProvider)传入 user
+   *   - 旧逻辑: AuthProvider mount 时调 refresh + listMyIdentities 内部再调 refresh,
+   *     → 同一 page load 触发 2-3 次 /auth/refresh,5/sec 全局限流被快速打爆,
+   *     后续 hard reload 全部 429。
+   *   - 新逻辑: refresh 只调一次(listProviders 之前 Promise.all),listMyIdentities
+   *     复用已拿到的 user。
+   *
    * TODO(backend): 等后端 P2 实现 GET /auth/identities 时切到真接口
    */
-  async listMyIdentities(): Promise<Identity[]> {
-    // 先 refresh 探活 — 有 cookie 就有 session
-    const session = await this.refresh();
-    if (!session) return [];
+  async listMyIdentities(user: { id: string; email: string; name: string } | null): Promise<Identity[]> {
+    if (!user) return [];
     // Phase 1: 只返回 local identity,等后端 P2 接真接口
     return [
       {
-        id: `local-${session.user.id}`,
+        id: `local-${user.id}`,
         provider: 'local',
-        providerUserId: session.user.id,
-        email: session.user.email,
-        displayName: session.user.name,
+        providerUserId: user.id,
+        email: user.email,
+        displayName: user.name,
         linkedAt: new Date().toISOString(),
         lastUsedAt: new Date().toISOString(),
         isPrimary: true,
