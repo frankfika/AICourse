@@ -44,6 +44,8 @@ import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { useSiteSettings, usePageSettings, useI18n, pickSite, pickPage, pickI18n } from '../../lib/cms';
+import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
+import { cn } from '../../lib/cn';
 
 // =============================================================
 // 公共类型(贴近后端 schema,但不引 shared-types 避免循环依赖)
@@ -1043,6 +1045,9 @@ export function HomePage() {
     ? `${termLabel} · ${hackathonCount > 0 ? badgeLive : '开放报名'}`
     : termDefault;
 
+  // 向下滚 → 收起顶部 hero, 向上滚 → 展开 (iOS Safari / Twitter 风格)
+  const { ref: heroRef, isCollapsed } = useCollapsibleHero<HTMLElement>({ threshold: 120 });
+
   return (
     <div className="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 transition-colors">
       <Helmet>
@@ -1052,13 +1057,18 @@ export function HomePage() {
         <meta property="og:description" content={subheadline.replace(/\n/g, ' ')} />
         <meta property="og:type" content="website" />
       </Helmet>
-      {/* 1 段:HERO */}
+      {/* 1 段:HERO (collapsible on scroll) */}
       <section
-        className="relative overflow-hidden"
+        ref={heroRef}
+        className={cn(
+          'relative transition-all duration-300 ease-out',
+          isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[1600px] opacity-100',
+        )}
         style={{
           background:
             'radial-gradient(ellipse at top, rgba(23,23,23,0.06), transparent 60%), radial-gradient(ellipse at bottom right, rgba(163,163,163,0.08), transparent 50%)',
         }}
+        aria-hidden={isCollapsed}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">

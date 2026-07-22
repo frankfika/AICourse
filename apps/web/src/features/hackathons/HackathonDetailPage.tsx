@@ -7,37 +7,26 @@ import {
   Calendar,
   MapPin,
   Users,
-  Trophy,
   ScrollText,
   Megaphone,
-  UsersRound,
-  FileText,
   Edit,
   ArrowUpRight,
-  Clock,
 } from 'lucide-react';
-import { useAuthStore } from '../../stores/authStore';
 import { hackathonsApi } from '../../lib/hackathonsApi';
 import { HackathonStatusBadge } from './HackathonStatusBadge';
-import { RegistrationButton } from './RegistrationButton';
 import { AnnouncementList } from './AnnouncementList';
-import { TeamPanel } from './TeamPanel';
-import { SubmissionPanel } from './SubmissionPanel';
 import type { HackathonWithDetails } from '@opencsg/shared-types';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
 const TABS = [
   { key: 'overview', label: '概览', icon: ScrollText },
   { key: 'announcements', label: '公告', icon: Megaphone },
-  { key: 'teams', label: '队伍', icon: UsersRound },
-  { key: 'submissions', label: '作品', icon: FileText },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
 
 export function HackathonDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const user = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
   const { data: hackathon, isLoading } = useQuery<HackathonWithDetails>({
@@ -57,10 +46,10 @@ export function HackathonDetailPage() {
   // CMS-driven copy
   const { t } = useI18n();
   const { data: pageData } = usePageSettings('hackathons', [
-    'detail.back', 'detail.countdown_template', 'detail.panel_label_desc', 'detail.panel_label_rules', 'detail.empty_judges',
+    'detail.back', 'detail.cta_registration', 'detail.panel_label_desc', 'detail.panel_label_rules', 'detail.empty_judges',
   ]);
   const back = pickPage(pageData, 'detail.back', 'zh-CN', t('hackathon.detail.back', 'Back To Hackathons'));
-  const countdownTpl = pickPage(pageData, 'detail.countdown_template', 'zh-CN', t('hackathon.countdown.template', '还有 {days} 天开始'));
+  const ctaDefault = pickPage(pageData, 'detail.cta_registration', 'zh-CN', t('hackathon.cta.registration', '前往报名'));
   const panelDesc = pickPage(pageData, 'detail.panel_label_desc', 'zh-CN', t('hackathon.panel.desc', '01 / Description'));
   const panelRules = pickPage(pageData, 'detail.panel_label_rules', 'zh-CN', t('hackathon.panel.rules', '02 / Rules'));
   const emptyJudges = pickPage(pageData, 'detail.empty_judges', 'zh-CN', t('hackathon.panel.empty_judges', '评委待定'));
@@ -82,13 +71,12 @@ export function HackathonDetailPage() {
     );
   }
 
-  const isOrganizer = !!user && hackathon.organizerId === user.id;
-  const isAdmin = user?.role === 'admin';
-  const isRegistered = hackathon.myRegistration?.status === 'registered';
-
   const startDate = new Date(hackathon.startDate);
   const endDate = new Date(hackathon.endDate);
-  const days = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / 86_400_000));
+  // 基础信息 (描述 / 规则 / 奖品 / 评委) 已经在 tab 里, hero 只挂 1 个外链 CTA。
+  // 报名 / 了解更多 / 官网 等都走同一个链接, label 可配, 留空用 CMS default。
+  const regUrl = hackathon.registrationUrl;
+  const regLabel = (hackathon.registrationLabel || '').trim() || ctaDefault;
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
@@ -124,17 +112,12 @@ export function HackathonDetailPage() {
           <div className="lg:col-span-5 p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-[#171717] text-white">
             <div className="flex items-center gap-2 mb-6 flex-wrap">
               <HackathonStatusBadge status={hackathon.status} className="border-white text-white bg-white text-[#171717]" />
-              {isOrganizer && (
-                <span className="inline-flex items-center px-2 py-0.5 border border-white/30 text-white text-[10px] font-black uppercase tracking-widest">
-                  {t('hackathon.organizer.label', 'Organizer')}
-                </span>
-              )}
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-[0.95] mb-6 uppercase">
               {hackathon.title}
             </h1>
 
-            {/* Stats grid */}
+            {/* 基础信息 (banner + 这些字段都是 admin 提前填好的) */}
             <div className="grid grid-cols-2 gap-0 border border-white/20 mb-8">
               <div className="p-4 border-r border-b border-white/20">
                 <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1 flex items-center gap-1">
@@ -166,32 +149,25 @@ export function HackathonDetailPage() {
               </div>
             </div>
 
-            {/* Countdown / CTA */}
-            <div className="flex flex-wrap items-center gap-3">
-              {user ? <RegistrationButton hackathon={hackathon} /> : (
-                <Link
-                  to="/login"
+            {/* 1 个外链 CTA: 报名 / 了解更多 都走这一个, admin 配链接 + 可选 label。
+                没配链接就显示 fallback 提示, 引导用户看下方公告。 */}
+            <div className="flex flex-col gap-3">
+              {regUrl ? (
+                <a
+                  href={regUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-between gap-6 bg-white text-[#171717] px-6 py-4 font-black uppercase tracking-wider text-sm hover:bg-[#EEEDE9] transition-colors"
                 >
-                  <span>{t('hackathon.cta.login', 'Login to Join')}</span>
+                  <span>{regLabel}</span>
                   <ArrowUpRight className="w-4 h-4" />
-                </Link>
-              )}
-              {isAdmin && (
-                <Link
-                  to={`/admin/hackathons?edit=${hackathon.id}`}
-                  className="inline-flex items-center gap-2 border border-white/30 text-white px-4 py-2.5 text-xs font-black uppercase tracking-widest hover:bg-white/10"
-                >
-                  <Edit className="w-3.5 h-3.5" /> {t('hackathon.admin.label', 'Admin')}
-                </Link>
+                </a>
+              ) : (
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                  {t('hackathon.cta.empty', '组织者暂未配置外链, 详情请见下方公告')}
+                </div>
               )}
             </div>
-
-            {days > 0 && hackathon.status === 'upcoming' && (
-              <div className="mt-4 text-[10px] font-black uppercase tracking-widest text-white/50 flex items-center gap-2">
-                <Clock className="w-3 h-3" /> {countdownTpl.replace('{days}', String(days))}
-              </div>
-            )}
           </div>
         </div>
       </section>
@@ -237,7 +213,6 @@ export function HackathonDetailPage() {
                 {hackathon.prizes && (
                   <div className="border-2 border-[#171717] bg-white">
                     <div className="bg-[#171717] text-white p-4 flex items-center gap-2">
-                      <Trophy className="w-4 h-4" />
                       <span className="text-[10px] font-black uppercase tracking-widest">{t('hackathon.prizes.label', 'Prizes')}</span>
                     </div>
                     <div className="p-5">
@@ -270,12 +245,6 @@ export function HackathonDetailPage() {
           )}
 
           {activeTab === 'announcements' && <AnnouncementList announcements={announcements} />}
-          {activeTab === 'teams' && (
-            <TeamPanel hackathonId={hackathon.id} maxTeamSize={hackathon.maxTeamSize} isRegistered={isRegistered} />
-          )}
-          {activeTab === 'submissions' && (
-            <SubmissionPanel hackathonId={hackathon.id} isRegistered={isRegistered} />
-          )}
         </div>
       </section>
     </div>

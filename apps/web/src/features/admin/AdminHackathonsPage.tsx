@@ -49,6 +49,8 @@ const EMPTY_FORM = {
   location: '',
   rules: '',
   prizes: '',
+  registrationUrl: '',
+  registrationLabel: '',
 };
 
 export function AdminHackathonsPage() {
@@ -117,6 +119,8 @@ export function AdminHackathonsPage() {
       location: h.location || '',
       rules: h.rules || '',
       prizes: h.prizes || '',
+      registrationUrl: h.registrationUrl || '',
+      registrationLabel: h.registrationLabel || '',
     });
   };
 
@@ -253,6 +257,25 @@ export function AdminHackathonsPage() {
               multiline
             />
           </div>
+          <div className="mt-6 pt-4 border-t border-[#EEEDE9]">
+            <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-3">
+              / 外链 CTA(报名 / 了解更多 / 官网 都走这一个; 留空不显示按钮)
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Field
+                label="外链 URL"
+                value={form.registrationUrl}
+                onChange={(v) => setForm({ ...form, registrationUrl: v })}
+                placeholder="https://..."
+              />
+              <Field
+                label="按钮文案 (留空默认 前往报名)"
+                value={form.registrationLabel}
+                onChange={(v) => setForm({ ...form, registrationLabel: v })}
+                placeholder="前往报名"
+              />
+            </div>
+          </div>
           <div className="flex gap-2 mt-6 pt-4 border-t border-[#EEEDE9]">
             <button
               type="submit"
@@ -340,6 +363,7 @@ function Field({
   type = 'text',
   required,
   multiline,
+  placeholder,
 }: {
   label: string;
   value: string;
@@ -347,6 +371,7 @@ function Field({
   type?: string;
   required?: boolean;
   multiline?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div>
@@ -368,6 +393,7 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required={required}
+          placeholder={placeholder}
           className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors"
         />
       )}

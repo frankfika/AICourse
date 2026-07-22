@@ -278,6 +278,8 @@ export interface Hackathon {
   rules?: string | null;
   prizes?: string | null;
   organizerId?: string | null;
+  registrationUrl?: string | null;
+  registrationLabel?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -584,6 +586,8 @@ export interface CreateHackathonRequest {
   location?: string;
   rules?: string;
   prizes?: string;
+  registrationUrl?: string;
+  registrationLabel?: string;
 }
 
 export interface UpdateHackathonRequest extends Partial<CreateHackathonRequest> {}

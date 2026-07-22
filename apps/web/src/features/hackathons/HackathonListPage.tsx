@@ -8,6 +8,8 @@ import { useAuthStore } from '../../stores/authStore';
 import { hackathonsApi } from '../../lib/hackathonsApi';
 import { HackathonCard } from './HackathonCard';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
+import { cn } from '../../lib/cn';
 
 const FALLBACK_TABS: { key: HackathonStatus | 'all'; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -53,14 +55,24 @@ export function HackathonListPage() {
   const emptyTitle = pickPage(pageData, 'list.empty_title', 'zh-CN', t('hackathon.list.empty_title', '没有找到符合条件的黑客松'));
   const headlineLines = headline.split('\n');
 
+  // 向下滚 → 收起顶部 hero, 向上滚 → 展开 (iOS Safari / Twitter 风格)
+  const { ref: heroRef, isCollapsed } = useCollapsibleHero<HTMLElement>({ threshold: 120 });
+
   return (
     <div className="bg-[#F5F4F0] text-[#171717]">
       <Helmet>
         <title>{`${headline.replace(/\n/g, ' ')} · OpenCSG Academy`}</title>
         <meta name="description" content={sub} />
       </Helmet>
-      {/* Hero — black */}
-      <section className="border-b border-[#171717] bg-[#171717] text-white">
+      {/* Hero — black (collapsible on scroll) */}
+      <section
+        ref={heroRef}
+        className={cn(
+          'border-b border-[#171717] bg-[#171717] text-white overflow-hidden transition-all duration-300 ease-out',
+          isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1200px] opacity-100',
+        )}
+        aria-hidden={isCollapsed}
+      >
         <div className="max-w-7xl mx-auto px-6 py-16 md:py-24">
           <div className="flex items-center gap-2 mb-4">
             <Rocket className="w-4 h-4 text-white/60" />

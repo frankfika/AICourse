@@ -38,6 +38,8 @@ export class HackathonsService {
     location: true,
     rules: true,
     prizes: true,
+    registrationUrl: true,
+    registrationLabel: true,
     organizerId: true,
     createdAt: true,
     updatedAt: true,

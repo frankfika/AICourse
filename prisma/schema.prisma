@@ -381,6 +381,9 @@ model Hackathon {
   location         String?
   rules            String?         @db.Text
   prizes           String?         @db.Text
+  // 外部 CTA 链接(基础信息在 tab 里, 详情页只挂 1 个外链: 报名 / 了解更多)
+  registrationUrl  String?         @map("registration_url")
+  registrationLabel String?        @map("registration_label")
   organizerId      String?         @map("organizer_id")
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")

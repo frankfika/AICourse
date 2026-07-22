@@ -73,6 +73,16 @@ export class CreateHackathonDto {
   @IsOptional()
   @IsString()
   prizes?: string;
+
+  @ApiPropertyOptional({ description: '外链 CTA URL (报名 / 了解更多 / 官网 等任意一个)' })
+  @IsOptional()
+  @IsUrl()
+  registrationUrl?: string;
+
+  @ApiPropertyOptional({ description: '外链 CTA 文案, 留空默认 "前往报名"' })
+  @IsOptional()
+  @IsString()
+  registrationLabel?: string;
 }
 
 export class UpdateHackathonDto extends CreateHackathonDto {}

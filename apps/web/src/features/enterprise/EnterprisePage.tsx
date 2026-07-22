@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useList, usePageSettings, useSiteSettings, useI18n, pickPage, pickSite } from '../../lib/cms';
+import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
+import { cn } from '../../lib/cn';
 
 // 复用 site/stats 的 KPI,4 个 slot 都从真实数据映射, 避免假数字
 interface SiteStats {
@@ -154,6 +156,8 @@ export function EnterprisePage() {
   const heroCtaPrimary = pickPage(entPages, 'hero.cta_primary', 'zh-CN', t('enterprise.cta.primary', 'Book 1v1 Consultation'));
   const heroCtaSecondary = pickPage(entPages, 'hero.cta_secondary', 'zh-CN', t('enterprise.cta.secondary', 'View Cases'));
   const heroLines = heroHeadline.split('\n');
+  // 向下滚 → 收起顶部 hero, 向上滚 → 展开 (iOS Safari / Twitter 风格)
+  const { ref: heroRef, isCollapsed } = useCollapsibleHero<HTMLElement>({ threshold: 120 });
   // Method copy
   const methodEyebrow = pickPage(entPages, 'method.eyebrow', 'zh-CN', t('enterprise.eyebrow.method', '/ 01 Method'));
   const methodHeadline = pickPage(entPages, 'method.headline', 'zh-CN', t('enterprise.headline.method', 'How We\nWork'));
@@ -202,7 +206,15 @@ export function EnterprisePage() {
         <meta name="description" content={heroSub} />
       </Helmet>
       {/* ==================== HERO (FULL BLACK) ==================== */}
-      <section className="border-b border-[#171717] bg-[#171717] text-white">
+      {/* 向下滚 → 收起, 向上滚 → 展开 (iOS Safari / Twitter 风格) */}
+      <section
+        ref={heroRef}
+        className={cn(
+          'border-b border-[#171717] bg-[#171717] text-white overflow-hidden transition-all duration-300 ease-out',
+          isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1200px] opacity-100',
+        )}
+        aria-hidden={isCollapsed}
+      >
         <div className="max-w-7xl mx-auto px-6 py-20 md:py-32">
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-4 flex items-center gap-2">
             <Building2 className="w-3.5 h-3.5" /> {heroEyebrow}

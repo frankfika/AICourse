@@ -51,6 +51,7 @@ import { Button } from '../../components/ui/Button';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { cn } from '../../lib/cn';
 import { useEnum, useList, usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 
 // =============================================================
 // 类型(与 API 实际返回对齐)
@@ -153,6 +154,9 @@ export function CourseListPage() {
   ]);
   const { t } = useI18n();
   const coursesH1 = pickPage(pageData, 'list.h1', 'zh-CN', t('courses.list.h1', '课程大厅'));
+
+  // 向下滚 → 收起顶部 hero (含搜索框), 向上滚 → 展开 (iOS Safari / Twitter 风格)
+  const { ref: heroRef, isCollapsed } = useCollapsibleHero<HTMLElement>({ threshold: 120 });
 
   const [input, setInput] = useState(urlQ);
   const [debouncedQ, setDebouncedQ] = useState(urlQ);
@@ -278,8 +282,15 @@ export function CourseListPage() {
         <title>{`${coursesH1} · OpenCSG Academy`}</title>
         <meta name="description" content="从系统化课程中找到你的下一步" />
       </Helmet>
-      {/* Header banner */}
-      <section className="border-b border-neutral-200 bg-neutral-0 dark:bg-neutral-100">
+      {/* Header banner (collapsible on scroll) */}
+      <section
+        ref={heroRef}
+        className={cn(
+          'border-b border-neutral-200 bg-neutral-0 dark:bg-neutral-100 transition-all duration-300 ease-out',
+          isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[1200px] opacity-100',
+        )}
+        aria-hidden={isCollapsed}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12">
           <h1 className="text-3xl md:text-display-md font-bold text-neutral-900 dark:text-neutral-900">
             {coursesH1}

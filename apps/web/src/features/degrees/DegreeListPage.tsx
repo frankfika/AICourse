@@ -5,6 +5,8 @@ import { BookOpen, GraduationCap, Sparkles, ArrowUpRight } from 'lucide-react';
 import api from '../../lib/api';
 import type { NanoDegreeWithPath } from '@opencsg/shared-types';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
+import { cn } from '../../lib/cn';
 
 export function DegreeListPage() {
   const { data: degrees, isLoading } = useQuery({
@@ -23,14 +25,24 @@ export function DegreeListPage() {
   const sub = pickPage(pageData, 'list.sub', 'zh-CN', t('degree.list.sub', '体系化课程路径，从入门到进阶一站式打通，拿下 OpenCSG 认证学位。'));
   const headlineLines = headline.split('\n');
 
+  // 向下滚 → 收起顶部 hero, 向上滚 → 展开 (iOS Safari / Twitter 风格)
+  const { ref: heroRef, isCollapsed } = useCollapsibleHero<HTMLElement>({ threshold: 120 });
+
   return (
     <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
       <Helmet>
         <title>{`${headline.replace(/\n/g, ' ')} · OpenCSG Academy`}</title>
         <meta name="description" content={sub} />
       </Helmet>
-      {/* Header banner */}
-      <section className="border-b border-[#171717] bg-[#171717] text-white">
+      {/* Header banner (collapsible on scroll) */}
+      <section
+        ref={heroRef}
+        className={cn(
+          'border-b border-[#171717] bg-[#171717] text-white overflow-hidden transition-all duration-300 ease-out',
+          isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[1200px] opacity-100',
+        )}
+        aria-hidden={isCollapsed}
+      >
         <div className="max-w-7xl mx-auto px-6 py-16 md:py-24">
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-4">
             {eyebrow}
@@ -63,7 +75,7 @@ export function DegreeListPage() {
                     idx < (degrees?.length ?? 0) - 1 ? 'border-b border-[#171717]' : ''
                   }`}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-12">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 max-w-7xl mx-auto px-6">
                     {/* Number column */}
                     <div className="lg:col-span-1 p-8 border-b lg:border-b-0 lg:border-r border-[#171717] flex lg:items-start">
                       <span className="text-3xl lg:text-5xl font-black tracking-tighter text-[#A3A3A3]">
