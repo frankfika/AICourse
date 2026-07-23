@@ -9,7 +9,7 @@ import { Prisma } from '@prisma/client';
 export class CmsI18nService {
   constructor(private readonly prisma: PrismaService) {}
 
-  listMessages(locale?: string, category?: string) {
+  listMessages(locale?: string, category?: 'common' | 'auth' | 'course' | 'hackathon' | 'degree' | 'enterprise' | 'admin') {
     return this.prisma.i18nMessage.findMany({
       where: {
         ...(locale ? { locale } : {}),

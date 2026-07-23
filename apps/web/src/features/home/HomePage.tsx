@@ -22,7 +22,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Seo } from '../../components/Seo';
 import {
   Clock,
   User as UserIcon,
@@ -224,14 +224,14 @@ function CoursesSection() {
   const courses = data ?? [];
 
   return (
-    <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">
+    <section className="py-16 md:py-24 bg-[#F5F4F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between mb-8 md:mb-10 gap-4">
           <div>
-            <h2 className="text-3xl md:text-display-md font-bold text-neutral-900 dark:text-neutral-900">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">
               {t('section.courses.title', '热门课程')}
             </h2>
-            <p className="mt-2 text-neutral-600 dark:text-neutral-600 text-sm md:text-base">
+            <p className="mt-2 text-[#666666] text-sm md:text-base">
               {pickPage(homePages, 'courses_subhead', 'zh-CN', t('section.courses.sub', '每门课 4-8 周,学完一个可被验证的能力'))}
             </p>
           </div>
@@ -273,27 +273,27 @@ function CoursesSection() {
                 <Link
                   key={course.id}
                   to={`/courses/${course.id}`}
-                  className="group block rounded-xl bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 hover:border-[#171717] transition overflow-hidden"
+                  className="group block bg-[#F5F4F0] border border-[#171717] hover:bg-[#EEEDE9] transition overflow-hidden"
                 >
                   <div
                     className={`aspect-video ${getCourseCoverBg(course.tags)} relative flex items-end p-4`}
                   >
-                    <span className="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium text-neutral-900">
+                    <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
                       {course.tags || 'LLM 应用'}
                     </span>
-                    <span className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full bg-cert-500 text-white font-medium">
+                    <span className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-cert-500 text-white font-medium">
                       {course.level}
                     </span>
                   </div>
                   <div className="p-5">
-                    <h3 className="font-semibold text-lg text-neutral-900 line-clamp-2">
+                    <h3 className="font-semibold text-lg text-[#171717] line-clamp-2">
                       {course.title}
                     </h3>
-                    <p className="mt-2 text-sm text-neutral-600 line-clamp-2">
+                    <p className="mt-2 text-sm text-[#666666] line-clamp-2">
                       {course.description}
                     </p>
                     <div className="mt-4 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-neutral-600">
+                      <div className="flex items-center gap-2 text-[#666666]">
                         <span className="flex items-center gap-1">
                           <UserIcon className="w-3.5 h-3.5" />
                           {course.instructor}
@@ -315,7 +315,7 @@ function CoursesSection() {
                       ) : course.costType === 'charity' ? (
                         <span className="text-xs text-warning-500 font-medium">公益</span>
                       ) : (
-                        <span className="text-sm font-mono font-medium text-neutral-900">
+                        <span className="text-sm font-mono font-medium text-[#171717]">
                           ¥ {Number(course.price).toFixed(0)}
                         </span>
                       )}
@@ -364,10 +364,10 @@ function DegreesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 md:mb-10 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">
               {t('section.degrees.title', '学位路径')}
             </h2>
-            <p className="mt-2 text-neutral-600 text-sm md:text-base">
+            <p className="mt-2 text-[#666666] text-sm md:text-base">
               {pickPage(homePages, 'degrees_subhead', 'zh-CN', t('section.degrees.sub', '不是又一张证书,是可被验证的能力图谱'))}
             </p>
           </div>
@@ -410,15 +410,15 @@ function DegreesSection() {
                 <Link
                   key={degree.id}
                   to={`/degrees/${degree.id}`}
-                  className={`block rounded-xl p-6 transition ${
+                  className={`block p-6 transition ${
                     isHot
-                      ? 'border-2 border-[#171717]'
-                      : 'border border-neutral-200 hover:border-[#171717]'
+                      ? 'border-2 border-[#171717] bg-[#EEEDE9]'
+                      : 'border border-[#171717] hover:bg-[#EEEDE9]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div
-                      className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl font-bold font-mono ${
+                      className={`w-12 h-12 flex items-center justify-center text-2xl font-bold font-mono ${
                         isHot
                           ? 'bg-xp-500 text-white'
                           : i === 2
@@ -429,20 +429,20 @@ function DegreesSection() {
                       {String(i + 1).padStart(2, '0')}
                     </div>
                     {isHot && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#171717] text-white font-medium">
+                      <span className="text-xs px-2 py-0.5 bg-[#171717] text-white font-medium">
                         最热门
                       </span>
                     )}
                   </div>
-                  <h3 className="mt-4 text-xl font-semibold text-neutral-900">
+                  <h3 className="mt-4 text-xl font-semibold text-[#171717]">
                     {degree.title}
                   </h3>
-                  <p className="mt-2 text-sm text-neutral-600">{degree.description}</p>
+                  <p className="mt-2 text-sm text-[#666666]">{degree.description}</p>
                   <ul className="mt-4 space-y-2 text-sm">
                     {(degree.courses ?? []).slice(0, 4).map((c) => (
-                      <li key={c.id} className="flex items-center gap-2 text-neutral-700">
+                      <li key={c.id} className="flex items-center gap-2 text-[#171717]">
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${
+                          className={`w-1.5 h-1.5 ${
                             isHot ? 'bg-[#171717]' : i === 2 ? 'bg-cert-500' : 'bg-[#171717]'
                           }`}
                         />
@@ -450,13 +450,13 @@ function DegreesSection() {
                       </li>
                     ))}
                     {(degree.courses?.length ?? 0) > 4 && (
-                      <li className="flex items-center gap-2 text-neutral-400">
-                        <span className="w-1.5 h-1.5 rounded-full bg-neutral-200" />...
+                      <li className="flex items-center gap-2 text-[#999999]">
+                        <span className="w-1.5 h-1.5 bg-[#EEEDE9]" />...
                       </li>
                     )}
                   </ul>
                   <div className="mt-6 flex items-center justify-between">
-                    <span className="text-xs text-neutral-600">
+                    <span className="text-xs text-[#666666]">
                       {degree.stats?.courseCount ?? 0} 门课 · {degree.stats?.estimatedHours ?? 0} 小时
                     </span>
                     <span className="text-sm text-[#171717] underline underline-offset-2 font-medium inline-flex items-center gap-1">
@@ -490,7 +490,7 @@ function HackathonCard({ h }: { h: Hackathon }) {
   return (
     <Link
       to={`/hackathons/${h.id}`}
-      className="group block rounded-xl border border-neutral-200 hover:border-[#171717] transition overflow-hidden"
+      className="group block border border-[#171717] hover:bg-[#EEEDE9] transition overflow-hidden"
     >
       <div
         className={`relative flex flex-col justify-end p-5 md:p-6 text-white ${
@@ -512,9 +512,9 @@ function HackathonCard({ h }: { h: Hackathon }) {
           <p className="mt-1 text-xs font-mono opacity-90">已结束</p>
         )}
       </div>
-      <div className="p-4 bg-neutral-50">
-        <p className="text-xs text-neutral-600 line-clamp-2 mb-2">{h.description}</p>
-        <div className="flex items-center justify-between text-[10px] text-neutral-600">
+      <div className="p-4 bg-[#F5F4F0]">
+        <p className="text-xs text-[#666666] line-clamp-2 mb-2">{h.description}</p>
+        <div className="flex items-center justify-between text-[10px] text-[#666666]">
           <span className="flex items-center gap-1">
             <Trophy className="w-3 h-3" />
             {h._count?.registrations ?? 0} 人报名
@@ -557,14 +557,14 @@ function HackathonsSection() {
   );
 
   return (
-    <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">
+    <section className="py-16 md:py-24 bg-[#F5F4F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between mb-8 md:mb-10 gap-4">
           <div>
-            <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">
               {t('section.hackathons.title', '黑客松进行中')}
             </h2>
-            <p className="mt-2 text-neutral-600 text-sm md:text-base">
+            <p className="mt-2 text-[#666666] text-sm md:text-base">
               {pickPage(homePages, 'hackathons_subhead', 'zh-CN', t('section.hackathons.sub', '社区、竞赛、激励 —— 让你的能力被看见'))}
             </p>
           </div>
@@ -600,7 +600,7 @@ function HackathonsSection() {
             {/* 主卡 */}
             <Link
               to={`/hackathons/${main.id}`}
-              className="lg:col-span-2 block rounded-xl border border-neutral-200 overflow-hidden group hover:border-[#171717] transition"
+              className="lg:col-span-2 block border border-[#171717] overflow-hidden group hover:bg-[#EEEDE9] transition"
             >
               <div className="aspect-[2/1] bg-[#171717] p-6 md:p-8 flex flex-col justify-end text-white">
                 <span className="text-xs font-medium opacity-80">
@@ -617,8 +617,8 @@ function HackathonsSection() {
                   {main.description}
                 </p>
               </div>
-              <div className="p-5 flex items-center justify-between bg-neutral-50">
-                <div className="flex items-center gap-3 text-xs text-neutral-600">
+              <div className="p-5 flex items-center justify-between bg-[#F5F4F0]">
+                <div className="flex items-center gap-3 text-xs text-[#666666]">
                   <span className="flex items-center gap-1">
                     <UsersMini /> {main._count?.registrations ?? 0} 人已报名
                   </span>
@@ -628,7 +628,7 @@ function HackathonsSection() {
                     </span>
                   )}
                 </div>
-                <span className="text-sm px-4 py-2 rounded-md bg-[#171717] text-white font-medium group-hover:bg-[#262626] transition">
+                <span className="text-sm px-4 py-2 bg-[#171717] text-white font-medium group-hover:bg-[#262626] transition">
                   立即报名
                 </span>
               </div>
@@ -639,7 +639,7 @@ function HackathonsSection() {
                 small.map((h) => <HackathonCard key={h.id} h={h} />)
               ) : (
                 <Card padding="lg">
-                  <p className="text-sm text-neutral-600 text-center">暂无其他赛事</p>
+                  <p className="text-sm text-[#666666] text-center">暂无其他赛事</p>
                 </Card>
               )}
             </div>
@@ -670,7 +670,7 @@ function AiTutorSection() {
   return (
     <section className="py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-2xl bg-[#171717] p-8 md:p-16 text-white relative overflow-hidden">
+        <div className="bg-[#171717] p-8 md:p-16 text-white relative overflow-hidden">
           {/* 装饰圆 */}
           <div
             className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-[#A3A3A3]/20 blur-3xl pointer-events-none"
@@ -678,23 +678,23 @@ function AiTutorSection() {
           />
           <div className="relative grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 text-white font-medium">
+              <span className="text-xs px-2 py-0.5 bg-white/20 text-white font-medium">
                 {pickPage(homePages, 'aitutor_chip', 'zh-CN', t('section.ai.chip', '贯穿全程'))}
               </span>
-              <h2 className="mt-4 text-3xl md:text-display-md font-bold">
+              <h2 className="mt-4 text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
                 {t('section.ai.title', 'AI 助教,不在抽屉里')}
               </h2>
               <p className="mt-4 opacity-90 leading-relaxed">
                 {pickPage(homePages, 'aitutor_subhead', 'zh-CN', t('section.ai.sub', '每节课、每个项目、每个问题旁边都有它 —— 知道你在学什么,能引用你学过的内容,会用苏格拉底式反问而不只是给答案。'))}
               </p>
               <Link to="/dashboard/learning" className="inline-block mt-6">
-                <span className="px-6 py-3 rounded-md bg-white text-[#171717] font-medium hover:bg-neutral-100 transition inline-flex items-center gap-2">
+                <span className="px-6 py-3 bg-white text-[#171717] font-medium hover:bg-neutral-100 transition inline-flex items-center gap-2">
                   体验 AI 助教 <ArrowUpRight className="w-4 h-4" />
                 </span>
               </Link>
             </div>
             {/* 聊天气泡 — 明确标注"产品示例"避免误导 */}
-            <div className="bg-white rounded-xl p-5 border border-[#171717]">
+            <div className="bg-white p-5 border border-[#171717]">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs opacity-70 font-mono text-[#666666]">
                   LESSON · Agent 基础
@@ -708,7 +708,7 @@ function AiTutorSection() {
                   <div className="w-7 h-7 rounded-full bg-[#171717] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                     我
                   </div>
-                  <div className="text-sm bg-[#EEEDE9] rounded-lg p-3 text-[#171717]">
+                  <div className="text-sm bg-[#EEEDE9] p-3 text-[#171717]">
                     这节课的 ReAct 循环,哪一步最容易出 bug?
                   </div>
                 </div>
@@ -716,7 +716,7 @@ function AiTutorSection() {
                   <div className="w-7 h-7 rounded-full bg-cert-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
                     AI
                   </div>
-                  <div className="text-sm bg-[#EEEDE9] rounded-lg p-3 text-[#171717]">
+                  <div className="text-sm bg-[#EEEDE9] p-3 text-[#171717]">
                     <p>通常是"观察"那一步:Agent 拿到工具结果后,容易直接答而不是先判断要不要再调一次工具。</p>
                     <p className="mt-2 text-[#666666] text-xs">📎 引用:这节课 Lesson 2 · ReAct 循环</p>
                   </div>
@@ -781,23 +781,23 @@ function InstructorsSection() {
 
   if (instructors.length === 0) {
     return (
-      <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">
+      <section className="py-16 md:py-24 bg-[#F5F4F0]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">{t('section.instructors.title', '来自一线的讲师')}</h2>
-          <p className="mt-2 text-neutral-600 text-sm md:text-base">{t('section.instructors.empty.sub', '讲师信息将在课程上线后展示')}</p>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">{t('section.instructors.title', '来自一线的讲师')}</h2>
+          <p className="mt-2 text-[#666666] text-sm md:text-base">{t('section.instructors.empty.sub', '讲师信息将在课程上线后展示')}</p>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="py-16 md:py-24 bg-neutral-0 dark:bg-neutral-100">
+    <section className="py-16 md:py-24 bg-[#F5F4F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 md:mb-10">
-          <h2 className="text-3xl md:text-display-md font-bold text-neutral-900">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">
             {t('section.instructors.title', '来自一线的讲师')}
           </h2>
-          <p className="mt-2 text-neutral-600 text-sm md:text-base">
+          <p className="mt-2 text-[#666666] text-sm md:text-base">
             {pickPage(homePages, 'instructors_subhead', 'zh-CN', t('section.instructors.sub', '不是 PPT 复读机,是正在写代码、正在做产品的人'))}
           </p>
         </div>
@@ -809,10 +809,10 @@ function InstructorsSection() {
               >
                 {inst.initials}
               </div>
-              <h3 className="mt-3 font-semibold text-neutral-900">
+              <h3 className="mt-3 font-semibold text-[#171717]">
                 {inst.name}
               </h3>
-              <p className="text-xs text-neutral-600 mt-1">{inst.title}</p>
+              <p className="text-xs text-[#666666] mt-1">{inst.title}</p>
             </div>
           ))}
         </div>
@@ -883,29 +883,29 @@ function HeroPreviewCard() {
           <div className="w-2 h-2 rounded-full bg-danger-500" />
           <div className="w-2 h-2 rounded-full bg-warning-500" />
           <div className="w-2 h-2 rounded-full bg-success-500" />
-          <span className="ml-2 text-xs text-neutral-600 font-mono">
+          <span className="ml-2 text-xs text-[#666666] font-mono">
             academy.opencsg / learn
           </span>
         </div>
-        <div className="text-[10px] font-mono text-neutral-500 mb-2 uppercase tracking-widest">
+        <div className="text-[10px] font-mono text-[#666666] mb-2 uppercase tracking-widest">
           产品示例 · Featured course
         </div>
         <div className="space-y-3">
-          <div className="p-3 rounded-lg bg-neutral-50 border border-neutral-200">
+          <div className="p-3 bg-[#F5F4F0] border border-[#171717]">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="text-xs text-[#666666] font-medium">
                   {c.level.toUpperCase()} · {c.duration}
                 </div>
-                <div className="mt-1 font-medium text-neutral-900 truncate">
+                <div className="mt-1 font-medium text-[#171717] truncate">
                   {c.title}
                 </div>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[#171717] text-white whitespace-nowrap">
+              <span className="text-xs px-2 py-0.5 bg-[#171717] text-white whitespace-nowrap">
                 {c.enrollmentCount} 人已报名
               </span>
             </div>
-            <p className="mt-2 text-xs text-neutral-600 line-clamp-2">{c.description}</p>
+            <p className="mt-2 text-xs text-[#666666] line-clamp-2">{c.description}</p>
           </div>
         </div>
         <div className="mt-4 flex items-center justify-between">
@@ -917,7 +917,7 @@ function HeroPreviewCard() {
           </Link>
           <Link
             to="/login"
-            className="text-xs text-neutral-500 hover:text-neutral-700"
+            className="text-xs text-[#666666] hover:text-[#171717]"
           >
             登录查看你的进度
           </Link>
@@ -944,7 +944,7 @@ function HeroPreviewCard() {
     return (
       <Card variant="elevated" padding="md" className="relative">
         <div className="text-center py-6">
-          <div className="text-sm text-neutral-600 mb-3">还没有选课,先去逛逛吧</div>
+          <div className="text-sm text-[#666666] mb-3">还没有选课,先去逛逛吧</div>
           <Link to="/courses">
             <Button variant="primary" size="sm">浏览课程</Button>
           </Link>
@@ -957,36 +957,36 @@ function HeroPreviewCard() {
     <Card variant="elevated" padding="md" className="relative">
       <div className="flex items-center gap-2 mb-4">
         <div className="w-2 h-2 rounded-full bg-success-500" />
-        <span className="ml-2 text-xs text-neutral-600 font-mono">
+        <span className="ml-2 text-xs text-[#666666] font-mono">
           academy.opencsg / my-learning
         </span>
       </div>
-      <div className="text-[10px] font-mono text-neutral-500 mb-2 uppercase tracking-widest">
+      <div className="text-[10px] font-mono text-[#666666] mb-2 uppercase tracking-widest">
         继续上次 · {recent.course.level}
       </div>
       <Link
         to={`/courses/${recent.course.id}`}
-        className="block p-3 rounded-lg bg-neutral-50 border border-neutral-200 hover:border-[#171717] transition"
+        className="block p-3 bg-[#F5F4F0] border border-[#171717] hover:bg-[#EEEDE9] transition"
       >
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="text-xs text-[#666666] font-medium">
               {recent.course.instructor} · {recent.course.duration}
             </div>
-            <div className="mt-1 font-medium text-neutral-900 truncate">
+            <div className="mt-1 font-medium text-[#171717] truncate">
               {recent.course.title}
             </div>
           </div>
           <PlayCircle className="w-5 h-5 text-[#171717] flex-shrink-0" />
         </div>
       </Link>
-      <div className="mt-3 p-3 rounded-lg bg-[#EEEDE9] border border-[#171717]">
+      <div className="mt-3 p-3 bg-[#EEEDE9] border border-[#171717]">
         <div className="flex items-start gap-2">
           <div className="w-6 h-6 rounded-full bg-[#171717] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
             AI
           </div>
-          <div className="text-sm text-neutral-900">
-            <div className="text-xs text-neutral-600 mb-1">AI 助教 · 准备就绪</div>
+          <div className="text-sm text-[#171717]">
+            <div className="text-xs text-[#666666] mb-1">AI 助教 · 准备就绪</div>
             想从上次的位置继续? 或者直接提问。
           </div>
         </div>
@@ -1049,14 +1049,12 @@ export function HomePage() {
   const { ref: heroRef, isCollapsed } = useCollapsibleHero<HTMLElement>({ threshold: 120 });
 
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 transition-colors">
-      <Helmet>
-        <title>{pickSite(heroSite, 'brand.hero.headline', 'zh-CN', 'OpenCSG Academy — AI 时代的能力可被看见').replace(/\n/g, ' ')}</title>
-        <meta name="description" content={subheadline.replace(/\n/g, ' ')} />
-        <meta property="og:title" content="OpenCSG Academy" />
-        <meta property="og:description" content={subheadline.replace(/\n/g, ' ')} />
-        <meta property="og:type" content="website" />
-      </Helmet>
+    <div className="bg-[#F5F4F0] text-[#171717] transition-colors">
+      <Seo
+        title={pickSite(heroSite, 'brand.hero.headline', 'zh-CN', 'OpenCSG Academy — AI 时代的能力可被看见').replace(/\n/g, ' ')}
+        description={subheadline.replace(/\n/g, ' ')}
+        path="/"
+      />
       {/* 1 段:HERO (collapsible on scroll) */}
       <section
         ref={heroRef}
@@ -1074,18 +1072,18 @@ export function HomePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* 左侧文字 */}
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEEDE9] text-[#171717] text-xs font-medium mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#EEEDE9] text-[#171717] text-xs font-medium mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#171717]" />
                 {badgeText}
               </div>
-              <h1 className="text-4xl md:text-display-lg font-bold tracking-tight leading-[1.1] text-neutral-900">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-[#171717]">
                 {headlineLines[0] ?? headline}
                 <br />
                 <span className="underline underline-offset-4 decoration-4">{headlineLines[1] ?? ''}</span>
                 <br />
                 {headlineLines[2] ?? ''}
               </h1>
-              <p className="mt-6 text-lg text-neutral-600 max-w-xl">
+              <p className="mt-6 text-lg text-[#666666] max-w-xl">
                 {subheadline}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -1103,10 +1101,10 @@ export function HomePage() {
               <div className="mt-10 md:mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 max-w-xl">
                 {heroStats.map((s) => (
                   <div key={s.label}>
-                    <div className="text-2xl md:text-3xl font-bold font-mono text-neutral-900">
+                    <div className="text-2xl md:text-3xl font-bold font-mono text-[#171717]">
                       {s.num}
                     </div>
-                    <div className="text-xs text-neutral-600 mt-1">{s.label}</div>
+                    <div className="text-xs text-[#666666] mt-1">{s.label}</div>
                   </div>
                 ))}
               </div>
@@ -1114,7 +1112,7 @@ export function HomePage() {
             {/* 右侧:登录态分支 — 未登录看 featured course, 登录后看真实学习进度 */}
             <div className="relative">
               <div
-                className="absolute inset-0 rounded-2xl blur-2xl"
+                className="absolute inset-0 blur-2xl"
                 style={{
                   background:
                     'linear-gradient(135deg, rgba(23,23,23,0.06), rgba(163,163,163,0.08))',

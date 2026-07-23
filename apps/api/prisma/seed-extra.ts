@@ -216,7 +216,7 @@ async function main() {
           type: OrderType.course,
           amount: course.price,
           status: OrderStatus.paid,
-          paymentMethod: 'mock_alipay',
+          paymentMethod: 'alipay',
           paidAt: new Date(Date.now() - Math.random() * 14 * 24 * 3600 * 1000),
         },
       });

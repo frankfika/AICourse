@@ -214,6 +214,7 @@ export const __FALLBACK_ENUMS__: Record<string, EnumItem[]> = {
 
 // =============================================================
 // 5) useI18n — 通用文案 (key 模式)
+// 返回 { t, locale } — locale 给 useLocaleDate 等下游 hook 用
 // =============================================================
 export function useI18n(locale: string = 'zh-CN') {
   const { data } = useQuery<Record<string, string>>({
@@ -223,6 +224,7 @@ export function useI18n(locale: string = 'zh-CN') {
     retry: 0,
   });
   return {
+    locale,
     t: (key: string, fallback?: string) => {
       // 优先: i18n_messages 真实翻译
       if (data && typeof data[key] === 'string') return data[key];

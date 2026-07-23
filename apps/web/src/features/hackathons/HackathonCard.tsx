@@ -3,6 +3,9 @@ import { Calendar, MapPin, Users, ArrowUpRight } from 'lucide-react';
 import type { HackathonListItem } from '@opencsg/shared-types';
 import { HackathonStatusBadge } from './HackathonStatusBadge';
 import { CountdownChip } from '../../components/CountdownChip';
+import { I18nText } from '../../components/I18nText';
+import { useLocaleDate } from '../../hooks/useLocaleDate';
+import { useI18n } from '../../lib/cms';
 
 interface HackathonCardProps {
   hackathon: HackathonListItem;
@@ -10,8 +13,10 @@ interface HackathonCardProps {
 }
 
 export function HackathonCard({ hackathon, isOrganizer }: HackathonCardProps) {
+  const { t } = useI18n();
+  const { locale } = useLocaleDate();
   const formatRange = (d: Date | string) =>
-    new Date(d).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    new Date(d).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 
   // 倒计时目标优先级:registerDeadline > startDate
   // status === 'upcoming' 时优先显示报名截止
@@ -22,10 +27,10 @@ export function HackathonCard({ hackathon, isOrganizer }: HackathonCardProps) {
       : hackathon.startDate;
   const countdownPrefix =
     hackathon.status === 'upcoming' && hackathon.registerDeadline
-      ? '报名截止'
+      ? t('hackathon.countdown.register_deadline', '报名截止')
       : hackathon.status === 'upcoming'
-        ? '距开赛'
-        : '距开始';
+        ? t('hackathon.countdown.to_start', '距开赛')
+        : t('hackathon.countdown.to_begin', '距开始');
 
   return (
     <Link
@@ -35,7 +40,7 @@ export function HackathonCard({ hackathon, isOrganizer }: HackathonCardProps) {
       {/* Date stamp */}
       <div className="col-span-3 md:col-span-2 flex flex-col border border-[#171717] p-3 text-center bg-[#F5F4F0]">
         <span className="text-[9px] font-black uppercase tracking-widest text-[#666666]">
-          {new Date(hackathon.startDate).toLocaleDateString('zh-CN', { month: 'short' })}
+          {new Date(hackathon.startDate).toLocaleDateString(locale, { month: 'short' })}
         </span>
         <span className="text-2xl font-black tracking-tighter leading-none mt-0.5">
           {new Date(hackathon.startDate).getDate()}
@@ -51,12 +56,12 @@ export function HackathonCard({ hackathon, isOrganizer }: HackathonCardProps) {
           <HackathonStatusBadge status={hackathon.status} />
           {hackathon.myRegistration?.status === 'registered' && (
             <span className="inline-flex items-center px-2 py-0.5 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest">
-              已报名
+              <I18nText k="hackathon.registered" default="已报名" />
             </span>
           )}
           {isOrganizer && (
             <span className="inline-flex items-center px-2 py-0.5 border border-[#171717] text-[10px] font-black uppercase tracking-widest">
-              我主办的
+              <I18nText k="hackathon.organizer_badge" default="我主办的" />
             </span>
           )}
         </div>
@@ -79,7 +84,7 @@ export function HackathonCard({ hackathon, isOrganizer }: HackathonCardProps) {
             </span>
           )}
           <span className="flex items-center gap-1">
-            <Users className="w-3 h-3" /> {hackathon.minTeamSize}-{hackathon.maxTeamSize} 人
+            <Users className="w-3 h-3" /> {hackathon.minTeamSize}-{hackathon.maxTeamSize} <I18nText k="hackathon.people" default="人" />
           </span>
           {(hackathon.status === 'upcoming' || hackathon.status === 'active') && (
             <CountdownChip

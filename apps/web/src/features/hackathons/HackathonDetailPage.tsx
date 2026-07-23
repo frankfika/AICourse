@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet-async';
 import {
   ArrowLeft,
   Calendar,
@@ -17,6 +16,9 @@ import { HackathonStatusBadge } from './HackathonStatusBadge';
 import { AnnouncementList } from './AnnouncementList';
 import type { HackathonWithDetails } from '@opencsg/shared-types';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import { Seo } from '../../components/Seo';
+import { Tabs, TabPanel } from '../../components/ui/Tabs';
+import { LazyImage } from '../../components/ui/LazyImage';
 
 const TABS = [
   { key: 'overview', label: '概览', icon: ScrollText },
@@ -80,10 +82,27 @@ export function HackathonDetailPage() {
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
-      <Helmet>
-        <title>{`${hackathon.title} · OpenCSG Academy`}</title>
-        <meta name="description" content={hackathon.description?.slice(0, 200) ?? '黑客松详情'} />
-      </Helmet>
+      <Seo
+        title={hackathon.title}
+        description={hackathon.description?.slice(0, 200) ?? '黑客松详情'}
+        path={`/hackathons/${hackathon.id}`}
+        image={hackathon.bannerUrl || undefined}
+        type="article"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Event',
+          name: hackathon.title,
+          description: hackathon.description,
+          startDate: new Date(hackathon.startDate).toISOString(),
+          endDate: new Date(hackathon.endDate).toISOString(),
+          eventStatus: 'https://schema.org/EventScheduled',
+          eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
+          location: hackathon.location
+            ? { '@type': 'Place', name: hackathon.location }
+            : { '@type': 'VirtualLocation', url: hackathon.registrationUrl || undefined },
+          organizer: { '@type': 'Organization', name: 'OpenCSG Academy' },
+        }}
+      />
       {/* Top action bar */}
       <section className="border-b border-[#171717] bg-white">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -102,7 +121,12 @@ export function HackathonDetailPage() {
           {/* Banner */}
           <div className="lg:col-span-7 aspect-[16/10] lg:aspect-auto border-b lg:border-b-0 lg:border-r border-[#171717] bg-[#EEEDE9] overflow-hidden">
             {hackathon.bannerUrl ? (
-              <img src={hackathon.bannerUrl} alt={hackathon.title} className="w-full h-full object-cover" />
+              <LazyImage
+                src={hackathon.bannerUrl}
+                alt={hackathon.title}
+                fill
+                className="object-cover"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-[#999999]">No Banner</div>
             )}
@@ -113,7 +137,7 @@ export function HackathonDetailPage() {
             <div className="flex items-center gap-2 mb-6 flex-wrap">
               <HackathonStatusBadge status={hackathon.status} className="border-white text-white bg-white text-[#171717]" />
             </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-[0.95] mb-6 uppercase">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[0.95] mb-6 uppercase">
               {hackathon.title}
             </h1>
 
@@ -172,32 +196,31 @@ export function HackathonDetailPage() {
         </div>
       </section>
 
-      {/* Tabs */}
+      {/* Tabs — P1-3 用公共 Tabs,加 role/aria-selected */}
       <section className="border-b border-[#171717] bg-white sticky top-16 z-30">
         <div className="max-w-7xl mx-auto px-6 flex overflow-x-auto">
-          {TABS.map(({ key, label, icon: Icon }, i) => {
-            const active = activeTab === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={`py-4 px-5 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 shrink-0 ${
-                  active
-                    ? 'text-[#171717] border-b-2 border-[#171717] -mb-px'
-                    : 'text-[#666666] hover:text-[#171717]'
-                } ${i < TABS.length - 1 ? 'border-r border-[#EEEDE9]' : ''}`}
-              >
-                <Icon className="w-4 h-4" /> {label}
-              </button>
-            );
-          })}
+          <Tabs<TabKey>
+            value={activeTab}
+            onChange={setActiveTab}
+            ariaLabel="黑客松详情"
+            items={TABS.map((t) => ({ key: t.key, label: t.label, icon: t.icon }))}
+            idPrefix="hackathon-detail"
+            className="flex"
+            itemClassName={(_, active) =>
+              `py-4 px-5 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 shrink-0 focus:outline-none focus:ring-2 focus:ring-[#171717] ${
+                active
+                  ? 'text-[#171717] border-b-2 border-[#171717] -mb-px'
+                  : 'text-[#666666] hover:text-[#171717]'
+              }`
+            }
+          />
         </div>
       </section>
 
       {/* Tab content */}
       <section className="border-b border-[#171717]">
         <div className="max-w-7xl mx-auto px-6 py-12">
-          {activeTab === 'overview' && (
+          <TabPanel value={activeTab} tabKey="overview" idPrefix="hackathon-detail">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <BrutalPanel label={panelDesc} title={t('hackathon.panel.desc.title', '活动介绍')}>
@@ -242,9 +265,11 @@ export function HackathonDetailPage() {
                 </div>
               </div>
             </div>
-          )}
+          </TabPanel>
 
-          {activeTab === 'announcements' && <AnnouncementList announcements={announcements} />}
+          <TabPanel value={activeTab} tabKey="announcements" idPrefix="hackathon-detail">
+            <AnnouncementList announcements={announcements} />
+          </TabPanel>
         </div>
       </section>
     </div>

@@ -44,6 +44,8 @@ export class DegreesService {
       where,
       include: this.degreeInclude,
       orderBy: { createdAt: 'desc' },
+      // P1-7 防御: 默认 50, max 100, 防 DoS
+      take: 100,
     });
     return degrees.map((d) => this.shapeDegree(d));
   }

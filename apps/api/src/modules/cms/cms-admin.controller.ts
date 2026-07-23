@@ -520,7 +520,7 @@ export class CmsAdminController {
   @ApiOperation({ summary: 'Admin: 列出 i18n_messages' })
   listI18nMessages(
     @Query('locale') locale?: string,
-    @Query('category') category?: string,
+    @Query('category') category?: 'common' | 'auth' | 'course' | 'hackathon' | 'degree' | 'enterprise' | 'admin',
   ) {
     return this.cmsI18nService.listMessages(locale, category);
   }

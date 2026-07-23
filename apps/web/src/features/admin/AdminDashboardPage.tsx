@@ -39,6 +39,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { useTheme, useThemeStore } from '../../stores/themeStore';
 import { adminApi, type AdminKpi } from '../../lib/adminApi';
+import { useLocaleDate } from '../../hooks/useLocaleDate';
 import { cn } from '../../lib/cn';
 
 type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
@@ -102,6 +103,7 @@ export function AdminDashboardPage() {
   const theme = useTheme();
   const toggleTheme = useThemeStore((s) => s.toggle);
   const isDark = theme === 'dark';
+  const { formatNumber, formatCurrency } = useLocaleDate();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin-stats'],
@@ -281,13 +283,13 @@ export function AdminDashboardPage() {
               />
               <SystemRow
                 name="总用户"
-                value={data.totals.users.toLocaleString()}
+                value={formatNumber(data.totals.users)}
                 tone="neutral"
                 dot="success"
               />
               <SystemRow
                 name="总课程"
-                value={data.totals.courses.toLocaleString()}
+                value={formatNumber(data.totals.courses)}
                 tone="neutral"
                 dot="success"
               />
@@ -434,6 +436,7 @@ function ChartSkeleton() {
 // 4 图表(简化版)
 // =============================================================
 function RevenueChart({ totalGmv }: { totalGmv: number }) {
+  const { formatCurrency } = useLocaleDate();
   return (
     <div className="border-2 border-[#171717] bg-white p-6">
       <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
@@ -446,7 +449,7 @@ function RevenueChart({ totalGmv }: { totalGmv: number }) {
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div>
           <div className="text-2xl font-black tracking-tighter text-[#171717] font-mono">
-            ¥ {totalGmv.toLocaleString()}
+            {formatCurrency(totalGmv)}
           </div>
           <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
             今日已支付 GMV
@@ -511,6 +514,7 @@ function UserGrowthChart({ growth }: { growth: { date: string; count: number }[]
 }
 
 function FunnelChart({ active, completed }: { active: number; completed: number }) {
+  const { formatNumber } = useLocaleDate();
   const total = active + completed;
   const rate = total > 0 ? (completed / total) * 100 : 0;
   return (
@@ -520,14 +524,14 @@ function FunnelChart({ active, completed }: { active: number; completed: number 
       </div>
       <h3 className="text-xs font-black uppercase tracking-widest">报名完成率</h3>
       <p className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
-        {total.toLocaleString()} 总报名
+        {formatNumber(total)} 总报名
       </p>
       <div className="mt-4 space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
             进行中
           </span>
-          <span className="font-mono text-[#171717] font-black">{active.toLocaleString()}</span>
+          <span className="font-mono text-[#171717] font-black">{formatNumber(active)}</span>
         </div>
         <div className="h-3 bg-[#EEEDE9] overflow-hidden flex border border-[#171717]">
           <div className="h-full bg-[#171717]" style={{ width: `${rate}%` }} />
@@ -538,7 +542,7 @@ function FunnelChart({ active, completed }: { active: number; completed: number 
             已完成
           </span>
           <span className="font-mono text-[#171717] font-black">
-            {completed.toLocaleString()} ({rate.toFixed(1)}%)
+            {formatNumber(completed)} ({rate.toFixed(1)}%)
           </span>
         </div>
       </div>
@@ -551,6 +555,7 @@ function DegreePieChart({
 }: {
   topCourses: { id: string; title: string; enrollmentCount: number }[];
 }) {
+  const { formatNumber } = useLocaleDate();
   const total = topCourses.reduce((s, c) => s + c.enrollmentCount, 0);
   if (total === 0) {
     return (
@@ -572,7 +577,7 @@ function DegreePieChart({
         课程报名 Top {topCourses.length}
       </h3>
       <p className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
-        共 {total.toLocaleString()} 报名
+        共 {formatNumber(total)} 报名
       </p>
       <div className="mt-4 space-y-1.5 text-xs">
         {topCourses.slice(0, 5).map((c) => {

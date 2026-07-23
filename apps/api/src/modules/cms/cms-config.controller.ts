@@ -9,6 +9,7 @@
  */
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CmsConfigService } from './cms-config.service';
 
 @ApiTags('cms-config')
@@ -16,12 +17,15 @@ import { CmsConfigService } from './cms-config.service';
 export class CmsConfigController {
   constructor(private readonly cmsConfigService: CmsConfigService) {}
 
+  // P2-5: 公开端点 30 req/sec 放宽（前台 layout 启动会拉 3 个 endpoint × 多 tab）
+  @Throttle({ short: { limit: 30, ttl: 1000 } })
   @Get('app-settings')
   @ApiOperation({ summary: '全局业务规则 key-value 配置' })
   listAppSettings(@Query('scope') scope?: string) {
     return this.cmsConfigService.listAppSettings(scope);
   }
 
+  @Throttle({ short: { limit: 30, ttl: 1000 } })
   @Get('site-settings')
   @ApiOperation({ summary: '全局品牌文案 (key 批量)' })
   async getSiteSettings(@Query('keys') keys?: string) {
@@ -34,6 +38,7 @@ export class CmsConfigController {
     return this.cmsConfigService.getSiteSettingsByKeys(list);
   }
 
+  @Throttle({ short: { limit: 30, ttl: 1000 } })
   @Get('page-settings')
   @ApiOperation({ summary: '页面级文案 (按 page 批量)' })
   async getPageSettings(@Query('page') page?: string | string[]) {

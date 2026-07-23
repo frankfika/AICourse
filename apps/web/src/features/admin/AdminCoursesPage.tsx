@@ -16,7 +16,7 @@
  * v1.3.0 起:资源管理从「课程级 P2 占位 tab」迁到「课时面板内」,因为 Resource model 是 lesson 级。
  */
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Plus,
@@ -56,7 +56,8 @@ import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
 import { coursesAdminApi, type Chapter, type ChapterLesson, type ChapterResource, type ResourceType } from '../../lib/coursesAdminApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useEnum } from '../../lib/cms';
+import { useEnum, useI18n } from '../../lib/cms';
+import { I18nText } from '../../components/I18nText';
 
 // ──────────────────────────────────────────────────────────────────────────
 // 1) 列表模式(原 AdminCoursesPage,几乎原样保留)
@@ -72,8 +73,15 @@ interface Course {
   status: string;
 }
 
-function CourseListView() {
+function CourseListView({
+  onEdit,
+  isEditing,
+}: {
+  onEdit: (id: string) => void;
+  isEditing: boolean;
+}) {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const [isCreating, setIsCreating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importUrl, setImportUrl] = useState('');
@@ -231,21 +239,23 @@ function CourseListView() {
       <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
         <div>
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mb-2">
-            / Admin · Courses
+            <I18nText k="admin.courses.eyebrow" default="/ Admin · Courses" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">课程管理</h2>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">
+            <I18nText k="admin.courses.title" default="课程管理" />
+          </h2>
         </div>
         <button
           onClick={() => setIsCreating(!isCreating)}
           className="inline-flex items-center gap-2 px-5 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
         >
-          <Plus className="w-4 h-4" /> 新增课程
+          <Plus className="w-4 h-4" /> <I18nText k="admin.courses.action.new" default="新增课程" />
         </button>
         <button
           onClick={() => setIsImporting(!isImporting)}
           className="inline-flex items-center gap-2 px-5 py-3 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 text-xs font-black uppercase tracking-widest hover:bg-[#171717] hover:text-white transition-colors"
         >
-          <Link2 className="w-4 h-4" /> 从 URL 导入
+          <Link2 className="w-4 h-4" /> <I18nText k="admin.courses.action.import" default="从 URL 导入" />
         </button>
       </div>
 
@@ -361,62 +371,62 @@ function CourseListView() {
           />
 
           <div className="grid md:grid-cols-2 gap-4">
-            <Field label="课程标题" required value={form.title} onChange={(v) => setForm({ ...form, title: v })} />
-            <Field label="讲师" required value={form.instructor} onChange={(v) => setForm({ ...form, instructor: v })} />
+            <Field label={t('admin.courses.field.title', '课程标题')} required value={form.title} onChange={(v) => setForm({ ...form, title: v })} />
+            <Field label={t('admin.courses.field.instructor', '讲师')} required value={form.instructor} onChange={(v) => setForm({ ...form, instructor: v })} />
             <div>
-              <Label>难度</Label>
+              <Label>{t('admin.courses.field.level', '难度')}</Label>
               <select
                 value={form.level}
                 onChange={(e) => setForm({ ...form, level: e.target.value })}
                 className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800"
               >
-                <option value="Beginner">入门</option>
-                <option value="Intermediate">进阶</option>
-                <option value="Advanced">高级</option>
-                <option value="Expert">专家</option>
+                <option value="Beginner">{t('course.level.Beginner', '入门')}</option>
+                <option value="Intermediate">{t('course.level.Intermediate', '进阶')}</option>
+                <option value="Advanced">{t('course.level.Advanced', '高级')}</option>
+                <option value="Expert">{t('course.level.Expert', '专家')}</option>
               </select>
             </div>
-            <Field label="时长（如：45 分钟）" required value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} />
+            <Field label={t('admin.courses.field.duration', '时长（如：45 分钟）')} required value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} />
             <div>
-              <Label>付费类型</Label>
+              <Label>{t('admin.courses.field.cost_type', '付费类型')}</Label>
               <select
                 value={form.costType}
                 onChange={(e) => setForm({ ...form, costType: e.target.value })}
                 className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800"
               >
-                <option value="free">免费</option>
-                <option value="paid">付费</option>
-                <option value="charity">公益</option>
+                <option value="free">{t('course.cost.free', '免费')}</option>
+                <option value="paid">{t('course.cost.paid', '付费')}</option>
+                <option value="charity">{t('course.cost.charity', '公益')}</option>
               </select>
             </div>
             <div>
-              <Label>课程来源</Label>
+              <Label>{t('admin.courses.field.course_type', '课程来源')}</Label>
               <select
                 value={form.courseType}
                 onChange={(e) => setForm({ ...form, courseType: e.target.value })}
                 className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800"
               >
-                <option value="own">自有课程</option>
-                <option value="partner">合作课程</option>
-                <option value="public">公开课程</option>
-                <option value="third_party">第三方课程</option>
+                <option value="own">{t('course.type.own', '自有课程')}</option>
+                <option value="partner">{t('course.type.partner', '合作课程')}</option>
+                <option value="public">{t('course.type.public', '公开课程')}</option>
+                <option value="third_party">{t('course.type.third_party', '第三方课程')}</option>
               </select>
             </div>
             <Field
-              label="价格"
+              label={t('admin.courses.field.price', '价格')}
               type="number"
               value={String(form.price)}
               onChange={(v) => setForm({ ...form, price: Number(v) })}
             />
             <Field
-              label="外部链接（第三方课程必填）"
+              label={t('admin.courses.field.external_url', '外部链接（第三方课程必填）')}
               value={form.externalUrl}
               onChange={(v) => setForm({ ...form, externalUrl: v })}
             />
           </div>
           <div className="mt-4">
             <Field
-              label="课程描述"
+              label={t('admin.courses.field.description', '课程描述')}
               multiline
               required
               value={form.description}
@@ -425,7 +435,7 @@ function CourseListView() {
           </div>
           <div className="mt-4">
             <Field
-              label="封面图 URL"
+              label={t('admin.courses.field.thumbnail', '封面图 URL')}
               value={form.thumbnail}
               onChange={(v) => setForm({ ...form, thumbnail: v })}
               required
@@ -433,7 +443,7 @@ function CourseListView() {
           </div>
           <div className="mt-4">
             <Field
-              label="学习要点（每行一个）"
+              label={t('admin.courses.field.learning_points', '学习要点（每行一个）')}
               multiline
               value={form.learningPoints}
               onChange={(v) => setForm({ ...form, learningPoints: v })}
@@ -441,7 +451,7 @@ function CourseListView() {
           </div>
           <div className="mt-4">
             <Field
-              label="标签（用逗号分隔）"
+              label={t('admin.courses.field.tags', '标签（用逗号分隔）')}
               value={form.tags}
               onChange={(v) => setForm({ ...form, tags: v })}
             />
@@ -452,7 +462,7 @@ function CourseListView() {
               disabled={createMutation.isPending}
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
             >
-              保存课程
+              {t('admin.courses.action.save', '保存课程')}
             </button>
             <button
               type="button"
@@ -469,12 +479,12 @@ function CourseListView() {
       <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100">
         <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
           <div className="col-span-12 md:col-span-1">#</div>
-          <div className="col-span-12 md:col-span-4">Title</div>
-          <div className="col-span-12 md:col-span-2">Instructor</div>
-          <div className="col-span-12 md:col-span-1">Cost</div>
-          <div className="col-span-12 md:col-span-1">Price</div>
-          <div className="col-span-12 md:col-span-2">Source</div>
-          <div className="col-span-12 md:col-span-1 text-right">Action</div>
+          <div className="col-span-12 md:col-span-4">{t('admin.courses.col.title', 'Title')}</div>
+          <div className="col-span-12 md:col-span-2">{t('admin.courses.col.instructor', 'Instructor')}</div>
+          <div className="col-span-12 md:col-span-1">{t('admin.courses.col.cost', 'Cost')}</div>
+          <div className="col-span-12 md:col-span-1">{t('admin.courses.col.price', 'Price')}</div>
+          <div className="col-span-12 md:col-span-2">{t('admin.courses.col.source', 'Source')}</div>
+          <div className="col-span-12 md:col-span-1 text-right">{t('admin.courses.col.action', 'Action')}</div>
         </div>
         {courses?.map((course, i) => (
           <div
@@ -487,12 +497,14 @@ function CourseListView() {
               {String(i + 1).padStart(2, '0')}
             </div>
             <div className="col-span-12 md:col-span-4 font-black tracking-tight truncate">
-              <Link
-                to={`/admin/courses?tab=info&id=${course.id}`}
-                className="hover:underline"
+              <button
+                type="button"
+                onClick={() => onEdit(course.id)}
+                disabled={isEditing}
+                className="hover:underline text-left disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {course.title}
-              </Link>
+              </button>
             </div>
             <div className="col-span-12 md:col-span-2 text-[#666666] dark:text-neutral-400 dark:text-neutral-400 text-xs">{course.instructor}</div>
             <div className="col-span-12 md:col-span-1 text-xs">
@@ -517,13 +529,15 @@ function CourseListView() {
               </span>
             </div>
             <div className="col-span-12 md:col-span-1 flex items-center justify-start md:justify-end gap-1">
-              <Link
-                to={`/admin/courses?tab=info&id=${course.id}`}
-                className="p-2 hover:bg-[#171717] hover:text-white transition-colors"
+              <button
+                type="button"
+                onClick={() => onEdit(course.id)}
+                disabled={isEditing}
+                className="p-2 hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-30"
                 title="编辑"
               >
                 <Pencil className="w-3.5 h-3.5" />
-              </Link>
+              </button>
               <button
                 onClick={() => deleteMutation.mutate(course.id)}
                 className="p-2 hover:bg-[#171717] hover:text-white transition-colors"
@@ -537,7 +551,9 @@ function CourseListView() {
         {(!courses || courses.length === 0) && (
           <div className="p-16 text-center">
             <Sparkles className="w-6 h-6 mx-auto mb-3 text-[#A3A3A3]" />
-            <p className="text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">暂无课程，点击"新增课程"或使用 AI 智能填充快速创建</p>
+            <p className="text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
+              <I18nText k="admin.courses.empty" default='暂无课程，点击"新增课程"或使用 AI 智能填充快速创建' />
+            </p>
           </div>
         )}
       </div>
@@ -609,6 +625,7 @@ function InfoTab({ courseId }: { courseId: string }) {
   const { courseQuery, updateCourse } = useCourseEdit(courseId);
   const course = courseQuery.data;
   const { getLabel: getLevelLabel } = useEnum('course_level');
+  const { t } = useI18n();
   const [form, setForm] = useState<{
     title: string;
     description: string;
@@ -632,67 +649,73 @@ function InfoTab({ courseId }: { courseId: string }) {
   }, [course?.id, course?.title, course?.description, course?.instructor, course?.level, course?.duration, course?.thumbnail]);
 
   if (courseQuery.isLoading) {
-    return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载中…</div>;
+    return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
+      {t('common.loading', '加载中…')}
+    </div>;
   }
   if (courseQuery.isError) {
     return (
       <div className="p-8 text-center text-sm text-red-600">
-        加载失败：{(courseQuery.error as any)?.message ?? '未知错误'}
+        {t('common.error.data_load', '加载失败')}:{(courseQuery.error as any)?.message ?? t('common.error.unknown', '未知错误')}
       </div>
     );
   }
 
   const save = () => {
     updateCourse.mutate(form, {
-      onSuccess: () => alert('已保存'),
-      onError: (e: any) => alert('保存失败：' + (e?.response?.data?.message ?? e?.message ?? '未知错误')),
+      onSuccess: () => alert(t('admin.courses.toast.saved', '已保存')),
+      onError: (e: any) => alert(t('admin.courses.toast.save_failed', '保存失败:') + (e?.response?.data?.message ?? e?.message ?? t('common.error.unknown', '未知错误'))),
     });
   };
 
   return (
     <div className="space-y-4">
       <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
-        <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-4">主要信息</h3>
+        <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-4">
+          {t('admin.courses.section.main_info', '主要信息')}
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <BrutalField
-            label="课程标题"
+            label={t('admin.courses.field.title', '课程标题')}
             value={form.title}
             onChange={(v) => setForm({ ...form, title: v })}
             required
           />
           <BrutalField
-            label="讲师"
+            label={t('admin.courses.field.instructor', '讲师')}
             value={form.instructor}
             onChange={(v) => setForm({ ...form, instructor: v })}
             required
           />
           <BrutalSelect
-            label="难度"
+            label={t('admin.courses.field.level', '难度')}
             value={form.level}
             onChange={(v) => setForm({ ...form, level: v })}
             options={[
-              { value: 'Beginner', label: getLevelLabel('Beginner') || '入门' },
-              { value: 'Intermediate', label: getLevelLabel('Intermediate') || '进阶' },
-              { value: 'Advanced', label: getLevelLabel('Advanced') || '高级' },
-              { value: 'Expert', label: getLevelLabel('Expert') || '专家' },
+              { value: 'Beginner', label: getLevelLabel('Beginner') || t('course.level.Beginner', '入门') },
+              { value: 'Intermediate', label: getLevelLabel('Intermediate') || t('course.level.Intermediate', '进阶') },
+              { value: 'Advanced', label: getLevelLabel('Advanced') || t('course.level.Advanced', '高级') },
+              { value: 'Expert', label: getLevelLabel('Expert') || t('course.level.Expert', '专家') },
             ]}
           />
           <BrutalField
-            label="总时长"
+            label={t('admin.courses.field.duration', '总时长')}
             value={form.duration}
             onChange={(v) => setForm({ ...form, duration: v })}
-            placeholder="如 6.5h"
+            placeholder={t('admin.courses.placeholder.duration', '如 6.5h')}
           />
           <div className="md:col-span-2">
             <BrutalField
-              label="封面图 URL"
+              label={t('admin.courses.field.thumbnail', '封面图 URL')}
               value={form.thumbnail}
               onChange={(v) => setForm({ ...form, thumbnail: v })}
             />
           </div>
         </div>
         <div className="mt-4">
-          <label className="text-sm font-medium text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-1.5 block">课程描述</label>
+          <label className="text-sm font-medium text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-1.5 block">
+            {t('admin.courses.field.description', '课程描述')}
+          </label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -1372,9 +1395,19 @@ function PublishTab({ courseId }: { courseId: string }) {
   );
 }
 
-// ── 编辑模式主组件 ──────────────────────────────────────────────────────
+// ── 编辑模式主组件(改 inline) ───────────────────────────────────────────
 
-function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
+function CourseEditInline({
+  courseId,
+  tab,
+  onTabChange,
+  onClose,
+}: {
+  courseId: string;
+  tab: Tab;
+  onTabChange: (t: Tab) => void;
+  onClose: () => void;
+}) {
   const { courseQuery, chaptersQuery } = useCourseEdit(courseId);
   const course = courseQuery.data;
   const chapters = chaptersQuery.data ?? [];
@@ -1384,12 +1417,13 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
     setCurrentTab(tab);
   }, [tab]);
 
+  const handleTabChange = (t: Tab) => {
+    setCurrentTab(t);
+    onTabChange(t);
+  };
+
   if (!courseId) {
-    return (
-      <div className="p-12 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
-        请在 URL 中提供 <code>?id=...</code> 参数
-      </div>
-    );
+    return null;
   }
 
   const TABS_DYNAMIC: { id: Tab; label: string; count?: string }[] = [
@@ -1400,23 +1434,24 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
   ];
 
   return (
-    <div className="-mx-6 -my-8">
-      <header className="bg-white dark:bg-neutral-100 dark:bg-neutral-100 border-b border-[#171717] dark:border-neutral-50 dark:border-neutral-50 sticky top-0 z-30">
+    <div className="mt-6 border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100">
+      <header className="bg-white dark:bg-neutral-100 dark:border-neutral-50 border-b border-[#171717] dark:border-neutral-50">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <Link
-              to="/admin/courses"
-              className="text-[#666666] dark:text-neutral-400 dark:text-neutral-400 hover:text-[#171717] dark:text-neutral-50 shrink-0"
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-[#666666] dark:text-neutral-400 hover:text-[#171717] dark:text-neutral-50 shrink-0"
               aria-label="返回课程列表"
             >
               <ArrowLeft className="w-5 h-5" />
-            </Link>
+            </button>
             <span className="text-neutral-300">/</span>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 truncate">
+              <div className="text-sm font-semibold text-[#171717] dark:text-neutral-50 truncate">
                 {courseQuery.isLoading ? '加载中…' : course?.title ?? '未知课程'}
               </div>
-              <div className="text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400 flex items-center gap-2 flex-wrap">
+              <div className="text-xs text-[#666666] dark:text-neutral-400 flex items-center gap-2 flex-wrap">
                 <span>
                   课程 ID: <span className="font-mono">{courseId}</span>
                 </span>
@@ -1427,12 +1462,12 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
                       className={
                         course.status === 'published'
                           ? 'bg-[#171717] text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-0.5'
-                          : 'border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#666666] dark:text-neutral-400 dark:text-neutral-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-0.5'
+                          : 'border border-[#171717] dark:border-neutral-50 text-[#666666] dark:text-neutral-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-0.5'
                       }
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          course.status === 'published' ? 'bg-[#171717]' : 'bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50'
+                          course.status === 'published' ? 'bg-[#171717]' : 'bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50'
                         }`}
                       />
                       {course.status === 'published' ? '已发布' : '未发布'}
@@ -1443,14 +1478,20 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <BrutalButton variant="secondary" size="sm">
-              预览
-            </BrutalButton>
-            <Link to={`/courses/${courseId}`} target="_blank">
+            <a href={`/courses/${courseId}`} target="_blank" rel="noopener noreferrer">
               <BrutalButton variant="secondary" size="sm">
                 查看公开页
               </BrutalButton>
-            </Link>
+            </a>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-[#666666] dark:text-neutral-400 hover:text-[#171717] dark:text-neutral-50"
+              aria-label="关闭编辑"
+              title="关闭编辑"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
         <div className="px-4 sm:px-6 flex gap-6 overflow-x-auto text-sm">
@@ -1460,15 +1501,15 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setCurrentTab(t.id)}
+                onClick={() => handleTabChange(t.id)}
                 className={`py-3 border-b-2 whitespace-nowrap transition-colors ${
                   active
-                    ? 'border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-[#171717] dark:text-neutral-50 dark:text-neutral-50 font-medium'
-                    : 'border-transparent text-[#666666] dark:text-neutral-400 dark:text-neutral-400 hover:text-[#171717] dark:text-neutral-50'
+                    ? 'border-[#171717] dark:border-neutral-50 text-[#171717] dark:text-neutral-50 font-medium'
+                    : 'border-transparent text-[#666666] dark:text-neutral-400 hover:text-[#171717] dark:text-neutral-50'
                 }`}
               >
                 {t.label}
-                {t.count && <span className="ml-1 text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400">· {t.count}</span>}
+                {t.count && <span className="ml-1 text-xs text-[#666666] dark:text-neutral-400">· {t.count}</span>}
               </button>
             );
           })}
@@ -1477,7 +1518,7 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
 
       <div className="px-4 sm:px-6 py-6 pb-12">
         {courseQuery.isLoading && currentTab !== 'chapters' ? (
-          <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载课程中…</div>
+          <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400">加载课程中…</div>
         ) : courseQuery.isError ? (
           <div className="p-8 text-center text-sm text-red-600">
             加载失败：{(courseQuery.error as any)?.message ?? '未知错误'}
@@ -1496,22 +1537,56 @@ function CourseEditView({ courseId, tab }: { courseId?: string; tab: Tab }) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// 路由层:根据 ?tab 决定走哪种 view
+// 路由层:P2-4d 改 inline — 列表 + 编辑同一组件,
+// 列表点 Edit2 触发本地 editingId state,编辑表单直接渲染在列表上方(跟 Hackathons / Badges 一致),
+// 不再走 ?tab=info&id= URL 跳转。
+// (URL-based 路由兼容性保留:从 URL 直接进入会回退到列表 mode,不显示编辑)
 // ──────────────────────────────────────────────────────────────────────────
 
 const VALID_TABS: Tab[] = ['info', 'chapters', 'pricing', 'publish'];
 
 export function AdminCoursesPage() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const tab = params.get('tab') as Tab | null;
-  const courseId = params.get('id') ?? undefined;
+  const urlCourseId = params.get('id') ?? undefined;
 
-  const isEditMode = tab && VALID_TABS.includes(tab);
+  // 本地 edit state(列表点 edit 按钮触发)
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTab, setEditingTab] = useState<Tab>('info');
 
-  if (isEditMode) {
-    return <CourseEditView courseId={courseId} tab={tab as Tab} />;
-  }
-  return <CourseListView />;
+  // 从 URL ?id 进入(老链接) → 自动转 inline;清掉 URL 参数
+  useEffect(() => {
+    if (urlCourseId && tab && VALID_TABS.includes(tab)) {
+      setEditingId(urlCourseId);
+      setEditingTab(tab);
+      setParams({}, { replace: true });
+    }
+  }, [urlCourseId, tab, setParams]);
+
+  const openEdit = (courseId: string, initialTab: Tab = 'info') => {
+    setEditingId(courseId);
+    setEditingTab(initialTab);
+  };
+  const closeEdit = () => {
+    setEditingId(null);
+  };
+
+  return (
+    <div>
+      <CourseListView
+        onEdit={(id) => openEdit(id, 'info')}
+        isEditing={!!editingId}
+      />
+      {editingId && (
+        <CourseEditInline
+          courseId={editingId}
+          tab={editingTab}
+          onTabChange={setEditingTab}
+          onClose={closeEdit}
+        />
+      )}
+    </div>
+  );
 }
 
 // ── 列表模式用到的 Field / Label 组件(原 AdminCoursesPage 已有) ──

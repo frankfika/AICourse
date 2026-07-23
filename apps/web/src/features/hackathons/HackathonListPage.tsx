@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Rocket, ArrowUpRight } from 'lucide-react';
+import { Rocket, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import type { HackathonStatus } from '@opencsg/shared-types';
+import { Seo } from '../../components/Seo';
 import { useAuthStore } from '../../stores/authStore';
 import { hackathonsApi } from '../../lib/hackathonsApi';
 import { HackathonCard } from './HackathonCard';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
+import { Tabs } from '../../components/ui/Tabs';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { usePagination } from '../../hooks/usePagination';
 
 const FALLBACK_TABS: { key: HackathonStatus | 'all'; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -44,6 +47,9 @@ export function HackathonListPage() {
     },
   });
 
+  // P1-4: 客户端分页(每页 24)
+  const pagination = usePagination(hackathons ?? [], { pageSize: 24 });
+
   // CMS-driven copy
   const { data: pageData } = usePageSettings('hackathons', [
     'list.eyebrow', 'list.headline', 'list.sub', 'list.empty_eyebrow', 'list.empty_title',
@@ -60,10 +66,11 @@ export function HackathonListPage() {
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717]">
-      <Helmet>
-        <title>{`${headline.replace(/\n/g, ' ')} · OpenCSG Academy`}</title>
-        <meta name="description" content={sub} />
-      </Helmet>
+      <Seo
+        title={headline.replace(/\n/g, ' ')}
+        description={sub}
+        path="/hackathons"
+      />
       {/* Hero — black (collapsible on scroll) */}
       <section
         ref={heroRef}
@@ -80,7 +87,7 @@ export function HackathonListPage() {
               {eyebrow}
             </div>
           </div>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase leading-[0.9] mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase leading-[0.9] mb-6">
             {headlineLines[0] ?? headline}
             <br />{headlineLines[1] ?? ''}
             <br />{headlineLines[2] ?? ''}
@@ -94,30 +101,25 @@ export function HackathonListPage() {
       {/* Toolbar */}
       <section className="border-b border-[#171717] bg-white">
         <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-          <div className="flex flex-wrap items-stretch border border-[#171717]">
-            {TABS.map((tab, i) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${
-                  activeTab === tab.key
-                    ? 'bg-[#171717] text-white'
-                    : 'bg-white text-[#171717] hover:bg-[#EEEDE9]'
-                } ${i < TABS.length - 1 ? 'border-r border-[#171717]' : ''}`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <Tabs<HackathonStatus | 'all'>
+            value={activeTab}
+            onChange={setActiveTab}
+            ariaLabel="黑客松状态筛选"
+            items={TABS.map((tab) => ({ key: tab.key, label: tab.label }))}
+            className="flex flex-wrap items-stretch border border-[#171717] divide-x divide-[#171717]"
+            itemClassName={(_, active) =>
+              `px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717] ${
+                active ? 'bg-[#171717] text-white' : 'bg-white text-[#171717] hover:bg-[#EEEDE9]'
+              }`
+            }
+          />
 
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999999]" />
-            <input
-              type="text"
-              placeholder={t('common.search.placeholder.hackathon', '搜索黑客松...')}
+          <div className="flex-1 max-w-md">
+            <SearchInput
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+              placeholder={t('common.search.placeholder.hackathon', '搜索黑客松...')}
+              ariaLabel={t('common.search.placeholder.hackathon', '搜索黑客松...')}
             />
           </div>
         </div>
@@ -128,20 +130,48 @@ export function HackathonListPage() {
         <div className="max-w-7xl mx-auto">
           {isLoading ? (
             <div className="py-24 text-center text-[#666666] font-medium">{t('common.loading', '加载中...')}</div>
-          ) : hackathons?.length ? (
-            <div>
-              {hackathons.map((h, i) => (
-                <div
-                  key={h.id}
-                  className={i < hackathons.length - 1 ? 'border-b border-[#171717]' : ''}
-                >
-                  <HackathonCard
-                    hackathon={h}
-                    isOrganizer={!!user && h.organizerId === user.id}
-                  />
+          ) : pagination.pageItems.length ? (
+            <>
+              <div>
+                {pagination.pageItems.map((h, i) => (
+                  <div
+                    key={h.id}
+                    className={i < pagination.pageItems.length - 1 ? 'border-b border-[#171717]' : ''}
+                  >
+                    <HackathonCard
+                      hackathon={h}
+                      isOrganizer={!!user && h.organizerId === user.id}
+                    />
+                  </div>
+                ))}
+              </div>
+              {pagination.totalPages > 1 && (
+                <div className="px-6 py-6 flex flex-wrap items-center justify-between gap-3 border-t border-[#171717]">
+                  <div className="text-sm text-[#666666]">
+                    第 <span className="font-mono font-medium text-[#171717]">{pagination.currentPage}</span> / {pagination.totalPages} 页
+                    <span className="ml-2 font-mono">· 共 {pagination.total} 条</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={pagination.prev}
+                      disabled={!pagination.hasPrev}
+                      className="px-3 py-1.5 text-xs font-black uppercase tracking-widest bg-[#F5F4F0] border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717]"
+                    >
+                      上一页
+                    </button>
+                    <button
+                      type="button"
+                      onClick={pagination.next}
+                      disabled={!pagination.hasNext}
+                      className="px-3 py-1.5 text-xs font-black uppercase tracking-widest bg-[#F5F4F0] border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717]"
+                    >
+                      下一页
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
             <div className="py-24 text-center">
               <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">

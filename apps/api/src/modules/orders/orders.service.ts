@@ -39,6 +39,8 @@ export class OrdersService {
           select: { id: true, title: true, thumbnail: true, costType: true, price: true },
         },
       },
+      // P1-7 防御: max 100, 防 DoS
+      take: 100,
     });
   }
 
@@ -193,7 +195,7 @@ export class OrdersService {
         data: {
           status: OrderStatus.paid,
           paidAt: new Date(),
-          paymentMethod: paymentMethod ?? existing.paymentMethod ?? 'mock',
+          paymentMethod: (paymentMethod ?? existing.paymentMethod ?? 'mock') as 'wechat' | 'alipay' | 'stripe',
           transactionId,
         },
       });

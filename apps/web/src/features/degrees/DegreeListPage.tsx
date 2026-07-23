@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { BookOpen, GraduationCap, Sparkles, ArrowUpRight } from 'lucide-react';
+import { Seo } from '../../components/Seo';
 import api from '../../lib/api';
 import type { NanoDegreeWithPath } from '@opencsg/shared-types';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
@@ -30,10 +30,11 @@ export function DegreeListPage() {
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
-      <Helmet>
-        <title>{`${headline.replace(/\n/g, ' ')} · OpenCSG Academy`}</title>
-        <meta name="description" content={sub} />
-      </Helmet>
+      <Seo
+        title={headline.replace(/\n/g, ' ')}
+        description={sub}
+        path="/degrees"
+      />
       {/* Header banner (collapsible on scroll) */}
       <section
         ref={heroRef}
@@ -47,7 +48,7 @@ export function DegreeListPage() {
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-4">
             {eyebrow}
           </div>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase leading-[0.9] mb-6">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase leading-[0.9] mb-6">
             {headlineLines[0] ?? headline}
             <br />{headlineLines[1] ?? ''}
           </h1>
@@ -78,7 +79,7 @@ export function DegreeListPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-12 max-w-7xl mx-auto px-6">
                     {/* Number column */}
                     <div className="lg:col-span-1 p-8 border-b lg:border-b-0 lg:border-r border-[#171717] flex lg:items-start">
-                      <span className="text-3xl lg:text-5xl font-black tracking-tighter text-[#A3A3A3]">
+                      <span className="text-2xl md:text-3xl font-black tracking-tighter text-[#A3A3A3]">
                         {String(idx + 1).padStart(2, '0')}
                       </span>
                     </div>

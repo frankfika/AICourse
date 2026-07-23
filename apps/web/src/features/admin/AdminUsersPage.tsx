@@ -44,8 +44,10 @@ import { useToast } from '../../components/auth/Toast';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Drawer } from '../../components/ui/Drawer';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { I18nText } from '../../components/I18nText';
+import { useLocaleDate } from '../../hooks/useLocaleDate';
 import { cn } from '../../lib/cn';
-import { useEnum } from '../../lib/cms';
+import { useEnum, useI18n } from '../../lib/cms';
 
 interface UserSummary {
   id: string;
@@ -153,6 +155,7 @@ function generateTempPassword(): string {
 export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -183,12 +186,12 @@ export function AdminUsersPage() {
     mutationFn: (newRole: string) =>
       api.patch(`/api/v1/users/${selectedUserId}`, { role: newRole }),
     onSuccess: () => {
-      showToast('角色已更新', 'success');
+      showToast(t('admin.users.toast.role_updated', '角色已更新'), 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedUserId] });
     },
     onError: (err: any) => {
-      showToast(err?.response?.data?.message ?? '更新失败', 'error');
+      showToast(err?.response?.data?.message ?? t('admin.users.toast.update_failed', '更新失败'), 'error');
     },
   });
 
@@ -197,10 +200,13 @@ export function AdminUsersPage() {
     mutationFn: (courseIds: string[]) =>
       api.post(`/api/v1/users/${selectedUserId}/grant-course`, { courseIds }),
     onSuccess: (res) => {
-      showToast(`已授权 ${res.data.granted} 门课程`, 'success');
+      showToast(
+        t('admin.users.toast.grant_success', '已授权 {count} 门课程').replace('{count}', String(res.data.granted)),
+        'success',
+      );
       queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedUserId] });
     },
-    onError: (err: any) => showToast(err?.response?.data?.message ?? '授权失败', 'error'),
+    onError: (err: any) => showToast(err?.response?.data?.message ?? t('admin.users.toast.grant_failed', '授权失败'), 'error'),
   });
 
   // 重置密码
@@ -214,21 +220,25 @@ export function AdminUsersPage() {
         password: tempPassword as any,
       }),
     onSuccess: (_, tempPassword) => {
-      showToast(`临时密码:${tempPassword}(请复制告知用户,刷新页面后消失)`, 'success', 15000);
+      showToast(
+        t('admin.users.toast.temp_password', '临时密码:{password}(请复制告知用户,刷新页面后消失)').replace('{password}', tempPassword),
+        'success',
+        15000,
+      );
     },
-    onError: (err: any) => showToast(err?.response?.data?.message ?? '重置失败', 'error'),
+    onError: (err: any) => showToast(err?.response?.data?.message ?? t('admin.users.toast.reset_failed', '重置失败'), 'error'),
   });
 
   // 删除
   const deleteMutation = useMutation({
     mutationFn: () => api.delete(`/api/v1/users/${selectedUserId}`),
     onSuccess: () => {
-      showToast('用户已删除', 'success');
+      showToast(t('admin.users.toast.deleted', '用户已删除'), 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setConfirmDelete(false);
       setSelectedUserId(null);
     },
-    onError: (err: any) => showToast(err?.response?.data?.message ?? '删除失败', 'error'),
+    onError: (err: any) => showToast(err?.response?.data?.message ?? t('admin.users.toast.delete_failed', '删除失败'), 'error'),
   });
 
   return (
@@ -237,18 +247,22 @@ export function AdminUsersPage() {
       <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
         <div>
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-2">
-            / Admin · Users
+            <I18nText k="admin.users.eyebrow" default="/ Admin · Users" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">用户管理</h2>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase">
+            <I18nText k="admin.users.title" default="用户管理" />
+          </h2>
         </div>
         <div className="relative max-w-xs w-full">
+          <label htmlFor="admin-user-search" className="sr-only">搜索用户</label>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999999]" />
           <input
+            id="admin-user-search"
             type="text"
-            placeholder="搜索邮箱 / 昵称..."
+            placeholder={t('admin.users.search_placeholder', '搜索邮箱 / 昵称...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-100 border-2 border-[#171717] dark:border-neutral-50 text-sm text-[#171717] dark:text-neutral-50 focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-100 border-2 border-[#171717] dark:border-neutral-50 text-sm text-[#171717] dark:text-neutral-50 focus:outline-none focus:bg-[#EEEDE9] focus:ring-2 focus:ring-[#171717] dark:focus:bg-neutral-800 transition-colors"
           />
         </div>
       </div>
@@ -256,9 +270,9 @@ export function AdminUsersPage() {
       {/* 错误态 */}
       {isError && (
         <div className="border-2 border-[#171717] bg-[#F5F4F0] text-[#171717] p-4 text-sm">
-          加载用户列表失败
+          <I18nText k="admin.users.load_failed" default="加载用户列表失败" />
           <button onClick={() => refetch()} className="ml-2 underline">
-            重试
+            <I18nText k="common.retry" default="重试" />
           </button>
         </div>
       )}
@@ -319,14 +333,16 @@ export function AdminUsersPage() {
                     onClick={() => setSelectedUserId(user.id)}
                     className="inline-flex items-center gap-1 px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white transition-colors"
                   >
-                    <Eye className="w-3 h-3" /> 详情
+                    <Eye className="w-3 h-3" /> <I18nText k="admin.users.action.detail" default="详情" />
                   </button>
                 </div>
               </div>
             );
           })
         ) : (
-          <div className="p-16 text-center text-sm text-[#666666]">未找到用户</div>
+          <div className="p-16 text-center text-sm text-[#666666]">
+            <I18nText k="admin.users.empty" default="未找到用户" />
+          </div>
         )}
       </div>
 
@@ -334,7 +350,7 @@ export function AdminUsersPage() {
       <Drawer
         open={!!selectedUserId}
         onClose={() => setSelectedUserId(null)}
-        title={detail ? `${detail.name} (${detail.email})` : '用户详情'}
+        title={detail ? `${detail.name} (${detail.email})` : t('admin.users.detail_title', '用户详情')}
         width={520}
       >
         {detailLoading ? (
@@ -366,10 +382,10 @@ export function AdminUsersPage() {
         onConfirm={async () => {
           await deleteMutation.mutateAsync();
         }}
-        title="确认删除该用户?"
-        description="此操作将从数据库彻底删除该用户及其所有报名、订单、证书、积分。不可恢复。"
+        title={t('admin.users.delete_confirm.title', '确认删除该用户?')}
+        description={t('admin.users.delete_confirm.desc', '此操作将从数据库彻底删除该用户及其所有报名、订单、证书、积分。不可恢复。')}
         variant="danger"
-        confirmText="确认删除"
+        confirmText={t('admin.users.delete_confirm.confirm', '确认删除')}
       />
     </div>
   );
@@ -398,6 +414,8 @@ function UserDetailContent({
   const [courseInput, setCourseInput] = useState('');
   const [showGrant, setShowGrant] = useState(false);
   const { getColor: getOrderStatusColor } = useEnum('order_status');
+  const { t } = useI18n();
+  const { formatDate, formatDateTime, formatNumber } = useLocaleDate();
 
   const roleMeta = ROLE_META[detail.role] ?? ROLE_META.student;
   const RoleIcon = roleMeta.icon;
@@ -409,10 +427,10 @@ function UserDetailContent({
     <div className="divide-y divide-[#EEEDE9]">
       {/* 1) 基本信息 */}
       <section className="p-5">
-        <SectionTitle icon={UserIcon} title="基本信息" />
+        <SectionTitle icon={UserIcon} title={t('admin.users.section.basic', '基本信息')} />
         <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
-          <Field label="用户 ID" value={<span className="font-mono text-xs">{detail.id}</span>} />
-          <Field label="角色">
+          <Field label={t('admin.users.field.user_id', '用户 ID')} value={<span className="font-mono text-xs">{detail.id}</span>} />
+          <Field label={t('admin.users.field.role', '角色')}>
             <span
               className={cn(
                 'inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest',
@@ -422,16 +440,21 @@ function UserDetailContent({
               <RoleIcon className="w-3 h-3" /> {roleMeta.label}
             </span>
           </Field>
-          <Field label="注册时间" value={formatDate(detail.createdAt)} />
-          <Field label="最后登录" value={formatDateTime(detail.lastLoginAt)} />
-          <Field label="积分" value={`${detail.points} (Lv.${detail.level})`} />
-          <Field label="需重置密码">
+          <Field label={t('admin.users.field.created_at', '注册时间')} value={formatDate(detail.createdAt)} />
+          <Field label={t('admin.users.field.last_login', '最后登录')} value={formatDateTime(detail.lastLoginAt)} />
+          <Field
+            label={t('admin.users.field.points', '积分')}
+            value={`${formatNumber(detail.points)} (Lv.${detail.level})`}
+          />
+          <Field label={t('admin.users.field.password_reset', '需重置密码')}>
             {detail.passwordResetRequired ? (
               <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-widest bg-[#171717] text-white">
-                是
+                <I18nText k="admin.users.flag.yes" default="是" />
               </span>
             ) : (
-              <span className="text-[#666666]">否</span>
+              <span className="text-[#666666]">
+                <I18nText k="admin.users.flag.no" default="否" />
+              </span>
             )}
           </Field>
         </div>
@@ -440,7 +463,7 @@ function UserDetailContent({
             value={detail.role}
             onChange={(e) => onChangeRole(e.target.value)}
             disabled={isUpdating}
-            aria-label="修改角色"
+            aria-label={t('admin.users.field.change_role', '修改角色')}
             className="px-3 py-2 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 disabled:opacity-50"
           >
             <option value="student">student</option>
@@ -453,36 +476,36 @@ function UserDetailContent({
             disabled={isUpdating}
             onClick={onResetPassword}
           >
-            重置密码
+            <I18nText k="admin.users.action.reset_password" default="重置密码" />
           </BrutalButton>
           <BrutalButton
             size="sm"
             variant="danger"
             onClick={onDelete}
           >
-            删除账号
+            <I18nText k="admin.users.action.delete_account" default="删除账号" />
           </BrutalButton>
         </div>
         <p className="text-[10px] text-[#666666] mt-2">
-          提示:封号功能 Phase 2+(schema 暂不支持 banned 字段)
+          <I18nText k="admin.users.ban_hint" default="提示:封号功能 Phase 2+(schema 暂不支持 banned 字段)" />
         </p>
       </section>
 
       {/* 2) 学习概况 */}
       <section className="p-5">
-        <SectionTitle icon={GraduationCap} title="学习概况" />
+        <SectionTitle icon={GraduationCap} title={t('admin.users.section.learning', '学习概况')} />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
-          <StatBox label="报名课程" value={detail._count.enrollments} />
-          <StatBox label="订单" value={detail._count.orders} />
-          <StatBox label="证书" value={detail._count.certificates} />
-          <StatBox label="进度记录" value={detail._count.progressRecords} />
-          <StatBox label="作品提交" value={detail._count.submissions} />
-          <StatBox label="积分" value={detail.points} />
+          <StatBox label={t('admin.users.stat.enrollments', '报名课程')} value={detail._count.enrollments} />
+          <StatBox label={t('admin.users.stat.orders', '订单')} value={detail._count.orders} />
+          <StatBox label={t('admin.users.stat.certificates', '证书')} value={detail._count.certificates} />
+          <StatBox label={t('admin.users.stat.progress', '进度记录')} value={detail._count.progressRecords} />
+          <StatBox label={t('admin.users.stat.submissions', '作品提交')} value={detail._count.submissions} />
+          <StatBox label={t('admin.users.stat.points', '积分')} value={detail.points} />
         </div>
         {detail.enrollments.length > 0 && (
           <div className="mt-4">
             <h4 className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
-              最近报名 (前 20)
+              <I18nText k="admin.users.recent_enrollments" default="最近报名 (前 20)" />
             </h4>
             <ul className="space-y-1 text-xs">
               {detail.enrollments.slice(0, 10).map((e) => (
@@ -491,7 +514,7 @@ function UserDetailContent({
                   className="flex items-center justify-between gap-2 py-1.5 px-2 bg-[#F5F4F0]"
                 >
                   <span className="truncate">
-                    {e.course?.title ?? e.degree?.title ?? '未知课程'}
+                    {e.course?.title ?? e.degree?.title ?? t('admin.users.unknown_course', '未知课程')}
                   </span>
                   <span className="text-[#666666] whitespace-nowrap">
                     {formatDate(e.enrolledAt)}
@@ -505,9 +528,14 @@ function UserDetailContent({
 
       {/* 3) 订单 */}
       <section className="p-5">
-        <SectionTitle icon={ShoppingBag} title={`订单 (${detail._count.orders})`} />
+        <SectionTitle
+          icon={ShoppingBag}
+          title={t('admin.users.section.orders', '订单 ({count})').replace('{count}', String(detail._count.orders))}
+        />
         {detail.orders.length === 0 ? (
-          <p className="text-xs text-[#666666] mt-2">无订单</p>
+          <p className="text-xs text-[#666666] mt-2">
+            <I18nText k="admin.users.no_orders" default="无订单" />
+          </p>
         ) : (
           <ul className="space-y-1.5 mt-3 text-xs">
             {detail.orders.slice(0, 10).map((o) => (
@@ -535,9 +563,14 @@ function UserDetailContent({
 
       {/* 4) 证书 */}
       <section className="p-5">
-        <SectionTitle icon={Award} title={`证书 (${detail._count.certificates})`} />
+        <SectionTitle
+          icon={Award}
+          title={t('admin.users.section.certificates', '证书 ({count})').replace('{count}', String(detail._count.certificates))}
+        />
         {detail.certificates.length === 0 ? (
-          <p className="text-xs text-[#666666] mt-2">未获证书</p>
+          <p className="text-xs text-[#666666] mt-2">
+            <I18nText k="admin.users.no_certificates" default="未获证书" />
+          </p>
         ) : (
           <ul className="space-y-1.5 mt-3 text-xs">
             {detail.certificates.slice(0, 10).map((c) => (
@@ -560,9 +593,14 @@ function UserDetailContent({
 
       {/* 5) 积分 */}
       <section className="p-5">
-        <SectionTitle icon={Coins} title={`积分 (当前 ${detail.points})`} />
+        <SectionTitle
+          icon={Coins}
+          title={t('admin.users.section.points', '积分 (当前 {count})').replace('{count}', String(detail.points))}
+        />
         {detail.pointTransactions.length === 0 ? (
-          <p className="text-xs text-[#666666] mt-2">无流水</p>
+          <p className="text-xs text-[#666666] mt-2">
+            <I18nText k="admin.users.no_point_history" default="无流水" />
+          </p>
         ) : (
           <ul className="space-y-1 mt-3 text-xs">
             {detail.pointTransactions.slice(0, 10).map((p) => (
@@ -588,7 +626,7 @@ function UserDetailContent({
 
       {/* 6) 授权课程操作 */}
       <section className="p-5">
-        <SectionTitle icon={RefreshCw} title="授权课程" />
+        <SectionTitle icon={RefreshCw} title={t('admin.users.section.grant', '授权课程')} />
         {!showGrant ? (
           <div className="mt-3">
             <BrutalButton
@@ -596,16 +634,16 @@ function UserDetailContent({
               variant="secondary"
               onClick={() => setShowGrant(true)}
             >
-              授权新课程
+              <I18nText k="admin.users.action.grant_new" default="授权新课程" />
             </BrutalButton>
           </div>
         ) : (
           <div className="mt-3 space-y-3">
             <BrutalField
-              label="课程 ID(逗号分隔)"
+              label={t('admin.users.field.course_ids', '课程 ID(逗号分隔)')}
               value={courseInput}
               onChange={setCourseInput}
-              placeholder="例如:abc123, def456"
+              placeholder={t('admin.users.placeholder.course_ids', '例如:abc123, def456')}
             />
             <div className="flex gap-2">
               <BrutalButton
@@ -618,7 +656,7 @@ function UserDetailContent({
                     .map((s) => s.trim())
                     .filter(Boolean);
                   if (ids.length === 0) {
-                    showToast('请输入至少一个课程 ID', 'warning');
+                    showToast(t('admin.users.toast.empty_course_ids', '请输入至少一个课程 ID'), 'warning');
                     return;
                   }
                   onGrantCourses(ids);
@@ -626,7 +664,7 @@ function UserDetailContent({
                   setShowGrant(false);
                 }}
               >
-                确认授权
+                <I18nText k="admin.users.action.confirm_grant" default="确认授权" />
               </BrutalButton>
               <BrutalButton
                 size="sm"
@@ -636,7 +674,7 @@ function UserDetailContent({
                   setCourseInput('');
                 }}
               >
-                取消
+                <I18nText k="common.cancel" default="取消" />
               </BrutalButton>
             </div>
           </div>
@@ -645,8 +683,10 @@ function UserDetailContent({
 
       {/* 7) 活动日志(Phase 2+) */}
       <section className="p-5">
-        <SectionTitle icon={Calendar} title="活动日志" />
-        <p className="text-xs text-[#666666] mt-2">Phase 2+ 接 audit-log 读 API</p>
+        <SectionTitle icon={Calendar} title={t('admin.users.section.activity', '活动日志')} />
+        <p className="text-xs text-[#666666] mt-2">
+          <I18nText k="admin.users.activity_hint" default="Phase 2+ 接 audit-log 读 API" />
+        </p>
       </section>
     </div>
   );

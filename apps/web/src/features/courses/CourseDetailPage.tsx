@@ -25,6 +25,9 @@ import { useAuthStore } from '../../stores/authStore';
 import { ProgressRing } from '../../components/ProgressRing';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { PurchaseModal } from '../degrees/PurchaseModal';
+import { Seo } from '../../components/Seo';
+import { Tabs, TabPanel } from '../../components/ui/Tabs';
+import { LazyImage } from '../../components/ui/LazyImage';
 
 interface Course {
   id: string;
@@ -223,6 +226,39 @@ export function CourseDetailPage() {
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717] animate-in fade-in duration-500">
+      <Seo
+        title={course.title}
+        description={course.description.slice(0, 200)}
+        path={`/courses/${course.id}`}
+        image={course.thumbnail}
+        type="article"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Course',
+          name: course.title,
+          description: course.description,
+          provider: {
+            '@type': 'Organization',
+            name: 'OpenCSG Academy',
+            sameAs: 'https://opencsg.com',
+          },
+          educationalLevel: course.level,
+          timeRequired: course.duration,
+          inLanguage: 'zh-CN',
+          offers: {
+            '@type': 'Offer',
+            category: course.costType === 'free' ? 'Free' : 'Paid',
+            price: course.costType === 'free' ? 0 : Number(course.price),
+            priceCurrency: 'CNY',
+            availability: 'https://schema.org/InStock',
+          },
+          hasCourseInstance: {
+            '@type': 'CourseInstance',
+            courseMode: 'online',
+            instructor: { '@type': 'Person', name: course.instructor },
+          },
+        }}
+      />
       {/* Top action bar */}
       <section className="border-b border-[#171717] bg-white">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -282,10 +318,11 @@ export function CourseDetailPage() {
           {/* Right: thumbnail + CTA */}
           <div className="bg-[#171717] text-white flex flex-col">
             <div className="aspect-[16/10] border-b border-white/20 overflow-hidden bg-[#262626]">
-              <img
+              <LazyImage
                 src={course.thumbnail}
                 alt={course.title}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
             <div className="p-8 md:p-12 flex flex-col gap-4">
@@ -341,36 +378,35 @@ export function CourseDetailPage() {
         </div>
       </section>
 
-      {/* Tabs bar */}
+      {/* Tabs bar — P1-3 用公共 Tabs,加 role/aria-selected */}
       <section className="border-b border-[#171717] bg-white sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-6 flex overflow-x-auto scrollbar-hide">
-          {[
-            { key: 'overview', label: '课程概览', icon: BookOpen },
-            { key: 'video', label: '视频课程', icon: PlayCircle },
-            { key: 'resources', label: `学习资源 (${totalResources})`, icon: FileText },
-          ].map(({ key, label, icon: Icon }, i, arr) => {
-            const active = activeTab === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key as any)}
-                className={`py-4 px-5 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 ${
-                  active
-                    ? 'text-[#171717] border-b-2 border-[#171717] -mb-px'
-                    : 'text-[#666666] hover:text-[#171717]'
-                } ${i < arr.length - 1 ? 'border-r border-[#EEEDE9]' : ''}`}
-              >
-                <Icon className="w-4 h-4" /> {label}
-              </button>
-            );
-          })}
+          <Tabs<'overview' | 'video' | 'resources'>
+            value={activeTab}
+            onChange={(k) => setActiveTab(k)}
+            ariaLabel="课程详情"
+            items={[
+              { key: 'overview', label: '课程概览', icon: BookOpen },
+              { key: 'video', label: '视频课程', icon: PlayCircle },
+              { key: 'resources', label: `学习资源 (${totalResources})`, icon: FileText },
+            ]}
+            idPrefix="course-detail"
+            className="flex divide-x divide-[#EEEDE9]"
+            itemClassName={(_, active) =>
+              `py-4 px-5 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 shrink-0 focus:outline-none focus:ring-2 focus:ring-[#171717] ${
+                active
+                  ? 'text-[#171717] border-b-2 border-[#171717] -mb-px'
+                  : 'text-[#666666] hover:text-[#171717]'
+              }`
+            }
+          />
         </div>
       </section>
 
       {/* Tab content */}
       <section className="border-b border-[#171717]">
         <div className="max-w-7xl mx-auto px-6 py-12">
-          {activeTab === 'overview' && (
+          <TabPanel value={activeTab} tabKey="overview" idPrefix="course-detail">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">
                 <div>
@@ -428,9 +464,9 @@ export function CourseDetailPage() {
                 </div>
               </div>
             </div>
-          )}
+          </TabPanel>
 
-          {activeTab === 'video' && (
+          <TabPanel value={activeTab} tabKey="video" idPrefix="course-detail">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
                 {!isUnlocked ? (
@@ -533,9 +569,9 @@ export function CourseDetailPage() {
                 </div>
               </div>
             </div>
-          )}
+          </TabPanel>
 
-          {activeTab === 'resources' && (
+          <TabPanel value={activeTab} tabKey="resources" idPrefix="course-detail">
             <div>
               {!isUnlocked ? (
                 <div className="text-center py-24 bg-white border border-[#171717]">
@@ -600,7 +636,7 @@ export function CourseDetailPage() {
                 </div>
               )}
             </div>
-          )}
+          </TabPanel>
         </div>
       </section>
 

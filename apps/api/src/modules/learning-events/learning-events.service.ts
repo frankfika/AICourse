@@ -49,7 +49,8 @@ export class LearningEventsService {
     return this.prisma.learningEvent.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      take: Math.min(limit, 200),
+      // P1-7: max 100 (从 200 收紧)
+      take: Math.min(limit, 100),
     });
   }
 
@@ -60,7 +61,8 @@ export class LearningEventsService {
     return this.prisma.learningEvent.findMany({
       where: { lessonId },
       orderBy: { createdAt: 'desc' },
-      take: Math.min(limit, 200),
+      // P1-7: max 100 (从 200 收紧)
+      take: Math.min(limit, 100),
     });
   }
 }

@@ -21,7 +21,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
+import { Seo } from '../../components/Seo';
 import {
   ArrowLeft,
   BookOpen,
@@ -45,6 +45,8 @@ import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { PurchaseModal } from './PurchaseModal';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import { Tabs, TabPanel } from '../../components/ui/Tabs';
+import { LazyImage } from '../../components/ui/LazyImage';
 
 const P2_PLACEHOLDERS = [
   { icon: Layers, title: '路径阶段图', sub: '后端 stage API 设计中' },
@@ -88,7 +90,7 @@ export function DegreeDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="bg-neutral-50 dark:bg-neutral-50 min-h-screen">
+      <div className="bg-[#F5F4F0] min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <Skeleton variant="text" className="h-4 w-32" />
           <Skeleton variant="rectangle" className="h-64 w-full rounded-2xl" />
@@ -101,12 +103,12 @@ export function DegreeDetailPage() {
   if (isError) {
     const status = (error as any)?.response?.status;
     return (
-      <div className="bg-neutral-50 dark:bg-neutral-50 min-h-screen">
+      <div className="bg-[#F5F4F0] min-h-screen">
         <div className="max-w-2xl mx-auto px-4 py-32 text-center">
-          <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-900 mb-2">
+          <h2 className="text-2xl font-bold text-[#171717] mb-2">
             {t('degree.error.load', '学位加载失败')}
           </h2>
-          <p className="text-sm text-neutral-600 dark:text-neutral-600 mb-6">
+          <p className="text-sm text-[#666666] mb-6">
             {status === 404
               ? t('degree.error.404', '该学位不存在或已下架')
               : `${t('common.error.network', '网络错误')}${(error as any)?.message ? `: ${(error as any).message}` : ''}`}
@@ -126,12 +128,12 @@ export function DegreeDetailPage() {
 
   if (!degree) {
     return (
-      <div className="bg-neutral-50 dark:bg-neutral-50 min-h-screen">
+      <div className="bg-[#F5F4F0] min-h-screen">
         <div className="max-w-2xl mx-auto px-4 py-32 text-center">
-          <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-900 mb-2">
+          <h2 className="text-2xl font-bold text-[#171717] mb-2">
             {t('degree.not_found', '学位不存在')}
           </h2>
-          <p className="text-sm text-neutral-600 dark:text-neutral-600 mb-6">
+          <p className="text-sm text-[#666666] mb-6">
             {t('degree.not_found.desc', '可能链接已失效,回到学位列表看看其他选择。')}
           </p>
           <Link to="/degrees">
@@ -153,17 +155,33 @@ export function DegreeDetailPage() {
   })();
 
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-50 min-h-screen text-neutral-900 dark:text-neutral-900">
-      <Helmet>
-        <title>{degree ? `${degree.title} · OpenCSG Academy` : '学位详情 · OpenCSG Academy'}</title>
-        <meta name="description" content={degree?.description ?? '学位详情页'} />
-      </Helmet>
+    <div className="bg-[#F5F4F0] min-h-screen text-[#171717]">
+      <Seo
+        title={degree ? degree.title : '学位详情'}
+        description={degree?.description ?? '学位详情页'}
+        path={degree ? `/degrees/${degree.id}` : '/degrees'}
+        image={degree?.thumbnail || undefined}
+        type="article"
+        jsonLd={degree ? {
+          '@context': 'https://schema.org',
+          '@type': 'Course',
+          name: degree.title,
+          description: degree.description,
+          provider: { '@type': 'Organization', name: 'OpenCSG Academy' },
+          offers: {
+            '@type': 'Offer',
+            category: degree.costType === 'free' ? 'Free' : 'Paid',
+            price: degree.costType === 'free' ? 0 : Number(degree.price),
+            priceCurrency: 'CNY',
+          },
+        } : undefined}
+      />
       {/* Top action bar */}
-      <section className="bg-neutral-0 dark:bg-neutral-100 border-b border-neutral-200 dark:border-neutral-200">
+      <section className="bg-[#F5F4F0] border-b border-[#171717]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link
             to="/degrees"
-            className="inline-flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 hover:text-[#171717] transition-colors"
+            className="inline-flex items-center gap-2 text-xs text-[#666666] hover:text-[#171717] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> {back}
           </Link>
@@ -171,61 +189,62 @@ export function DegreeDetailPage() {
       </section>
 
       {/* Hero — split white + black */}
-      <section className="border-b border-neutral-200 dark:border-neutral-200">
+      <section className="border-b border-[#171717]">
         <div className="grid grid-cols-1 lg:grid-cols-2">
-          <div className="p-8 md:p-12 lg:p-16 bg-neutral-0 dark:bg-neutral-100 border-b lg:border-b-0 lg:border-r border-neutral-200 dark:border-neutral-200 flex flex-col justify-center">
+          <div className="p-8 md:p-12 lg:p-16 bg-[#F5F4F0] border-b lg:border-b-0 lg:border-r border-[#171717] flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-6 flex-wrap">
-              <span className="inline-flex items-center px-2 py-0.5 bg-neutral-900 dark:bg-neutral-900 text-white text-[10px] font-black uppercase tracking-widest">
+              <span className="inline-flex items-center px-2 py-0.5 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest">
                 Nano Degree
               </span>
               {isFree ? (
-                <span className="inline-flex items-center px-2 py-0.5 border border-neutral-900 dark:border-neutral-900 text-neutral-900 dark:text-neutral-900 text-[10px] font-black uppercase tracking-widest">
+                <span className="inline-flex items-center px-2 py-0.5 border border-[#171717] text-[#171717] text-[10px] font-black uppercase tracking-widest">
                   Free
                 </span>
               ) : (
-                <span className="inline-flex items-center px-2 py-0.5 border border-neutral-900 dark:border-neutral-900 text-neutral-900 dark:text-neutral-900 text-[10px] font-black uppercase tracking-widest">
+                <span className="inline-flex items-center px-2 py-0.5 border border-[#171717] text-[#171717] text-[10px] font-black uppercase tracking-widest">
                   ¥{degree.price}
                 </span>
               )}
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-[#666666]">
                 <Sparkles className="w-3 h-3" /> {degree.stats?.estimatedHours ?? 0}h
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[0.95] mb-6 break-words">
               {degree.title}
             </h1>
-            <p className="text-neutral-600 dark:text-neutral-600 text-lg leading-relaxed mb-8 max-w-2xl">
+            <p className="text-[#666666] text-lg leading-relaxed mb-8 max-w-2xl">
               {degree.description}
             </p>
 
-            <div className="grid grid-cols-4 border-t border-neutral-200 dark:border-neutral-200">
-              <div className="py-5 border-r border-neutral-200 dark:border-neutral-200">
-                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">{t('degree.stats.courses', 'Courses')}</div>
+            <div className="grid grid-cols-4 border-t border-[#171717]">
+              <div className="py-5 border-r border-[#171717]">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">{t('degree.stats.courses', 'Courses')}</div>
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.courseCount ?? degree.courses.length}</div>
               </div>
-              <div className="py-5 border-r border-neutral-200 dark:border-neutral-200">
-                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">{t('degree.stats.chapters', 'Chapters')}</div>
+              <div className="py-5 border-r border-[#171717]">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">{t('degree.stats.chapters', 'Chapters')}</div>
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.totalChapters ?? 0}</div>
               </div>
-              <div className="py-5 border-r border-neutral-200 dark:border-neutral-200">
-                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">{t('degree.stats.learners', 'Learners')}</div>
+              <div className="py-5 border-r border-[#171717]">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">{t('degree.stats.learners', 'Learners')}</div>
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.totalLearners ?? 0}</div>
               </div>
               <div className="py-5">
-                <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mb-1">{t('degree.stats.hours', 'Hours')}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">{t('degree.stats.hours', 'Hours')}</div>
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.estimatedHours ?? 0}</div>
               </div>
             </div>
           </div>
 
           {/* Right: thumbnail + CTA */}
-          <div className="bg-neutral-900 dark:bg-neutral-900 text-white flex flex-col">
-            <div className="aspect-[16/10] border-b border-white/20 overflow-hidden bg-neutral-800">
+          <div className="bg-[#171717] text-white flex flex-col">
+            <div className="aspect-[16/10] border-b border-white/20 overflow-hidden bg-[#262626]">
               {degree.thumbnail ? (
-                <img
+                <LazyImage
                   src={degree.thumbnail}
                   alt={degree.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -241,7 +260,7 @@ export function DegreeDetailPage() {
               ) : user ? (
                 <button
                   onClick={() => setPurchaseOpen(true)}
-                  className="inline-flex items-center justify-between gap-3 bg-white text-neutral-900 px-6 py-4 font-black uppercase tracking-widest text-sm hover:bg-neutral-100 transition-colors"
+                  className="inline-flex items-center justify-between gap-3 bg-white text-[#171717] px-6 py-4 font-black uppercase tracking-widest text-sm hover:bg-[#EEEDE9] transition-colors"
                 >
                   <span>{isFree ? t('degree.cta.enroll', 'Free Enroll') : t('degree.cta.buy', 'Buy ¥{price}').replace('{price}', String(degree.price))}</span>
                   <ArrowUpRight className="w-4 h-4" />
@@ -249,7 +268,7 @@ export function DegreeDetailPage() {
               ) : (
                 <Link
                   to="/login"
-                  className="inline-flex items-center justify-between gap-3 bg-white text-neutral-900 px-6 py-4 font-black uppercase tracking-widest text-sm hover:bg-neutral-100 transition-colors"
+                  className="inline-flex items-center justify-between gap-3 bg-white text-[#171717] px-6 py-4 font-black uppercase tracking-widest text-sm hover:bg-[#EEEDE9] transition-colors"
                 >
                   <span>{t('degree.cta.login', 'Login to Enroll')}</span>
                   <ArrowUpRight className="w-4 h-4" />
@@ -263,39 +282,38 @@ export function DegreeDetailPage() {
         </div>
       </section>
 
-      {/* Tabs */}
-      <section className="border-b border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 sticky top-16 z-40">
+      {/* Tabs — P1-3 用公共 Tabs,加 role/aria-selected */}
+      <section className="border-b border-[#171717] bg-[#F5F4F0] sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto scrollbar-hide">
-          {[
-            { key: 'overview', label: t('degrees.detail.tabs.overview', '学位概览'), icon: BookOpen },
-            { key: 'courses', label: `${t('degrees.detail.tabs.courses', '课程')} (${degree.courses.length})`, icon: PlayCircle },
-          ].map(({ key, label, icon: Icon }, i, arr) => {
-            const active = activeTab === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key as any)}
-                className={`py-4 px-5 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 ${
-                  active
-                    ? 'text-neutral-900 dark:text-neutral-900 border-b-2 border-neutral-900 dark:border-neutral-900 -mb-px'
-                    : 'text-neutral-600 dark:text-neutral-600 hover:text-neutral-900'
-                } ${i < arr.length - 1 ? 'border-r border-neutral-200 dark:border-neutral-200' : ''}`}
-              >
-                <Icon className="w-4 h-4" /> {label}
-              </button>
-            );
-          })}
+          <Tabs<'overview' | 'courses'>
+            value={activeTab}
+            onChange={(k) => setActiveTab(k)}
+            ariaLabel="学位详情"
+            items={[
+              { key: 'overview', label: t('degrees.detail.tabs.overview', '学位概览'), icon: BookOpen },
+              { key: 'courses', label: `${t('degrees.detail.tabs.courses', '课程')} (${degree.courses.length})`, icon: PlayCircle },
+            ]}
+            idPrefix="degree-detail"
+            className="flex divide-x divide-[#171717]"
+            itemClassName={(_, active) =>
+              `py-4 px-5 text-xs font-black uppercase tracking-widest transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#171717] ${
+                active
+                  ? 'text-[#171717] border-b-2 border-[#171717] -mb-px'
+                  : 'text-[#666666] hover:text-[#171717]'
+              }`
+            }
+          />
         </div>
       </section>
 
       {/* Tab content */}
-      <section className="border-b border-neutral-200 dark:border-neutral-200">
+      <section className="border-b border-[#171717]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {activeTab === 'overview' && (
+          <TabPanel value={activeTab} tabKey="overview" idPrefix="degree-detail">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-neutral-600 mb-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
                     / 01 Overview
                   </div>
                   <p className="text-lg leading-relaxed">{degree.description}</p>
@@ -303,16 +321,16 @@ export function DegreeDetailPage() {
 
                 {learningPoints.length > 0 && (
                   <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-neutral-600 mb-3">
+                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
                       / 02 What You Will Learn
                     </div>
-                    <div className="grid sm:grid-cols-2 gap-0 border-t border-l border-neutral-200 dark:border-neutral-200">
+                    <div className="grid sm:grid-cols-2 gap-0 border-t border-l border-[#171717]">
                       {learningPoints.map((p, i) => (
                         <div
                           key={i}
-                          className="flex items-start gap-3 p-4 border-b border-r border-neutral-200 dark:border-neutral-200 hover:bg-neutral-0 dark:hover:bg-neutral-100 transition-colors"
+                          className="flex items-start gap-3 p-4 border-b border-r border-[#171717] hover:bg-[#F5F4F0]:bg-[#EEEDE9] transition-colors"
                         >
-                          <div className="shrink-0 w-7 h-7 bg-neutral-900 dark:bg-neutral-900 text-white text-[10px] font-black flex items-center justify-center">
+                          <div className="shrink-0 w-7 h-7 bg-[#171717] text-white text-[10px] font-black flex items-center justify-center">
                             {String(i + 1).padStart(2, '0')}
                           </div>
                           <span className="text-sm font-medium leading-relaxed pt-1">{p}</span>
@@ -324,7 +342,7 @@ export function DegreeDetailPage() {
 
                 {/* P2 增强功能占位 */}
                 <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-600 dark:text-neutral-600 mb-3">
+                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
                     / 03 Coming Next
                   </div>
                   <div className="grid sm:grid-cols-2 gap-3">
@@ -333,14 +351,14 @@ export function DegreeDetailPage() {
                       return (
                         <div
                           key={p.title}
-                          className="border border-dashed border-neutral-200 dark:border-neutral-200 p-4 flex items-start gap-3 bg-neutral-0 dark:bg-neutral-100"
+                          className="border border-dashed border-[#171717] p-4 flex items-start gap-3 bg-[#F5F4F0]"
                         >
-                          <div className="shrink-0 w-9 h-9 bg-neutral-100 dark:bg-neutral-100 flex items-center justify-center text-neutral-400">
+                          <div className="shrink-0 w-9 h-9 bg-[#EEEDE9] flex items-center justify-center text-[#999999]">
                             <Icon className="w-4 h-4" />
                           </div>
                           <div>
-                            <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-900">{p.title}</div>
-                            <div className="text-[10px] text-neutral-500 dark:text-neutral-500 mt-0.5">{p.sub}</div>
+                            <div className="text-sm font-semibold text-[#171717]">{p.title}</div>
+                            <div className="text-[10px] text-[#666666] mt-0.5">{p.sub}</div>
                           </div>
                         </div>
                       );
@@ -351,28 +369,28 @@ export function DegreeDetailPage() {
 
               {/* Sidebar */}
               <div>
-                <div className="border border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100">
-                  <div className="p-4 border-b border-neutral-200 dark:border-neutral-200">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600">{t('degree.sidebar.hours', '学位时长')}</div>
+                <div className="border border-[#171717] bg-[#F5F4F0]">
+                  <div className="p-4 border-b border-[#171717]">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">{t('degree.sidebar.hours', '学位时长')}</div>
                     <div className="text-lg font-black mt-1">{degree.stats?.estimatedHours ?? 0} 小时</div>
                   </div>
                   <div>
                     {degree.courses.slice(0, 5).map((c, i) => (
                       <div
                         key={c.id}
-                        className={`p-4 ${i < Math.min(degree.courses.length, 5) - 1 ? 'border-b border-neutral-200 dark:border-neutral-200' : ''} hover:bg-neutral-50 dark:hover:bg-neutral-50 transition-colors`}
+                        className={`p-4 ${i < Math.min(degree.courses.length, 5) - 1 ? 'border-b border-[#171717]' : ''} hover:bg-[#F5F4F0]:bg-[#F5F4F0] transition-colors`}
                       >
-                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-400 dark:text-neutral-400 mb-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[#999999] mb-1">
                           Step {String(c.stepNumber).padStart(2, '0')}
                         </div>
                         <div className="text-sm font-black tracking-tight leading-snug">{c.title}</div>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mt-1">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
                           {c.chapterCount} 章 · {c.instructor}
                         </div>
                       </div>
                     ))}
                     {degree.courses.length > 5 && (
-                      <div className="p-3 text-center text-[10px] text-neutral-500 dark:text-neutral-500 border-t border-neutral-200 dark:border-neutral-200">
+                      <div className="p-3 text-center text-[10px] text-[#666666] border-t border-[#171717]">
                         + {degree.courses.length - 5} 门课程
                       </div>
                     )}
@@ -380,31 +398,31 @@ export function DegreeDetailPage() {
                 </div>
               </div>
             </div>
-          )}
+          </TabPanel>
 
-          {activeTab === 'courses' && (
+          <TabPanel value={activeTab} tabKey="courses" idPrefix="degree-detail">
             <div>
               {degree.courses.length === 0 ? (
-                <div className="text-center py-24 text-neutral-600 dark:text-neutral-600">
-                  <BookOpen className="w-10 h-10 mx-auto mb-2 text-neutral-300" />
+                <div className="text-center py-24 text-[#666666]">
+                  <BookOpen className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
                   {t('degrees.detail.empty_courses', '该学位下暂无课程')}
                 </div>
               ) : (
-                <div className="border border-neutral-200 dark:border-neutral-200">
+                <div className="border border-[#171717]">
                   {degree.courses.map((c, i) => (
                     <Link
                       key={c.id}
                       to={`/courses/${c.id}`}
-                      className={`flex items-center gap-4 px-4 py-4 bg-neutral-0 dark:bg-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-50 transition-colors group ${
-                        i < degree.courses.length - 1 ? 'border-b border-neutral-200 dark:border-neutral-200' : ''
+                      className={`flex items-center gap-4 px-4 py-4 bg-[#F5F4F0] hover:bg-[#EEEDE9] transition-colors group ${
+                        i < degree.courses.length - 1 ? 'border-b border-[#171717]' : ''
                       }`}
                     >
-                      <div className="shrink-0 w-12 h-12 bg-neutral-900 dark:bg-neutral-900 text-white flex items-center justify-center font-black text-sm">
+                      <div className="shrink-0 w-12 h-12 bg-[#171717] text-white flex items-center justify-center font-black text-sm">
                         {String(c.stepNumber).padStart(2, '0')}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-black tracking-tight leading-snug truncate">{c.title}</div>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600 mt-1 flex items-center gap-2 flex-wrap">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1 flex items-center gap-2 flex-wrap">
                           <span>{c.chapterCount} 章</span>
                           <span>·</span>
                           <span className="flex items-center gap-1">
@@ -418,13 +436,13 @@ export function DegreeDetailPage() {
                           <span>{c.instructor}</span>
                         </div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" />
+                      <ChevronRight className="w-4 h-4 text-[#999999] group-hover:text-[#171717] transition-colors" />
                     </Link>
                   ))}
                 </div>
               )}
             </div>
-          )}
+          </TabPanel>
         </div>
       </section>
 

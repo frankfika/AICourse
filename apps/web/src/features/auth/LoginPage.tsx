@@ -14,7 +14,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '../../lib/zodResolver';
-import { Helmet } from 'react-helmet-async';
+import { Seo } from '../../components/Seo';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -259,10 +259,11 @@ function AuthHeader({ page }: { page: 'login' | 'register' }) {
   );
   return (
     <header>
-      <Helmet>
-        <title>{h1} · OpenCSG Academy</title>
-        <meta name="description" content={sub} />
-      </Helmet>
+      <Seo
+        title={h1}
+        description={sub}
+        path="/auth/login"
+      />
       <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-900">{h1}</h1>
       <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-600">{sub}</p>
     </header>

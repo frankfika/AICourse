@@ -19,6 +19,8 @@ export class ProgressService {
       where: { userId },
       orderBy: { updatedAt: 'desc' },
       include: { lesson: { select: { id: true, title: true, chapterId: true } } },
+      // P1-7 防御: max 100, 防 DoS
+      take: 100,
     });
   }
 

@@ -32,6 +32,7 @@ import { useToast } from '../../../components/auth/Toast';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
+import { LazyImage } from '../../../components/ui/LazyImage';
 import { QueryErrorState } from '../../../components/QueryErrorState';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { cn } from '../../../lib/cn';
@@ -294,8 +295,7 @@ function OrderCard({
     <Card padding="md" variant="default">
       <div className="flex gap-3">
         {itemThumb && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <LazyImage
             src={itemThumb}
             alt={itemTitle}
             className="w-16 h-16 rounded-md object-cover bg-neutral-200 dark:bg-neutral-200 shrink-0"

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet-async';
+import { Seo } from '../../components/Seo';
 import {
   Building2,
   ArrowUpRight,
@@ -201,10 +201,11 @@ export function EnterprisePage() {
 
   return (
     <div className="bg-[#F5F4F0] text-[#171717]">
-      <Helmet>
-        <title>{heroHeadline.replace(/\n/g, ' ')} · OpenCSG Academy</title>
-        <meta name="description" content={heroSub} />
-      </Helmet>
+      <Seo
+        title={heroHeadline.replace(/\n/g, ' ')}
+        description={heroSub}
+        path="/enterprise"
+      />
       {/* ==================== HERO (FULL BLACK) ==================== */}
       {/* 向下滚 → 收起, 向上滚 → 展开 (iOS Safari / Twitter 风格) */}
       <section
@@ -219,7 +220,7 @@ export function EnterprisePage() {
           <div className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-4 flex items-center gap-2">
             <Building2 className="w-3.5 h-3.5" /> {heroEyebrow}
           </div>
-          <h1 className="text-5xl md:text-7xl lg:text-[8rem] font-black tracking-tighter uppercase leading-[0.9] mb-8">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase leading-[0.95] mb-8">
             {heroLines[0] ?? heroHeadline}
             <br />
             {heroLines[1] ?? ''}
@@ -511,7 +512,7 @@ export function EnterprisePage() {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     rows={4}
                     placeholder="简单描述你的团队现状、痛点、想要达成的目标..."
-                    className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors resize-none"
+                    className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] focus:ring-2 focus:ring-[#171717] transition-colors resize-none"
                   />
                 </div>
 
@@ -571,7 +572,7 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] transition-colors"
+        className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] focus:ring-2 focus:ring-[#171717] transition-colors"
       />
     </div>
   );

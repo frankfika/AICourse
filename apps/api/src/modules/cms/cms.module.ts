@@ -22,6 +22,7 @@ import { CmsConfigController } from './cms-config.controller';
 import { CmsContentController } from './cms-content.controller';
 import { CmsI18nController } from './cms-i18n.controller';
 import { CmsAdminController } from './cms-admin.controller';
+import { SitemapController } from './sitemap.controller';
 import { CmsEnumService } from './cms-enum.service';
 import { CmsConfigService } from './cms-config.service';
 import { CmsContentService } from './cms-content.service';
@@ -34,6 +35,7 @@ import { CmsI18nService } from './cms-i18n.service';
     CmsContentController,
     CmsI18nController,
     CmsAdminController,
+    SitemapController,
   ],
   providers: [CmsEnumService, CmsConfigService, CmsContentService, CmsI18nService],
   exports: [CmsEnumService, CmsConfigService, CmsContentService, CmsI18nService],

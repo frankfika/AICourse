@@ -68,11 +68,11 @@ export class NotificationService {
     const where: {
       userId: string;
       isRead?: boolean;
-      type?: string;
+      type?: 'announcement' | 'comment' | 'hackathon' | 'order';
       deletedAt: null;
     } = { userId, deletedAt: null };
     if (unreadOnly) where.isRead = false;
-    if (q.type && q.type !== 'all') where.type = q.type;
+    if (q.type && q.type !== 'all') where.type = q.type as 'announcement' | 'comment' | 'hackathon' | 'order';
 
     const [items, total, unreadCount] = await Promise.all([
       this.prisma.notification.findMany({
@@ -177,8 +177,8 @@ export class NotificationService {
    */
   async create(input: CreateNotificationInput): Promise<{ id: string }> {
     // 防御:非法 type 兜底(后续扩 enum 可去)
-    const safeType = (NOTIFICATION_TYPES as readonly string[]).includes(input.type)
-      ? input.type
+    const safeType: 'announcement' | 'comment' | 'hackathon' | 'order' = (NOTIFICATION_TYPES as readonly string[]).includes(input.type)
+      ? (input.type as 'announcement' | 'comment' | 'hackathon' | 'order')
       : 'announcement';
 
     const n = await this.prisma.notification.create({

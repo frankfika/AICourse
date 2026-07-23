@@ -18,6 +18,9 @@ model User {
   passwordResetRequired Boolean @default(false) @map("password_reset_required")
   points          Int       @default(0)
   level           Int       @default(1)
+  // 软删：admin 禁用账号走 deletedAt, user 物理删除会触发 17 个外键 cascade (证书 / 积分 / 评价 / 进度 ...) 数据断裂
+  // Service 层 (users.service.ts) 禁调 prisma.user.delete, 只能 update({ deletedAt: now() })
+  deletedAt       DateTime? @map("deleted_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   lastLoginAt     DateTime? @map("last_login_at")
@@ -44,6 +47,8 @@ model User {
   learningEvents  LearningEvent[]
   aiUsage         AiUsage[]
 
+  @@index([email, deletedAt])
+  @@index([role, deletedAt])
   @@map("users")
 }
 
@@ -55,8 +60,8 @@ model User {
 model Certificate {
   id           String   @id @default(uuid())
   userId       String   @map("user_id")
-  // 'course' | 'degree' | 'hackathon'
-  type         String
+  // P2-2: 'course' | 'degree' | 'hackathon' (从 String 升级为 enum)
+  type         CertificateType
   // 关联的 course / degree / hackathon id
   refId        String   @map("ref_id")
   title        String
@@ -84,6 +89,12 @@ model Certificate {
   @@map("certificates")
 }
 
+enum CertificateType {
+  course
+  degree
+  hackathon
+}
+
 enum UserRole {
   admin
   student
@@ -99,6 +110,7 @@ model RefreshToken {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([expiresAt])
   @@map("refresh_tokens")
 }
 
@@ -175,6 +187,12 @@ model Course {
   practiceProjects PracticeProject[]
   reviews          Review[]
 
+  @@index([status, createdAt])
+  @@index([costType])
+  @@index([courseType])
+  @@index([level])
+  @@index([instructorId])
+  @@index([createdAt])
   @@map("courses")
 }
 
@@ -300,6 +318,7 @@ model DegreeCourse {
   course Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@id([degreeId, courseId])
+  @@index([courseId])
   @@map("degree_courses")
 }
 
@@ -312,13 +331,18 @@ model Enrollment {
   enrolledAt DateTime @default(now()) @map("enrolled_at")
   expiresAt  DateTime? @map("expires_at")
   source     EnrollmentSource @default(direct)
+  // 软删：admin 取消报名走 deletedAt (退课 / 批量清账号)
+  deletedAt  DateTime? @map("deleted_at")
 
   user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course?     @relation(fields: [courseId], references: [id], onDelete: SetNull)
   degree NanoDegree? @relation(fields: [degreeId], references: [id], onDelete: SetNull)
 
+  // 软删后重新报名 → Service 强制逻辑:findFirst({ userId, courseId, deletedAt: null }) 不存在才建新
   @@unique([userId, courseId])
   @@unique([userId, degreeId])
+  @@index([userId, deletedAt])
+  @@index([courseId, deletedAt])
   @@map("enrollments")
 }
 
@@ -340,9 +364,13 @@ model Order {
   amount        Decimal     @db.Decimal(10, 2)
   currency      String      @default("CNY")
   status        OrderStatus @default(pending)
-  paymentMethod String?     @map("payment_method")
+  // P2-2: 'wechat' | 'alipay' | 'stripe' (从 String 升级为 enum)
+  // 注意: dev DB 历史数据可能含 'mock_alipay' (测试用),需要先 SQL 修正
+  paymentMethod PaymentMethod? @map("payment_method")
   transactionId String?     @map("transaction_id")
   paidAt        DateTime?   @map("paid_at")
+  // 软删：财务痕迹 (订单/退款/对账) 永久保留, 走 deletedAt
+  deletedAt     DateTime?   @map("deleted_at")
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
 
@@ -350,6 +378,10 @@ model Order {
   course Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
   degree NanoDegree? @relation(fields: [degreeId], references: [id], onDelete: SetNull)
 
+  @@index([userId, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([status, paidAt])
+  @@index([transactionId])
   @@map("orders")
 }
 
@@ -364,6 +396,12 @@ enum OrderStatus {
   failed
   expired
   refunded
+}
+
+enum PaymentMethod {
+  wechat
+  alipay
+  stripe
 }
 
 // ==================== 黑客松 ====================
@@ -395,6 +433,8 @@ model Hackathon {
   announcements Announcement[]
   organizer     User?           @relation("OrganizedHackathons", fields: [organizerId], references: [id], onDelete: SetNull)
 
+  @@index([status, startDate])
+  @@index([organizerId])
   @@map("hackathons")
 }
 
@@ -413,11 +453,15 @@ model HackathonRegistration {
   status       RegistrationStatus @default(registered)
   registeredAt DateTime @default(now()) @map("registered_at")
   checkedInAt  DateTime? @map("checked_in_at")
+  // 软删：用户取消报名走 deletedAt, 保留审计
+  deletedAt    DateTime? @map("deleted_at")
 
   hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([hackathonId, userId])
+  @@index([userId, status])
+  @@index([hackathonId, status])
   @@map("hackathon_registrations")
 }
 
@@ -425,6 +469,46 @@ enum RegistrationStatus {
   registered
   cancelled
   checked_in
+}
+
+enum NotificationKind {
+  announcement
+  comment
+  hackathon
+  order
+}
+
+enum ChatRole {
+  user
+  assistant
+  system
+}
+
+enum LearningEventType {
+  play
+  pause
+  seek
+  complete
+  replay
+  skip
+  note
+}
+
+enum PointRefType {
+  lesson
+  practice
+  badge
+  enrollment
+}
+
+enum I18nCategory {
+  common
+  auth
+  course
+  hackathon
+  degree
+  enterprise
+  admin
 }
 
 model Team {
@@ -439,6 +523,8 @@ model Team {
   members   TeamMember[]
   submissions Submission[]
 
+  @@index([hackathonId])
+  @@index([captainId])
   @@map("teams")
 }
 
@@ -495,6 +581,13 @@ model Submission {
   team      Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
   user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  // 软删:作品删除走 deletedAt (评审后归档 / 选手撤回)
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@index([hackathonId, status])
+  @@index([userId])
+  @@index([teamId])
+  @@index([status, submittedAt])
   @@map("submissions")
 }
 
@@ -517,6 +610,7 @@ model Announcement {
 
   hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
 
+  @@index([hackathonId, isPinned, createdAt])
   @@map("announcements")
 }
 
@@ -536,6 +630,10 @@ model ProgressRecord {
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
+  @@index([courseId, status])
+  @@index([lessonId])
+  @@index([userId, status])
+  @@index([status, completedAt])
   @@map("progress_records")
 }
 
@@ -561,6 +659,7 @@ model AuditLog {
 
   @@index([userId, createdAt])
   @@index([action, createdAt])
+  @@index([entity, entityId])
   @@map("audit_logs")
 }
 
@@ -586,6 +685,7 @@ model PracticeProject {
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   completions PracticeCompletion[]
 
+  @@index([courseId, isActive, orderIndex])
   @@map("practice_projects")
 }
 
@@ -616,11 +716,15 @@ model PracticeCompletion {
   completedAt DateTime? @map("completed_at")
   submissionUrl String? @map("submission_url") // 用户提交的链接（可选）
   notes       String?  @db.Text // 学习笔记
+  // 软删：admin 清账号 / 用户撤回进度走 deletedAt
+  deletedAt   DateTime? @map("deleted_at")
 
   user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   project PracticeProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([userId, projectId])
+  @@index([userId, status])
+  @@index([projectId, status])
   @@map("practice_completions")
 }
 
@@ -688,9 +792,14 @@ model EnterpriseInquiry {
   topic       String
   description String?       @db.Text
   status      InquiryStatus @default(pending)
+  // 软删：销售线索走 deletedAt (关闭 / 合并去重)
+  deletedAt   DateTime?     @map("deleted_at")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
+  @@index([status, createdAt])
+  @@index([email])
+  @@index([deletedAt])
   @@map("enterprise_inquiries")
 }
 
@@ -708,14 +817,18 @@ model PointTransaction {
   userId    String   @map("user_id")
   amount    Int // 正数为获得，负数为扣除
   reason    String // 人类可读原因，如 "完成课时"
-  refType   String?  @map("ref_type") // 关联类型：lesson / practice / badge / enrollment
+  // P2-2: 关联类型: lesson / practice / badge / enrollment (从 String 升级为 enum)
+  refType   PointRefType? @map("ref_type")
   refId     String?  @map("ref_id")   // 关联实体 ID，用于幂等去重
+  // 软删：金融痕迹永久保留, 走 deletedAt (修正错账 / 退积分)
+  deletedAt DateTime? @map("deleted_at")
   createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, refType, refId]) // 同一来源不重复发放
   @@index([userId, createdAt])
+  @@index([userId, deletedAt])
   @@map("point_transactions")
 }
 
@@ -729,6 +842,8 @@ model Review {
   rating    Int      // 1-5
   content   String   @db.Text
   helpful   Int      @default(0)
+  // 软删：admin 下架违规评价走 deletedAt (保留作者 / 评分痕迹, 详情页过滤)
+  deletedAt DateTime? @map("deleted_at")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -738,6 +853,7 @@ model Review {
   @@unique([userId, courseId])
   @@index([courseId, createdAt])
   @@index([courseId, helpful])
+  @@index([courseId, deletedAt])
   @@map("reviews")
 }
 
@@ -751,7 +867,8 @@ model Review {
 model Notification {
   id        String    @id @default(uuid())
   userId    String    @map("user_id")
-  type      String    // 4 类之一 (后续如扩展 → enum)
+  // P2-2: 4 类之一 (从 String 升级为 enum)
+  type      NotificationKind
   title     String
   body      String    @db.Text
   linkUrl   String?   @map("link_url")
@@ -765,6 +882,13 @@ model Notification {
   @@index([userId, isRead, createdAt])
   @@index([userId, deletedAt, createdAt])
   @@map("notifications")
+}
+
+enum NotificationType {
+  announcement
+  comment
+  hackathon
+  order
 }
 
 // ==================== P2: AI 助教 / 学情事件 ====================
@@ -791,8 +915,8 @@ model ChatSession {
 model ChatMessage {
   id        String   @id @default(uuid())
   sessionId String   @map("session_id")
-  // 'user' | 'assistant' | 'system'
-  role      String
+  // P2-2: 'user' | 'assistant' | 'system' (从 String 升级为 enum)
+  role      ChatRole
   content   String   @db.Text
   // mock 阶段每条 100 tokens,P2 切真 AI 时改用 tokensIn / tokensOut
   tokens    Int      @default(0)
@@ -804,12 +928,18 @@ model ChatMessage {
   @@map("chat_messages")
 }
 
+enum ChatMessageRole {
+  user
+  assistant
+  system
+}
+
 model LearningEvent {
   id          String   @id @default(uuid())
   userId      String   @map("user_id")
   lessonId    String?  @map("lesson_id")
-  // 'play' | 'pause' | 'seek' | 'complete' | 'replay' | 'skip' | 'note'
-  eventType   String   @map("event_type")
+  // P2-2: 'play' | 'pause' | 'seek' | 'complete' | 'replay' | 'skip' | 'note' (从 String 升级为 enum)
+  eventType   LearningEventType @map("event_type")
   positionSec Int?     @map("position_sec")
   durationMs  Int?     @map("duration_ms")
   metadata    Json?
@@ -838,8 +968,12 @@ model AiUsage {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // 软删:账单痕迹永久保留, 走 deletedAt (修正错账)
+  deletedAt DateTime? @map("deleted_at")
+
   @@index([userId, createdAt])
   @@index([feature, createdAt])
+  @@index([userId, deletedAt])
   @@map("ai_usage")
 }
 
@@ -931,6 +1065,7 @@ model Industry {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  @@index([isActive, orderIndex])
   @@map("industries")
 }
 
@@ -944,6 +1079,7 @@ model EnterpriseMethod {
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
 
+  @@index([isActive, orderIndex])
   @@map("enterprise_methods")
 }
 
@@ -957,6 +1093,7 @@ model Testimonial {
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
 
+  @@index([isActive, orderIndex])
   @@map("testimonials")
 }
 
@@ -970,6 +1107,8 @@ model QuickPrompt {
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
 
+  @@index([isActive, orderIndex])
+  @@index([scope, isActive, orderIndex])
   @@map("quick_prompts")
 }
 
@@ -981,6 +1120,7 @@ model CourseCategory {
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
 
+  @@index([isActive, orderIndex])
   @@map("course_categories")
 }
 
@@ -992,6 +1132,7 @@ model PopularSearch {
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
 
+  @@index([isActive, orderIndex])
   @@map("popular_searches")
 }
 
@@ -1003,6 +1144,7 @@ model HotKeyword {
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
 
+  @@index([scope, isActive, orderIndex])
   @@map("hot_keywords")
 }
 
@@ -1015,6 +1157,7 @@ model AuthProvider {
   orderIndex Int     @default(0) @map("order_index")
   config     Json?
 
+  @@index([isActive, orderIndex])
   @@map("auth_providers")
 }
 
@@ -1027,6 +1170,7 @@ model TopNavItem {
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
 
+  @@index([isActive, orderIndex])
   @@map("top_nav_items")
 }
 
@@ -1038,6 +1182,7 @@ model FooterColumn {
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
 
+  @@index([isActive, orderIndex])
   @@map("footer_columns")
 }
 
@@ -1048,9 +1193,22 @@ model I18nMessage {
   key      String @db.VarChar(255)
   locale   String @default("zh-CN")
   value    String @db.Text
-  category String @default("common")
+  // P2-2: 分类 (从 String 升级为 enum)
+  // 现有 seed-cms.ts 用了 'empty'/'loading'/'error'/'toast' 旧值,
+  // prisma db push 前需要先 SQL 修正为新 enum 值 (默认 'common')
+  category I18nCategory @default(common)
 
   @@id([key, locale])
   @@index([category])
   @@map("i18n_messages")
+}
+
+enum I18nMessageCategory {
+  common
+  auth
+  course
+  hackathon
+  degree
+  enterprise
+  admin
 }

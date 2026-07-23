@@ -558,38 +558,39 @@ const i18nMessages: Array<{
   key: string;
   locale: string;
   value: string;
-  category: string;
+  // P2-2: 改用 enum 值,旧 'empty'/'loading'/'error'/'toast' 归并到 'common'
+  category: 'common' | 'auth' | 'course' | 'hackathon' | 'degree' | 'enterprise' | 'admin';
 }> = [
-  // empty
-  { key: 'course.empty.title', locale: 'zh-CN', value: '暂无课程', category: 'empty' },
-  { key: 'course.empty.description', locale: 'zh-CN', value: '稍后再来看看', category: 'empty' },
-  { key: 'hackathon.empty.title', locale: 'zh-CN', value: '暂无黑客松', category: 'empty' },
-  { key: 'degree.empty.title', locale: 'zh-CN', value: '暂无学位', category: 'empty' },
-  { key: 'order.empty.title', locale: 'zh-CN', value: '暂无订单', category: 'empty' },
+  // common — 旧 empty/loading/error/toast 都归并到 common
+  { key: 'course.empty.title', locale: 'zh-CN', value: '暂无课程', category: 'course' },
+  { key: 'course.empty.description', locale: 'zh-CN', value: '稍后再来看看', category: 'course' },
+  { key: 'hackathon.empty.title', locale: 'zh-CN', value: '暂无黑客松', category: 'hackathon' },
+  { key: 'degree.empty.title', locale: 'zh-CN', value: '暂无学位', category: 'degree' },
+  { key: 'order.empty.title', locale: 'zh-CN', value: '暂无订单', category: 'common' },
 
-  // loading
-  { key: 'loading.default', locale: 'zh-CN', value: '加载中…', category: 'loading' },
-  { key: 'loading.submit', locale: 'zh-CN', value: '提交中…', category: 'loading' },
-  { key: 'loading.payment', locale: 'zh-CN', value: '支付处理中…', category: 'loading' },
-  { key: 'loading.uploading', locale: 'zh-CN', value: '上传中…', category: 'loading' },
+  // common — loading
+  { key: 'loading.default', locale: 'zh-CN', value: '加载中…', category: 'common' },
+  { key: 'loading.submit', locale: 'zh-CN', value: '提交中…', category: 'common' },
+  { key: 'loading.payment', locale: 'zh-CN', value: '支付处理中…', category: 'common' },
+  { key: 'loading.uploading', locale: 'zh-CN', value: '上传中…', category: 'common' },
 
-  // error
-  { key: 'error.network', locale: 'zh-CN', value: '网络异常, 请稍后重试', category: 'error' },
-  { key: 'error.unauthorized', locale: 'zh-CN', value: '请先登录', category: 'error' },
-  { key: 'error.forbidden', locale: 'zh-CN', value: '没有权限', category: 'error' },
-  { key: 'error.not_found', locale: 'zh-CN', value: '资源不存在', category: 'error' },
-  { key: 'error.payment_failed', locale: 'zh-CN', value: '支付失败, 请重试', category: 'error' },
-  { key: 'error.server', locale: 'zh-CN', value: '服务器异常, 请稍后重试', category: 'error' },
+  // common — error
+  { key: 'error.network', locale: 'zh-CN', value: '网络异常, 请稍后重试', category: 'common' },
+  { key: 'error.unauthorized', locale: 'zh-CN', value: '请先登录', category: 'auth' },
+  { key: 'error.forbidden', locale: 'zh-CN', value: '没有权限', category: 'common' },
+  { key: 'error.not_found', locale: 'zh-CN', value: '资源不存在', category: 'common' },
+  { key: 'error.payment_failed', locale: 'zh-CN', value: '支付失败, 请重试', category: 'common' },
+  { key: 'error.server', locale: 'zh-CN', value: '服务器异常, 请稍后重试', category: 'common' },
 
-  // toast
-  { key: 'toast.save_success', locale: 'zh-CN', value: '保存成功', category: 'toast' },
-  { key: 'toast.save_failed', locale: 'zh-CN', value: '保存失败', category: 'toast' },
-  { key: 'toast.delete_success', locale: 'zh-CN', value: '删除成功', category: 'toast' },
-  { key: 'toast.delete_confirm', locale: 'zh-CN', value: '确定要删除吗?', category: 'toast' },
-  { key: 'toast.copy_success', locale: 'zh-CN', value: '已复制到剪贴板', category: 'toast' },
-  { key: 'toast.enroll_success', locale: 'zh-CN', value: '报名成功', category: 'toast' },
-  { key: 'toast.payment_success', locale: 'zh-CN', value: '支付成功', category: 'toast' },
-  { key: 'toast.register_success', locale: 'zh-CN', value: '注册成功', category: 'toast' },
+  // common — toast
+  { key: 'toast.save_success', locale: 'zh-CN', value: '保存成功', category: 'common' },
+  { key: 'toast.save_failed', locale: 'zh-CN', value: '保存失败', category: 'common' },
+  { key: 'toast.delete_success', locale: 'zh-CN', value: '删除成功', category: 'common' },
+  { key: 'toast.delete_confirm', locale: 'zh-CN', value: '确定要删除吗?', category: 'common' },
+  { key: 'toast.copy_success', locale: 'zh-CN', value: '已复制到剪贴板', category: 'common' },
+  { key: 'toast.enroll_success', locale: 'zh-CN', value: '报名成功', category: 'common' },
+  { key: 'toast.payment_success', locale: 'zh-CN', value: '支付成功', category: 'common' },
+  { key: 'toast.register_success', locale: 'zh-CN', value: '注册成功', category: 'common' },
 
   // common
   { key: 'common.confirm', locale: 'zh-CN', value: '确认', category: 'common' },

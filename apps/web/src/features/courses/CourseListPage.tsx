@@ -31,7 +31,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Helmet } from 'react-helmet-async';
+import { Seo } from '../../components/Seo';
 import {
   Search as SearchIcon,
   Star,
@@ -41,17 +41,21 @@ import {
   SlidersHorizontal as FilterIcon,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { Input } from '../../components/ui/Input';
+import { SearchInput } from '../../components/ui/SearchInput';
 import { Button } from '../../components/ui/Button';
 import { QueryErrorState } from '../../components/QueryErrorState';
+import { I18nText } from '../../components/I18nText';
 import { cn } from '../../lib/cn';
 import { useEnum, useList, usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
+import { usePagination } from '../../hooks/usePagination';
 
 // =============================================================
 // 类型(与 API 实际返回对齐)
@@ -238,6 +242,9 @@ export function CourseListPage() {
     return arr;
   }, [filtered, sort]);
 
+  // P1-4: 客户端分页(每页 24 条),先排序后分页
+  const pagination = usePagination(sorted, { pageSize: 24 });
+
   // 动态提取:tag 频次(从结果里),instructor 列表
   const tagOptions = useMemo(() => {
     if (!courses) return [];
@@ -277,71 +284,60 @@ export function CourseListPage() {
     (minRating > 0 ? 1 : 0);
 
   return (
-    <div className="bg-neutral-50 dark:bg-neutral-950 min-h-screen">
-      <Helmet>
-        <title>{`${coursesH1} · OpenCSG Academy`}</title>
-        <meta name="description" content="从系统化课程中找到你的下一步" />
-      </Helmet>
+    <div className="bg-[#F5F4F0] min-h-screen text-[#171717]">
+      <Seo
+        title={coursesH1}
+        description="从系统化课程中找到你的下一步"
+        path="/courses"
+      />
       {/* Header banner (collapsible on scroll) */}
       <section
         ref={heroRef}
         className={cn(
-          'border-b border-neutral-200 bg-neutral-0 dark:bg-neutral-100 transition-all duration-300 ease-out',
+          'border-b border-[#171717] bg-[#F5F4F0] transition-all duration-300 ease-out',
           isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[1200px] opacity-100',
         )}
         aria-hidden={isCollapsed}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-12">
-          <h1 className="text-3xl md:text-display-md font-bold text-neutral-900 dark:text-neutral-900">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">
             {coursesH1}
           </h1>
-          <p className="mt-2 text-sm md:text-base text-neutral-600 dark:text-neutral-600">
+          <p className="mt-2 text-sm md:text-base text-[#666666]">
             {courses
               ? pickPage(pageData, 'list.sub_template', 'zh-CN', t('courses.list.sub', '从 {count} 门系统化课程中找到你的下一步'))
                   .replace('{count}', String(courses.length))
               : pickPage(pageData, 'list.loading', 'zh-CN', t('common.loading', '加载课程中...'))}
           </p>
 
-          {/* 搜索框(URL 同步) */}
+          {/* 搜索框(URL 同步) — P1-3 用 SearchInput 加 aria-label */}
           <form
             onSubmit={(e) => e.preventDefault()}
             className="mt-6 max-w-2xl"
           >
-            <Input
-              type="search"
+            <SearchInput
               size="lg"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={pickPage(pageData, 'list.search_placeholder', 'zh-CN', t('courses.list.search_placeholder', '搜索课程 / 讲师 / 技能,如 LangChain / RAG / Agent'))}
-              leftIcon={<SearchIcon className="w-4 h-4" />}
-              rightIcon={
-                input ? (
-                  <button
-                    type="button"
-                    onClick={() => setInput('')}
-                    className="text-neutral-400 hover:text-neutral-900"
-                    aria-label="清空"
-                  >
-                    <XIcon className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono rounded border border-neutral-200 text-neutral-600">
-                    ⌘K
-                  </kbd>
-                )
+              rightAddon={
+                <kbd className="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono border border-[#171717] text-[#171717]">
+                  ⌘K
+                </kbd>
               }
+              ariaLabel={t('courses.list.search_placeholder', '搜索课程 / 讲师 / 技能,如 LangChain / RAG / Agent')}
               fullWidth
             />
           </form>
 
           {/* 热门关键词 chips */}
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-neutral-600 dark:text-neutral-600">{pickPage(pageData, 'list.hot_label', 'zh-CN', t('courses.list.hot_label', '热门:'))}</span>
+            <span className="text-xs text-[#666666]">{pickPage(pageData, 'list.hot_label', 'zh-CN', t('courses.list.hot_label', '热门:'))}</span>
             {hotKeywords.map((kw) => (
               <button
                 key={kw}
                 onClick={() => setInput(kw)}
-                className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-[#171717] hover:text-white transition-colors"
+                className="px-2.5 py-0.5 text-xs font-medium bg-[#EEEDE9] text-[#171717] hover:bg-[#171717] hover:text-white transition-colors"
               >
                 {kw}
               </button>
@@ -360,9 +356,9 @@ export function CourseListPage() {
             onClick={() => setMobileFiltersOpen(true)}
             leftIcon={<FilterIcon className="w-4 h-4" />}
           >
-            筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
+            {t('courses.filter.title', '筛选')} {activeFilterCount > 0 && `(${activeFilterCount})`}
           </Button>
-          <div className="text-sm text-neutral-600 dark:text-neutral-600">
+          <div className="text-sm text-[#666666]">
             {isLoading ? t('common.loading.dots', '加载中…') : `${t('common.found.label', '共找到')} ${sorted.length} ${t('common.units.courses', '门课程')}`}
           </div>
         </div>
@@ -374,7 +370,7 @@ export function CourseListPage() {
               'space-y-6',
               'lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-2',
               mobileFiltersOpen
-                ? 'fixed inset-0 z-[150] lg:static lg:z-auto overflow-y-auto bg-neutral-0 dark:bg-neutral-100 p-5 lg:p-0'
+                ? 'fixed inset-0 z-[150] lg:static lg:z-auto overflow-y-auto bg-[#F5F4F0] p-5 lg:p-0'
                 : 'hidden lg:block',
             )}
           >
@@ -382,18 +378,18 @@ export function CourseListPage() {
             <div className="flex items-center justify-between mb-4 lg:hidden">
               <h3 className="text-base font-bold flex items-center gap-2">
                 <FilterIcon className="w-4 h-4 text-[#171717]" />
-                筛选 {activeFilterCount > 0 && `(${activeFilterCount})`}
+                {t('courses.filter.title', '筛选')} {activeFilterCount > 0 && `(${activeFilterCount})`}
               </h3>
               <button
                 type="button"
                 onClick={() => setMobileFiltersOpen(false)}
-                className="p-1.5 rounded-md text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-200"
+                className="p-1.5 rounded-md text-[#666666] hover:bg-[#EEEDE9]"
                 aria-label="关闭筛选"
               >
                 <XIcon className="w-4 h-4" />
               </button>
             </div>
-            <FilterSection title="分类" defaultOpen>
+            <FilterSection title={t("courses.filter.category", "分类")} defaultOpen>
               {CATEGORIES.map((cat) => (
                 <label key={cat.key} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
                   <input
@@ -412,7 +408,7 @@ export function CourseListPage() {
               ))}
             </FilterSection>
 
-            <FilterSection title="难度" defaultOpen>
+            <FilterSection title={t("courses.filter.level", "难度")} defaultOpen>
               <div className="grid grid-cols-2 gap-2">
                 {LEVELS.map((lv) => {
                   const active = selectedLevels.has(lv);
@@ -426,10 +422,10 @@ export function CourseListPage() {
                         setSelectedLevels(next);
                       }}
                       className={cn(
-                        'px-3 py-1.5 rounded-md text-xs transition-colors',
+                        'px-3 py-1.5 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717]',
                         active
                           ? 'bg-[#171717] text-white'
-                          : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-[#EEEDE9]',
+                          : 'bg-[#EEEDE9] text-[#171717] hover:bg-[#171717] hover:text-white',
                       )}
                     >
                       {levelLabel(lv)}
@@ -439,7 +435,7 @@ export function CourseListPage() {
               </div>
             </FilterSection>
 
-            <FilterSection title="时长" defaultOpen>
+            <FilterSection title={t("courses.filter.duration", "时长")} defaultOpen>
               {(Object.keys(DURATION_LABELS) as Array<ReturnType<typeof durationBucket>>).map((dk) => {
                 const active = selectedDurations.has(dk);
                 return (
@@ -461,7 +457,7 @@ export function CourseListPage() {
               })}
             </FilterSection>
 
-            <FilterSection title="收费" defaultOpen>
+            <FilterSection title={t("courses.filter.cost", "收费")} defaultOpen>
               {(['free', 'paid', 'charity'] as const).map((k) => {
                 const active = costFilter.has(k);
                 return (
@@ -486,7 +482,7 @@ export function CourseListPage() {
             </FilterSection>
 
             {tagOptions.length > 0 && (
-              <FilterSection title="标签">
+              <FilterSection title={t("courses.filter.tag", "标签")}>
                 {tagOptions.map(([t, count]) => {
                   const active = selectedTags.has(t);
                   return (
@@ -503,7 +499,7 @@ export function CourseListPage() {
                         }}
                       />
                       <span className="flex-1 truncate">{t}</span>
-                      <span className="ml-auto text-xs text-neutral-400 font-mono">{count}</span>
+                      <span className="ml-auto text-xs text-[#999999] font-mono">{count}</span>
                     </label>
                   );
                 })}
@@ -511,7 +507,7 @@ export function CourseListPage() {
             )}
 
             {instructorOptions.length > 0 && (
-              <FilterSection title="讲师">
+              <FilterSection title={t("courses.filter.instructor", "讲师")}>
                 {instructorOptions.map(([name, count]) => {
                   const active = selectedInstructors.has(name);
                   return (
@@ -528,14 +524,14 @@ export function CourseListPage() {
                         }}
                       />
                       <span className="flex-1 truncate">{name}</span>
-                      <span className="ml-auto text-xs text-neutral-400 font-mono">{count}</span>
+                      <span className="ml-auto text-xs text-[#999999] font-mono">{count}</span>
                     </label>
                   );
                 })}
               </FilterSection>
             )}
 
-            <FilterSection title="评分" defaultOpen>
+            <FilterSection title={t("courses.filter.rating", "评分")} defaultOpen>
               {[
                 { v: 0, label: '全部' },
                 { v: 5, label: '★ 5.0' },
@@ -559,7 +555,7 @@ export function CourseListPage() {
 
             <button
               onClick={clearAll}
-              className="w-full px-3 py-2 rounded-md text-sm border border-neutral-200 text-neutral-900 dark:text-neutral-900 hover:border-[#171717] hover:text-[#171717] transition-colors"
+              className="w-full px-3 py-2 text-sm border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717]"
             >
               {t('courses.list.clear_all', '清除全部筛选')}
             </button>
@@ -583,7 +579,7 @@ export function CourseListPage() {
               type="button"
               aria-label="关闭筛选"
               onClick={() => setMobileFiltersOpen(false)}
-              className="lg:hidden fixed inset-0 z-[140] bg-neutral-900/50 dark:bg-neutral-950/70 backdrop-blur-sm -m-4 sm:-m-6 lg:m-0"
+              className="lg:hidden fixed inset-0 z-[140] bg-neutral-900/50/70 backdrop-blur-sm -m-4 sm:-m-6 lg:m-0"
             />
           )}
 
@@ -591,9 +587,9 @@ export function CourseListPage() {
           <div>
             {/* 顶部排序条 + 计数(desktop) */}
             <div className="hidden lg:flex flex-wrap items-center justify-between gap-3 mb-6">
-              <div className="text-sm text-neutral-600 dark:text-neutral-600">
+              <div className="text-sm text-[#666666]">
                 {t('common.found.label', '共找到')}{' '}
-                <span className="font-mono font-medium text-neutral-900 dark:text-neutral-900">
+                <span className="font-mono font-medium text-[#171717]">
                   {sorted.length}
                 </span>{' '}
                 {t('common.units.courses', '门课程')}
@@ -604,7 +600,7 @@ export function CourseListPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-600 dark:text-neutral-600">{pickPage(pageData, 'list.sort_label', 'zh-CN', t('courses.list.sort_label', '排序:'))}</span>
+                <span className="text-xs text-[#666666]">{pickPage(pageData, 'list.sort_label', 'zh-CN', t('courses.list.sort_label', '排序:'))}</span>
                 {[
                   { v: 'popular', label: '最热门' },
                   { v: 'recent', label: '最新' },
@@ -616,10 +612,10 @@ export function CourseListPage() {
                       key={opt.v}
                       onClick={() => setSort(opt.v as SortKey)}
                       className={cn(
-                        'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                        'px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717]',
                         active
                           ? 'bg-[#171717] text-white'
-                          : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-[#EEEDE9]',
+                          : 'bg-[#EEEDE9] text-[#171717] hover:bg-[#171717] hover:text-white',
                       )}
                     >
                       {opt.label}
@@ -659,11 +655,23 @@ export function CourseListPage() {
                 }
               />
             ) : (
-              <div className="grid sm:grid-cols-2 gap-5">
-                {sorted.map((course) => (
-                  <CourseCardLink key={course.id} course={course} />
-                ))}
-              </div>
+              <>
+                <div className="grid sm:grid-cols-2 gap-5">
+                  {pagination.pageItems.map((course) => (
+                    <CourseCardLink key={course.id} course={course} />
+                  ))}
+                </div>
+                {pagination.totalPages > 1 && (
+                  <PaginationControl
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    total={pagination.total}
+                    onPrev={pagination.prev}
+                    onNext={pagination.next}
+                    onGoto={pagination.goto}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>
@@ -689,15 +697,16 @@ function FilterSection({
   return (
     <div>
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between text-sm font-semibold mb-3"
+        className="w-full flex items-center justify-between text-sm font-semibold mb-3 focus:outline-none focus:ring-2 focus:ring-[#171717]"
         aria-expanded={open}
       >
         <span>{title}</span>
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
       </button>
       {open && <div className="space-y-1">{children}</div>}
-      <hr className="mt-4 border-neutral-200 dark:border-neutral-200" />
+      <hr className="mt-4 border-[#171717]" />
     </div>
   );
 }
@@ -712,20 +721,20 @@ function CourseCardLink({ course }: { course: Course }) {
       to={course.externalUrl && course.courseType === 'third_party' ? course.externalUrl : `/courses/${course.id}`}
       target={course.externalUrl && course.courseType === 'third_party' ? '_blank' : undefined}
       rel={course.externalUrl && course.courseType === 'third_party' ? 'noopener noreferrer' : undefined}
-      className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-[#171717] hover:shadow-md transition overflow-hidden flex flex-col"
+      className="group bg-[#F5F4F0] border border-[#171717] hover:bg-[#EEEDE9] transition overflow-hidden flex flex-col"
     >
       <div
         className={`aspect-video bg-gradient-to-br ${getCourseCoverGradient(course.tags)} relative`}
       >
-        <span className="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium text-neutral-900">
+        <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
           {course.tags || 'LLM 应用'}
         </span>
-        <span className="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full bg-cert-500 text-white font-medium">
+        <span className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-cert-500 text-white font-medium">
           {levelLabel(course.level)}
         </span>
         <span
           className={cn(
-            'absolute bottom-3 right-3 text-xs px-2 py-0.5 rounded-full font-medium',
+            'absolute bottom-3 right-3 text-xs px-2 py-0.5 font-medium',
             isFree
               ? 'bg-success-500 text-white'
               : isCharity
@@ -740,7 +749,7 @@ function CourseCardLink({ course }: { course: Course }) {
         <h3 className="font-semibold text-base group-hover:text-[#171717] transition line-clamp-1">
           {course.title}
         </h3>
-        <p className="mt-1.5 text-sm text-neutral-600 dark:text-neutral-600 line-clamp-2">
+        <p className="mt-1.5 text-sm text-[#666666] line-clamp-2">
           {course.description}
         </p>
         {(course.tags ?? '').split(/[,，]/).filter(Boolean).length > 0 && (
@@ -753,14 +762,14 @@ function CourseCardLink({ course }: { course: Course }) {
               .map((t) => (
                 <span
                   key={t}
-                  className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 dark:bg-neutral-100 text-neutral-600 dark:text-neutral-600"
+                  className="px-2 py-0.5 text-[10px] font-medium bg-[#EEEDE9] text-[#666666]"
                 >
                   {t}
                 </span>
               ))}
           </div>
         )}
-        <div className="mt-auto pt-3 flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-600 border-t border-neutral-200">
+        <div className="mt-auto pt-3 flex items-center justify-between text-xs text-[#666666] border-t border-[#171717]">
           <div className="flex items-center gap-2 truncate">
             <div className="w-5 h-5 rounded-full bg-[#171717] shrink-0" />
             <span className="truncate">{course.instructor}</span>
@@ -777,4 +786,70 @@ function CourseCardLink({ course }: { course: Course }) {
 
 // 避免未使用引用警告
 void Star;
+void Sparkles;
+
+/**
+ * PaginationControl — 公共分页控件(P1-4 配套 usePagination)
+ * 简单前后翻页 + 跳页 + 总数,brutalist 硬边风格
+ */
+function PaginationControl({
+  currentPage,
+  totalPages,
+  total,
+  onPrev,
+  onNext,
+  onGoto,
+}: {
+  currentPage: number;
+  totalPages: number;
+  total: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onGoto: (page: number) => void;
+}) {
+  return (
+    <nav
+      className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#171717] pt-5"
+      aria-label="分页"
+    >
+      <div className="text-sm text-[#666666]">
+        第 <span className="font-mono font-medium text-[#171717]">{currentPage}</span> / {totalPages} 页
+        <span className="ml-2 font-mono">· 共 {total} 条</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onPrev}
+          disabled={currentPage <= 1}
+          aria-label="上一页"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black uppercase tracking-widest bg-[#F5F4F0] border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717]"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" /> 上一页
+        </button>
+        <input
+          type="number"
+          min={1}
+          max={totalPages}
+          value={currentPage}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10);
+            if (!Number.isNaN(n)) onGoto(n);
+          }}
+          aria-label="跳到指定页"
+          className="w-14 px-2 py-1.5 text-xs font-mono text-center bg-white border border-[#171717] focus:outline-none focus:ring-2 focus:ring-[#171717]"
+        />
+        <span className="text-xs text-[#666666]">/ {totalPages}</span>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={currentPage >= totalPages}
+          aria-label="下一页"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black uppercase tracking-widest bg-[#F5F4F0] border border-[#171717] text-[#171717] hover:bg-[#171717] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-[#171717]"
+        >
+          下一页 <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </nav>
+  );
+}
 void Sparkles;

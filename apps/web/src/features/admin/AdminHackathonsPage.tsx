@@ -5,6 +5,8 @@ import { Plus, Trash2, Edit2, Rocket } from 'lucide-react';
 import type { Hackathon, HackathonStatus } from '@opencsg/shared-types';
 import { hackathonsApi } from '../../lib/hackathonsApi';
 import { HackathonStatusBadge } from '../hackathons/HackathonStatusBadge';
+import { useApiMutation } from '../../hooks/useApiMutation';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 
 const STATUS_OPTIONS: HackathonStatus[] = [
   'upcoming',
@@ -59,6 +61,7 @@ export function AdminHackathonsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [pendingDelete, setPendingDelete] = useState<Hackathon | null>(null);
 
   const editId = searchParams.get('edit');
 
@@ -95,12 +98,11 @@ export function AdminHackathonsPage() {
     },
   });
 
-  const deleteMutation = useMutation({
+  // P2-4b: 接 ConfirmDialog
+  const deleteMutation = useApiMutation({
     mutationFn: (id: string) => hackathonsApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-hackathons'] });
-      queryClient.invalidateQueries({ queryKey: ['hackathons'] });
-    },
+    successMessage: '黑客松已删除',
+    invalidateKeys: [['admin-hackathons'], ['hackathons']],
   });
 
   const startEdit = (h: Hackathon) => {
@@ -338,7 +340,7 @@ export function AdminHackathonsPage() {
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => deleteMutation.mutate(h.id)}
+                  onClick={() => setPendingDelete(h)}
                   className="p-2 hover:bg-[#171717] hover:text-white transition-colors"
                   title="删除"
                 >
@@ -352,6 +354,25 @@ export function AdminHackathonsPage() {
           <div className="p-16 text-center text-sm text-[#666666] dark:text-neutral-400">暂无黑客松</div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          const id = pendingDelete.id;
+          setPendingDelete(null);
+          await deleteMutation.mutateAsync(id);
+        }}
+        title="确认删除该黑客松?"
+        description={
+          pendingDelete
+            ? `「${pendingDelete.title}」删除后不可恢复,关联的参赛队伍和提交记录将失效。`
+            : ''
+        }
+        variant="danger"
+        confirmText="确认删除"
+      />
     </div>
   );
 }

@@ -10,13 +10,16 @@
  */
 import { IsInt, IsString, Min, Max, MinLength, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateReviewDto {
+  @ApiProperty({ description: '评分 (1-5 整数)', minimum: 1, maximum: 5 })
   @IsInt({ message: 'rating 必须是 1-5 整数' })
   @Min(1)
   @Max(5)
   rating: number;
 
+  @ApiProperty({ description: '评价内容 (10-1000 字符)', minLength: 10, maxLength: 1000 })
   @IsString()
   @MinLength(10, { message: '评价内容至少 10 字符' })
   @MaxLength(1000, { message: '评价内容最多 1000 字符' })
@@ -24,11 +27,13 @@ export class CreateReviewDto {
 }
 
 export class ListReviewsQueryDto {
+  @ApiPropertyOptional({ description: '页码', minimum: 1, default: 1 })
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number = 1;
 
+  @ApiPropertyOptional({ description: '每页大小 (1-50)', minimum: 1, maximum: 50, default: 10 })
   @Type(() => Number)
   @IsInt()
   @Min(1)

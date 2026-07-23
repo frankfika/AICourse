@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -128,16 +129,55 @@ export class UsersService {
   }
 
   async update(id: string, dto: UpdateUserDto) {
-    return this.prisma.user.update({
-      where: { id },
-      data: dto,
+    // 不允许通过 PATCH /users/:id 改 role / points / level / passwordHash, 这些字段是 admin 专用
+    // 业务上, 普通用户改自己只能改 name / avatarUrl
+    const safe: Partial<UpdateUserDto> = {};
+    if (dto.name !== undefined) safe.name = dto.name;
+    if (dto.avatarUrl !== undefined) safe.avatarUrl = dto.avatarUrl;
+
+    // 软删用户不能改: 先 findFirst 查 (UserWhereUniqueInput 不支持 deletedAt)
+    const before = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
       select: this.userSelect,
     });
+    if (!before) throw new NotFoundException('User not found or deleted');
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: safe,
+      select: this.userSelect,
+    });
+
+    await this.auditLog.log({
+      userId: id,
+      action: 'USER_UPDATE',
+      entity: 'user',
+      entityId: id,
+      details: { before, after: updated },
+    });
+
+    return updated;
   }
 
   async delete(id: string) {
-    await this.prisma.user.delete({ where: { id } });
-    return { message: 'User deleted' };
+    // 软删: 改 deletedAt, 物理删除会触发 17 个外键 cascade 断数据
+    const user = await this.prisma.user.findFirst({ where: { id, deletedAt: null } });
+    if (!user) throw new NotFoundException('User not found or already deleted');
+
+    const deleted = await this.prisma.user.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+      select: { id: true, email: true, deletedAt: true },
+    });
+
+    await this.auditLog.log({
+      userId: id,
+      action: 'USER_SOFT_DELETE',
+      entity: 'user',
+      entityId: id,
+    });
+
+    return deleted;
   }
 
   async grantCourseAccess(userId: string, dto: GrantCourseAccessDto) {

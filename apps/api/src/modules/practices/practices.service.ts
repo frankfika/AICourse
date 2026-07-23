@@ -15,6 +15,8 @@ export class PracticesService {
     return this.prisma.practiceProject.findMany({
       where: { courseId, isActive: true },
       orderBy: { orderIndex: 'asc' },
+      // P1-7 防御: max 100, 防 DoS
+      take: 100,
     });
   }
 

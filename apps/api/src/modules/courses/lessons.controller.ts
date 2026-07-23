@@ -20,6 +20,7 @@ import {
   UseGuards,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -154,6 +155,22 @@ export class LessonsController {
   ) {
     if (!Array.isArray(dto.ids)) {
       throw new BadRequestException('ids must be an array');
+    }
+    // 安全: 校验所有 lesson id 都属于该 chapter, 防止 admin 拿任意 chapter 的 lesson id 重排
+    const lessons = await this.prisma.lesson.findMany({
+      where: { id: { in: dto.ids } },
+      select: { id: true, chapterId: true },
+    });
+    const invalid = lessons.filter((l) => l.chapterId !== chapterId);
+    if (invalid.length > 0) {
+      throw new ForbiddenException(
+        `Lessons ${invalid.map((l) => l.id).join(', ')} 不属于 chapter ${chapterId}`,
+      );
+    }
+    if (lessons.length !== dto.ids.length) {
+      throw new BadRequestException(
+        `Some lesson ids not found: expected ${dto.ids.length}, got ${lessons.length}`,
+      );
     }
     await this.prisma.$transaction(
       dto.ids.map((id, idx) =>

@@ -18,7 +18,7 @@ export class CmsI18nController {
   @ApiOperation({ summary: 'i18n 通用文案 (按 locale + category)' })
   listMessages(
     @Query('locale') locale?: string,
-    @Query('category') category?: string,
+    @Query('category') category?: 'common' | 'auth' | 'course' | 'hackathon' | 'degree' | 'enterprise' | 'admin',
   ) {
     return this.cmsI18nService.listMessages(locale, category);
   }

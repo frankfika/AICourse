@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -14,12 +15,15 @@ import { BatchCreateLearningEventDto, CreateLearningEventDto } from './learning-
  * - 单条接口给 immediate 类型(complete / note)用
  * - list 接口给用户历史 / 教师视角用
  */
+@ApiTags('learning-events')
+@ApiBearerAuth()
 @Controller('learning-events')
 @UseGuards(JwtAuthGuard)
 export class LearningEventsController {
   constructor(private readonly service: LearningEventsService) {}
 
   @Post()
+  @ApiOperation({ summary: '上报单条学习事件（complete / note 等）' })
   async createOne(@Request() req: any, @Body() dto: CreateLearningEventDto) {
     const event = await this.service.createOne(req.user.userId, dto);
     return { event };
@@ -28,11 +32,14 @@ export class LearningEventsController {
   // 批量上报走更宽松的 throttle(防止 30s flush 撞限流)
   @Post('batch')
   @Throttle({ short: { limit: 10, ttl: 1000 }, medium: { limit: 120, ttl: 60000 } })
+  @ApiOperation({ summary: '批量上报学习事件（video player flush）' })
   async createBatch(@Request() req: any, @Body() dto: BatchCreateLearningEventDto) {
     return this.service.createBatch(req.user.userId, dto);
   }
 
   @Get('me')
+  @ApiOperation({ summary: '我的最近学习事件' })
+  @ApiQuery({ name: 'limit', required: false, description: '返回条数（默认 50，上限 100）' })
   async listMine(@Request() req: any, @Query('limit') limit?: string) {
     return this.service.listMine(req.user.userId, limit ? Number(limit) : 50);
   }
@@ -40,6 +47,9 @@ export class LearningEventsController {
   @Get('lesson/:lessonId')
   @UseGuards(RolesGuard)
   @Roles(UserRole.admin, UserRole.instructor)
+  @ApiOperation({ summary: '课时的学习事件列表（管理员/讲师）' })
+  @ApiParam({ name: 'lessonId', description: '课时ID' })
+  @ApiQuery({ name: 'limit', required: false, description: '返回条数（默认 50，上限 100）' })
   async listByLesson(
     @Param('lessonId', new ParseUUIDPipe()) lessonId: string,
     @Query('limit') limit?: string,

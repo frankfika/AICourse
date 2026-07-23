@@ -13,6 +13,7 @@
  */
 import {
   Controller,
+  ForbiddenException,
   Get,
   Post,
   Patch,
@@ -158,6 +159,22 @@ export class ChaptersController {
   ) {
     if (!Array.isArray(dto.ids)) {
       throw new BadRequestException('ids must be an array');
+    }
+    // 安全: 校验所有 chapter id 都属于该 course, 防止 admin 拿任意 course 的 chapter id 重排
+    const chapters = await this.prisma.chapter.findMany({
+      where: { id: { in: dto.ids } },
+      select: { id: true, courseId: true },
+    });
+    const invalid = chapters.filter((c) => c.courseId !== courseId);
+    if (invalid.length > 0) {
+      throw new ForbiddenException(
+        `Chapters ${invalid.map((c) => c.id).join(', ')} 不属于 course ${courseId}`,
+      );
+    }
+    if (chapters.length !== dto.ids.length) {
+      throw new BadRequestException(
+        `Some chapter ids not found: expected ${dto.ids.length}, got ${chapters.length}`,
+      );
     }
     // 事务:按 ids 数组顺序重设 orderIndex
     await this.prisma.$transaction(

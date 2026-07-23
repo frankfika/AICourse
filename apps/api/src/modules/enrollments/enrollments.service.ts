@@ -14,6 +14,8 @@ export class EnrollmentsService {
     return this.prisma.enrollment.findMany({
       where: { userId },
       include: { course: true, degree: true },
+      // P1-7 防御: max 100, 防 DoS
+      take: 100,
     });
   }
 

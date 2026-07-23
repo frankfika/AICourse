@@ -25,6 +25,7 @@ import { ordersApi } from '../../../lib/ordersApi';
 import { useToast } from '../../../components/auth/Toast';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
+import { LazyImage } from '../../../components/ui/LazyImage';
 import type { OrderStatus, OrderType } from '@opencsg/shared-types';
 import { cn } from '../../../lib/cn';
 import { useEnum } from '../../../lib/cms';
@@ -255,11 +256,10 @@ export function OrderDetailPage() {
               <Card padding="md" variant="default">
                 <h3 className="text-sm font-semibold mb-3">关联商品</h3>
                 {item.thumbnail && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <LazyImage
                     src={item.thumbnail}
                     alt={item.title}
-                    className="w-full aspect-video rounded-md object-cover bg-neutral-200 dark:bg-neutral-200 mb-3"
+                    className="w-full aspect-video object-cover bg-neutral-200 dark:bg-neutral-200 mb-3"
                   />
                 )}
                 <h4 className="text-sm font-medium mb-1">{item.title}</h4>

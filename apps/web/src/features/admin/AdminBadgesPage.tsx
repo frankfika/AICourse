@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Edit2, Award, ChevronRight, ChevronDown, X, Layers } from 'lucide-react';
+import { useApiMutation } from '../../hooks/useApiMutation';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { badgesApi } from '../../lib/badgesApi';
 import type {
   Badge,
@@ -53,6 +55,7 @@ export function AdminBadgesPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [pendingDelete, setPendingDelete] = useState<Badge | null>(null);
 
   const { data: badges } = useQuery({
     queryKey: ['admin-badges'],
@@ -77,12 +80,11 @@ export function AdminBadgesPage() {
     },
   });
 
-  const deleteMutation = useMutation({
+  // P2-4b: 接 ConfirmDialog
+  const deleteMutation = useApiMutation({
     mutationFn: badgesApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-badges'] });
-      queryClient.invalidateQueries({ queryKey: ['my-badges'] });
-    },
+    successMessage: '徽章已删除',
+    invalidateKeys: [['admin-badges'], ['my-badges']],
   });
 
   const resetForm = () => {
@@ -357,7 +359,7 @@ export function AdminBadgesPage() {
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
               <button
-                onClick={() => deleteMutation.mutate(badge.id)}
+                onClick={() => setPendingDelete(badge)}
                 className="p-2 hover:bg-[#171717] hover:text-white transition-colors"
                 title="删除"
               >
@@ -370,6 +372,25 @@ export function AdminBadgesPage() {
           <div className="p-16 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">暂无徽章</div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          const id = pendingDelete.id;
+          setPendingDelete(null);
+          await deleteMutation.mutateAsync(id);
+        }}
+        title="确认删除该徽章?"
+        description={
+          pendingDelete
+            ? `「${pendingDelete.name}」(code: ${pendingDelete.code})删除后不可恢复,已发放的徽章记录将无法继续匹配该规则。`
+            : ''
+        }
+        variant="danger"
+        confirmText="确认删除"
+      />
     </div>
   );
 }

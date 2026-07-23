@@ -1,7 +1,8 @@
 import { IsEnum, IsOptional, IsString, IsDateString } from 'class-validator';
+import { CertificateType as PrismaCertificateType } from '@prisma/client';
 
 export const CERTIFICATE_TYPES = ['course', 'degree', 'hackathon'] as const;
-export type CertificateType = (typeof CERTIFICATE_TYPES)[number];
+export type CertificateType = PrismaCertificateType;
 
 /**
  * IssueCertificateDto — 由 order mockPay / course complete / hackathon judge 调用,
@@ -11,8 +12,8 @@ export class IssueCertificateDto {
   @IsString()
   userId: string;
 
-  @IsString()
-  type: CertificateType | string;
+  @IsEnum(PrismaCertificateType, { message: 'type 必须是 course / degree / hackathon' })
+  type: PrismaCertificateType;
 
   @IsString()
   refId: string;
@@ -34,6 +35,6 @@ export class IssueCertificateDto {
 
 export class ListCertificatesQuery {
   @IsOptional()
-  @IsString()
-  type?: string; // 'course' | 'degree' | 'hackathon' | 'all'
+  @IsEnum(PrismaCertificateType, { message: 'type 必须是 course / degree / hackathon / all' })
+  type?: PrismaCertificateType | 'all'; // 'course' | 'degree' | 'hackathon' | 'all'
 }

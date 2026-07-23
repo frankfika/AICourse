@@ -21,6 +21,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto, ListReviewsQueryDto } from './reviews.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -32,11 +34,14 @@ interface AuthedRequest {
   user: { id: string; role?: string };
 }
 
+@ApiTags('reviews')
 @Controller({ path: 'courses', version: '1' })
 export class CoursesReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Get(':id/reviews')
+  @ApiOperation({ summary: '获取课程评价列表（公开）' })
+  @ApiParam({ name: 'id', description: '课程ID' })
   async list(
     @Param('id') courseId: string,
     @Query() query: ListReviewsQueryDto,
@@ -50,6 +55,9 @@ export class CoursesReviewsController {
 
   @Post(':id/reviews')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '写课程评价（登录用户）' })
+  @ApiParam({ name: 'id', description: '课程ID' })
   async create(
     @Param('id') courseId: string,
     @Req() req: AuthedRequest,
@@ -59,12 +67,18 @@ export class CoursesReviewsController {
   }
 }
 
+@ApiTags('reviews')
 @Controller({ path: 'reviews', version: '1' })
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Post(':id/helpful')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  // P1-7: 限流 — 单用户 10 次/分钟 防止刷 helpful 计数
+  @Throttle({ medium: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: '给评价点赞（登录用户）' })
+  @ApiParam({ name: 'id', description: '评价ID' })
   async helpful(
     @Param('id') reviewId: string,
     @Req() req: AuthedRequest,
@@ -80,6 +94,13 @@ export class ReviewsController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '全量评价列表（管理员）' })
+  @ApiQuery({ name: 'page', required: false, description: '页码（默认 1）' })
+  @ApiQuery({ name: 'limit', required: false, description: '每页大小（默认 20）' })
+  @ApiQuery({ name: 'courseId', required: false, description: '按课程过滤' })
+  @ApiQuery({ name: 'rating', required: false, description: '按评分过滤（1-5）' })
+  @ApiQuery({ name: 'onlyDeleted', required: false, description: '只显示已软删评价' })
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -103,6 +124,9 @@ export class ReviewsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '软删评价（管理员；保留审计）' })
+  @ApiParam({ name: 'id', description: '评价ID' })
   async adminRemove(@Param('id') id: string) {
     return this.reviewsService.adminRemove(id);
   }

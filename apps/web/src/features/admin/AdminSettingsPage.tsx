@@ -4,16 +4,11 @@
  * 设计契约: review/cms-design.md §4
  * 风格: 跟 AdminBadgesPage / AdminCoursesPage 一致 — brutalist 黑色边框 + uppercase tracking
  *
- * 本期范围 (FRONTEND_FOUNDATION_DONE):
- *   - 13 个 tab 的 UI 骨架全部就位
- *   - Tab 1 (全局设置) 能编辑 site_settings / app_settings 草稿(本地 state,不持久化)
- *   - 其他 tab 是 placeholder: 显示 fallback / 列 schema 字段,等后续接 CRUD
- *
- * **为什么不做完整 CRUD**:
- *   - 本任务是"基础层",sub-agent A 正在并行建后端 13 张表 + API
- *   - 端点形态按 cms-design.md §2.2 假设,真实 endpoint 可能晚到
- *   - Hook 已有 fallback,UI 不会白屏,所以骨架先出
- *   - 后续 PR 接 admin CRUD mutation
+ * P2-3 接通:
+ *   - Tab 1 (全局) 接 useApiMutation 持久化 site / app settings(单条 PATCH / POST / DELETE)
+ *   - Tab 3 (枚举) 接 create / update / delete 3 个 mutation,启用 3 个 disabled 按钮
+ *   - 9 个 ListCrudTab saveEdit / createRow / removeRow / toggleActive 改 useApiMutation
+ *   - ListCrudTab 删除用 ConfirmDialog 二次确认
  */
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -37,13 +32,16 @@ import {
   X,
 } from 'lucide-react';
 import { useToast } from '../../components/auth/Toast';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { cn } from '../../lib/cn';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import {
   __FALLBACK_ENUMS__ as FALLBACK_ENUMS,
   type EnumItem,
 } from '../../lib/cms';
-import { getAppSettings, getSiteSettings, getEnumTranslations } from '../../lib/cmsApi';
+import { getAppSettings, getEnumTranslations } from '../../lib/cmsApi';
+import api from '../../lib/api';
 
 // =============================================================
 // 13 个 tab 的定义
@@ -164,20 +162,29 @@ function PlaceholderPanel({
 
 // =============================================================
 // Tab 1: 全局设置(site_settings + app_settings)
+//
+// P2-3a 接真后端:site / app settings 用 admin endpoint 拉 list,
+// 走 useApiMutation 单个 PATCH 持久化。
 // =============================================================
 function GlobalSettingsTab() {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
-  // 取所有 site_settings
-  const { data: siteRaw, isLoading: siteLoading } = useQuery({
-    queryKey: ['cms-admin', 'site-settings-all'],
-    queryFn: () => getSiteSettings([]).catch(() => ({})),
+  // 拉 admin 列表(返 SiteSetting[] 形状)
+  const { data: siteList, isLoading: siteLoading } = useQuery({
+    queryKey: ['cms-admin', 'site-settings-list'],
+    queryFn: async () => {
+      const { data } = await api.get<any[]>('/api/v1/admin/cms/site-settings');
+      return Array.isArray(data) ? data : (data as any)?.data ?? [];
+    },
     retry: 0,
   });
-  // 取所有 app_settings
-  const { data: appRaw, isLoading: appLoading } = useQuery({
-    queryKey: ['cms-admin', 'app-settings-all'],
-    queryFn: () => getAppSettings('global'),
+  // 拉 admin app_settings 列表
+  const { data: appList, isLoading: appLoading } = useQuery({
+    queryKey: ['cms-admin', 'app-settings-list'],
+    queryFn: async () => {
+      const { data } = await api.get<any[]>('/api/v1/admin/cms/app-settings');
+      return Array.isArray(data) ? data : (data as any)?.data ?? [];
+    },
     retry: 0,
   });
   const [siteDraft, setSiteDraft] = useState<Record<string, any>>({});
@@ -186,27 +193,110 @@ function GlobalSettingsTab() {
   const [siteKeys, setSiteKeys] = useState<string[]>([]);
   const [newSiteKey, setNewSiteKey] = useState('');
   const [newAppKey, setNewAppKey] = useState('');
+  // 删除二次确认
+  const [pendingDelete, setPendingDelete] = useState<{ kind: 'site' | 'app'; key: string } | null>(null);
 
   useEffect(() => {
-    if (siteRaw) {
-      setSiteDraft(siteRaw);
-      setSiteKeys(Object.keys(siteRaw));
+    if (siteList) {
+      const out: Record<string, any> = {};
+      const keys: string[] = [];
+      for (const row of siteList) {
+        out[row.key] = row.value;
+        keys.push(row.key);
+      }
+      setSiteDraft(out);
+      setSiteKeys(keys);
     }
-  }, [siteRaw]);
+  }, [siteList]);
 
   useEffect(() => {
-    if (appRaw) {
-      setAppDraft(appRaw);
-      setAppKeys(Object.keys(appRaw));
+    if (appList) {
+      const out: Record<string, any> = {};
+      const keys: string[] = [];
+      for (const row of appList) {
+        out[row.key] = row.valueJson ?? row.value;
+        keys.push(row.key);
+      }
+      setAppDraft(out);
+      setAppKeys(keys);
     }
-  }, [appRaw]);
+  }, [appList]);
 
   const isLoading = siteLoading || appLoading;
 
-  // 草稿保存(本期仅 UI 操作,不实际写后端,等 endpoint 落地后再接 mutation)
-  const handleSaveDraft = () => {
-    showToast(`草稿已更新(本地,未持久化) — site ${Object.keys(siteDraft).length} keys / app ${Object.keys(appDraft).length} keys`, 'info');
-    void queryClient.invalidateQueries({ queryKey: ['cms'] });
+  // 单条 site_setting 更新 mutation
+  const updateSiteKey = useApiMutation({
+    mutationFn: ({ key, value }: { key: string; value: any }) =>
+      api.patch(`/api/v1/admin/cms/site-settings/${encodeURIComponent(key)}`, { value }),
+    invalidateKeys: [['cms-admin', 'site-settings-list'], ['cms', 'site-settings']],
+    successMessage: '已更新 site_setting',
+  });
+  // 单条 app_setting 更新 mutation
+  const updateAppKey = useApiMutation({
+    mutationFn: ({ key, value }: { key: string; value: any }) =>
+      api.patch(`/api/v1/admin/cms/app-settings/${encodeURIComponent(key)}`, { valueJson: value }),
+    invalidateKeys: [['cms-admin', 'app-settings-list'], ['cms', 'app-settings']],
+    successMessage: '已更新 app_setting',
+  });
+  // 新建 site / app key
+  const createSiteKey = useApiMutation({
+    mutationFn: ({ key, value }: { key: string; value: any }) =>
+      api.post('/api/v1/admin/cms/site-settings', { key, value }),
+    successMessage: '已新增 site_setting',
+    invalidateKeys: [['cms-admin', 'site-settings-list'], ['cms', 'site-settings']],
+  });
+  const createAppKey = useApiMutation({
+    mutationFn: ({ key, value }: { key: string; value: any }) =>
+      api.post('/api/v1/admin/cms/app-settings', { key, valueJson: value }),
+    successMessage: '已新增 app_setting',
+    invalidateKeys: [['cms-admin', 'app-settings-list'], ['cms', 'app-settings']],
+  });
+  // 删除 site / app key
+  const deleteSiteKey = useApiMutation({
+    mutationFn: (key: string) =>
+      api.delete(`/api/v1/admin/cms/site-settings/${encodeURIComponent(key)}`),
+    successMessage: '已删除 site_setting',
+    invalidateKeys: [['cms-admin', 'site-settings-list'], ['cms', 'site-settings']],
+  });
+  const deleteAppKey = useApiMutation({
+    mutationFn: (key: string) =>
+      api.delete(`/api/v1/admin/cms/app-settings/${encodeURIComponent(key)}`),
+    successMessage: '已删除 app_setting',
+    invalidateKeys: [['cms-admin', 'app-settings-list'], ['cms', 'app-settings']],
+  });
+
+  // 草稿保存(把本地 siteDraft / appDraft 全部 PATCH 一遍)
+  const [savingDraft, setSavingDraft] = useState(false);
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    try {
+      // 已存在的 key → PATCH 更新;新 key → POST 创建
+      const knownSite = new Set((siteList ?? []).map((r: any) => r.key));
+      const knownApp = new Set((appList ?? []).map((r: any) => r.key));
+      const tasks: Promise<unknown>[] = [];
+      for (const [k, v] of Object.entries(siteDraft)) {
+        if (knownSite.has(k)) {
+          tasks.push(api.patch(`/api/v1/admin/cms/site-settings/${encodeURIComponent(k)}`, { value: v }));
+        } else {
+          tasks.push(api.post('/api/v1/admin/cms/site-settings', { key: k, value: v }));
+        }
+      }
+      for (const [k, v] of Object.entries(appDraft)) {
+        if (knownApp.has(k)) {
+          tasks.push(api.patch(`/api/v1/admin/cms/app-settings/${encodeURIComponent(k)}`, { valueJson: v }));
+        } else {
+          tasks.push(api.post('/api/v1/admin/cms/app-settings', { key: k, valueJson: v }));
+        }
+      }
+      await Promise.all(tasks);
+      await queryClient.invalidateQueries({ queryKey: ['cms-admin'] });
+      await queryClient.invalidateQueries({ queryKey: ['cms'] });
+      showToast(`草稿已保存 — site ${siteKeys.length} keys / app ${appKeys.length} keys`, 'success');
+    } catch (e: any) {
+      showToast(`保存失败: ${e?.response?.data?.message ?? e?.message ?? '未知错误'}`, 'error');
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
   const updateSiteValue = (key: string, raw: string) => {
@@ -216,6 +306,7 @@ function GlobalSettingsTab() {
     setAppDraft((prev) => ({ ...prev, [key]: tryParseJson(raw) }));
   };
 
+  // 新增 key 入口(只 push 到本地 draft,真正落库走"保存草稿"批量 POST/PATCH)
   const addSiteKey = () => {
     const k = newSiteKey.trim();
     if (!k) return;
@@ -226,14 +317,6 @@ function GlobalSettingsTab() {
     setSiteKeys((prev) => [...prev, k]);
     setSiteDraft((prev) => ({ ...prev, [k]: '' }));
     setNewSiteKey('');
-  };
-  const removeSiteKey = (k: string) => {
-    setSiteKeys((prev) => prev.filter((x) => x !== k));
-    setSiteDraft((prev) => {
-      const next = { ...prev };
-      delete next[k];
-      return next;
-    });
   };
   const addAppKey = () => {
     const k = newAppKey.trim();
@@ -246,13 +329,50 @@ function GlobalSettingsTab() {
     setAppDraft((prev) => ({ ...prev, [k]: '' }));
     setNewAppKey('');
   };
-  const removeAppKey = (k: string) => {
-    setAppKeys((prev) => prev.filter((x) => x !== k));
-    setAppDraft((prev) => {
-      const next = { ...prev };
-      delete next[k];
-      return next;
-    });
+
+  // 单行"立即落库":只对后端已存在的 key 生效(避免新增 key 时绕开"保存草稿"批量)
+  const persistSiteRow = (key: string) => {
+    if (!(siteList ?? []).some((r: any) => r.key === key)) {
+      showToast(`新 key "${key}" 需走"保存草稿"批量落库`, 'info');
+      return;
+    }
+    updateSiteKey.mutate({ key, value: siteDraft[key] });
+  };
+  const persistAppRow = (key: string) => {
+    if (!(appList ?? []).some((r: any) => r.key === key)) {
+      showToast(`新 key "${key}" 需走"保存草稿"批量落库`, 'info');
+      return;
+    }
+    updateAppKey.mutate({ key, value: appDraft[key] });
+  };
+
+  // 删除用 ConfirmDialog 二次确认
+  const requestRemove = (kind: 'site' | 'app', k: string) => setPendingDelete({ kind, key: k });
+  const confirmRemove = async () => {
+    if (!pendingDelete) return;
+    const { kind, key } = pendingDelete;
+    setPendingDelete(null);
+    if (kind === 'site') {
+      await deleteSiteKey.mutateAsync(key);
+    } else {
+      await deleteAppKey.mutateAsync(key);
+    }
+    // 同步清掉本地 draft
+    if (kind === 'site') {
+      setSiteKeys((prev) => prev.filter((x) => x !== key));
+      setSiteDraft((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    } else {
+      setAppKeys((prev) => prev.filter((x) => x !== key));
+      setAppDraft((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
   };
 
   return (
@@ -261,14 +381,15 @@ function GlobalSettingsTab() {
         <div>
           <h3 className="text-xl font-black tracking-tighter uppercase">Site & App Settings</h3>
           <p className="text-xs text-[#666666] dark:text-neutral-400 mt-1">
-            品牌文案(key-value)放 site_settings,业务规则(key-value)放 app_settings。
+            品牌文案(key-value)放 site_settings,业务规则(key-value)放 app_settings。逐行小保存 → PATCH 单条;保存草稿 → 批量 POST 新 key / PATCH 已有 key。
           </p>
         </div>
         <button
           onClick={handleSaveDraft}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
+          disabled={savingDraft}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
         >
-          <Save className="w-3.5 h-3.5" /> 保存草稿
+          <Save className="w-3.5 h-3.5" /> {savingDraft ? '保存中…' : '保存草稿'}
         </button>
       </div>
 
@@ -306,7 +427,7 @@ function GlobalSettingsTab() {
             ) : (
               <div className="space-y-3">
                 {siteKeys.map((k) => (
-                  <div key={k} className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-2 items-start">
+                  <div key={k} className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto_auto] gap-2 items-start">
                     <code className="text-xs font-mono font-bold text-[#171717] dark:text-neutral-50 break-all pt-2">{k}</code>
                     <textarea
                       value={stringifyValue(siteDraft[k])}
@@ -315,8 +436,16 @@ function GlobalSettingsTab() {
                       className="px-3 py-2 border-2 border-[#171717] dark:border-neutral-50 text-xs font-mono focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 resize-none"
                     />
                     <button
-                      onClick={() => removeSiteKey(k)}
-                      className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors"
+                      onClick={() => persistSiteRow(k)}
+                      disabled={updateSiteKey.isPending}
+                      className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-50"
+                      title="保存此行"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => requestRemove('site', k)}
+                      className="p-1.5 hover:bg-danger-100 hover:text-danger-500 transition-colors"
                       title="删除"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -353,7 +482,7 @@ function GlobalSettingsTab() {
             ) : (
               <div className="space-y-3">
                 {appKeys.map((k) => (
-                  <div key={k} className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-2 items-start">
+                  <div key={k} className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto_auto] gap-2 items-start">
                     <code className="text-xs font-mono font-bold text-[#171717] dark:text-neutral-50 break-all pt-2">{k}</code>
                     <textarea
                       value={stringifyValue(appDraft[k])}
@@ -362,8 +491,16 @@ function GlobalSettingsTab() {
                       className="px-3 py-2 border-2 border-[#171717] dark:border-neutral-50 text-xs font-mono focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 resize-none"
                     />
                     <button
-                      onClick={() => removeAppKey(k)}
-                      className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors"
+                      onClick={() => persistAppRow(k)}
+                      disabled={updateAppKey.isPending}
+                      className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-50"
+                      title="保存此行"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => requestRemove('app', k)}
+                      className="p-1.5 hover:bg-danger-100 hover:text-danger-500 transition-colors"
                       title="删除"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -375,6 +512,20 @@ function GlobalSettingsTab() {
           </section>
         </>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={confirmRemove}
+        title={`确认删除 ${pendingDelete?.kind === 'site' ? 'site' : 'app'}_setting?`}
+        description={
+          pendingDelete
+            ? `key "${pendingDelete.key}" 删除后不可恢复,前端 useSetting / useSiteSettings 会自动失效该 key。`
+            : ''
+        }
+        variant="danger"
+        confirmText="确认删除"
+      />
     </div>
   );
 }
@@ -438,6 +589,10 @@ function PageSettingsTab() {
 
 // =============================================================
 // Tab 3: 枚举(enum_translations)
+//
+// P2-3b 接真后端:3 个 mutation(create / update / delete) +
+// 启用"新增 value" / 行内 Edit2 / Trash2。
+// 复合主键 id 形如 "enumType:enumValue:locale",走 admin controller。
 // =============================================================
 const ENUM_TYPES = [
   'course_level', 'cost_type', 'order_status', 'hackathon_status',
@@ -446,18 +601,131 @@ const ENUM_TYPES = [
   'search_result_type', 'progress_status',
 ];
 
+const ENUM_LOCALE = 'zh-CN';
+
 function EnumsTab() {
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
   const [filterType, setFilterType] = useState<string>('order_status');
+  // 拉 admin list(支持 type/locale filter)
   const { data, isLoading } = useQuery({
-    queryKey: ['cms-admin', 'enum', filterType],
-    queryFn: () => getEnumTranslations(filterType).catch(() => []),
+    queryKey: ['cms-admin', 'enum-list', filterType, ENUM_LOCALE],
+    queryFn: async () => {
+      const { data } = await api.get<any[]>('/api/v1/admin/cms/enum-translations', {
+        params: { type: filterType, locale: ENUM_LOCALE },
+      });
+      return Array.isArray(data) ? data : (data as any)?.data ?? [];
+    },
     retry: 0,
   });
-  // 数据: API > fallback
-  const items: EnumItem[] =
-    data && data.length > 0
-      ? (data as EnumItem[])
-      : (FALLBACK_ENUMS[filterType] ?? []);
+  // 转成 EnumItem 形状
+  const items: EnumItem[] = (data ?? []).map((row: any) => ({
+    value: row.enumValue ?? row.value,
+    label: row.label,
+    colorClass: row.colorClass ?? undefined,
+    icon: row.icon ?? undefined,
+    sortOrder: row.sortOrder,
+  }));
+  // API 没数据 → 用 fallback
+  const effective: EnumItem[] = items.length > 0 ? items : (FALLBACK_ENUMS[filterType] ?? []);
+
+  // 新增 / 更新 / 删除 mutations
+  const createEnum = useApiMutation({
+    mutationFn: (payload: { enumValue: string; label: string; colorClass?: string; icon?: string; sortOrder?: number }) =>
+      api.post('/api/v1/admin/cms/enum-translations', {
+        enumType: filterType,
+        locale: ENUM_LOCALE,
+        ...payload,
+      }),
+    successMessage: '已新增 enum value',
+    invalidateKeys: [['cms-admin', 'enum-list'], ['cms', 'enum']],
+  });
+  const updateEnum = useApiMutation({
+    mutationFn: ({ value, payload }: { value: string; payload: { label: string; colorClass?: string; icon?: string; sortOrder?: number } }) =>
+      api.patch(`/api/v1/admin/cms/enum-translations/${encodeURIComponent(`${filterType}:${value}:${ENUM_LOCALE}`)}`, payload),
+    successMessage: '已更新 enum value',
+    invalidateKeys: [['cms-admin', 'enum-list'], ['cms', 'enum']],
+  });
+  const deleteEnum = useApiMutation({
+    mutationFn: (value: string) =>
+      api.delete(`/api/v1/admin/cms/enum-translations/${encodeURIComponent(`${filterType}:${value}:${ENUM_LOCALE}`)}`),
+    successMessage: '已删除 enum value',
+    invalidateKeys: [['cms-admin', 'enum-list'], ['cms', 'enum']],
+  });
+
+  // 行内编辑
+  const [editingValue, setEditingValue] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ label: string; colorClass: string; icon: string; sortOrder: number }>({
+    label: '',
+    colorClass: '',
+    icon: '',
+    sortOrder: 0,
+  });
+  const beginEdit = (it: EnumItem) => {
+    setEditingValue(it.value);
+    setDraft({
+      label: it.label,
+      colorClass: it.colorClass ?? '',
+      icon: it.icon ?? '',
+      sortOrder: it.sortOrder ?? 0,
+    });
+  };
+  const cancelEdit = () => {
+    setEditingValue(null);
+  };
+  const saveEdit = () => {
+    if (!editingValue) return;
+    updateEnum.mutate(
+      {
+        value: editingValue,
+        payload: {
+          label: draft.label,
+          colorClass: draft.colorClass || undefined,
+          icon: draft.icon || undefined,
+          sortOrder: Number(draft.sortOrder) || 0,
+        },
+      },
+      { onSuccess: () => cancelEdit() },
+    );
+  };
+
+  // 新增 row state
+  const [creating, setCreating] = useState(false);
+  const [newRow, setNewRow] = useState({ value: '', label: '', colorClass: '', icon: '', sortOrder: 0 });
+  const startCreate = () => {
+    setCreating(true);
+    setNewRow({ value: '', label: '', colorClass: '', icon: '', sortOrder: effective.length + 1 });
+  };
+  const cancelCreate = () => {
+    setCreating(false);
+    setNewRow({ value: '', label: '', colorClass: '', icon: '', sortOrder: 0 });
+  };
+  const submitCreate = () => {
+    const v = newRow.value.trim();
+    if (!v || !newRow.label.trim()) {
+      showToast('value 和 label 必填', 'warning');
+      return;
+    }
+    createEnum.mutate(
+      {
+        enumValue: v,
+        label: newRow.label.trim(),
+        colorClass: newRow.colorClass || undefined,
+        icon: newRow.icon || undefined,
+        sortOrder: Number(newRow.sortOrder) || 0,
+      },
+      { onSuccess: () => cancelCreate() },
+    );
+  };
+
+  // 删除 confirm
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const v = pendingDelete;
+    setPendingDelete(null);
+    await deleteEnum.mutateAsync(v);
+  };
 
   return (
     <div className="space-y-4">
@@ -465,13 +733,17 @@ function EnumsTab() {
         <div>
           <h3 className="text-xl font-black tracking-tighter uppercase">Enum Translations</h3>
           <p className="text-xs text-[#666666] dark:text-neutral-400 mt-1">
-            枚举的 i18n label + color + icon。共 {ENUM_TYPES.length} 种。
+            枚举的 i18n label + color + icon。共 {ENUM_TYPES.length} 种。修改后前端 useEnum 立即刷新。
           </p>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              setEditingValue(null);
+              setCreating(false);
+            }}
             className="px-3 py-2 border-2 border-[#171717] dark:border-neutral-50 text-xs font-black uppercase tracking-widest bg-white dark:bg-neutral-100"
           >
             {ENUM_TYPES.map((t) => (
@@ -479,11 +751,11 @@ function EnumsTab() {
             ))}
           </select>
           <button
-            disabled
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
-            title="完整 CRUD 留给后续 PR"
+            onClick={creating ? cancelCreate : startCreate}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
+            title="新增 enum value"
           >
-            <Plus className="w-3.5 h-3.5" /> 新增 value
+            {creating ? <><X className="w-3.5 h-3.5" /> 取消</> : <><Plus className="w-3.5 h-3.5" /> 新增 value</>}
           </button>
         </div>
       </div>
@@ -499,49 +771,177 @@ function EnumsTab() {
             <div className="col-span-1">order</div>
             <div className="col-span-1 text-right">action</div>
           </div>
-          {items.length === 0 ? (
+          {effective.length === 0 ? (
             <div className="p-6 text-center text-sm text-[#999999] italic">无数据</div>
           ) : (
-            items.map((it) => (
-              <div
-                key={it.value}
-                className="grid grid-cols-12 gap-3 p-3 items-center text-sm border-b border-[#EEEDE9] last:border-0 hover:bg-[#F5F4F0] dark:hover:bg-neutral-800"
-              >
-                <div className="col-span-2 font-mono text-xs font-bold">{it.value}</div>
-                <div className="col-span-3">{it.label}</div>
-                <div className="col-span-4 font-mono text-[10px] text-[#666666] dark:text-neutral-400 break-all">
-                  {it.colorClass ?? '—'}
+            <>
+              {creating && (
+                <div className="grid grid-cols-12 gap-3 p-3 items-start text-sm border-b border-[#EEEDE9] bg-[#F5F4F0] dark:bg-neutral-800">
+                  <div className="col-span-2">
+                    <input
+                      value={newRow.value}
+                      onChange={(e) => setNewRow({ ...newRow, value: e.target.value })}
+                      placeholder="Beginner"
+                      className="w-full px-2 py-1 border-2 border-[#171717] text-xs font-mono"
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <input
+                      value={newRow.label}
+                      onChange={(e) => setNewRow({ ...newRow, label: e.target.value })}
+                      placeholder="入门"
+                      className="w-full px-2 py-1 border-2 border-[#171717] text-xs"
+                    />
+                  </div>
+                  <div className="col-span-4">
+                    <input
+                      value={newRow.colorClass}
+                      onChange={(e) => setNewRow({ ...newRow, colorClass: e.target.value })}
+                      placeholder="border border-[#171717] text-[#171717]"
+                      className="w-full px-2 py-1 border-2 border-[#171717] text-xs font-mono"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <input
+                      value={newRow.icon}
+                      onChange={(e) => setNewRow({ ...newRow, icon: e.target.value })}
+                      placeholder="graduation"
+                      className="w-full px-2 py-1 border-2 border-[#171717] text-xs"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <input
+                      type="number"
+                      value={newRow.sortOrder}
+                      onChange={(e) => setNewRow({ ...newRow, sortOrder: Number(e.target.value) })}
+                      className="w-full px-2 py-1 border-2 border-[#171717] text-xs font-mono"
+                    />
+                  </div>
+                  <div className="col-span-1 flex items-center justify-end gap-1">
+                    <button
+                      onClick={submitCreate}
+                      disabled={createEnum.isPending}
+                      className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-50"
+                      title="保存"
+                    >
+                      <Save className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-                <div className="col-span-1 text-xs text-[#666666] dark:text-neutral-400">
-                  {it.icon ?? '—'}
-                </div>
-                <div className="col-span-1 text-xs text-[#666666] dark:text-neutral-400">
-                  {it.sortOrder ?? 0}
-                </div>
-                <div className="col-span-1 flex items-center justify-end gap-1">
-                  <button
-                    disabled
-                    className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-40"
-                    title="编辑(后续 PR)"
+              )}
+              {effective.map((it) => {
+                const isEditing = editingValue === it.value;
+                return (
+                  <div
+                    key={it.value}
+                    className={cn(
+                      'grid grid-cols-12 gap-3 p-3 items-center text-sm border-b border-[#EEEDE9] last:border-0',
+                      isEditing ? 'bg-[#F5F4F0] dark:bg-neutral-800' : 'hover:bg-[#F5F4F0] dark:hover:bg-neutral-800',
+                    )}
                   >
-                    <Edit2 className="w-3 h-3" />
-                  </button>
-                  <button
-                    disabled
-                    className="p-1.5 hover:bg-danger-100 hover:text-danger-500 transition-colors disabled:opacity-40"
-                    title="删除(后续 PR)"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-            ))
+                    <div className="col-span-2 font-mono text-xs font-bold">{it.value}</div>
+                    {isEditing ? (
+                      <>
+                        <div className="col-span-3">
+                          <input
+                            value={draft.label}
+                            onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+                            className="w-full px-2 py-1 border-2 border-[#171717] text-xs"
+                          />
+                        </div>
+                        <div className="col-span-4">
+                          <input
+                            value={draft.colorClass}
+                            onChange={(e) => setDraft({ ...draft, colorClass: e.target.value })}
+                            className="w-full px-2 py-1 border-2 border-[#171717] text-xs font-mono"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <input
+                            value={draft.icon}
+                            onChange={(e) => setDraft({ ...draft, icon: e.target.value })}
+                            className="w-full px-2 py-1 border-2 border-[#171717] text-xs"
+                          />
+                        </div>
+                        <div className="col-span-1">
+                          <input
+                            type="number"
+                            value={draft.sortOrder}
+                            onChange={(e) => setDraft({ ...draft, sortOrder: Number(e.target.value) })}
+                            className="w-full px-2 py-1 border-2 border-[#171717] text-xs font-mono"
+                          />
+                        </div>
+                        <div className="col-span-1 flex items-center justify-end gap-1">
+                          <button
+                            onClick={saveEdit}
+                            disabled={updateEnum.isPending}
+                            className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-50"
+                            title="保存"
+                          >
+                            <Save className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors"
+                            title="取消"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="col-span-3">{it.label}</div>
+                        <div className="col-span-4 font-mono text-[10px] text-[#666666] dark:text-neutral-400 break-all">
+                          {it.colorClass ?? '—'}
+                        </div>
+                        <div className="col-span-1 text-xs text-[#666666] dark:text-neutral-400">
+                          {it.icon ?? '—'}
+                        </div>
+                        <div className="col-span-1 text-xs text-[#666666] dark:text-neutral-400">
+                          {it.sortOrder ?? 0}
+                        </div>
+                        <div className="col-span-1 flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => beginEdit(it)}
+                            className="p-1.5 hover:bg-[#171717] hover:text-white transition-colors"
+                            title="编辑"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => setPendingDelete(it.value)}
+                            className="p-1.5 hover:bg-danger-100 hover:text-danger-500 transition-colors"
+                            title="删除"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
       )}
       <p className="text-[10px] text-[#999999]">
-        当前展示的是 fallback(API 不可用时的硬编码值),不写后端;CRUD 按钮留待后续 PR。
+        API 不可用时回退 fallback 显示;CRUD 只对 API 端生效(改 fallback 不会落库)。
       </p>
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+        title="确认删除该 enum value?"
+        description={
+          pendingDelete
+            ? `value "${pendingDelete}" 删除后,前端 useEnum 立即失效该 enum。`
+            : ''
+        }
+        variant="danger"
+        confirmText="确认删除"
+      />
     </div>
   );
 }
@@ -561,8 +961,6 @@ function EnumsTab() {
 //
 // 通用 ListCrudTab 接 resource 名 + 字段定义,渲染统一 brutalist 表格 + edit form.
 // 简化: Json 字段用 textarea + JSON.parse; boolean 用 checkbox; number 用 input type=number.
-
-import api from '../../lib/api';
 
 interface FieldDef {
   name: string;
@@ -595,7 +993,6 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
   const [draft, setDraft] = useState<Record<string, any>>({});
   const [creating, setCreating] = useState(false);
   const [newRow, setNewRow] = useState<Record<string, any>>({});
-  const [busy, setBusy] = useState(false);
 
   const beginEdit = (item: any) => {
     setEditingId(item.id);
@@ -616,49 +1013,52 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
     setNewRow({});
   };
 
-  const saveEdit = async () => {
-    setBusy(true);
-    try {
-      await api.patch(`/api/v1/admin/cms/${resource}/${editingId}`, draft);
-      showToast(`${displayName} 已更新`, 'success');
-      await queryClient.invalidateQueries({ queryKey: ['cms-admin', 'list', resource] });
-      cancelEdit();
-    } catch (e: any) {
-      showToast(`更新失败: ${e?.response?.data?.message ?? e?.message ?? '未知错误'}`, 'error');
-    } finally {
-      setBusy(false);
-    }
+  // P2-3c: 接 useApiMutation,自动 toast / invalidate
+  const updateMutation = useApiMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Record<string, any> }) =>
+      api.patch(`/api/v1/admin/cms/${resource}/${id}`, payload),
+    successMessage: `${displayName} 已更新`,
+    invalidateKeys: [['cms-admin', 'list', resource], ['cms', 'list', resource]],
+    onSuccess: () => cancelEdit(),
+  });
+  const createMutation = useApiMutation({
+    mutationFn: (payload: Record<string, any>) =>
+      api.post(`/api/v1/admin/cms/${resource}`, payload),
+    successMessage: `${displayName} 已新增`,
+    invalidateKeys: [['cms-admin', 'list', resource], ['cms', 'list', resource]],
+    onSuccess: () => cancelCreate(),
+  });
+  const deleteMutation = useApiMutation({
+    mutationFn: (id: string) =>
+      api.delete(`/api/v1/admin/cms/${resource}/${id}`),
+    successMessage: `${displayName} 已删除`,
+    invalidateKeys: [['cms-admin', 'list', resource], ['cms', 'list', resource]],
+  });
+  const toggleMutation = useApiMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      api.patch(`/api/v1/admin/cms/${resource}/${id}`, { isActive }),
+    errorMessage: '切换失败',
+    invalidateKeys: [['cms-admin', 'list', resource], ['cms', 'list', resource]],
+  });
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    updateMutation.mutate({ id: editingId, payload: draft });
   };
-  const createRow = async () => {
-    setBusy(true);
-    try {
-      await api.post(`/api/v1/admin/cms/${resource}`, newRow);
-      showToast(`${displayName} 已新增`, 'success');
-      await queryClient.invalidateQueries({ queryKey: ['cms-admin', 'list', resource] });
-      cancelCreate();
-    } catch (e: any) {
-      showToast(`新增失败: ${e?.response?.data?.message ?? e?.message ?? '未知错误'}`, 'error');
-    } finally {
-      setBusy(false);
-    }
+  const createRow = () => {
+    createMutation.mutate(newRow);
   };
-  const removeRow = async (id: string) => {
-    if (!confirm(`确认删除该 ${displayName}?`)) return;
-    try {
-      await api.delete(`/api/v1/admin/cms/${resource}/${id}`);
-      showToast(`已删除`, 'success');
-      await queryClient.invalidateQueries({ queryKey: ['cms-admin', 'list', resource] });
-    } catch (e: any) {
-      showToast(`删除失败: ${e?.response?.data?.message ?? e?.message ?? '未知错误'}`, 'error');
-    }
+  // 删除走 ConfirmDialog(controlled 二次确认)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const requestRemove = (id: string) => setPendingDeleteId(id);
+  const confirmRemove = async () => {
+    if (!pendingDeleteId) return;
+    const id = pendingDeleteId;
+    setPendingDeleteId(null);
+    await deleteMutation.mutateAsync(id);
   };
-  const toggleActive = async (item: any) => {
-    try {
-      await api.patch(`/api/v1/admin/cms/${resource}/${item.id}`, { isActive: !item.isActive });
-      await queryClient.invalidateQueries({ queryKey: ['cms-admin', 'list', resource] });
-    } catch (e: any) {
-      showToast(`切换失败: ${e?.response?.data?.message ?? e?.message ?? '未知错误'}`, 'error');
-    }
+  const toggleActive = (item: any) => {
+    toggleMutation.mutate({ id: item.id, isActive: !item.isActive });
   };
 
   const updateDraft = (key: string, val: any) => setDraft((p) => ({ ...p, [key]: val }));
@@ -685,7 +1085,7 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
         </div>
         <button
           onClick={creating ? cancelCreate : beginCreate}
-          disabled={busy}
+          disabled={createMutation.isPending}
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] disabled:opacity-50 transition-colors"
         >
           {creating ? <><X className="w-3.5 h-3.5" /> 取消</> : <><Plus className="w-3.5 h-3.5" /> 新增</>}
@@ -741,8 +1141,8 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
                   <td className="px-3 py-2 text-right">
                     <button
                       onClick={createRow}
-                      disabled={busy}
-                      className="p-1 hover:bg-[#171717] hover:text-white transition-colors"
+                      disabled={createMutation.isPending}
+                      className="p-1 hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-50"
                       title="保存"
                     >
                       <Save className="w-3.5 h-3.5" />
@@ -773,7 +1173,8 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
                     <td className="px-3 py-2">
                       <button
                         onClick={() => toggleActive(item)}
-                        className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border-2 ${item.isActive !== false ? 'bg-[#171717] text-white border-[#171717]' : 'border-[#171717] text-[#171717]'}`}
+                        disabled={toggleMutation.isPending}
+                        className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-widest border-2 disabled:opacity-50 ${item.isActive !== false ? 'bg-[#171717] text-white border-[#171717]' : 'border-[#171717] text-[#171717]'}`}
                       >
                         {item.isActive !== false ? 'ON' : 'OFF'}
                       </button>
@@ -781,7 +1182,7 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
                     <td className="px-3 py-2 text-right whitespace-nowrap">
                       {isEditing ? (
                         <>
-                          <button onClick={saveEdit} disabled={busy} className="p-1 hover:bg-[#171717] hover:text-white transition-colors" title="保存">
+                          <button onClick={saveEdit} disabled={updateMutation.isPending} className="p-1 hover:bg-[#171717] hover:text-white transition-colors disabled:opacity-50" title="保存">
                             <Save className="w-3.5 h-3.5" />
                           </button>
                           <button onClick={cancelEdit} className="p-1 hover:bg-[#171717] hover:text-white transition-colors" title="取消">
@@ -793,7 +1194,7 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
                           <button onClick={() => beginEdit(item)} className="p-1 hover:bg-[#171717] hover:text-white transition-colors" title="编辑">
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => removeRow(item.id)} className="p-1 hover:bg-[#171717] hover:text-white transition-colors" title="删除">
+                          <button onClick={() => requestRemove(item.id)} className="p-1 hover:bg-danger-100 hover:text-danger-500 transition-colors" title="删除">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
@@ -806,6 +1207,15 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={!!pendingDeleteId}
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={confirmRemove}
+        title={`确认删除该 ${displayName}?`}
+        description="删除后不可恢复,前端 useList 会立即移除该条。"
+        variant="danger"
+        confirmText="确认删除"
+      />
     </div>
   );
 }

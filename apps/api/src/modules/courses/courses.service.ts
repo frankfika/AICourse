@@ -52,6 +52,8 @@ export class CoursesService {
       where,
       include: this.courseInclude,
       orderBy: { createdAt: 'desc' },
+      // P1-7 防御: 默认 50, max 100, 防 DoS (公开 list 拉全表 OOM)
+      take: 100,
     });
   }
 

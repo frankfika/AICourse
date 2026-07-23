@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, Trash2, Mail, Phone } from 'lucide-react';
+import { useApiMutation } from '../../hooks/useApiMutation';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import api from '../../lib/api';
 import { useEnum } from '../../lib/cms';
 
@@ -23,6 +25,7 @@ export function AdminEnterprisePage() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Inquiry['status'] | 'all'>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Inquiry | null>(null);
   const { getLabel: getInquiryLabel } = useEnum('inquiry_status');
 
   const { data: inquiries } = useQuery({
@@ -39,9 +42,11 @@ export function AdminEnterprisePage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-enterprise'] }),
   });
 
-  const deleteMutation = useMutation({
+  // P2-4b: 接 ConfirmDialog
+  const deleteMutation = useApiMutation({
     mutationFn: (id: string) => api.delete(`/api/v1/enterprise/inquiries/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-enterprise'] }),
+    successMessage: '已删除',
+    invalidateKeys: [['admin-enterprise']],
   });
 
   const filtered = inquiries?.filter((i) => filter === 'all' || i.status === filter);
@@ -126,7 +131,7 @@ export function AdminEnterprisePage() {
               </div>
               <div className="col-span-12 md:col-span-1 flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                 <button
-                  onClick={() => deleteMutation.mutate(inq.id)}
+                  onClick={() => setPendingDelete(inq)}
                   className="p-2 hover:bg-[#171717] hover:text-white transition-colors"
                   title="删除"
                 >
@@ -198,6 +203,25 @@ export function AdminEnterprisePage() {
           <div className="p-16 text-center text-sm text-[#666666] dark:text-neutral-400">暂无企业咨询</div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          const id = pendingDelete.id;
+          setPendingDelete(null);
+          await deleteMutation.mutateAsync(id);
+        }}
+        title="确认删除该企业咨询?"
+        description={
+          pendingDelete
+            ? `${pendingDelete.company} / ${pendingDelete.name} 的咨询记录将彻底删除,不可恢复。`
+            : ''
+        }
+        variant="danger"
+        confirmText="确认删除"
+      />
     </div>
   );
 }

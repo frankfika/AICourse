@@ -40,9 +40,9 @@ export class CertificatesService {
     const where: {
       userId: string;
       revokedAt: null;
-      type?: string;
+      type?: 'course' | 'degree' | 'hackathon';
     } = { userId, revokedAt: null };
-    if (type && type !== 'all') where.type = type;
+    if (type && type !== 'all') where.type = type as 'course' | 'degree' | 'hackathon';
 
     const items = await this.prisma.certificate.findMany({
       where,
@@ -66,14 +66,14 @@ export class CertificatesService {
 
   /**
    * 公开查单条证书,任何人都能看(证书本身就是公开证明)。
-   * 返回时附 holderName。
+   * 返回时附 holderName, **不返回 email** (防止凭证书 ID 查持有人邮箱)。
    */
   async findCertificateById(id: string) {
     const cert = await this.prisma.certificate.findUnique({ where: { id } });
     if (!cert) throw new NotFoundException('Certificate not found');
     const user = await this.prisma.user.findUnique({
       where: { id: cert.userId },
-      select: { id: true, name: true, email: true },
+      select: { id: true, name: true },
     });
     return {
       ...cert,

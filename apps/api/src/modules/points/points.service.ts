@@ -62,7 +62,7 @@ export class PointsService {
     userId: string,
     amount: number,
     reason: string,
-    refType?: string | null,
+    refType?: 'lesson' | 'practice' | 'badge' | 'enrollment' | null,
     refId?: string | null,
   ) {
     if (amount === 0) return null;
@@ -86,7 +86,7 @@ export class PointsService {
         userId,
         amount,
         reason,
-        refType: refType ?? null,
+        refType: (refType as 'lesson' | 'practice' | 'badge' | 'enrollment' | undefined) ?? null,
         refId: refId ?? null,
       },
     });

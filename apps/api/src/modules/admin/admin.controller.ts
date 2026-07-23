@@ -15,6 +15,7 @@
  */
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -29,6 +30,9 @@ import { AdminService } from './admin.service';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  // P1-7: admin/stats 是聚合查询 (5-10 个 prisma.count + 1 个 auditLog.findMany),
+  // 5 req/sec 已能挡自动化轮询 (5+ 个 admin tab 同时刷才会撞限).
+  @Throttle({ short: { limit: 5, ttl: 1000 } })
   @Get('stats')
   @ApiOperation({ summary: '后台看板统计(KPI / 图表 / 待办 / 系统状态)' })
   getStats() {

@@ -28,13 +28,15 @@ export class AuthController {
 
   // ============ 旧端点：email/password 兼容 ============
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  // P1-7: 显式 'short' + 'medium' 覆盖全局 5/sec 60/min, 对注册收紧到 5/min 挡批量账号
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 5, ttl: 60000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  // P1-7: 5/sec 30/min 挡密码爆破, 仍允许合法用户失败重试
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 30, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -68,6 +70,8 @@ export class AuthController {
     return { accessToken: result.accessToken, user: result.user };
   }
 
+  // P1-7: 5/sec 30/min 防止 token 暴力清除 race
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 30, ttl: 60000 } })
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: true }) res: Response) {
@@ -85,7 +89,8 @@ export class AuthController {
    *
    * 返回结构跟 /auth/login 一致（access + refresh + user）
    */
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  // P1-7: 通用 provider 入口 — 5/sec 30/min 跟 login 对齐 (OAuth callback 也是登录动作)
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 30, ttl: 60000 } })
   @Post(':providerId')
   @HttpCode(HttpStatus.OK)
   async authenticate(

@@ -14,6 +14,9 @@ export type OrderStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'refunded'
 
 export type OrderType = 'course' | 'degree';
 
+// P2-2: 支付方式 (新加, 从 Order.paymentMethod String 升级为 enum)
+export type PaymentMethod = 'wechat' | 'alipay' | 'stripe';
+
 export type EnrollmentSource = 'direct' | 'degree' | 'hackathon' | 'promotion' | 'order';
 
 export type ProgressStatus = 'not_started' | 'in_progress' | 'completed';
@@ -39,6 +42,18 @@ export type ProjectType =
   | 'csghub_space';
 
 export type CompletionStatus = 'in_progress' | 'completed' | 'skipped';
+
+// P2-2: 6 个新 enum (CertificateType 已在 P1-8 处定义)
+// 通知类型
+export type NotificationType = 'announcement' | 'comment' | 'hackathon' | 'order';
+// AI 聊天角色
+export type ChatMessageRole = 'user' | 'assistant' | 'system';
+// 学习事件类型
+export type LearningEventType = 'play' | 'pause' | 'seek' | 'complete' | 'replay' | 'skip' | 'note';
+// 积分流水关联类型
+export type PointRefType = 'lesson' | 'practice' | 'badge' | 'enrollment';
+// i18n 分类
+export type I18nMessageCategory = 'common' | 'auth' | 'course' | 'hackathon' | 'degree' | 'enterprise' | 'admin';
 
 export type BadgeCriteriaType =
   | 'course_completed'
