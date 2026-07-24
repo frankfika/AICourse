@@ -153,7 +153,7 @@ export class CreateInstructorDto {
   })
   @IsOptional()
   @IsArray()
-  @IsUUID('all', { each: true })
+  @IsString({ each: true })
   @ArrayMaxSize(20)
   expertiseIds?: string[];
 }
@@ -180,7 +180,7 @@ export class QueryInstructorDto {
   @IsOptional()
   @Transform(({ value }) => (Array.isArray(value) ? value : value ? [value] : []))
   @IsArray()
-  @IsUUID('all', { each: true })
+  @IsString({ each: true })
   expertiseIds?: string[];
 
   @ApiPropertyOptional({ description: 'null=全部, true=已发布, false=草稿' })
@@ -226,7 +226,7 @@ export class QueryInstructorDto {
  */
 export class LinkCourseDto {
   @ApiProperty({ description: '讲师 ID' })
-  @IsUUID()
+  @IsString()
   instructorId: string;
 
   @ApiProperty({
@@ -304,7 +304,7 @@ export class UpdateExpertiseDto extends PartialType(CreateExpertiseDto) {}
 export class ReorderInstructorsDto {
   @ApiProperty({ type: [String], description: '按新顺序排列的讲师 ID 列表' })
   @IsArray()
-  @IsUUID('all', { each: true })
+  @IsString({ each: true })
   @ArrayMaxSize(500)
   orderedIds: string[];
 }
