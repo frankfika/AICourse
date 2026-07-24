@@ -3,7 +3,7 @@
  */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, AppSettingScope, SiteSettingScope } from '@prisma/client';
 import { validateJsonValue, assertJsonSize } from './cms-config.validator';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class CmsConfigService {
 
   listAppSettings(scope?: string) {
     return this.prisma.appSetting.findMany({
-      where: scope ? { scope } : {},
+      where: scope ? { scope: scope as AppSettingScope } : {},
       orderBy: { key: 'asc' },
     });
   }
@@ -26,7 +26,7 @@ export class CmsConfigService {
   createAppSetting(data: {
     key: string;
     valueJson: Prisma.InputJsonValue;
-    scope?: string;
+    scope?: AppSettingScope;
     description?: string;
   }) {
     validateJsonValue(data.valueJson);
@@ -36,7 +36,7 @@ export class CmsConfigService {
 
   updateAppSetting(
     key: string,
-    data: { valueJson?: Prisma.InputJsonValue; scope?: string; description?: string },
+    data: { valueJson?: Prisma.InputJsonValue; scope?: AppSettingScope; description?: string },
   ) {
     if (data.valueJson !== undefined) {
       validateJsonValue(data.valueJson);
@@ -53,7 +53,7 @@ export class CmsConfigService {
 
   listSiteSettings(scope?: string) {
     return this.prisma.siteSetting.findMany({
-      where: scope ? { scope } : {},
+      where: scope ? { scope: scope as SiteSettingScope } : {},
       orderBy: { key: 'asc' },
     });
   }
@@ -81,7 +81,7 @@ export class CmsConfigService {
   createSiteSetting(data: {
     key: string;
     value: Prisma.InputJsonValue;
-    scope?: string;
+    scope?: SiteSettingScope;
     description?: string;
   }) {
     validateJsonValue(data.value);
@@ -91,7 +91,7 @@ export class CmsConfigService {
 
   updateSiteSetting(
     key: string,
-    data: { value?: Prisma.InputJsonValue; scope?: string; description?: string },
+    data: { value?: Prisma.InputJsonValue; scope?: SiteSettingScope; description?: string },
   ) {
     if (data.value !== undefined) {
       validateJsonValue(data.value);

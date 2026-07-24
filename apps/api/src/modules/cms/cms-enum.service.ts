@@ -5,6 +5,7 @@
  */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DateFormatTemplateScope } from '@prisma/client';
 
 @Injectable()
 export class CmsEnumService {
@@ -63,7 +64,7 @@ export class CmsEnumService {
   listDateFormatTemplates(scope?: string, locale?: string) {
     return this.prisma.dateFormatTemplate.findMany({
       where: {
-        ...(scope ? { scope } : {}),
+        ...(scope ? { scope: scope as DateFormatTemplateScope } : {}),
         ...(locale ? { locale } : {}),
       },
     });
@@ -71,24 +72,24 @@ export class CmsEnumService {
 
   getDateFormatTemplate(scope: string, locale: string) {
     return this.prisma.dateFormatTemplate.findUnique({
-      where: { scope_locale: { scope, locale } },
+      where: { scope_locale: { scope: scope as DateFormatTemplateScope, locale } },
     });
   }
 
-  createDateFormatTemplate(data: { scope: string; locale: string; template: string }) {
+  createDateFormatTemplate(data: { scope: DateFormatTemplateScope; locale: string; template: string }) {
     return this.prisma.dateFormatTemplate.create({ data });
   }
 
   updateDateFormatTemplate(scope: string, locale: string, data: { template: string }) {
     return this.prisma.dateFormatTemplate.update({
-      where: { scope_locale: { scope, locale } },
+      where: { scope_locale: { scope: scope as DateFormatTemplateScope, locale } },
       data,
     });
   }
 
   deleteDateFormatTemplate(scope: string, locale: string) {
     return this.prisma.dateFormatTemplate.delete({
-      where: { scope_locale: { scope, locale } },
+      where: { scope_locale: { scope: scope as DateFormatTemplateScope, locale } },
     });
   }
 }

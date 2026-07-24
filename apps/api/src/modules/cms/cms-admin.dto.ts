@@ -31,6 +31,13 @@ import {
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BadRequestException } from '@nestjs/common';
+import {
+  AppSettingScope,
+  SiteSettingScope,
+  DateFormatTemplateScope,
+  QuickPromptScope,
+  HotKeywordScope as PrismaHotKeywordScope,
+} from '@prisma/client';
 import { assertJsonSize, validateJsonValue } from './cms-config.validator';
 
 // ========== 共享 helper ==========
@@ -75,11 +82,10 @@ export class CreateAppSettingDto {
   @TransformJsonField()
   valueJson: unknown;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: AppSettingScope })
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  scope?: string;
+  @IsEnum(AppSettingScope)
+  scope?: AppSettingScope;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -94,11 +100,10 @@ export class UpdateAppSettingDto {
   @TransformJsonField()
   valueJson?: unknown;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: AppSettingScope })
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  scope?: string;
+  @IsEnum(AppSettingScope)
+  scope?: AppSettingScope;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -117,11 +122,10 @@ export class CreateSiteSettingDto {
   @TransformJsonField()
   valueJson: unknown;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: SiteSettingScope })
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  scope?: string;
+  @IsEnum(SiteSettingScope)
+  scope?: SiteSettingScope;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -136,11 +140,10 @@ export class UpdateSiteSettingDto {
   @TransformJsonField()
   valueJson?: unknown;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: SiteSettingScope })
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  scope?: string;
+  @IsEnum(SiteSettingScope)
+  scope?: SiteSettingScope;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -257,10 +260,9 @@ export class UpdateEnumTranslationDto {
 // ========== date_format_templates ==========
 
 export class CreateDateFormatTemplateDto {
-  @ApiProperty()
-  @IsString()
-  @MaxLength(50)
-  scope: string;
+  @ApiProperty({ enum: DateFormatTemplateScope })
+  @IsEnum(DateFormatTemplateScope)
+  scope: DateFormatTemplateScope;
 
   @ApiProperty()
   @IsString()
@@ -496,11 +498,10 @@ export class CreateQuickPromptDto {
   @MaxLength(2000)
   prompt: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: QuickPromptScope })
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  scope?: string;
+  @IsEnum(QuickPromptScope)
+  scope?: QuickPromptScope;
 }
 
 export class UpdateQuickPromptDto {
@@ -524,11 +525,10 @@ export class UpdateQuickPromptDto {
   @MaxLength(2000)
   prompt?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: QuickPromptScope })
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  scope?: string;
+  @IsEnum(QuickPromptScope)
+  scope?: QuickPromptScope;
 }
 
 // ========== course_categories ==========
@@ -606,7 +606,10 @@ export class UpdatePopularSearchDto {
 
 // ========== hot_keywords ==========
 
-export const HOT_KEYWORD_SCOPES = ['homepage', 'search', 'course', 'all'] as const;
+// P1-2 (2026-07-24): scope 改成 prisma enum 同步 (courses / home / search / all).
+// 之前 DTO 是 ['homepage', 'search', 'course', 'all'] — 跟 prisma default 'courses' 不一致,
+// 跟 apps/web/src/lib/cms.ts:589 LIST_FALLBACK 用 'courses' 也不一致. 改 prisma enum 同步.
+export const HOT_KEYWORD_SCOPES = ['courses', 'home', 'search', 'all'] as const;
 export type HotKeywordScope = (typeof HOT_KEYWORD_SCOPES)[number];
 
 export class CreateHotKeywordDto {
@@ -624,7 +627,7 @@ export class CreateHotKeywordDto {
 
   @ApiPropertyOptional({ enum: HOT_KEYWORD_SCOPES })
   @IsOptional()
-  @IsEnum(HOT_KEYWORD_SCOPES as readonly string[] as string[])
+  @IsEnum(PrismaHotKeywordScope)
   scope?: HotKeywordScope;
 }
 
@@ -644,7 +647,7 @@ export class UpdateHotKeywordDto {
 
   @ApiPropertyOptional({ enum: HOT_KEYWORD_SCOPES })
   @IsOptional()
-  @IsEnum(HOT_KEYWORD_SCOPES as readonly string[] as string[])
+  @IsEnum(PrismaHotKeywordScope)
   scope?: HotKeywordScope;
 }
 

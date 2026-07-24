@@ -641,6 +641,40 @@ enum I18nCategory {
   admin
 }
 
+// P1-2 (2026-07-24): scope 字段从 String 改 enum, 防止 admin 填任意值.
+// 5 张表 + 5 个 enum. LIST_FALLBACK 数据 scope 值见 apps/web/src/lib/cms.ts:589.
+
+enum AppSettingScope {
+  global
+  page
+  user
+}
+
+enum DateFormatTemplateScope {
+  global
+  locale
+}
+
+enum SiteSettingScope {
+  global
+  page
+  user
+}
+
+enum QuickPromptScope {
+  lesson
+  course
+  degree
+  global
+}
+
+enum HotKeywordScope {
+  courses
+  home
+  search
+  all
+}
+
 model Team {
   id          String   @id @default(uuid())
   hackathonId String   @map("hackathon_id")
@@ -1164,11 +1198,11 @@ model AiConfig {
 
 // 全局 key-value 配置 (duration_buckets / number_format / ai.quick_prompts 等)
 model AppSetting {
-  key         String   @id
-  valueJson   Json     @map("value_json")
-  scope       String   @default("global")
-  description String?  @db.Text
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  key         String          @id
+  valueJson   Json            @map("value_json")
+  scope       AppSettingScope @default(global)
+  description String?         @db.Text
+  updatedAt   DateTime        @updatedAt @map("updated_at")
 
   @@map("app_settings")
 }
@@ -1190,8 +1224,8 @@ model EnumTranslation {
 
 // 日期/时间格式模板
 model DateFormatTemplate {
-  scope    String
-  locale   String @default("zh-CN")
+  scope    DateFormatTemplateScope
+  locale   String                  @default("zh-CN")
   template String
 
   @@id([scope, locale])
@@ -1202,11 +1236,11 @@ model DateFormatTemplate {
 
 // 全局品牌文案 (hero / footer / auth shell / nav)
 model SiteSetting {
-  key         String   @id
+  key         String           @id
   value       Json
-  scope       String   @default("global")
-  description String?  @db.Text
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  scope       SiteSettingScope @default(global)
+  description String?          @db.Text
+  updatedAt   DateTime         @updatedAt @map("updated_at")
 
   @@map("site_settings")
 }
@@ -1276,13 +1310,13 @@ model Testimonial {
 
 // AI 快捷 prompt (dashboard 助手 / lesson 内)
 model QuickPrompt {
-  id         String  @id @default(cuid())
-  emoji      String  @default("💡")
+  id         String           @id @default(cuid())
+  emoji      String           @default("💡")
   label      String
-  promptText String  @map("prompt_text") @db.Text
-  scope      String  @default("lesson")
-  isActive   Boolean @default(true) @map("is_active")
-  orderIndex Int     @default(0) @map("order_index")
+  promptText String           @map("prompt_text") @db.Text
+  scope      QuickPromptScope @default(lesson)
+  isActive   Boolean          @default(true) @map("is_active")
+  orderIndex Int              @default(0) @map("order_index")
 
   @@index([isActive, orderIndex])
   @@index([scope, isActive, orderIndex])
@@ -1318,11 +1352,11 @@ model PopularSearch {
 
 // 热词 (按 scope: courses / home / search)
 model HotKeyword {
-  id         String  @id @default(cuid())
-  keyword    String  @unique
-  scope      String  @default("courses")
-  isActive   Boolean @default(true) @map("is_active")
-  orderIndex Int     @default(0) @map("order_index")
+  id         String          @id @default(cuid())
+  keyword    String          @unique
+  scope      HotKeywordScope @default(courses)
+  isActive   Boolean         @default(true) @map("is_active")
+  orderIndex Int             @default(0) @map("order_index")
 
   @@index([scope, isActive, orderIndex])
   @@map("hot_keywords")

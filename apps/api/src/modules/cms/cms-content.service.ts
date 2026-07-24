@@ -7,7 +7,7 @@
  */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, QuickPromptScope, HotKeywordScope } from '@prisma/client';
 
 @Injectable()
 export class CmsContentService {
@@ -93,7 +93,7 @@ export class CmsContentService {
   listQuickPrompts(scope?: { isActive?: boolean; promptScope?: string }) {
     const where: Prisma.QuickPromptWhereInput = {};
     if (scope?.isActive !== undefined) where.isActive = scope.isActive;
-    if (scope?.promptScope) where.scope = scope.promptScope;
+    if (scope?.promptScope) where.scope = scope.promptScope as QuickPromptScope;
     return this.prisma.quickPrompt.findMany({
       where,
       orderBy: { orderIndex: 'asc' },
@@ -171,7 +171,7 @@ export class CmsContentService {
   listHotKeywords(scope?: { isActive?: boolean; keywordScope?: string }) {
     const where: Prisma.HotKeywordWhereInput = {};
     if (scope?.isActive !== undefined) where.isActive = scope.isActive;
-    if (scope?.keywordScope) where.scope = scope.keywordScope;
+    if (scope?.keywordScope) where.scope = scope.keywordScope as HotKeywordScope;
     return this.prisma.hotKeyword.findMany({
       where,
       orderBy: { orderIndex: 'asc' },

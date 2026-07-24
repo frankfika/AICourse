@@ -32,6 +32,9 @@ import {
   UserRole,
   CostType,
   CourseStatus,
+  DateFormatTemplateScope,
+  QuickPromptScope,
+  HotKeywordScope,
 } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -451,7 +454,7 @@ const quickPrompts: Array<{
   emoji: string;
   label: string;
   promptText: string;
-  scope: string;
+  scope: QuickPromptScope;
 }> = [
   { emoji: '💡', label: '解释这节课', promptText: '请用通俗易懂的语言, 给我讲解这节课的核心概念, 配合一个生活化的例子', scope: 'lesson' },
   { emoji: '🧪', label: '给个代码例子', promptText: '基于本节内容, 给我一段可以立刻运行的代码示例, 加上逐行注释', scope: 'lesson' },
@@ -487,7 +490,7 @@ const popularSearches: Array<{ keyword: string; clickCount: number }> = [
 // 12. hot_keywords (5 行, scope=courses)
 // ============================================================================
 
-const hotKeywords: Array<{ keyword: string; scope: string }> = [
+const hotKeywords: Array<{ keyword: string; scope: HotKeywordScope }> = [
   { keyword: 'Python 基础', scope: 'courses' },
   { keyword: 'PyTorch', scope: 'courses' },
   { keyword: 'LangChain', scope: 'courses' },
@@ -650,11 +653,14 @@ async function main() {
   }
 
   // 5. date_format_templates
+  // P1-2 注意: 现有 seed 用 string 风格的 scope key (admin.users.list / common.date),
+  // 跟 prisma enum { global, locale } 不兼容. 临时 cast `as any` 让 build 过,
+  // 真要跑这个 seed 必须先扩 enum 或重写 seed scope 值. — Frank 决定.
   console.log(`  date_format_templates: ${dateFormatTemplates.length} rows`);
   for (const d of dateFormatTemplates) {
     await prisma.dateFormatTemplate.upsert({
-      where: { scope_locale: { scope: d.scope, locale: d.locale } },
-      create: d,
+      where: { scope_locale: { scope: d.scope as DateFormatTemplateScope, locale: d.locale } },
+      create: d as any,
       update: { template: d.template },
     });
   }
@@ -711,7 +717,7 @@ async function main() {
   console.log(`  quick_prompts: ${quickPrompts.length} rows`);
   for (let i = 0; i < quickPrompts.length; i++) {
     const q = quickPrompts[i]!;
-    const existing = await prisma.quickPrompt.findFirst({ where: { label: q.label, scope: q.scope } });
+    const existing = await prisma.quickPrompt.findFirst({ where: { label: q.label, scope: q.scope as QuickPromptScope } });
     if (existing) {
       await prisma.quickPrompt.update({
         where: { id: existing.id },
@@ -719,7 +725,7 @@ async function main() {
       });
     } else {
       await prisma.quickPrompt.create({
-        data: { emoji: q.emoji, label: q.label, promptText: q.promptText, scope: q.scope, isActive: true, orderIndex: i },
+        data: { emoji: q.emoji, label: q.label, promptText: q.promptText, scope: q.scope as QuickPromptScope, isActive: true, orderIndex: i },
       });
     }
   }
@@ -750,11 +756,11 @@ async function main() {
   console.log(`  hot_keywords: ${hotKeywords.length} rows`);
   for (let i = 0; i < hotKeywords.length; i++) {
     const k = hotKeywords[i]!;
-    const existing = await prisma.hotKeyword.findFirst({ where: { keyword: k.keyword, scope: k.scope } });
+    const existing = await prisma.hotKeyword.findFirst({ where: { keyword: k.keyword, scope: k.scope as HotKeywordScope } });
     if (existing) {
       await prisma.hotKeyword.update({ where: { id: existing.id }, data: { orderIndex: i } });
     } else {
-      await prisma.hotKeyword.create({ data: { keyword: k.keyword, scope: k.scope, isActive: true, orderIndex: i } });
+      await prisma.hotKeyword.create({ data: { keyword: k.keyword, scope: k.scope as HotKeywordScope, isActive: true, orderIndex: i } });
     }
   }
 
