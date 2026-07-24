@@ -631,6 +631,8 @@ export const LIST_FALLBACK: Record<ListResource, any[]> = {
       links: [
         { label: '服务条款', path: '/terms' },
         { label: '隐私政策', path: '/privacy' },
+        { label: 'Cookie 政策', path: '/cookies' },
+        { label: '退款政策', path: '/refund' },
       ],
     },
   ],
