@@ -335,6 +335,11 @@ export class BadgesService {
         return { current: stats.completedPracticesCount, target };
       case 'points_reached':
         return { current: stats.points, target };
+      // P1 修复(2026-07-24): 完成指定课程, 1 = 已修过, 0 = 没修
+      // leaf 节点带 courseId, 但 computeProgress 只看 stats, 所以这个 case
+      // 实际不工作 — 真正的判定走 evaluateCriteria 叶子分支
+      case 'course_specific':
+        return { current: 0, target: 1 };
       default:
         return { current: 0, target };
     }
@@ -378,6 +383,12 @@ export class BadgesService {
       return { passed: passedAll, current: passedCount, target: total };
     }
     // 叶子
+    if (criteria.type === 'course_specific') {
+      // P1 修复(2026-07-24): 完成指定 courseId
+      const courseId = criteria.courseId as string | undefined;
+      const passed = !!courseId && stats.completedCourseIds.includes(courseId);
+      return { passed, current: passed ? 1 : 0, target: 1 };
+    }
     const leaf = this.computeProgress(criteria.type, criteria.value ?? 1, stats);
     return { passed: leaf.current >= leaf.target, current: leaf.current, target: leaf.target };
   }

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { CreateCourseDto, UpdateCourseDto } from './courses.dto';
+import { CreateCourseDto, UpdateCourseDto, LinkDegreesDto } from './courses.dto';
 import { CourseStatus, CourseType } from '@prisma/client';
 
 export interface RatingDistribution {
@@ -34,6 +34,18 @@ export class CoursesService {
       },
       orderBy: { orderIndex: 'asc' as const },
     },
+    // P0 修复(2026-07-24): 返回 course 所属的 degree, 让前端能展示
+    degreeCourses: {
+      include: {
+        degree: {
+          select: { id: true, title: true, status: true, costType: true },
+        },
+      },
+      orderBy: { orderIndex: 'asc' as const },
+    },
+    // P1 修复(2026-07-24): 行业/分类
+    industry: { select: { id: true, key: true, label: true, icon: true } },
+    category: { select: { id: true, key: true, label: true } },
   };
 
   async findAll(params: { status?: CourseStatus; courseType?: CourseType; search?: string }) {
@@ -151,5 +163,54 @@ export class CoursesService {
     });
 
     return { message: 'Course deleted' };
+  }
+
+  /**
+   * P0 修复(2026-07-24): 课程挂学位 — append 语义。
+   * 把此 course 追加到每个指定 degree 的末尾(orderIndex = 现有 max + 1..N)。
+   * 同一 (course, degree) 已存在则跳过(避免重复)。
+   * 精确位置编辑请走 degree service.linkCourses。
+   */
+  async linkDegrees(courseId: string, dto: LinkDegreesDto) {
+    // 校验 course 存在
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true },
+    });
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+
+    let appended = 0;
+    let skipped = 0;
+    for (const degreeId of dto.degreeIds) {
+      // 已存在则跳过
+      const existing = await this.prisma.degreeCourse.findUnique({
+        where: { degreeId_courseId: { degreeId, courseId } },
+      });
+      if (existing) {
+        skipped += 1;
+        continue;
+      }
+      // 找该 degree 内现有最大 orderIndex
+      const max = await this.prisma.degreeCourse.aggregate({
+        where: { degreeId },
+        _max: { orderIndex: true },
+      });
+      const orderIndex = (max._max.orderIndex ?? -1) + 1;
+      await this.prisma.degreeCourse.create({
+        data: { degreeId, courseId, orderIndex },
+      });
+      appended += 1;
+    }
+
+    await this.auditLog.log({
+      action: 'COURSE_LINK_DEGREES',
+      entity: 'course',
+      entityId: courseId,
+      details: { appended, skipped, requested: dto.degreeIds.length },
+    });
+
+    return this.findOne(courseId, true);
   }
 }

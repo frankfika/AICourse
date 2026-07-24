@@ -186,6 +186,11 @@ model Course {
   degreeCourses    DegreeCourse[]
   practiceProjects PracticeProject[]
   reviews          Review[]
+  // P1 修复(2026-07-24): 课程挂行业/分类 (FK, 之前 Industry/CourseCategory 模型孤立)
+  industry         Industry?      @relation(fields: [industryId], references: [id], onDelete: SetNull)
+  industryId       String?        @map("industry_id")
+  category         CourseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId       String?        @map("category_id")
 
   @@index([status, createdAt])
   @@index([costType])
@@ -193,6 +198,8 @@ model Course {
   @@index([level])
   @@index([instructorId])
   @@index([createdAt])
+  @@index([industryId])
+  @@index([categoryId])
   @@map("courses")
 }
 
@@ -431,6 +438,8 @@ model Hackathon {
   judges        Judge[]
   submissions   Submission[]
   announcements Announcement[]
+  // P1 修复(2026-07-24): 赞助商
+  sponsors      Sponsor[]
   organizer     User?           @relation("OrganizedHackathons", fields: [organizerId], references: [id], onDelete: SetNull)
 
   @@index([status, startDate])
@@ -554,10 +563,32 @@ model Judge {
   title       String?
   avatarUrl   String?  @map("avatar_url")
   bio         String?  @db.Text
+  // P1 修复(2026-07-24): 排序 + 角色
+  orderIndex  Int      @default(0) @map("order_index")
+  role        String   @default("judge") // judge | advisor | host
 
   hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
 
+  @@index([hackathonId, orderIndex])
   @@map("judges")
+}
+
+// P1 修复(2026-07-24): 赞助商
+model Sponsor {
+  id          String   @id @default(uuid())
+  hackathonId String   @map("hackathon_id")
+  name        String
+  logoUrl     String?  @map("logo_url")
+  websiteUrl  String?  @map("website_url")
+  tier        String   @default("silver") // platinum / gold / silver / bronze
+  orderIndex  Int      @default(0) @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+
+  @@index([hackathonId, tier, orderIndex])
+  @@map("sponsors")
 }
 
 model Submission {
@@ -765,6 +796,8 @@ enum BadgeCriteriaType {
   first_enrollment     // 首次报名（N=1）
   practice_completed   // 完成 N 个实践项目
   points_reached       // 累计积分达到 N
+  // P1 修复(2026-07-24): 完成指定 courseId 的课程 (叶子 criteriaJson.courseId, target 默认为 1)
+  course_specific
 }
 
 model UserBadge {
@@ -977,6 +1010,26 @@ model AiUsage {
   @@map("ai_usage")
 }
 
+// ==================== P0 修复(2026-07-24): AI Provider 配置 ====================
+// admin 后台可改的 AI key, 加密存储(API_KEY_ENC_PREFIX + base64 iv+tag+ct)
+// 单例: 通常 1 行, 但允许多 provider 并存(将来要加 openai/claude 也可插拔)
+model AiConfig {
+  id          String   @id @default(uuid())
+  // 'gemini' | 'openai' | 'claude' | ...
+  provider    String   @unique
+  // 加密的 API key, 格式: <iv-b64>.<tag-b64>.<ct-b64> (AES-256-GCM)
+  apiKeyEnc   String   @map("api_key_enc")
+  // 模型名, 如 'gemini-2.0-flash', 'gpt-4o', 'claude-3-5-sonnet-latest'
+  model       String
+  // 可选: 自定义 base URL (azure / proxy)
+  baseUrl     String?  @map("base_url")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("ai_configs")
+}
+
 // 注: Review model 已在 P1-3 评价系统 (line 700 附近) 完整定义, 这里不重复.
 // 之前 dev DB 的 reviews 表跟 schema 重复, 但 prisma migrate deploy 会处理 (用 P1-3 那一份).
 
@@ -1065,6 +1118,9 @@ model Industry {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  // P1 修复(2026-07-24): 反向 relation
+  courses     Course[]
+
   @@index([isActive, orderIndex])
   @@map("industries")
 }
@@ -1119,6 +1175,9 @@ model CourseCategory {
   label      String
   isActive   Boolean @default(true) @map("is_active")
   orderIndex Int     @default(0) @map("order_index")
+
+  // P1 修复(2026-07-24): 反向 relation
+  courses    Course[]
 
   @@index([isActive, orderIndex])
   @@map("course_categories")

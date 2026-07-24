@@ -61,7 +61,8 @@ export type BadgeCriteriaType =
   | 'streak_days'
   | 'first_enrollment'
   | 'practice_completed'
-  | 'points_reached';
+  | 'points_reached'
+  | 'course_specific'; // P1 修复(2026-07-24): 完成指定 courseId 课程
 
 /**
  * 徽章嵌套条件 DSL(P1-3):
@@ -76,6 +77,8 @@ export type BadgeCriteriaOp = 'and' | 'or' | 'not';
 export interface BadgeCriteriaLeaf {
   type: BadgeCriteriaType;
   value?: number;
+  // P1 修复(2026-07-24): 叶子节点可附 courseId (course_specific 用)
+  courseId?: string;
 }
 
 export interface BadgeCriteriaRule {

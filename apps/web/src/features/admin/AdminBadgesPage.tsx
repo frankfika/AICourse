@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Edit2, Award, ChevronRight, ChevronDown, X, Layers } from 'lucide-react';
 import { useApiMutation } from '../../hooks/useApiMutation';
+import { useToast } from '../../components/auth/Toast';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { badgesApi } from '../../lib/badgesApi';
 import type {
@@ -18,6 +19,8 @@ const criteriaTypeOptions: { value: BadgeCriteriaType; label: string }[] = [
   { value: 'first_enrollment', label: '首次报名' },
   { value: 'practice_completed', label: '完成实践项目' },
   { value: 'points_reached', label: '积分达到' },
+  // P1 修复(2026-07-24): 完成指定课程 (advanced DSL 才用得到, 在叶子节点配 courseId)
+  { value: 'course_specific', label: '完成指定课程 (需配 courseId)' },
 ];
 
 interface BadgeForm {
@@ -33,6 +36,8 @@ interface BadgeForm {
   orderIndex: number;
   useAdvanced: boolean;
   criteriaJson: BadgeCriteriaRule | null;
+  // P1 修复(2026-07-24): course_specific 用 — 提交时套到 criteriaJson.courseId
+  specificCourseId: string;
 }
 
 const emptyForm: BadgeForm = {
@@ -48,10 +53,12 @@ const emptyForm: BadgeForm = {
   orderIndex: 0,
   useAdvanced: false,
   criteriaJson: null,
+  specificCourseId: '',
 };
 
 export function AdminBadgesPage() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -108,6 +115,7 @@ export function AdminBadgesPage() {
       orderIndex: badge.orderIndex,
       useAdvanced: !!badge.criteriaJson,
       criteriaJson: badge.criteriaJson ?? null,
+      specificCourseId: (badge.criteriaJson as any)?.courseId ?? '',
     });
     setIsCreating(true);
   };
@@ -127,9 +135,23 @@ export function AdminBadgesPage() {
       orderIndex: Number(form.orderIndex),
     };
     // P1-3: 嵌套规则优先 — useAdvanced 时清掉旧 flat 字段
-    const payload = form.useAdvanced
+    let payload: any = form.useAdvanced
       ? { ...base, criteriaValue: 1, criteriaJson: form.criteriaJson }
       : { ...base, criteriaJson: null };
+
+    // P1 修复(2026-07-24): course_specific 时自动套 courseId 到 criteriaJson
+    if (form.criteriaType === 'course_specific') {
+      if (!form.specificCourseId.trim()) {
+        showToast('course_specific 必须填 courseId', 'error');
+        return;
+      }
+      payload = {
+        ...base,
+        criteriaValue: 1,
+        criteriaJson: { type: 'course_specific', value: 1, courseId: form.specificCourseId.trim() },
+      };
+    }
+
     if (editingId) {
       updateMutation.mutate({ id: editingId, data: payload });
     } else {
@@ -240,7 +262,19 @@ export function AdminBadgesPage() {
                 type="number"
                 value={String(form.criteriaValue)}
                 onChange={(v) => setForm({ ...form, criteriaValue: Number(v) })}
+                disabled={form.criteriaType === 'course_specific'}
               />
+              {/* P1 修复(2026-07-24): course_specific 时显示 courseId 输入 */}
+              {form.criteriaType === 'course_specific' && (
+                <div className="md:col-span-2">
+                  <BrutalField
+                    label="目标课程 UUID (course_specific 必填)"
+                    value={form.specificCourseId}
+                    onChange={(v) => setForm({ ...form, specificCourseId: v })}
+                    placeholder="e.g. 7f1a8c3e-..."
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="mt-4">
@@ -403,6 +437,7 @@ function BrutalField({
   required,
   multiline,
   disabled,
+  placeholder,
 }: {
   label: string;
   value: string;
@@ -411,6 +446,7 @@ function BrutalField({
   required?: boolean;
   multiline?: boolean;
   disabled?: boolean;
+  placeholder?: string;
 }) {
   return (
     <div>
@@ -425,6 +461,7 @@ function BrutalField({
           rows={3}
           required={required}
           disabled={disabled}
+          placeholder={placeholder}
           className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors resize-none disabled:opacity-50"
         />
       ) : (
@@ -434,6 +471,7 @@ function BrutalField({
           onChange={(e) => onChange(e.target.value)}
           required={required}
           disabled={disabled}
+          placeholder={placeholder}
           className="w-full px-4 py-3 bg-white dark:bg-neutral-100 dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 dark:focus:bg-neutral-800 transition-colors disabled:opacity-50"
         />
       )}

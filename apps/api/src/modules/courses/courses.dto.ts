@@ -162,6 +162,17 @@ export class CreateCourseDto {
   @MaxLength(20)
   sourcePlatform?: string;
 
+  // P1 修复(2026-07-24): 行业/分类 FK
+  @ApiPropertyOptional({ description: '行业 UUID' })
+  @IsOptional()
+  @IsUUID()
+  industryId?: string;
+
+  @ApiPropertyOptional({ description: '课程分类 UUID' })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
+
   @ApiPropertyOptional({ type: () => [CreateChapterDto], description: '课程章节（含课时和资源）' })
   @IsOptional()
   @ValidateNested({ each: true })
@@ -170,3 +181,14 @@ export class CreateCourseDto {
 }
 
 export class UpdateCourseDto extends CreateCourseDto {}
+
+/**
+ * P0 修复(2026-07-24): 课程挂学位 — 接受学位 ID 列表(append 语义)。
+ * 课程会按列表顺序追加到各学位的末尾(orderIndex = 现有 max + 1..N)。
+ * 精确顺序编辑请走 POST /api/v1/degrees/:id/courses (linkCourses)。
+ */
+export class LinkDegreesDto {
+  @ApiProperty({ type: [String], description: '要追加到的学位 UUID 列表' })
+  @IsUUID('all', { each: true })
+  degreeIds: string[];
+}

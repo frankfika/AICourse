@@ -51,11 +51,21 @@ const EnterprisePage = lazy(() => import('./features/enterprise/EnterprisePage')
 const NotFoundPage = lazy(() => import('./features/misc/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const DesignSystemPage = lazy(() => import('./routes/design-system').then(m => ({ default: m.default })));
 const SearchPage = lazy(() => import('./routes/SearchPage').then(m => ({ default: m.SearchPage })));
+// P1-9 dev-only: 错误页 demo 路由组件, 生产 build 被 tree-shake
+const ErrorDemoPage = lazy(() =>
+  import('./features/misc/ErrorDemoPage').then(m => ({ default: m.ErrorDemoPage })),
+);
+// P1-9 法律页 (公开 + lazy, footer 链接需要)
+const TermsPage = lazy(() => import('./features/legal/TermsPage').then(m => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('./features/legal/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
+const CookiesPage = lazy(() => import('./features/legal/CookiesPage').then(m => ({ default: m.CookiesPage })));
+const RefundPage = lazy(() => import('./features/legal/RefundPage').then(m => ({ default: m.RefundPage })));
 
 function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
   // user 真正存在的地方是 zustand store (AuthProvider 也读这里)
   // 直接订阅 zustand 避免 React Context 异步 hydration 时机问题
   const user = useAuthStore((s) => s.user);
+  // DEBUG removed 2026-07-24: admin role 跳回学生问题已修
   if (!user) return <Navigate to="/auth/login" replace />;
   if (requireAdmin && user.role !== 'admin') return <Navigate to="/" replace />;
   return <>{children}</>;
@@ -124,6 +134,11 @@ export const router = createBrowserRouter([
   { path: '/auth/login', element: <LoginPage /> },
   { path: '/auth/register', element: <RegisterPage /> },
   { path: '/auth/forgot', element: <ForgotPasswordPage /> },
+  // ===== P1-9 法律页 (公开, footer 链接需要 — 之前缺失直接 404) =====
+  { path: '/terms', element: <PublicSuspense><TermsPage /></PublicSuspense> },
+  { path: '/privacy', element: <PublicSuspense><PrivacyPage /></PublicSuspense> },
+  { path: '/cookies', element: <PublicSuspense><CookiesPage /></PublicSuspense> },
+  { path: '/refund', element: <PublicSuspense><RefundPage /></PublicSuspense> },
   // 注:BindingsPage 内部自己处理"未登录" EmptyState,这样 demo 模式 ?demo=with-google
   //     可以绕过登录态渲染示例视图(给截图用)
   { path: '/dashboard/settings/bindings', element: <PublicSuspense><BindingsPage /></PublicSuspense> },
@@ -152,5 +167,16 @@ export const router = createBrowserRouter([
   },
   // P0-4 设计系统演示页 — 临时挂载,后续 worktree 跑完移除
   { path: '/__design-system', element: <PublicSuspense><DesignSystemPage /></PublicSuspense> },
+  // P1-9 错误页演示路由 (仅 dev mode — 用来截图/QA 验证 4 个错误页)
+  // 路径: /__error-demo/:type  (type = 404|403|500|network)
+  // prod build 时 import.meta.env.DEV === false, 整段被 tree-shake 掉
+  ...(import.meta.env.DEV
+    ? [
+        {
+          path: '__error-demo/:type',
+          element: <PublicSuspense><ErrorDemoPage /></PublicSuspense>,
+        },
+      ]
+    : []),
   { path: '*', element: <PublicSuspense><NotFoundPage /></PublicSuspense> },
 ]);

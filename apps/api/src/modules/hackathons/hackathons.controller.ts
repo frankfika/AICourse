@@ -263,4 +263,107 @@ export class HackathonsController {
   ) {
     return this.hackathonsService.judgeSubmission(id, submissionId, dto);
   }
+
+  // ==================== P1 修复(2026-07-24): Judges CRUD ====================
+
+  @Get(':id/judges')
+  @ApiOperation({ summary: '列出黑客松评委' })
+  @ApiParam({ name: 'id', description: '黑客松ID' })
+  async listJudges(@Param('id') id: string) {
+    return this.hackathonsService.listJudges(id);
+  }
+
+  @Post(':id/judges')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '新增评委（管理员）' })
+  @ApiParam({ name: 'id', description: '黑客松ID' })
+  async addJudge(@Param('id') id: string, @Body() body: {
+    name: string;
+    title?: string;
+    avatarUrl?: string;
+    bio?: string;
+    orderIndex?: number;
+    role?: 'judge' | 'advisor' | 'host';
+  }) {
+    return this.hackathonsService.addJudge(id, body);
+  }
+
+  @Patch(':id/judges/:judgeId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '更新评委（管理员）' })
+  @ApiParam({ name: 'id', description: '黑客松ID' })
+  @ApiParam({ name: 'judgeId', description: '评委ID' })
+  async updateJudge(
+    @Param('id') id: string,
+    @Param('judgeId') judgeId: string,
+    @Body() body: Partial<{ name: string; title: string; avatarUrl: string; bio: string; orderIndex: number; role: 'judge' | 'advisor' | 'host' }>,
+  ) {
+    return this.hackathonsService.updateJudge(id, judgeId, body);
+  }
+
+  @Delete(':id/judges/:judgeId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '删除评委（管理员）' })
+  @ApiParam({ name: 'id', description: '黑客松ID' })
+  @ApiParam({ name: 'judgeId', description: '评委ID' })
+  async removeJudge(@Param('id') id: string, @Param('judgeId') judgeId: string) {
+    return this.hackathonsService.removeJudge(id, judgeId);
+  }
+
+  // ==================== P1 修复(2026-07-24): Sponsors CRUD ====================
+
+  @Get(':id/sponsors')
+  @ApiOperation({ summary: '列出黑客松赞助商' })
+  @ApiParam({ name: 'id', description: '黑客松ID' })
+  async listSponsors(@Param('id') id: string) {
+    return this.hackathonsService.listSponsors(id);
+  }
+
+  @Post(':id/sponsors')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '新增赞助商（管理员）' })
+  @ApiParam({ name: 'id', description: '黑客松ID' })
+  async addSponsor(@Param('id') id: string, @Body() body: {
+    name: string;
+    logoUrl?: string;
+    websiteUrl?: string;
+    tier?: 'platinum' | 'gold' | 'silver' | 'bronze';
+    orderIndex?: number;
+  }) {
+    return this.hackathonsService.addSponsor(id, body);
+  }
+
+  @Patch(':id/sponsors/:sponsorId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '更新赞助商（管理员）' })
+  @ApiParam({ name: 'id', description: '黑客松ID' })
+  @ApiParam({ name: 'sponsorId', description: '赞助商ID' })
+  async updateSponsor(
+    @Param('id') id: string,
+    @Param('sponsorId') sponsorId: string,
+    @Body() body: Partial<{ name: string; logoUrl: string; websiteUrl: string; tier: 'platinum' | 'gold' | 'silver' | 'bronze'; orderIndex: number }>,
+  ) {
+    return this.hackathonsService.updateSponsor(id, sponsorId, body);
+  }
+
+  @Delete(':id/sponsors/:sponsorId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '删除赞助商（管理员）' })
+  @ApiParam({ name: 'id', description: '黑客松ID' })
+  @ApiParam({ name: 'sponsorId', description: '赞助商ID' })
+  async removeSponsor(@Param('id') id: string, @Param('sponsorId') sponsorId: string) {
+    return this.hackathonsService.removeSponsor(id, sponsorId);
+  }
 }

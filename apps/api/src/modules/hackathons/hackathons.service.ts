@@ -533,4 +533,92 @@ export class HackathonsService {
       throw new ForbiddenException('请先报名该黑客松');
     }
   }
+
+  // ==================== P1 修复(2026-07-24): Judges ====================
+
+  async listJudges(hackathonId: string) {
+    return this.prisma.judge.findMany({
+      where: { hackathonId },
+      orderBy: { orderIndex: 'asc' },
+    });
+  }
+
+  async addJudge(hackathonId: string, body: {
+    name: string;
+    title?: string;
+    avatarUrl?: string;
+    bio?: string;
+    orderIndex?: number;
+    role?: 'judge' | 'advisor' | 'host';
+  }) {
+    if (!body.name?.trim()) {
+      throw new BadRequestException('judge.name 不能为空');
+    }
+    return this.prisma.judge.create({
+      data: {
+        hackathonId,
+        name: body.name.trim(),
+        title: body.title,
+        avatarUrl: body.avatarUrl,
+        bio: body.bio,
+        orderIndex: body.orderIndex ?? 0,
+        role: body.role ?? 'judge',
+      },
+    });
+  }
+
+  async updateJudge(hackathonId: string, judgeId: string, body: any) {
+    return this.prisma.judge.update({
+      where: { id: judgeId },
+      data: body,
+    });
+  }
+
+  async removeJudge(hackathonId: string, judgeId: string) {
+    await this.prisma.judge.delete({ where: { id: judgeId } });
+    return { message: 'Judge deleted' };
+  }
+
+  // ==================== P1 修复(2026-07-24): Sponsors ====================
+
+  async listSponsors(hackathonId: string) {
+    return this.prisma.sponsor.findMany({
+      where: { hackathonId },
+      orderBy: [{ tier: 'asc' }, { orderIndex: 'asc' }],
+    });
+  }
+
+  async addSponsor(hackathonId: string, body: {
+    name: string;
+    logoUrl?: string;
+    websiteUrl?: string;
+    tier?: 'platinum' | 'gold' | 'silver' | 'bronze';
+    orderIndex?: number;
+  }) {
+    if (!body.name?.trim()) {
+      throw new BadRequestException('sponsor.name 不能为空');
+    }
+    return this.prisma.sponsor.create({
+      data: {
+        hackathonId,
+        name: body.name.trim(),
+        logoUrl: body.logoUrl,
+        websiteUrl: body.websiteUrl,
+        tier: body.tier ?? 'silver',
+        orderIndex: body.orderIndex ?? 0,
+      },
+    });
+  }
+
+  async updateSponsor(hackathonId: string, sponsorId: string, body: any) {
+    return this.prisma.sponsor.update({
+      where: { id: sponsorId },
+      data: body,
+    });
+  }
+
+  async removeSponsor(hackathonId: string, sponsorId: string) {
+    await this.prisma.sponsor.delete({ where: { id: sponsorId } });
+    return { message: 'Sponsor deleted' };
+  }
 }

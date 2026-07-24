@@ -69,8 +69,12 @@ interface UserDetail extends UserSummary {
     enrolledAt: string;
     expiresAt?: string | null;
     source: string;
-    course?: { id: string; title: string; thumbnail?: string | null } | null;
+    course?: { id: string; title: string; thumbnail?: string | null; _count?: { lessons: number; chapters: number } } | null;
     degree?: { id: string; title: string } | null;
+    // P1 修复(2026-07-24): 完成度
+    completedLessonsCount?: number;
+    isCompleted?: boolean;
+    progressPercent?: number;
   }>;
   orders: Array<{
     id: string;
@@ -508,19 +512,49 @@ function UserDetailContent({
               <I18nText k="admin.users.recent_enrollments" default="最近报名 (前 20)" />
             </h4>
             <ul className="space-y-1 text-xs">
-              {detail.enrollments.slice(0, 10).map((e) => (
-                <li
-                  key={e.id}
-                  className="flex items-center justify-between gap-2 py-1.5 px-2 bg-[#F5F4F0]"
-                >
-                  <span className="truncate">
-                    {e.course?.title ?? e.degree?.title ?? t('admin.users.unknown_course', '未知课程')}
-                  </span>
-                  <span className="text-[#666666] whitespace-nowrap">
-                    {formatDate(e.enrolledAt)}
-                  </span>
-                </li>
-              ))}
+              {detail.enrollments.slice(0, 10).map((e) => {
+                // P1 修复(2026-07-24): 完成度 + "已完成" 标记
+                const total = e.course?._count?.lessons ?? 0;
+                const done = e.completedLessonsCount ?? 0;
+                const pct = e.progressPercent ?? 0;
+                const isDone = e.isCompleted ?? false;
+                return (
+                  <li
+                    key={e.id}
+                    className="py-1.5 px-2 bg-[#F5F4F0]"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate flex-1">
+                        {e.course?.title ?? e.degree?.title ?? t('admin.users.unknown_course', '未知课程')}
+                      </span>
+                      {e.course && total > 0 && (
+                        <span
+                          className={`text-[10px] font-black uppercase tracking-widest px-1.5 py-0.5 ${
+                            isDone
+                              ? 'bg-[#171717] text-white'
+                              : pct > 0
+                                ? 'border border-[#171717] text-[#171717]'
+                                : 'text-[#A3A3A3]'
+                          }`}
+                        >
+                          {isDone ? '✓ 已完成' : `${pct}%`}
+                        </span>
+                      )}
+                      <span className="text-[#666666] whitespace-nowrap">
+                        {formatDate(e.enrolledAt)}
+                      </span>
+                    </div>
+                    {e.course && total > 0 && !isDone && pct > 0 && (
+                      <div className="mt-1 h-1 bg-[#EEEDE9]">
+                        <div
+                          className="h-full bg-[#171717] transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

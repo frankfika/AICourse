@@ -70,7 +70,16 @@ export class UsersService {
       select: {
         ...this.userSelect,
         enrollments: {
-          include: { course: true, degree: true },
+          include: {
+            course: {
+              select: {
+                id: true,
+                title: true,
+                thumbnail: true,
+              },
+            },
+            degree: { select: { id: true, title: true } },
+          },
           orderBy: { enrolledAt: 'desc' },
           take: 20, // 最近 20 笔报名
         },
@@ -98,6 +107,45 @@ export class UsersService {
       },
     });
     if (!user) throw new NotFoundException('User not found');
+
+    // P1 修复(2026-07-24): 给每个 enrollment 加 completedLessonsCount + progressPercent
+    // 一次 groupBy 算完, 避免 N+1
+    const enrollments = (user as any).enrollments ?? [];
+    const courseIds = enrollments
+      .map((e: any) => e.course?.id)
+      .filter(Boolean) as string[];
+    if (courseIds.length > 0) {
+      // 已修课时数
+      const completed = await this.prisma.progressRecord.groupBy({
+        by: ['courseId'],
+        where: { userId: id, status: 'completed', courseId: { in: courseIds } },
+        _count: { _all: true },
+      });
+      const completedMap = new Map(
+        completed.map((c) => [c.courseId, c._count._all ?? 0]),
+      );
+      // 总课时数 (lesson 间接挂在 chapter 下, 聚合 chapter.lessons)
+      const chapters = await this.prisma.chapter.findMany({
+        where: { courseId: { in: courseIds }, deletedAt: null },
+        select: {
+          courseId: true,
+          _count: { select: { lessons: { where: { deletedAt: null } } } },
+        },
+      });
+      const totalMap = new Map<string, number>();
+      for (const ch of chapters) {
+        totalMap.set(ch.courseId, (totalMap.get(ch.courseId) ?? 0) + (ch._count.lessons ?? 0));
+      }
+      for (const e of enrollments) {
+        const total = e.course?.id ? totalMap.get(e.course.id) ?? 0 : 0;
+        const done = e.course?.id ? completedMap.get(e.course.id) ?? 0 : 0;
+        e.completedLessonsCount = done;
+        e.totalLessonsCount = total;
+        e.isCompleted = total > 0 && done >= total;
+        e.progressPercent = total > 0 ? Math.round((done / total) * 100) : 0;
+      }
+    }
+
     return user;
   }
 

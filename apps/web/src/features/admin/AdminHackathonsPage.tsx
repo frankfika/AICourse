@@ -7,6 +7,7 @@ import { hackathonsApi } from '../../lib/hackathonsApi';
 import { HackathonStatusBadge } from '../hackathons/HackathonStatusBadge';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import api from '../../lib/api';
 
 const STATUS_OPTIONS: HackathonStatus[] = [
   'upcoming',
@@ -297,6 +298,9 @@ export function AdminHackathonsPage() {
         </form>
       )}
 
+      {/* P1 修复(2026-07-24): 评委 + 赞助商管理 */}
+      <JudgesSponsorsSection hackathonId={editingId} />
+
       <div className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100">
         <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 border-b-2 border-[#171717] dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400">
           <div className="col-span-12 md:col-span-1">#</div>
@@ -373,6 +377,245 @@ export function AdminHackathonsPage() {
         variant="danger"
         confirmText="确认删除"
       />
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// P1 修复(2026-07-24): 评委 + 赞助商管理
+// ──────────────────────────────────────────────────────────────────────
+
+interface Judge {
+  id: string;
+  hackathonId: string;
+  name: string;
+  title?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  orderIndex: number;
+  role: string;
+}
+
+interface Sponsor {
+  id: string;
+  hackathonId: string;
+  name: string;
+  logoUrl?: string | null;
+  websiteUrl?: string | null;
+  tier: string;
+  orderIndex: number;
+}
+
+const SPONSOR_TIERS = ['platinum', 'gold', 'silver', 'bronze'] as const;
+const JUDGE_ROLES = ['judge', 'advisor', 'host'] as const;
+
+function JudgesSponsorsSection({ hackathonId }: { hackathonId: string | null }) {
+  if (!hackathonId) {
+    return (
+      <div className="border-2 border-dashed border-[#171717] dark:border-neutral-50 p-6 mb-8 text-center text-xs text-[#666666]">
+        先在表单里保存一次黑客松基础信息, 才能管理评委和赞助商
+      </div>
+    );
+  }
+  return (
+    <div className="grid md:grid-cols-2 gap-6 mb-8">
+      <JudgesPanel hackathonId={hackathonId} />
+      <SponsorsPanel hackathonId={hackathonId} />
+    </div>
+  );
+}
+
+function JudgesPanel({ hackathonId }: { hackathonId: string }) {
+  const [newJudge, setNewJudge] = useState({ name: '', title: '', role: 'judge' as (typeof JUDGE_ROLES)[number] });
+
+  const { data: judges } = useQuery({
+    queryKey: ['admin-hackathon-judges', hackathonId],
+    queryFn: async () => {
+      const { data } = await api.get<Judge[]>(`/api/v1/hackathons/${hackathonId}/judges`);
+      return data ?? [];
+    },
+  });
+
+  const addMutation = useApiMutation({
+    mutationFn: (payload: any) => api.post(`/api/v1/hackathons/${hackathonId}/judges`, payload),
+    successMessage: '评委已添加',
+    invalidateKeys: [['admin-hackathon-judges', hackathonId]],
+    onSuccess: () => setNewJudge({ name: '', title: '', role: 'judge' }),
+  });
+
+  const removeMutation = useApiMutation({
+    mutationFn: (judgeId: string) => api.delete(`/api/v1/hackathons/${hackathonId}/judges/${judgeId}`),
+    successMessage: '已删除',
+    invalidateKeys: [['admin-hackathon-judges', hackathonId]],
+  });
+
+  return (
+    <div className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 p-4">
+      <h3 className="text-sm font-black uppercase tracking-widest mb-3">评委 ({judges?.length ?? 0})</h3>
+      <ul className="mb-3 space-y-1">
+        {(judges ?? []).map((j) => (
+          <li
+            key={j.id}
+            className="flex items-center gap-2 px-2 py-1 text-xs border border-[#EEEDE9]"
+          >
+            <span className="font-black">#{j.orderIndex + 1}</span>
+            <span className="flex-1 truncate">{j.name}</span>
+            <span className="text-[10px] uppercase opacity-70">{j.role}</span>
+            <button
+              type="button"
+              onClick={() => removeMutation.mutate(j.id)}
+              className="text-red-600 hover:bg-red-50 px-1"
+            >
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="space-y-1">
+        <input
+          value={newJudge.name}
+          onChange={(e) => setNewJudge({ ...newJudge, name: e.target.value })}
+          placeholder="姓名"
+          className="w-full px-2 py-1 text-xs border border-[#171717]"
+        />
+        <input
+          value={newJudge.title}
+          onChange={(e) => setNewJudge({ ...newJudge, title: e.target.value })}
+          placeholder="头衔 (如 'AI 科学家')"
+          className="w-full px-2 py-1 text-xs border border-[#171717]"
+        />
+        <div className="flex gap-1">
+          <select
+            value={newJudge.role}
+            onChange={(e) => setNewJudge({ ...newJudge, role: e.target.value as any })}
+            className="flex-1 px-2 py-1 text-xs border border-[#171717]"
+          >
+            {JUDGE_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => {
+              if (!newJudge.name.trim()) return;
+              addMutation.mutate({
+                name: newJudge.name,
+                title: newJudge.title || undefined,
+                role: newJudge.role,
+                orderIndex: judges?.length ?? 0,
+              });
+            }}
+            disabled={addMutation.isPending || !newJudge.name.trim()}
+            className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-[#171717] text-white disabled:opacity-50"
+          >
+            + 添加
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SponsorsPanel({ hackathonId }: { hackathonId: string }) {
+  const [newSponsor, setNewSponsor] = useState({
+    name: '',
+    websiteUrl: '',
+    tier: 'silver' as (typeof SPONSOR_TIERS)[number],
+  });
+
+  const { data: sponsors } = useQuery({
+    queryKey: ['admin-hackathon-sponsors', hackathonId],
+    queryFn: async () => {
+      const { data } = await api.get<Sponsor[]>(`/api/v1/hackathons/${hackathonId}/sponsors`);
+      return data ?? [];
+    },
+  });
+
+  const addMutation = useApiMutation({
+    mutationFn: (payload: any) => api.post(`/api/v1/hackathons/${hackathonId}/sponsors`, payload),
+    successMessage: '赞助商已添加',
+    invalidateKeys: [['admin-hackathon-sponsors', hackathonId]],
+    onSuccess: () => setNewSponsor({ name: '', websiteUrl: '', tier: 'silver' }),
+  });
+
+  const removeMutation = useApiMutation({
+    mutationFn: (sponsorId: string) => api.delete(`/api/v1/hackathons/${hackathonId}/sponsors/${sponsorId}`),
+    successMessage: '已删除',
+    invalidateKeys: [['admin-hackathon-sponsors', hackathonId]],
+  });
+
+  return (
+    <div className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 p-4">
+      <h3 className="text-sm font-black uppercase tracking-widest mb-3">赞助商 ({sponsors?.length ?? 0})</h3>
+      <ul className="mb-3 space-y-1">
+        {(sponsors ?? []).map((s) => (
+          <li
+            key={s.id}
+            className="flex items-center gap-2 px-2 py-1 text-xs border border-[#EEEDE9]"
+          >
+            <span className="font-black">#{s.orderIndex + 1}</span>
+            <span className="flex-1 truncate">{s.name}</span>
+            <span className="text-[10px] uppercase opacity-70">{s.tier}</span>
+            {s.websiteUrl && (
+              <a href={s.websiteUrl} target="_blank" rel="noopener" className="text-blue-600">
+                ↗
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => removeMutation.mutate(s.id)}
+              className="text-red-600 hover:bg-red-50 px-1"
+            >
+              ×
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="space-y-1">
+        <input
+          value={newSponsor.name}
+          onChange={(e) => setNewSponsor({ ...newSponsor, name: e.target.value })}
+          placeholder="赞助商名称"
+          className="w-full px-2 py-1 text-xs border border-[#171717]"
+        />
+        <input
+          value={newSponsor.websiteUrl}
+          onChange={(e) => setNewSponsor({ ...newSponsor, websiteUrl: e.target.value })}
+          placeholder="官网 URL (可选)"
+          className="w-full px-2 py-1 text-xs border border-[#171717]"
+        />
+        <div className="flex gap-1">
+          <select
+            value={newSponsor.tier}
+            onChange={(e) => setNewSponsor({ ...newSponsor, tier: e.target.value as any })}
+            className="flex-1 px-2 py-1 text-xs border border-[#171717]"
+          >
+            {SPONSOR_TIERS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => {
+              if (!newSponsor.name.trim()) return;
+              addMutation.mutate({
+                name: newSponsor.name,
+                websiteUrl: newSponsor.websiteUrl || undefined,
+                tier: newSponsor.tier,
+                orderIndex: sponsors?.length ?? 0,
+              });
+            }}
+            disabled={addMutation.isPending || !newSponsor.name.trim()}
+            className="px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-[#171717] text-white disabled:opacity-50"
+          >
+            + 添加
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -17,7 +17,7 @@ import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guar
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole, CourseStatus, CourseType } from '@prisma/client';
-import { CreateCourseDto, UpdateCourseDto } from './courses.dto';
+import { CreateCourseDto, UpdateCourseDto, LinkDegreesDto } from './courses.dto';
 
 @ApiTags('courses')
 @Controller('courses')
@@ -78,5 +78,16 @@ export class CoursesController {
   @ApiParam({ name: 'id', description: '课程ID' })
   async delete(@Param('id') id: string) {
     return this.coursesService.delete(id);
+  }
+
+  // P0 修复(2026-07-24): 课程挂学位 (append 语义)
+  @Post(':id/degrees')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '把课程追加到指定学位末尾（管理员）' })
+  @ApiParam({ name: 'id', description: '课程ID' })
+  async linkDegrees(@Param('id') id: string, @Body() dto: LinkDegreesDto) {
+    return this.coursesService.linkDegrees(id, dto);
   }
 }

@@ -50,12 +50,14 @@ import {
   Lock,
   Unlock,
   ExternalLink,
+  XCircle,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
 import { coursesAdminApi, type Chapter, type ChapterLesson, type ChapterResource, type ResourceType } from '../../lib/coursesAdminApi';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from '../../hooks/useApiMutation';
 import { useEnum, useI18n } from '../../lib/cms';
 import { I18nText } from '../../components/I18nText';
 
@@ -583,6 +585,16 @@ interface CourseForEdit {
   price: number;
   status: 'draft' | 'published' | 'unpublished';
   publishedAt: string | null;
+  // P0 修复(2026-07-24): 课程所属学位(后端 shapeDegree 已在 courseInclude 暴露 degreeCourses)
+  degreeCourses?: Array<{
+    orderIndex: number;
+    degree: { id: string; title: string; status: string; costType: string };
+  }>;
+  // P1 修复(2026-07-24): 行业/分类 FK
+  industry?: { id: string; key: string; label: string; icon?: string | null } | null;
+  industryId?: string | null;
+  category?: { id: string; key: string; label: string } | null;
+  categoryId?: string | null;
 }
 
 function useCourseEdit(courseId: string | undefined) {
@@ -618,6 +630,65 @@ function useCourseEdit(courseId: string | undefined) {
 }
 
 // ──────────────────────────────────────────────────────────────────────
+// P1 修复(2026-07-24): 行业/分类下拉 (复选 course.industryId / course.categoryId)
+// ──────────────────────────────────────────────────────────────────────
+
+function IndustryCategorySelects({
+  industryId,
+  categoryId,
+  onChange,
+}: {
+  industryId: string;
+  categoryId: string;
+  onChange: (industryId: string, categoryId: string) => void;
+}) {
+  // 拉 industry / category 列表(后端 endpoint 用 cms admin API, 这里用 /api/v1/admin/industries / categories)
+  // 走 admin auth + requireAdmin 守卫.
+  const { data: industries } = useQuery({
+    queryKey: ['admin-industries'],
+    queryFn: async () => {
+      const { data } = await api.get<Array<{ id: string; key: string; label: string; icon?: string | null }>>(
+        '/api/v1/admin/cms/industries',
+      );
+      return (data ?? []).filter((i) => (i as any).isActive !== false);
+    },
+  });
+
+  const { data: categories } = useQuery({
+    queryKey: ['admin-course-categories'],
+    queryFn: async () => {
+      const { data } = await api.get<Array<{ id: string; key: string; label: string }>>(
+        '/api/v1/admin/cms/course-categories',
+      );
+      return (data ?? []).filter((c) => (c as any).isActive !== false);
+    },
+  });
+
+  return (
+    <>
+      <BrutalSelect
+        label="行业"
+        value={industryId}
+        onChange={(v) => onChange(v, categoryId)}
+        options={[
+          { value: '', label: '— 不选 —' },
+          ...(industries ?? []).map((i) => ({ value: i.id, label: `${i.icon ?? ''} ${i.label}`.trim() })),
+        ]}
+      />
+      <BrutalSelect
+        label="课程分类"
+        value={categoryId}
+        onChange={(v) => onChange(industryId, v)}
+        options={[
+          { value: '', label: '— 不选 —' },
+          ...(categories ?? []).map((c) => ({ value: c.id, label: c.label })),
+        ]}
+      />
+    </>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
 // InfoTab — 基本信息(接 PATCH /api/v1/courses/:id 真后端)
 // ──────────────────────────────────────────────────────────────────────
 
@@ -633,7 +704,9 @@ function InfoTab({ courseId }: { courseId: string }) {
     level: string;
     duration: string;
     thumbnail: string;
-  }>({ title: '', description: '', instructor: '', level: 'Beginner', duration: '', thumbnail: '' });
+    industryId: string;
+    categoryId: string;
+  }>({ title: '', description: '', instructor: '', level: 'Beginner', duration: '', thumbnail: '', industryId: '', categoryId: '' });
 
   useEffect(() => {
     if (course) {
@@ -644,9 +717,11 @@ function InfoTab({ courseId }: { courseId: string }) {
         level: course.level ?? 'Beginner',
         duration: course.duration ?? '',
         thumbnail: course.thumbnail ?? '',
+        industryId: course.industryId ?? course.industry?.id ?? '',
+        categoryId: course.categoryId ?? course.category?.id ?? '',
       });
     }
-  }, [course?.id, course?.title, course?.description, course?.instructor, course?.level, course?.duration, course?.thumbnail]);
+  }, [course?.id, course?.title, course?.description, course?.instructor, course?.level, course?.duration, course?.thumbnail, course?.industryId, course?.categoryId]);
 
   if (courseQuery.isLoading) {
     return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
@@ -662,10 +737,17 @@ function InfoTab({ courseId }: { courseId: string }) {
   }
 
   const save = () => {
-    updateCourse.mutate(form, {
-      onSuccess: () => alert(t('admin.courses.toast.saved', '已保存')),
-      onError: (e: any) => alert(t('admin.courses.toast.save_failed', '保存失败:') + (e?.response?.data?.message ?? e?.message ?? t('common.error.unknown', '未知错误'))),
-    });
+    updateCourse.mutate(
+      {
+        ...form,
+        industryId: form.industryId || null,
+        categoryId: form.categoryId || null,
+      },
+      {
+        onSuccess: () => alert(t('admin.courses.toast.saved', '已保存')),
+        onError: (e: any) => alert(t('admin.courses.toast.save_failed', '保存失败:') + (e?.response?.data?.message ?? e?.message ?? t('common.error.unknown', '未知错误'))),
+      },
+    );
   };
 
   return (
@@ -704,6 +786,12 @@ function InfoTab({ courseId }: { courseId: string }) {
             onChange={(v) => setForm({ ...form, duration: v })}
             placeholder={t('admin.courses.placeholder.duration', '如 6.5h')}
           />
+          {/* P1 修复(2026-07-24): 行业/分类 FK 选择 */}
+          <IndustryCategorySelects
+            industryId={form.industryId}
+            categoryId={form.categoryId}
+            onChange={(industryId, categoryId) => setForm((f) => ({ ...f, industryId, categoryId }))}
+          />
           <div className="md:col-span-2">
             <BrutalField
               label={t('admin.courses.field.thumbnail', '封面图 URL')}
@@ -736,6 +824,155 @@ function InfoTab({ courseId }: { courseId: string }) {
             <span className="text-xs bg-[#171717] text-white px-2 py-0.5 font-black uppercase tracking-widest">已保存</span>
           )}
         </div>
+      </div>
+
+      {/* P0 修复(2026-07-24): 课程挂学位 — 显示已属学位 + 添加新学位 */}
+      <DegreeMembershipSection courseId={courseId} />
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// DegreeMembershipSection — 课程所属学位(append 语义, 调 POST /api/v1/courses/:id/degrees)
+// ──────────────────────────────────────────────────────────────────────
+
+function DegreeMembershipSection({ courseId }: { courseId: string }) {
+  const { courseQuery } = useCourseEdit(courseId);
+  const [degreeSearch, setDegreeSearch] = useState('');
+  const [pendingAdd, setPendingAdd] = useState<string | null>(null);
+
+  const linkedDegrees = courseQuery.data?.degreeCourses ?? [];
+
+  // 拉全量已发布学位做候选(草稿学位对课程没意义)
+  const { data: allDegrees } = useQuery({
+    queryKey: ['admin-degrees-for-course'],
+    queryFn: async () => {
+      const { data } = await api.get<Array<{ id: string; title: string; status: string; costType: string }>>(
+        '/api/v1/degrees',
+      );
+      return data ?? [];
+    },
+  });
+
+  const linkMutation = useApiMutation({
+    mutationFn: (degreeId: string) => api.post(`/api/v1/courses/${courseId}/degrees`, { degreeIds: [degreeId] }),
+    successMessage: '已加入学位',
+    invalidateKeys: [
+      ['admin-course-edit', courseId],
+      ['admin-degrees'],
+      ['degrees'],
+    ],
+  });
+
+  const removeMutation = useApiMutation({
+    mutationFn: async (degreeId: string) => {
+      // 调 degree service 的 linkCourses 传空数组会清空整个 degree 的课程,
+      // 这里要"只删这一门课", 所以直接 prisma 删中间表行 — 但前端不直接 prisma,
+      // 走: 先拿当前 degree 的所有 courseId(排除本门), 再 linkCourses 重写
+      const { data: deg } = await api.get<{ courses: Array<{ id: string; orderIndex: number }> }>(
+        `/api/v1/degrees/${degreeId}`,
+      );
+      const remaining = (deg?.courses ?? []).filter((c) => c.id !== courseId);
+      await api.post(`/api/v1/degrees/${degreeId}/courses`, {
+        courses: remaining.map((c, idx) => ({ courseId: c.id, orderIndex: idx })),
+      });
+    },
+    successMessage: '已从学位移除',
+    invalidateKeys: [
+      ['admin-course-edit', courseId],
+      ['admin-degrees'],
+      ['degrees'],
+    ],
+  });
+
+  const linkedIds = new Set(linkedDegrees.map((d) => d.degree.id));
+  const candidates = (allDegrees ?? []).filter((d) => !linkedIds.has(d.id));
+  const filteredCandidates = degreeSearch.trim()
+    ? candidates.filter((d) => d.title.toLowerCase().includes(degreeSearch.toLowerCase()))
+    : candidates;
+
+  return (
+    <div className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 p-6 mt-4">
+      <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 mb-1">
+        所属学位
+      </h3>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 mb-4">
+        / Degree Membership · {linkedDegrees.length} 个学位含此课
+      </p>
+
+      {linkedDegrees.length === 0 ? (
+        <div className="mb-4 p-3 text-xs text-[#666666] border border-dashed border-[#171717]">
+          此课程尚未加入任何学位
+        </div>
+      ) : (
+        <ul className="mb-4 border border-[#171717] dark:border-neutral-50 divide-y divide-[#EEEDE9] dark:divide-neutral-800">
+          {linkedDegrees.map((lc) => (
+            <li
+              key={lc.degree.id}
+              className="flex items-center gap-3 px-3 py-2 text-sm bg-white dark:bg-neutral-100"
+            >
+              <span className="font-black text-[#A3A3A3] w-6 text-[10px]">
+                #{String(lc.orderIndex + 1).padStart(2, '0')}
+              </span>
+              <span className="flex-1 truncate text-[#171717] dark:text-neutral-50">
+                {lc.degree.title}
+              </span>
+              <span className="text-[10px] uppercase tracking-widest text-[#666666] dark:text-neutral-400">
+                {lc.degree.status}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeMutation.mutate(lc.degree.id)}
+                disabled={removeMutation.isPending}
+                className="p-1 text-[#A3A3A3] hover:bg-[#171717] hover:text-white disabled:opacity-30"
+                title="从学位移除"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div>
+        <input
+          type="text"
+          value={degreeSearch}
+          onChange={(e) => setDegreeSearch(e.target.value)}
+          placeholder="搜索学位..."
+          className="w-full px-3 py-2 mb-2 text-sm bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 focus:outline-none"
+        />
+        <div className="max-h-48 overflow-y-auto border border-[#171717] dark:border-neutral-50">
+          {filteredCandidates.length === 0 ? (
+            <div className="p-3 text-center text-xs text-[#666666]">
+              {candidates.length === 0 ? '已加入所有学位' : '无匹配学位'}
+            </div>
+          ) : (
+            filteredCandidates.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => {
+                  setPendingAdd(d.id);
+                  linkMutation.mutate(d.id, {
+                    onSettled: () => setPendingAdd(null),
+                  });
+                }}
+                disabled={linkMutation.isPending && pendingAdd === d.id}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm border-b last:border-b-0 border-[#EEEDE9] dark:border-neutral-800 bg-white dark:bg-neutral-100 hover:bg-[#F5F4F0] dark:hover:bg-neutral-800 disabled:opacity-50"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#A3A3A3]" />
+                <span className="flex-1 truncate">{d.title}</span>
+                {pendingAdd === d.id && linkMutation.isPending && (
+                  <span className="text-[10px] uppercase tracking-widest">加入中…</span>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+        <p className="mt-2 text-[10px] text-[#666666] dark:text-neutral-400">
+          点击 + 把此课程追加到学位末尾(append 语义)。如需精确排序, 请到「学位管理」编辑。
+        </p>
       </div>
     </div>
   );

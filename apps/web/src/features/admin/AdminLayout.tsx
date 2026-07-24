@@ -2,7 +2,8 @@
  * AdminLayout — admin 侧栏导航
  *
  * P0-7 调整:nav 顺序按 mock 调整(看板 / 课程 / 学位 / 用户 / 黑客松 / 企业),
- * 保留 徽章管理,新增 审计日志 / 系统设置 2 个 placeholder "即将推出"。
+ * 保留 徽章管理。
+ * 2026-07-24: 审计日志 / 评价管理 / 系统设置 都已实装, 无 placeholder.
  */
 import { Link, useLocation } from 'react-router-dom';
 import {

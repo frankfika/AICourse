@@ -30,6 +30,7 @@ import {
   Edit2,
   Save,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { useToast } from '../../components/auth/Toast';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -59,7 +60,8 @@ type TabKey =
   | 'auth_providers'
   | 'navigation'
   | 'i18n'
-  | 'date_formats';
+  | 'date_formats'
+  | 'ai_config';
 
 interface TabDef {
   key: TabKey;
@@ -82,7 +84,302 @@ const TABS: TabDef[] = [
   { key: 'navigation', label: '导航 / Footer', shortLabel: 'Nav', icon: Compass },
   { key: 'i18n', label: 'i18n 通用文案', shortLabel: 'i18n', icon: Globe },
   { key: 'date_formats', label: '日期格式', shortLabel: 'Date', icon: Calendar },
+  // P0 修复(2026-07-24): 第 14 tab, admin 改 AI provider key (加密存储)
+  { key: 'ai_config', label: 'AI 模型', shortLabel: 'AI', icon: Sparkles },
 ];
+
+// =============================================================
+// P0 修复(2026-07-24): AI Config Tab — admin 改 AI provider key
+// =============================================================
+
+interface AiConfigRow {
+  id: string;
+  provider: string;
+  model: string;
+  baseUrl: string | null;
+  isActive: boolean;
+  apiKeyMasked: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const PROVIDER_PRESETS: Record<string, { label: string; defaultModel: string; placeholder: string }> = {
+  gemini: { label: 'Google Gemini', defaultModel: 'gemini-2.0-flash', placeholder: 'AIzaSy...' },
+  openai: { label: 'OpenAI', defaultModel: 'gpt-4o', placeholder: 'sk-...' },
+  claude: { label: 'Anthropic Claude', defaultModel: 'claude-3-5-sonnet-latest', placeholder: 'sk-ant-...' },
+};
+
+function AiConfigTab() {
+  const { showToast } = useToast();
+  const [editingProvider, setEditingProvider] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    provider: 'gemini',
+    apiKey: '',
+    model: PROVIDER_PRESETS.gemini.defaultModel,
+    baseUrl: '',
+    isActive: true,
+  });
+
+  const { data: configs, isLoading } = useQuery({
+    queryKey: ['admin-ai-config'],
+    queryFn: async () => {
+      const { data } = await api.get<AiConfigRow[]>('/api/v1/admin/ai/config');
+      return data ?? [];
+    },
+  });
+
+  const upsertMutation = useApiMutation({
+    mutationFn: (payload: typeof form) => api.put('/api/v1/admin/ai/config', payload),
+    successMessage: 'AI 配置已保存',
+    invalidateKeys: [['admin-ai-config']],
+    onSuccess: () => {
+      setEditingProvider(null);
+      setForm({
+        provider: 'gemini',
+        apiKey: '',
+        model: PROVIDER_PRESETS.gemini.defaultModel,
+        baseUrl: '',
+        isActive: true,
+      });
+    },
+  });
+
+  const deleteMutation = useApiMutation({
+    mutationFn: (provider: string) => api.delete(`/api/v1/admin/ai/config/${provider}`),
+    successMessage: '已删除',
+    invalidateKeys: [['admin-ai-config']],
+  });
+
+  const testMutation = useApiMutation({
+    mutationFn: () => api.post('/api/v1/admin/ai/config/test'),
+    successMessage: 'AI 服务可用',
+  });
+
+  const startEdit = (row: AiConfigRow) => {
+    setEditingProvider(row.provider);
+    setForm({
+      provider: row.provider,
+      apiKey: '', // 不预填 (masked 也不显示完整)
+      model: row.model,
+      baseUrl: row.baseUrl ?? '',
+      isActive: row.isActive,
+    });
+  };
+
+  const handleProviderChange = (p: string) => {
+    setForm((f) => ({
+      ...f,
+      provider: p,
+      model: PROVIDER_PRESETS[p]?.defaultModel ?? f.model,
+    }));
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 p-6">
+        <h3 className="text-base font-black uppercase tracking-widest text-[#171717] dark:text-neutral-50 mb-1">
+          AI Provider 配置
+        </h3>
+        <p className="text-xs text-[#666666] dark:text-neutral-400 mb-4">
+          API key 在写入数据库前经过 AES-256-GCM 加密 (key 来自 env <code>AI_KEY_ENCRYPTION_KEY</code>)。
+          列表展示仅显示末 4 位; 修改需重新输入完整 key。
+        </p>
+
+        {isLoading ? (
+          <div className="p-4 text-sm text-[#666666]">加载中…</div>
+        ) : (configs ?? []).length === 0 ? (
+          <div className="p-4 mb-4 text-xs text-[#666666] border border-dashed border-[#171717]">
+            尚未配置任何 AI provider — 系统将回退到 env GEMINI_API_KEY (如果设置了)
+          </div>
+        ) : (
+          <table className="w-full text-sm mb-4">
+            <thead>
+              <tr className="text-[10px] font-black uppercase tracking-widest text-[#666666] border-b-2 border-[#171717]">
+                <th className="text-left py-2">Provider</th>
+                <th className="text-left py-2">Model</th>
+                <th className="text-left py-2">API Key</th>
+                <th className="text-left py-2">Status</th>
+                <th className="text-right py-2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {configs!.map((c) => (
+                <tr key={c.id} className="border-b border-[#EEEDE9]">
+                  <td className="py-2 font-black">{PROVIDER_PRESETS[c.provider]?.label ?? c.provider}</td>
+                  <td className="py-2 font-mono text-xs">{c.model}</td>
+                  <td className="py-2 font-mono text-xs">{c.apiKeyMasked || '—'}</td>
+                  <td className="py-2">
+                    <span
+                      className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${
+                        c.isActive
+                          ? 'bg-[#171717] text-white'
+                          : 'border border-[#171717] text-[#171717]'
+                      }`}
+                    >
+                      {c.isActive ? 'active' : 'disabled'}
+                    </span>
+                  </td>
+                  <td className="py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(c)}
+                      className="px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white mr-1"
+                    >
+                      修改
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(`确认删除 ${c.provider} 配置?`)) {
+                          deleteMutation.mutate(c.provider);
+                        }
+                      }}
+                      className="px-2 py-1 text-[10px] font-black uppercase tracking-widest border border-[#171717] hover:bg-[#171717] hover:text-white"
+                    >
+                      删除
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => testMutation.mutate()}
+            disabled={testMutation.isPending}
+            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-[#171717] text-white hover:bg-[#262626] disabled:opacity-50"
+          >
+            {testMutation.isPending ? '测试中…' : '🧪 测试当前 Gemini 配置'}
+          </button>
+          {testMutation.isSuccess && (
+            <div className="mt-2 text-xs">
+              <span className="bg-[#171717] text-white px-2 py-0.5 font-black uppercase tracking-widest mr-2">OK</span>
+              <span className="font-mono text-[#666666]">{(testMutation.data as any)?.data?.sample}</span>
+            </div>
+          )}
+          {testMutation.isError && (
+            <div className="mt-2 text-xs text-red-600">测试失败 — 检查 key / 网络 / env 配置</div>
+          )}
+        </div>
+      </div>
+
+      {/* 新增 / 修改表单 */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!form.apiKey && !editingProvider) {
+            showToast('请输入 API key', 'error');
+            return;
+          }
+          // 修改时 apiKey 为空 = 保留旧 key (跳过传 apiKey)
+          upsertMutation.mutate(form);
+        }}
+        className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 p-6"
+      >
+        <h3 className="text-base font-black uppercase tracking-widest text-[#171717] dark:text-neutral-50 mb-4">
+          {editingProvider ? `修改 ${editingProvider}` : '新增 Provider'}
+        </h3>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] block mb-2">
+              Provider
+            </label>
+            <select
+              value={form.provider}
+              onChange={(e) => handleProviderChange(e.target.value)}
+              disabled={!!editingProvider}
+              className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] text-sm focus:outline-none disabled:opacity-50"
+            >
+              {Object.entries(PROVIDER_PRESETS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] block mb-2">
+              Model
+            </label>
+            <input
+              type="text"
+              value={form.model}
+              onChange={(e) => setForm({ ...form, model: e.target.value })}
+              placeholder={PROVIDER_PRESETS[form.provider]?.defaultModel}
+              className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] text-sm font-mono focus:outline-none"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] block mb-2">
+              API Key {editingProvider && <span className="text-[#A3A3A3]">(留空保留旧 key)</span>}
+            </label>
+            <input
+              type="password"
+              value={form.apiKey}
+              onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+              placeholder={PROVIDER_PRESETS[form.provider]?.placeholder}
+              className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] text-sm font-mono focus:outline-none"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-[#666666] block mb-2">
+              Base URL <span className="text-[#A3A3A3]">(可选, 用于 Azure / proxy)</span>
+            </label>
+            <input
+              type="text"
+              value={form.baseUrl}
+              onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
+              placeholder="https://..."
+              className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] text-sm font-mono focus:outline-none"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+              />
+              启用 (isActive) — 多个 provider 时只取一个 active
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-2">
+          <button
+            type="submit"
+            disabled={upsertMutation.isPending}
+            className="px-6 py-3 text-xs font-black uppercase tracking-widest bg-[#171717] text-white hover:bg-[#262626] disabled:opacity-50"
+          >
+            {upsertMutation.isPending ? '保存中…' : editingProvider ? '更新' : '保存'}
+          </button>
+          {editingProvider && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingProvider(null);
+                setForm({
+                  provider: 'gemini',
+                  apiKey: '',
+                  model: PROVIDER_PRESETS.gemini.defaultModel,
+                  baseUrl: '',
+                  isActive: true,
+                });
+              }}
+              className="px-6 py-3 text-xs font-black uppercase tracking-widest border border-[#171717] hover:bg-[#EEEDE9]"
+            >
+              取消
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+  );
+}
 
 // =============================================================
 // 头部(13 tab 横向 / 移动折叠)
@@ -1430,6 +1727,7 @@ export function AdminSettingsPage() {
             ]}
           />
         )}
+        {activeTab === 'ai_config' && <AiConfigTab />}
       </div>
     </div>
   );

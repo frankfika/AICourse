@@ -1,26 +1,26 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
 import { CourseLevel, CostType } from '@prisma/client';
+import { GeminiService } from '../../common/gemini/gemini.service';
 
 /**
  * AI 内容生成服务
  *
- * 当前使用 Google Gemini（GEMINI_API_KEY）。
+ * 当前使用 Google Gemini（GEMINI_API_KEY），通过共享 GeminiService 调用。
  * 失败时回退到规则化生成，确保前端始终能拿到可用的草稿。
  */
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly gemini: GeminiService,
+  ) {}
 
   private get apiKey(): string | undefined {
     return this.config.get<string>('GEMINI_API_KEY');
-  }
-
-  private get model(): string {
-    return this.config.get<string>('GEMINI_MODEL') ?? 'gemini-2.0-flash';
   }
 
   /**
@@ -36,7 +36,7 @@ export class AiService {
     }
 
     const prompt = this.buildCoursePrompt(topic, hint);
-    const result = await this.callGemini(prompt, fallback);
+    const result = await this.callGeminiWithJson(prompt, fallback);
     return result;
   }
 
@@ -51,7 +51,7 @@ export class AiService {
     }
 
     const prompt = this.buildDegreePrompt(topic, hint);
-    const result = await this.callGemini(prompt, fallback);
+    const result = await this.callGeminiWithJson(prompt, fallback);
     return result;
   }
 
@@ -118,57 +118,42 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
 
   // ==================== Gemini 调用 ====================
 
-  private async callGemini<T>(prompt: string, fallback: T): Promise<T> {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+  /**
+   * JSON 草稿模式: 调 Gemini -> 解析 JSON -> zod 校验 -> 合并 fallback.
+   * 任何环节失败都安全回退到规则化草稿, 不向前端暴露错误.
+   */
+  private async callGeminiWithJson<T>(prompt: string, fallback: T): Promise<T> {
+    if (!this.apiKey) return fallback;
+    let text = '';
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.9,
-            maxOutputTokens: 1024,
-          },
-        }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        this.logger.error(`Gemini 调用失败: ${res.status} ${text}`);
-        return fallback;
-      }
-
-      const data: any = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-      const json = this.extractJson(text);
-      if (!json) {
-        this.logger.warn('Gemini 返回无法解析为 JSON，使用兜底');
-        return fallback;
-      }
-      // Security: validate LLM output against the strict schema before merging.
-      // If the LLM produced something malicious or malformed, fall back instead
-      // of trusting the partial result.
-      const schema: z.ZodTypeAny =
-        (fallback as any)?.courseType !== undefined || (fallback as any)?.instructor !== undefined
-          ? CourseDraftSchema
-          : DegreeDraftSchema;
-      const parsed = schema.safeParse(json);
-      if (!parsed.success) {
-        this.logger.warn(`Gemini 输出未通过 schema 校验，使用兜底: ${parsed.error.message}`);
-        return fallback;
-      }
-      return this.mergeWithFallback(parsed.data, fallback);
+      text = await this.gemini.generateText(prompt, { maxOutputTokens: 1024 });
     } catch (err) {
+      if (err instanceof ServiceUnavailableException) {
+        this.logger.warn('Gemini 不可用, 使用兜底');
+        return fallback;
+      }
       this.logger.error('Gemini 调用异常', err as Error);
       return fallback;
-    } finally {
-      clearTimeout(timeoutId);
     }
+
+    const json = this.extractJson(text);
+    if (!json) {
+      this.logger.warn('Gemini 返回无法解析为 JSON，使用兜底');
+      return fallback;
+    }
+    // Security: validate LLM output against the strict schema before merging.
+    // If the LLM produced something malicious or malformed, fall back instead
+    // of trusting the partial result.
+    const schema: z.ZodTypeAny =
+      (fallback as any)?.courseType !== undefined || (fallback as any)?.instructor !== undefined
+        ? CourseDraftSchema
+        : DegreeDraftSchema;
+    const parsed = schema.safeParse(json);
+    if (!parsed.success) {
+      this.logger.warn(`Gemini 输出未通过 schema 校验，使用兜底: ${parsed.error.message}`);
+      return fallback;
+    }
+    return this.mergeWithFallback(parsed.data, fallback);
   }
 
   private extractJson(text: string): any | null {
