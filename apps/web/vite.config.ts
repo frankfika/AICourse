@@ -1,5 +1,5 @@
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // Security: GEMINI_API_KEY must NEVER be injected into the client bundle.
@@ -8,6 +8,21 @@ export default defineConfig(({ mode }) => {
     // 读根目录 .env(与 apps/api 共享),不注入到 client
     const env = loadEnv(mode, path.resolve(__dirname, '../..'), '');
     const API_TARGET = env.API_INTERNAL_URL ?? 'http://localhost:8080';
+
+    // P0 安全加固 2026-07-23: dev mode 给 index.html 注入 HMR 需要的
+    //   connect-src ws://localhost:* + http://localhost:*, prod build 不注入.
+    //   prod 用静态 meta CSP (index.html),严格限制 inline script.
+    const devCspPlugin: PluginOption = {
+      name: 'dev-csp-relax',
+      apply: 'serve', // 只 dev mode
+      transformIndexHtml(html) {
+        const relaxed = html.replace(
+          /connect-src 'self'( https:\/\/generativelanguage\.googleapis\.com)?;/,
+          "connect-src 'self' http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:*$1;",
+        );
+        return relaxed;
+      },
+    };
 
     return {
       server: {
@@ -30,7 +45,7 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-      plugins: [react()],
+      plugins: [react(), devCspPlugin],
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
