@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { OriginCheckMiddleware } from './common/middleware/origin-check.middleware';
 import { AppController } from './app.controller';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -77,4 +78,20 @@ import { CmsModule } from './modules/cms/cms.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  /**
+   * P0 2026-07-23 CSRF 防御第二层: admin 写操作的 mutating 请求 (POST/PATCH/
+   * PUT/DELETE) 强制 Origin / Referer 头检查, 跟 CORS_ORIGIN 白名单对比,
+   * 跨站直接 403。配合 cookie sameSite=strict (生产) 双层防御。
+   *
+   * 范围: /api/v1/admin/* + /api/v1/admin/cms/* (cms-admin 用同一前缀) +
+   *       /api/v1/audit-logs (admin 唯一访问)。其他公开端点不强加, 因为
+   *       公开端点本来就不要鉴权, CSRF 没什么意义。
+   */
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(OriginCheckMiddleware).forRoutes(
+      'api/v1/admin*',
+      'api/v1/audit-logs*',
+    );
+  }
+}
