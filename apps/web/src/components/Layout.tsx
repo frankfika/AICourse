@@ -35,7 +35,7 @@ import { useTheme, useThemeStore } from '../stores/themeStore';
 import { CommandPalette } from './CommandPalette';
 import { cn } from '../lib/cn';
 import { Skeleton } from './ui/Skeleton';
-import { useList, useSiteSettings, useI18n, pickSite } from '../lib/cms';
+import { useList, useSiteSettings, useI18n, pickSite, safeNavPath } from '../lib/cms';
 
 // initThemeFromStorage 重新导出,保持 index.tsx 的导入路径不变
 export { initThemeFromStorage } from '../stores/themeStore';
@@ -46,7 +46,9 @@ export { initThemeFromStorage } from '../stores/themeStore';
 function useNavItems(): Array<{ label: string; path: string }> {
   const { data } = useList<{ label: string; path: string; isActive?: boolean }>('top-nav');
   if (data && data.length > 0) {
-    return data.filter((it) => it.isActive !== false).map((it) => ({ label: it.label, path: it.path }));
+    return data
+      .filter((it) => it.isActive !== false)
+      .map((it) => ({ label: it.label, path: safeNavPath(it.path) }));
   }
   return [
     { label: '课程', path: '/courses' },
@@ -62,7 +64,12 @@ function useNavItems(): Array<{ label: string; path: string }> {
 function useFooterColumns(): Array<{ title: string; links: Array<{ label: string; path: string }> }> {
   const { data } = useList<{ title: string; links: Array<{ label: string; path: string }>; isActive?: boolean }>('footer-columns');
   if (data && data.length > 0) {
-    return data.filter((c) => c.isActive !== false).map((c) => ({ title: c.title, links: c.links }));
+    return data
+      .filter((c) => c.isActive !== false)
+      .map((c) => ({
+        title: c.title,
+        links: (c.links ?? []).map((l) => ({ label: l.label, path: safeNavPath(l.path) })),
+      }));
   }
   return [
     {

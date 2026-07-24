@@ -196,6 +196,26 @@ export class CmsContentService {
 
   // ---- auth_providers ----
 
+  /**
+   * 公开端点列表 — 严格 select 排除 `config` 字段,防止 OAuth client_secret /
+   * redirect_url 泄露给任意访问者。Admin 路径走 listAuthProviders 全量。
+   * (P0 安全加固 2026-07-23)
+   */
+  listAuthProvidersPublic() {
+    return this.prisma.authProvider.findMany({
+      where: { isActive: true },
+      orderBy: { orderIndex: 'asc' },
+      select: {
+        id: true,
+        label: true,
+        icon: true,
+        isActive: true,
+        orderIndex: true,
+        // config 故意不 select — admin 才有权限看
+      },
+    });
+  }
+
   listAuthProviders() {
     return this.prisma.authProvider.findMany({
       orderBy: { orderIndex: 'asc' },

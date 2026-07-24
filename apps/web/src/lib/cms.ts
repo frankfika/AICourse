@@ -1051,3 +1051,33 @@ export function pickSite(
   }
   return inline ?? '';
 }
+
+// ---- 安全: nav / footer path 白名单 ----
+//
+// P0 安全加固 2026-07-23: admin 可以在 CMS 后台填任意 path, 之前直接
+//   <a href={link.path}> 渲染, 一旦填了 javascript:alert(1) / data:text/html,...
+//   就会变成 XSS。
+//
+// 这里做白名单:
+//   - / 开头 (内部路由)  → 保留
+//   - http(s):// 开头 (外部) → 保留
+//   - 其他 (含 javascript: / data: / vbscript:) → 降级为 '#'
+//
+// 注意: 这只是**前端**的兜底防线。真正的安全是 admin 角色本身要可信。
+// 服务端 schema 不限制 path 字段格式, 是因为 admin 是可信用户。
+export function safeNavPath(path: unknown): string {
+  if (typeof path !== 'string' || path.length === 0) return '#';
+  const p = path.trim();
+  // 协议相对 URL (//evil.com/path) — 浏览器会按当前 scheme 解析, 等于 open redirect / phishing,降级
+  if (p.startsWith('//')) return '#';
+  // 内部路由 (但 // 已拦,这里只剩单 / 开头的)
+  if (p.startsWith('/')) return p;
+  // 外部 http(s) URL
+  if (/^https?:\/\//i.test(p)) return p;
+  // 锚点
+  if (p.startsWith('#')) return p;
+  // 邮件 / tel
+  if (/^(mailto|tel):/i.test(p)) return p;
+  // 其他全部 (含 javascript: / data: / vbscript: / 单 / 起头但 // 已被拦) → 降级
+  return '#';
+}

@@ -93,7 +93,9 @@ export class CmsContentController {
   @Get('auth-providers')
   @ApiOperation({ summary: '第三方登录 provider 列表' })
   listAuthProviders() {
-    return this.cmsContentService.listAuthProviders();
+    // P0 安全加固 2026-07-23: 公开端点必须排除 `config` 字段,防止 OAuth
+    // client_secret / redirect_url 泄露。Admin 路径用 listAuthProviders() 拿全量。
+    return this.cmsContentService.listAuthProvidersPublic();
   }
 
   @Throttle({ short: { limit: 30, ttl: 1000 } })

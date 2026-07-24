@@ -57,7 +57,7 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: React.Re
   // 直接订阅 zustand 避免 React Context 异步 hydration 时机问题
   const user = useAuthStore((s) => s.user);
   if (!user) return <Navigate to="/auth/login" replace />;
-  if (requireAdmin && user.role !== 'admin' && user.role !== 'super_admin') return <Navigate to="/" replace />;
+  if (requireAdmin && user.role !== 'admin') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
