@@ -653,14 +653,15 @@ async function main() {
   }
 
   // 5. date_format_templates
-  // P1-2 注意: 现有 seed 用 string 风格的 scope key (admin.users.list / common.date),
-  // 跟 prisma enum { global, locale } 不兼容. 临时 cast `as any` 让 build 过,
-  // 真要跑这个 seed 必须先扩 enum 或重写 seed scope 值. — Frank 决定.
+  // P1-2 修了: enum 加 admin_users_list / common_date / dashboard_lesson_duration,
+  // seed 用点风格 key 转下划线风格以匹配 enum
   console.log(`  date_format_templates: ${dateFormatTemplates.length} rows`);
   for (const d of dateFormatTemplates) {
+    // seed 数组用点风格 (admin.users.list), enum 用下划线 (admin_users_list)
+    const enumScope = d.scope.replace(/\./g, '_') as DateFormatTemplateScope;
     await prisma.dateFormatTemplate.upsert({
-      where: { scope_locale: { scope: d.scope as DateFormatTemplateScope, locale: d.locale } },
-      create: d as any,
+      where: { scope_locale: { scope: enumScope, locale: d.locale } },
+      create: { ...d, scope: enumScope },
       update: { template: d.template },
     });
   }

@@ -653,6 +653,11 @@ enum AppSettingScope {
 enum DateFormatTemplateScope {
   global
   locale
+  // 兼容历史 seed 数据 (admin.users.list / common.date / dashboard.lesson.duration)
+  // 之前是 String 任意值, P1-2 enum 化保留这些 key 不破坏已有 date format 渲染
+  admin_users_list
+  common_date
+  dashboard_lesson_duration
 }
 
 enum SiteSettingScope {
