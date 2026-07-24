@@ -9,6 +9,7 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CostType, CourseStatus } from '@prisma/client';
+import { SafeUrl } from '../../common/validators/safe-url.decorator';
 
 class DegreeCourseLinkDto {
   @ApiProperty({ description: '课程 UUID' })
@@ -46,9 +47,10 @@ export class CreateDegreeDto {
   @IsEnum(CostType)
   costType: CostType;
 
-  @ApiPropertyOptional({ description: '缩略图 URL' })
+  @ApiPropertyOptional({ description: '缩略图 URL (http/https)' })
   @IsOptional()
-  @IsString()
+  // 2026-07-24 P0: 限制 scheme
+  @SafeUrl({ optional: true, maxLength: 1000 })
   thumbnail?: string;
 
   @ApiPropertyOptional({ enum: CourseStatus, description: '学位状态' })

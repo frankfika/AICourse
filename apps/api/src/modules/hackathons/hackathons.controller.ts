@@ -24,6 +24,10 @@ import {
   CreateSubmissionDto,
   UpdateSubmissionDto,
   CreateAnnouncementDto,
+  CreateJudgeDto,
+  UpdateJudgeDto,
+  CreateSponsorDto,
+  UpdateSponsorDto,
   JudgeSubmissionDto,
 } from './hackathons.dto';
 
@@ -279,14 +283,7 @@ export class HackathonsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '新增评委（管理员）' })
   @ApiParam({ name: 'id', description: '黑客松ID' })
-  async addJudge(@Param('id') id: string, @Body() body: {
-    name: string;
-    title?: string;
-    avatarUrl?: string;
-    bio?: string;
-    orderIndex?: number;
-    role?: 'judge' | 'advisor' | 'host';
-  }) {
+  async addJudge(@Param('id') id: string, @Body() body: CreateJudgeDto) {
     return this.hackathonsService.addJudge(id, body);
   }
 
@@ -300,7 +297,7 @@ export class HackathonsController {
   async updateJudge(
     @Param('id') id: string,
     @Param('judgeId') judgeId: string,
-    @Body() body: Partial<{ name: string; title: string; avatarUrl: string; bio: string; orderIndex: number; role: 'judge' | 'advisor' | 'host' }>,
+    @Body() body: UpdateJudgeDto,
   ) {
     return this.hackathonsService.updateJudge(id, judgeId, body);
   }
@@ -331,13 +328,7 @@ export class HackathonsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: '新增赞助商（管理员）' })
   @ApiParam({ name: 'id', description: '黑客松ID' })
-  async addSponsor(@Param('id') id: string, @Body() body: {
-    name: string;
-    logoUrl?: string;
-    websiteUrl?: string;
-    tier?: 'platinum' | 'gold' | 'silver' | 'bronze';
-    orderIndex?: number;
-  }) {
+  async addSponsor(@Param('id') id: string, @Body() body: CreateSponsorDto) {
     return this.hackathonsService.addSponsor(id, body);
   }
 
@@ -351,7 +342,7 @@ export class HackathonsController {
   async updateSponsor(
     @Param('id') id: string,
     @Param('sponsorId') sponsorId: string,
-    @Body() body: Partial<{ name: string; logoUrl: string; websiteUrl: string; tier: 'platinum' | 'gold' | 'silver' | 'bronze'; orderIndex: number }>,
+    @Body() body: UpdateSponsorDto,
   ) {
     return this.hackathonsService.updateSponsor(id, sponsorId, body);
   }

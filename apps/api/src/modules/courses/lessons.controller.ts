@@ -29,6 +29,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
+import { CreateLessonDto, UpdateLessonDto } from './lessons.dto';
 
 @ApiTags('lessons')
 @ApiBearerAuth()
@@ -59,14 +60,7 @@ export class LessonsController {
   @ApiOperation({ summary: '新建课时' })
   async create(
     @Param('chapterId') chapterId: string,
-    @Body() dto: {
-      title: string;
-      description?: string;
-      videoUrl?: string;
-      videoDuration?: number;
-      isPreview?: boolean;
-      orderIndex?: number;
-    },
+    @Body() dto: CreateLessonDto,
   ) {
     if (!dto.title) throw new BadRequestException('title is required');
     const chapter = await this.prisma.chapter.findUnique({ where: { id: chapterId } });
@@ -105,14 +99,7 @@ export class LessonsController {
   @ApiOperation({ summary: '改课时' })
   async update(
     @Param('id') id: string,
-    @Body() dto: {
-      title?: string;
-      description?: string;
-      videoUrl?: string;
-      videoDuration?: number;
-      isPreview?: boolean;
-      orderIndex?: number;
-    },
+    @Body() dto: UpdateLessonDto,
   ) {
     const existing = await this.prisma.lesson.findUnique({ where: { id } });
     if (!existing || existing.deletedAt) {

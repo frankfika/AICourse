@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsEnum, IsInt, IsOptional, IsBoolean, IsUrl, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsInt, IsOptional, IsBoolean, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SafeUrl } from '../../common/validators/safe-url.decorator';
 
 export enum ProjectDifficulty {
   BEGINNER = 'beginner',
@@ -42,12 +43,12 @@ export class CreatePracticeProjectDto {
   description: string;
 
   @ApiProperty()
-  @IsUrl()
+  @SafeUrl({ maxLength: 1000 })
   @IsNotEmpty()
   projectUrl: string;
 
   @ApiPropertyOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   @IsOptional()
   thumbnailUrl?: string;
 
@@ -102,12 +103,12 @@ export class UpdatePracticeProjectDto {
   description?: string;
 
   @ApiPropertyOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   @IsOptional()
   projectUrl?: string;
 
   @ApiPropertyOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   @IsOptional()
   thumbnailUrl?: string;
 
@@ -155,7 +156,7 @@ export class UpdatePracticeProjectDto {
 
 export class CompletePracticeDto {
   @ApiPropertyOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   @IsOptional()
   submissionUrl?: string;
 

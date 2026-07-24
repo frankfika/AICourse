@@ -4,7 +4,6 @@ import {
   IsEnum,
   IsInt,
   IsDateString,
-  IsUrl,
   Min,
   Max,
 } from 'class-validator';
@@ -13,6 +12,7 @@ import {
   HackathonStatus,
   SubmissionStatus,
 } from '@prisma/client';
+import { SafeUrl } from '../../common/validators/safe-url.decorator';
 
 export class CreateHackathonDto {
   @ApiProperty({ description: '黑客松标题' })
@@ -23,9 +23,10 @@ export class CreateHackathonDto {
   @IsString()
   description: string;
 
-  @ApiPropertyOptional({ description: 'Banner 图片 URL' })
+  @ApiPropertyOptional({ description: 'Banner 图片 URL (http/https)' })
   @IsOptional()
-  @IsUrl()
+  // 2026-07-24 P0: @SafeUrl 替换 @IsUrl, 限制 http(s) 防 javascript:/data:/file:
+  @SafeUrl({ optional: true, maxLength: 1000 })
   bannerUrl?: string;
 
   @ApiPropertyOptional({ enum: HackathonStatus, description: '状态' })
@@ -76,7 +77,7 @@ export class CreateHackathonDto {
 
   @ApiPropertyOptional({ description: '外链 CTA URL (报名 / 了解更多 / 官网 等任意一个)' })
   @IsOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   registrationUrl?: string;
 
   @ApiPropertyOptional({ description: '外链 CTA 文案, 留空默认 "前往报名"' })
@@ -109,17 +110,17 @@ export class CreateSubmissionDto {
 
   @ApiPropertyOptional({ description: 'Demo 链接' })
   @IsOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   demoUrl?: string;
 
   @ApiPropertyOptional({ description: '代码仓库链接' })
   @IsOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   repoUrl?: string;
 
   @ApiPropertyOptional({ description: '视频链接' })
   @IsOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   videoUrl?: string;
 
   @ApiPropertyOptional({ description: '所属队伍 ID，为空则个人参赛' })
@@ -146,17 +147,17 @@ export class UpdateSubmissionDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   demoUrl?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   repoUrl?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsUrl()
+  @SafeUrl({ optional: true, maxLength: 1000 })
   videoUrl?: string;
 
   @ApiPropertyOptional({ enum: SubmissionStatus })
@@ -195,4 +196,122 @@ export class JudgeSubmissionDto {
   @IsOptional()
   @IsEnum(SubmissionStatus)
   status?: SubmissionStatus;
+}
+
+// ==================== P0 修复(2026-07-24): Judges / Sponsors 内联 DTO 抽 class ====================
+
+export class CreateJudgeDto {
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiPropertyOptional({ description: '头像 URL (http/https)' })
+  @IsOptional()
+  @SafeUrl({ optional: true, maxLength: 1000 })
+  avatarUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  orderIndex?: number;
+
+  @ApiPropertyOptional({ enum: ['judge', 'advisor', 'host'] })
+  @IsOptional()
+  @IsString()
+  role?: 'judge' | 'advisor' | 'host';
+}
+
+export class UpdateJudgeDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @ApiPropertyOptional({ description: '头像 URL (http/https)' })
+  @IsOptional()
+  @SafeUrl({ optional: true, maxLength: 1000 })
+  avatarUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  orderIndex?: number;
+
+  @ApiPropertyOptional({ enum: ['judge', 'advisor', 'host'] })
+  @IsOptional()
+  @IsString()
+  role?: 'judge' | 'advisor' | 'host';
+}
+
+export class CreateSponsorDto {
+  @ApiProperty()
+  @IsString()
+  name: string;
+
+  @ApiPropertyOptional({ description: 'Logo URL (http/https)' })
+  @IsOptional()
+  @SafeUrl({ optional: true, maxLength: 1000 })
+  logoUrl?: string;
+
+  @ApiPropertyOptional({ description: '官网 URL (http/https)' })
+  @IsOptional()
+  @SafeUrl({ optional: true, maxLength: 1000 })
+  websiteUrl?: string;
+
+  @ApiPropertyOptional({ enum: ['platinum', 'gold', 'silver', 'bronze'] })
+  @IsOptional()
+  @IsString()
+  tier?: 'platinum' | 'gold' | 'silver' | 'bronze';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  orderIndex?: number;
+}
+
+export class UpdateSponsorDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ description: 'Logo URL (http/https)' })
+  @IsOptional()
+  @SafeUrl({ optional: true, maxLength: 1000 })
+  logoUrl?: string;
+
+  @ApiPropertyOptional({ description: '官网 URL (http/https)' })
+  @IsOptional()
+  @SafeUrl({ optional: true, maxLength: 1000 })
+  websiteUrl?: string;
+
+  @ApiPropertyOptional({ enum: ['platinum', 'gold', 'silver', 'bronze'] })
+  @IsOptional()
+  @IsString()
+  tier?: 'platinum' | 'gold' | 'silver' | 'bronze';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  orderIndex?: number;
 }

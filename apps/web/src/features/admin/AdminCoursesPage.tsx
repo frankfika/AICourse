@@ -56,6 +56,7 @@ import api from '../../lib/api';
 import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
 import { coursesAdminApi, type Chapter, type ChapterLesson, type ChapterResource, type ResourceType } from '../../lib/coursesAdminApi';
+import { FileUploadButton } from '../../components/admin/FileUploadButton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { useEnum, useI18n } from '../../lib/cms';
@@ -1289,12 +1290,27 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
       <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-4">课时详情</h3>
       <div className="space-y-3">
         <BrutalField label="标题" value={title} onChange={setTitle} required />
-        <BrutalField
-          label="视频 URL"
-          value={videoUrl}
-          onChange={setVideoUrl}
-          placeholder="https://cdn.opencsg.ai/lessons/...mp4"
-        />
+        <div>
+          <BrutalField
+            label="视频 URL"
+            value={videoUrl}
+            onChange={setVideoUrl}
+            placeholder="https://cdn.opencsg.ai/lessons/...mp4"
+          />
+          {/* 2026-07-24 P0: 视频上传 (presigned MinIO/S3) */}
+          <div className="mt-1.5 flex items-center gap-2 text-[10px] text-[#666666]">
+            <span>或</span>
+            <FileUploadButton
+              scope="lesson-video"
+              refId={lesson.id}
+              label="上传视频文件"
+              accept="video/mp4,video/webm,video/quicktime"
+              onUploaded={(publicUrl) => setVideoUrl(publicUrl)}
+              existingUrl={videoUrl}
+              onClear={() => setVideoUrl('')}
+            />
+          </div>
+        </div>
         <div>
           <label className="text-sm font-medium text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-1.5 block">描述 / 笔记</label>
           <textarea
@@ -1372,6 +1388,18 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
                 onChange={(e) => setNewResource({ ...newResource, url: e.target.value })}
                 placeholder="https://..."
                 className="px-3 py-2 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-sm bg-white dark:bg-neutral-100 dark:bg-neutral-100 focus:outline-none focus:border-[#171717] dark:border-neutral-50 font-mono"
+              />
+            </div>
+            <div className="flex items-center gap-2 text-[10px] text-[#666666] mt-1">
+              <span>或上传文件:</span>
+              <FileUploadButton
+                scope="resource"
+                refId={lesson.id}
+                label="上传资源"
+                accept="application/pdf,application/zip,video/mp4,audio/mpeg"
+                onUploaded={(publicUrl) => setNewResource({ ...newResource, url: publicUrl })}
+                existingUrl={newResource.url}
+                onClear={() => setNewResource({ ...newResource, url: '' })}
               />
             </div>
             <div className="flex items-center gap-2">

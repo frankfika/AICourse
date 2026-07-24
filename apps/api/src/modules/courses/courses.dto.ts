@@ -11,54 +11,22 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CourseLevel, CostType, CourseStatus, CourseType, ResourceType } from '@prisma/client';
+import { CreateLessonDto as NestedCreateLessonDto } from './lessons.dto';
+import { CreateResourceDto as NestedCreateResourceDto } from './resources.dto';
+import { SafeUrl } from '../../common/validators/safe-url.decorator';
 
-class CreateResourceDto {
-  @ApiProperty({ description: '资源标题' })
-  @IsString()
-  title: string;
+// P0 修复(2026-07-24): 直接 extends resources.dto.ts 的 CreateResourceDto, 共享 @SafeUrl url 校验
+// 之前 courses.dto.ts 重复定义 CreateResourceDto, url 字段只有 @IsString 没 @SafeUrl
+// POST /api/v1/courses 的 chapters[].lessons[].resources[].url 入库路径绕过 scheme 校验
+class CreateResourceDto extends NestedCreateResourceDto {}
 
-  @ApiProperty({ description: '资源 URL' })
-  @IsString()
-  url: string;
-
-  @ApiProperty({ enum: ResourceType, description: '资源类型' })
-  @IsEnum(ResourceType)
-  type: ResourceType;
-
-  @ApiPropertyOptional({ description: '是否锁定（仅报名用户可看）', default: false })
-  @IsOptional()
-  @IsBoolean()
-  isLocked?: boolean;
-}
-
-class CreateLessonDto {
-  @ApiProperty({ description: '课时标题' })
-  @IsString()
-  title: string;
-
-  @ApiPropertyOptional({ description: '课时描述' })
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @ApiPropertyOptional({ description: '视频 URL' })
-  @IsOptional()
-  @IsString()
-  videoUrl?: string;
-
-  @ApiPropertyOptional({ description: '视频时长（秒）' })
-  @IsOptional()
-  @IsNumber()
-  videoDuration?: number;
-
+// P0 修复(2026-07-24): 直接 extends lessons.dto.ts 的 CreateLessonDto, 共享 @SafeUrl videoUrl 校验
+// 之前 courses.dto.ts 重复定义 CreateLessonDto, videoUrl 字段只有 @IsString 没 @SafeUrl
+// POST /api/v1/courses 的 chapters[].lessons[].videoUrl 入库路径绕过 scheme 校验
+class CreateLessonDto extends NestedCreateLessonDto {
   @ApiProperty({ description: '排序索引' })
   @IsNumber()
   orderIndex: number;
-
-  @ApiPropertyOptional({ description: '是否可试看', default: false })
-  @IsOptional()
-  @IsBoolean()
-  isPreview?: boolean;
 
   @ApiPropertyOptional({ type: () => [CreateResourceDto], description: '关联资源' })
   @IsOptional()

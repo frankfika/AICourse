@@ -8,6 +8,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SafeUrl } from '../../common/validators/safe-url.decorator';
 import { UserRole } from '@prisma/client';
 
 export class CreateUserDto {
@@ -35,9 +36,10 @@ export class UpdateUserDto {
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ description: '头像 URL' })
+  @ApiPropertyOptional({ description: '头像 URL (http/https)' })
   @IsOptional()
-  @IsString()
+  // 2026-07-24 P0: 限制 scheme 防 javascript: / data: / file:
+  @SafeUrl({ optional: true, maxLength: 500 })
   avatarUrl?: string;
 }
 

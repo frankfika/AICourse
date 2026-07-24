@@ -21,6 +21,7 @@ import { ProgressModule } from './modules/progress/progress.module';
 import { HackathonsModule } from './modules/hackathons/hackathons.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AiModule } from './modules/ai/ai.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 import { EnterpriseModule } from './modules/enterprise/enterprise.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { UrlImportModule } from './modules/url-import/url-import.module';
@@ -30,6 +31,8 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { LearningEventsModule } from './modules/learning-events/learning-events.module';
 import { SiteModule } from './modules/site/site.module';
 import { CmsModule } from './modules/cms/cms.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { GeminiModule } from './common/gemini/gemini.module';
 
 @Module({
   imports: [
@@ -66,6 +69,8 @@ import { CmsModule } from './modules/cms/cms.module';
     HackathonsModule,
     OrdersModule,
     AiModule,
+    // 2026-07-24 P0: 视频 / 图片 / 资源 上传管道 (presigned URL)
+    UploadsModule,
     EnterpriseModule,
     NotificationModule,
     UrlImportModule,
@@ -75,6 +80,8 @@ import { CmsModule } from './modules/cms/cms.module';
     LearningEventsModule,
     SiteModule,
     CmsModule,
+    GeminiModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [

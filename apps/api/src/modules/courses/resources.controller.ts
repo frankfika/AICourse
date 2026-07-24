@@ -38,6 +38,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole, ResourceType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
+import { CreateResourceDto, UpdateResourceDto } from './resources.dto';
 
 const ALLOWED_TYPES: ResourceType[] = ['pdf', 'code', 'link', 'video', 'audio'];
 
@@ -69,12 +70,7 @@ export class ResourcesController {
   @ApiOperation({ summary: '新建资源' })
   async create(
     @Param('lessonId') lessonId: string,
-    @Body() dto: {
-      title: string;
-      url: string;
-      type: ResourceType;
-      isLocked?: boolean;
-    },
+    @Body() dto: CreateResourceDto,
   ) {
     if (!dto.title) throw new BadRequestException('title is required');
     if (!dto.url) throw new BadRequestException('url is required');
@@ -126,12 +122,7 @@ export class ResourceItemController {
   @ApiOperation({ summary: '改资源' })
   async update(
     @Param('id') id: string,
-    @Body() dto: {
-      title?: string;
-      url?: string;
-      type?: ResourceType;
-      isLocked?: boolean;
-    },
+    @Body() dto: UpdateResourceDto,
   ) {
     const existing = await this.prisma.resource.findUnique({ where: { id } });
     if (!existing || existing.deletedAt) {
