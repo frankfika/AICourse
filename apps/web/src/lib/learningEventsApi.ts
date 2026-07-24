@@ -6,7 +6,7 @@
  *   - play / pause / seek / replay 走 batch 缓冲,每 30s flush 一次
  *   - flush 走 navigator.sendBeacon(无 body 长度限制 + 不阻塞 unload)
  */
-import { api } from './api';
+import { api, getAccessToken } from './api';
 
 export type LearningEventType =
   | 'play'
@@ -53,9 +53,18 @@ export const learningEventsApi = {
     if (events.length === 0) return { count: 0 };
 
     const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/v1/learning-events/batch`;
-    const token = localStorage.getItem('accessToken') ?? '';
+    // P0 安全加固 2026-07-23: 之前用 `localStorage.getItem('accessToken')` 是死代码
+    //   (token 实际在 sessionStorage + 内存),永远返回 '', L78 永远发空 Authorization。
+    //   改用 lib/api.ts 的 getAccessToken() (memory 缓存 + sessionStorage 兜底)。
+    const token = getAccessToken() ?? '';
 
     // 优先 sendBeacon(unload 友好,不会因页面关闭丢请求)
+    //
+    // P0 2026-07-23 已知限制: sendBeacon **不支持自定义 header** (浏览器规范),
+    //   所以 unload 时如果 accessToken 过期就只能 fail silently,后端 401 静默
+    //   丢。退路: 依赖 createOne (单条 immediate, 走 axios 自动加 Authorization)
+    //   兜住重要事件 (complete / note), 高频 play/pause/seek 丢几条不影响
+    //   分析。
     if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
       try {
         const blob = new Blob(
