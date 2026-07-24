@@ -1,4 +1,4 @@
-# OpenCSG Academy 管理员手册
+# AI Academy 管理员手册
 
 > 给 admin / super_admin 角色使用的后台操作指南。覆盖课程 / 学位 / 用户 / 黑客松 / 徽章 / 企业咨询 / 看板 / 审核 全部后台模块。
 >

@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useAuthStore } from '../../stores/authStore';
-import type { NanoDegreeWithPath } from '@opencsg/shared-types';
+import type { NanoDegreeWithPath } from '@ai-academy/shared-types';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -167,7 +167,7 @@ export function DegreeDetailPage() {
           '@type': 'Course',
           name: degree.title,
           description: degree.description,
-          provider: { '@type': 'Organization', name: 'OpenCSG Academy' },
+          provider: { '@type': 'Organization', name: 'AI Academy' },
           offers: {
             '@type': 'Offer',
             category: degree.costType === 'free' ? 'Free' : 'Paid',

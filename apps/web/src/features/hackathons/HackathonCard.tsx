@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, Users, ArrowUpRight } from 'lucide-react';
-import type { HackathonListItem } from '@opencsg/shared-types';
+import type { HackathonListItem } from '@ai-academy/shared-types';
 import { HackathonStatusBadge } from './HackathonStatusBadge';
 import { CountdownChip } from '../../components/CountdownChip';
 import { I18nText } from '../../components/I18nText';

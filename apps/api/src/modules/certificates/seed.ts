@@ -1,13 +1,13 @@
 /**
  * certificates/seed.ts — P1-8 证书 seed
  *
- * 给 admin user(从 DB 查,id 1 / email admin@opencsg.com)发 3 条 mock 证书:
+ * 给 admin user(从 DB 查,id 1 / email admin@ai-academy.local)发 3 条 mock 证书:
  *   1 课程 (LangChain)
  *   1 学位 (AI 工程师基础)
  *   1 黑客松 (Spring 2026 Agent Builders)
  *
  * 用法:
- *   pnpm --filter @opencsg/academy-api exec ts-node src/modules/certificates/seed.ts
+ *   pnpm --filter @ai-academy/api exec ts-node src/modules/certificates/seed.ts
  *
  * 幂等: 已存在则跳过。
  */
@@ -83,7 +83,7 @@ async function main() {
       title: `${hackathon.title} · 参赛证书`,
       description: `感谢您参加黑客松《${hackathon.title}》。`,
       completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      metadata: { teamName: 'OpenCSG Pioneers', rank: 2 },
+      metadata: { teamName: 'AI Pioneers', rank: 2 },
     });
     console.log(`  hackathon certificate: ${cert.serialNumber}`);
   } else {

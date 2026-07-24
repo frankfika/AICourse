@@ -223,13 +223,13 @@ export class NotificationService {
     const body = this.buildEnterpriseInquiryEmail(data);
 
     await this.send({
-      to: this.config.get<string>('ENTERPRISE_NOTIFY_EMAIL') ?? 'contact@opencsg.com',
+      to: this.config.get<string>('ENTERPRISE_NOTIFY_EMAIL') ?? 'contact@ai-academy.local',
       subject,
       body,
     });
 
     this.logger.log(
-      `[Email Notification]\n  To: contact@opencsg.com\n  Subject: ${subject}\n  Body:\n${body}`,
+      `[Email Notification]\n  To: contact@ai-academy.local\n  Subject: ${subject}\n  Body:\n${body}`,
     );
   }
 

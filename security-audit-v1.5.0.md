@@ -1,4 +1,4 @@
-# OpenCSG Academy — Security Audit Report v1.5.0
+# AI Academy — Security Audit Report v1.5.0
 
 > **审计时间**：2026-07-23
 > **审计范围**：`apps/api` (NestJS 后端) + `apps/web` (React 前端) + `prisma/schema.prisma` (16 张新表) + `vite.config.ts` + `.env` + `package.json`

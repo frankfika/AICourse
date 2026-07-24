@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Rocket, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { HackathonStatus } from '@opencsg/shared-types';
+import type { HackathonStatus } from '@ai-academy/shared-types';
 import { Seo } from '../../components/Seo';
 import { useAuthStore } from '../../stores/authStore';
 import { hackathonsApi } from '../../lib/hackathonsApi';

@@ -1,4 +1,4 @@
--- OpenCSG Academy Database Schema
+-- AI Academy Database Schema
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS users (
@@ -72,7 +72,7 @@ CREATE POLICY "Allow all operations on nano_degrees" ON nano_degrees FOR ALL USI
 
 -- 插入默认管理员
 INSERT INTO users (email, password_hash, name, role, permissions, degree_permissions)
-VALUES ('admin@opencsg.com', 'admin123', '管理员', 'admin', '{}', '{}')
+VALUES ('admin@ai-academy.local', 'admin123', '管理员', 'admin', '{}', '{}')
 ON CONFLICT (email) DO NOTHING;
 
 -- 插入示例课程（使用自动生成的 UUID）

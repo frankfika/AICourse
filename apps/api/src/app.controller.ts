@@ -4,6 +4,6 @@ import { Controller, Get } from '@nestjs/common';
 export class AppController {
   @Get()
   health() {
-    return { status: 'ok', service: 'opencsg-academy-api' };
+    return { status: 'ok', service: 'ai-academy-api' };
   }
 }

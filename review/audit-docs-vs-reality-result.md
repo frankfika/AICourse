@@ -86,16 +86,16 @@
 
 ### 文档坑 12: 证书 verify URL 域名/路径
 - 文档位置: USER_MANUAL §11.3
-- 文档原文: "https://academy.opencsg.com/verify/<serial>"
+- 文档原文: "https://ai-academy.local/verify/<serial>"
 - 现实: certificates.service.ts:154 `verifyUrl: /verify/${serialNumber}`(相对路径);前端 CertificateDetailPage.tsx:217 `to={`/verify/${cert.serialNumber}`}`(相对路径)
-- 影响: 当前是 dev-only 路径,生产部署后才会有 academy.opencsg.com 域
+- 影响: 当前是 dev-only 路径,生产部署后才会有 ai-academy.local 域
 
 ## 文档本身的问题
 
 - ADMIN_MANUAL §12.1 课程审核状态机 vs §4.5 发布流程冲突: §12.1 写 "状态 pending_review → published",§4.5 直接 "保存草稿 → 发布" 无 pending_review
 - USER_MANUAL §2 步骤 4 / §8.5 反复说"完成后端上报 LearningEvent",DashboardPage.tsx:486 TODO 注释说"后端未建"
 - USER_MANUAL §12.4 退款规则 4 条,代码 0 条校验,文档凭空
-- GLOSSARY "Cohort" 段写 "OpenCSG Academy 是 self-paced",但 §7 黑客松又按"开赛 / 比赛"限时,边界不清晰
+- GLOSSARY "Cohort" 段写 "AI Academy 是 self-paced",但 §7 黑客松又按"开赛 / 比赛"限时,边界不清晰
 
 ## 附录:按文档分组的不一致列表
 

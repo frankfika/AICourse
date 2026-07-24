@@ -14,7 +14,7 @@ import type {
   UpdateSubmissionRequest,
   CreateAnnouncementRequest,
   JudgeSubmissionRequest,
-} from '@opencsg/shared-types';
+} from '@ai-academy/shared-types';
 
 const PREFIX = '/api/v1/hackathons';
 

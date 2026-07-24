@@ -16,7 +16,7 @@ const newHome = `const HomePage = () => (
       <section className="relative overflow-hidden bg-transparent border-b border-[#171717]">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
           <div className="col-span-1 lg:col-span-2 p-8 md:p-16 lg:p-24 border-b lg:border-b-0 lg:border-r border-[#171717] bg-[#F5F4F0] flex flex-col justify-center">
-            <div className="inline-block mb-8 w-fit"><span className="inline-flex items-center px-3 py-1 rounded-full border border-[#171717] bg-[#171717] text-[#F5F4F0] text-[10px] font-black uppercase tracking-widest">OpenCSG Academy</span></div>
+            <div className="inline-block mb-8 w-fit"><span className="inline-flex items-center px-3 py-1 rounded-full border border-[#171717] bg-[#171717] text-[#F5F4F0] text-[10px] font-black uppercase tracking-widest">AI Academy</span></div>
             <h1 className="text-6xl md:text-8xl lg:text-[100px] font-black leading-[0.9] text-[#171717] tracking-tighter mb-8 uppercase">
               MASTER AI.<br />OWN THE FUTURE.
             </h1>
@@ -76,7 +76,7 @@ const newHome = `const HomePage = () => (
           </div>
           <div className="flex flex-col">
             {[
-              { name: "李明", role: "前端工程师", text: "OpenCSG 的课程非常实战。我以前完全不懂代码，跟着'全栈创作者'路径学完后，我成功拿到了第一份开发 Offer。", icon: <Code2 /> },
+              { name: "李明", role: "前端工程师", text: "AI Academy 的课程非常实战。我以前完全不懂代码，跟着'全栈创作者'路径学完后，我成功拿到了第一份开发 Offer。", icon: <Code2 /> },
               { name: "Sarah Wang", role: "数据分析师", text: "这里的 AI 助教太棒了！无论多晚，遇到问题都能立刻得到解答，就像有个私人导师在身边。", icon: <Sparkles /> }
             ].map((item, idx) => (
               <div key={idx} className={\`p-8 lg:p-12 relative flex flex-col justify-between \${idx === 0 ? 'border-b border-[#262626]' : ''}\`}>

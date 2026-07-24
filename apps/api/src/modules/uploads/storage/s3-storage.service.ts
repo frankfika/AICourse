@@ -9,8 +9,8 @@
  *   MINIO_USE_SSL=false
  *   MINIO_ROOT_USER=minioadmin
  *   MINIO_ROOT_PASSWORD=minioadmin
- *   MINIO_BUCKET=opencsg-academy
- *   MINIO_PUBLIC_URL_BASE=http://localhost:9010/opencsg-academy  (可选, 给前端访问用)
+ *   MINIO_BUCKET=ai-academy
+ *   MINIO_PUBLIC_URL_BASE=http://localhost:9010/ai-academy  (可选, 给前端访问用)
  *
  * 安全:
  *   - presigned URL 短期 (10-15 min), 即使泄露窗口小
@@ -79,7 +79,7 @@ export class S3StorageService extends StorageProvider implements OnModuleInit {
     }
   }
 
-  /** 公开 URL 基础 (e.g. http://localhost:9010/opencsg-academy), 给 complete 时拼 publicUrl */
+  /** 公开 URL 基础 (e.g. http://localhost:9010/ai-academy), 给 complete 时拼 publicUrl */
   getPublicUrlBase(): string {
     return this.publicUrlBase;
   }

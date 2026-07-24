@@ -1,10 +1,28 @@
-# OpenCSG Academy
+# AI Academy
 
-> **v1.5.1** (2026-07-24) — 维护 release:3 audit 修复 (安全 + UX + 死代码/mockup) + 5 张表 scope String→enum 落地 + 22 处零硬编码
+> **v1.5.2** (2026-07-25) — **白板化 release**:全部 OpenCSG 品牌清除 (前端 / 后端 / 包名 / 文档 / 基础设施 / 数据库)
 >
 > 253 测试 0 fail (154 api jest + 99 web vitest) · 0 tsc / 0 nest build 错 · dev 跑通 (vite 5500 + api 8080)
 
-OpenCSG Academy 是一个现代化的在线教育平台，专注于 AI 和大模型技术培训。
+一个**完全白板化**的现代化在线教育平台，专注于 AI 和大模型技术培训。本仓库是去品牌化版本 — **所有原商标 / 域名 / 邮箱 / 包名 / 文档引用已清除**,可作为通用白板 demo 直接部署,适合二次品牌定制。
+
+## 🏷️ 关于白板化
+
+| 类别 | 之前 | 现在 |
+|---|---|---|
+| 包名 | `@opencsg/{academy-api,academy-web,shared-types}` | `@ai-academy/{api,web,shared-types}` |
+| 顶层名 | `opencsg-academy` | `ai-academy` |
+| 品牌名 | OpenCSG Academy | AI Academy |
+| 主品牌色 | `#1D8C80` (青绿) | `#3B82F6` (通用蓝) |
+| 邮箱 | `@opencsg.com` / `@opencsg.ai` | `@ai-academy.local` |
+| 域名 | `opencsg.com` / `cdn.opencsg.ai` / `opencsg-academy.example.com` | `ai-academy.local` / `cdn.ai-academy.local` |
+| Docker 容器 | `opencsg-academy-{mysql,redis,minio}` | `ai-academy-{mysql,redis,minio}` |
+| DB | `opencsg_academy` / `opencsg` / `opencsg_pass` | `ai_academy` / `ai_academy` / `ai_academy_pass` |
+| MinIO bucket | `opencsg-academy` | `ai-academy` |
+| localStorage key | `opencsg_token` | `ai_academy_token` |
+| 文档 / 部署指南 / review 报告 / mocks | 50+ 处 OpenCSG | 全部清除 |
+
+**注意**:`.env` 仍是用户的私有配置 (git ignore),未随仓库白板化。dev 时请按 `.env.example` 生成新 `.env` 并更新所有 `ai_academy_*` 字段。
 
 ---
 
@@ -168,9 +186,9 @@ pnpm test             # 运行测试
 
 ```bash
 # 在特定子项目中运行命令
-pnpm --filter @opencsg/academy-api <command>
-pnpm --filter @opencsg/academy-web <command>
-pnpm --filter @opencsg/shared-types <command>
+pnpm --filter @ai-academy/api <command>
+pnpm --filter @ai-academy/academy-web <command>
+pnpm --filter @ai-academy/shared-types <command>
 ```
 
 ---
@@ -292,11 +310,11 @@ TypeScript 类型定义，供前后端共享：
 
 | 角色 | 邮箱 | 密码 | 说明 |
 |------|------|------|------|
-| 管理员 | admin@opencsg.com | admin123 | 可访问管理后台 `/admin/*` |
+| 管理员 | admin\@ai-academy.local | admin123 | 可访问管理后台 `/admin/*` |
 | 学员 | student@test.com | 123456 | 完整前台体验,可报名课程 / 提交黑客松 |
 | 学员 | 自行注册 | 自定义 | 普通新用户走完整注册流程 |
 
-> ⚠️ **dev 沙箱专用**:`admin@opencsg.com` / `student@test.com` 都在 `apps/api/prisma/seed.ts` 自动 seed,生产环境必须删掉这两个账号 + 改所有默认密码。
+> ⚠️ **dev 沙箱专用**:`admin\@ai-academy.local` / `student@test.com` 都在 `apps/api/prisma/seed.ts` 自动 seed,生产环境必须删掉这两个账号 + 改所有默认密码。
 
 ---
 
@@ -393,7 +411,7 @@ vercel --prod
 
 ## 🎨 设计语言:Brutalist 黑白
 
-整个 UI 走 **瑞士国际主义 / Brutalism** 设计语言,刻意去除 OpenCSG 品牌青绿色,统一黑白调性:
+整个 UI 走 **瑞士国际主义 / Brutalism** 设计语言,刻意去除 AI Academy 品牌青绿色,统一黑白调性:
 
 - **核心调色板** (4 色 + 1 渐变):
   - `text/bg-[#171717]` — 实心黑
@@ -529,6 +547,64 @@ v1.5.0 起,**投资人/客户外部看到的所有内容**(文案 / 枚举 / 列
 
 ---
 
+## 🔧 v1.5.2 白板化 release(2026-07-25)
+
+**全部 OpenCSG 品牌清除**,共改 100+ 文件:
+
+### 包名重命名(Agent A)
+- `@opencsg/academy-api` → `@ai-academy/api`
+- `@opencsg/academy-web` → `@ai-academy/web`
+- `@opencsg/shared-types` → `@ai-academy/shared-types`
+- 顶层 `opencsg-academy` → `ai-academy`
+- 18 个 import 文件全部 sed 替换
+- 4 个 `package.json` 的 name / description / scripts filter
+
+### 品牌资产(我手工 + Agent B 协同)
+- 品牌色:`#1D8C80` (青绿) → `#3B82F6` (通用蓝) 整族 (50/100/300/500/700/900 + 暗色 + progress + shadow-glow)
+- 平台名 fallback:`OpenCSG Academy` → `AI Academy`
+- Logo 文字 (Layout / AuthShell / Footer)
+- WebAssistant 3 处提示文案
+- 5 个法律页 + ErrorPages + Login/Register/Bindings
+- 课程/学位/黑客松 JSON-LD provider
+
+### 邮箱/域名/链接(Agent B)
+- 6 类邮箱全部 → `@ai-academy.local`
+- 4 个域名 → `ai-academy.local`
+- 3 个 GitHub URL → `github.com/ai-academy/...`
+- 1 个 CDN URL → `cdn.ai-academy.local`
+- 部署路径 / Docker 镜像名 / 容器名 / DB 凭证 全部对应改名
+
+### 文档 + 历史报告(Agent B)
+- 顶层 README.md
+- apps/web/README.md
+- 4 个 apps/web/docs/*.md
+- 2 个顶层 docs/*.md
+- 5 个 review/*.md
+- 5 个 *-2026-07-24.md 历史 audit 报告
+- CHANGELOG.md sed 全局
+- LICENSE (版权方)
+- prisma/supabase/schema.sql
+
+### 边界文件(我手工补完)
+- LICENSE 4 处 OpenCSG → AI Academy
+- prisma/supabase/schema.sql 注释 + admin 邮箱
+- 7 个 review/mocks/*.html (24 处 OpenCSG 文本)
+- .mavis/plans/plan_aicourse_redesign/plan.yaml 4 处
+
+### 运行时数据(我手工清)
+- 7 处 DB 残留 (site_settings 6 + page_settings 1 + testimonials 1)
+  - 注意:这是 dev 时连的旧 MySQL 数据,实际部署时跑 `pnpm db:seed` 即可
+
+### 包名一致性补充修复
+- 6 处 README / docs 里的 `pnpm --filter @ai-academy/academy-api` → `@ai-academy/api`
+
+### 验证
+- ✅ pnpm install 939 包 (新 lockfile)
+- ✅ tsc 0 错 (web + api)
+- ✅ 99/99 vitest + 154/154 jest 全过
+- ✅ 6+4 张截图全部白板化 (login × 3 + register + bindings × 2 + home + enterprise + footer + login-bug-fixed)
+- ⚠️ Frank 的 `.env` 未更新 (用户私有配置) — dev 真正白板化需要重生成 `.env` + 重起 docker
+
 ## 🔧 v1.5.1 维护 release(2026-07-24)
 
 3 audit agent 并行跑 (`security-audit-round2.md` / `ux-audit-2026-07-24.md` / 死代码 mockup), 找出 5 新 P0 + 4 v1.5.0 待修 + 22 零硬编码违反. 全修 + push (3 commit: `8f1da3a` / `b4fb90c` / `0cb3c32`)。
@@ -598,7 +674,7 @@ v1.5.0 起,**投资人/客户外部看到的所有内容**(文案 / 枚举 / 列
 | v1.4.1 | 2026-07-21 | 主题 store 重构 + admin 30+ 暗色化 + AdminCourses 三栏 mobile toggle + LearningEvent 后端 |
 | v1.4.0 | 2026-07-21 | AI 智能填充完善 + 整体 mobile 适配收口 + 5 audit 报告 |
 | v1.3.4 | 2026-07-15 | 全项目去 brand-* 残留(155 处) + 16 处 mobile 触摸目标 + iOS 16px 适配 |
-| v1.3.3 | 2026-07-14 | 公开页(HomePage/CourseList/DegreeDetail)去 OpenCSG 品牌色 |
+| v1.3.3 | 2026-07-14 | 公开页(HomePage/CourseList/DegreeDetail)去 AI Academy 品牌色 |
 | v1.3.2 | 2026-07-13 | admin 残留青绿色 22 处清理 |
 | v1.3.1 | 2026-07-13 | 4 个 admin 页 brutalist 一致性 + BrutalField/BrutalButton helpers |
 | v1.3.0 | 2026-07-12 | `ResourcesController` 资源管理接真后端 + LessonDetail 资源段 + 15 jest test |
@@ -613,7 +689,7 @@ v1.5.0 起,**投资人/客户外部看到的所有内容**(文案 / 枚举 / 列
 
 ## 📄 License
 
-本项目为专有软件（Proprietary Software），版权归 OpenCSG 所有。未经授权，禁止复制、分发、修改或反向工程。详见 [LICENSE](./LICENSE)。
+本项目为专有软件（Proprietary Software），版权归 AI Academy 所有。未经授权，禁止复制、分发、修改或反向工程。详见 [LICENSE](./LICENSE)。
 
 ---
 
@@ -752,7 +828,7 @@ openssl rand -hex 32
 新增字段 `Course.sourceVideoUrl`（unique）+ `Course.sourcePlatform`，通过 Prisma migration：
 
 ```bash
-pnpm --filter @opencsg/academy-api db:migrate
+pnpm --filter @ai-academy/api db:migrate
 ```
 
 迁移文件：`prisma/migrations/20260629010000_add_course_source_video/migration.sql`

@@ -5,8 +5,8 @@
  *
  * 颜色实现细节(突破 spec §2.2 hex 写法的部分):
  *   - 颜色用 `rgb(var(--xxx-rgb) / <alpha-value>)` 形式,值从 tokens.css 拿
- *   - tokens.css 里同时定义 `--brand-500: #1D8C80`(人读 + spec 字段)
- *     和 `--brand-500-rgb: 29 140 128`(Tailwind 消费)
+ *   - tokens.css 里同时定义 `--brand-500: #3B82F6`(人读 + spec 字段)
+ *     和 `--brand-500-rgb: 59 130 246`(Tailwind 消费)
  *   - 这样 .dark 翻转 CSS var 时,Tailwind utility 自动跟着翻
  *   - 妥协:hex 值在 spec 和 tokens.css 中保留;Tailwind config 用 rgb channel
  */

@@ -1,4 +1,4 @@
-# OpenCSG Academy — Security Audit Report Round 2 (v1.5.0+)
+# AI Academy — Security Audit Report Round 2 (v1.5.0+)
 
 > **审计时间**：2026-07-25
 > **审计范围**：v1.5.0 已修 3 P0 验证 + 4 P1 + 2 P2 状态核对 + v1.5.0 后新增代码 (`apps/api/src/modules/cms/cms-admin.controller.ts` 550 行 + `cms-content.controller.ts` + `cms-content.service.ts` + `cms-config/` + `cms-enum/` + `cms-i18n/` + `modules/uploads/` + `modules/audit/` + `modules/orders/` + `prisma/schema.prisma` CMS 16 表)

@@ -14,7 +14,7 @@ import {
 import { hackathonsApi } from '../../lib/hackathonsApi';
 import { HackathonStatusBadge } from './HackathonStatusBadge';
 import { AnnouncementList } from './AnnouncementList';
-import type { HackathonWithDetails } from '@opencsg/shared-types';
+import type { HackathonWithDetails } from '@ai-academy/shared-types';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { Seo } from '../../components/Seo';
 import { Tabs, TabPanel } from '../../components/ui/Tabs';
@@ -116,7 +116,7 @@ export function HackathonDetailPage() {
           location: hackathon.location
             ? { '@type': 'Place', name: hackathon.location }
             : { '@type': 'VirtualLocation', url: hackathon.registrationUrl || undefined },
-          organizer: { '@type': 'Organization', name: 'OpenCSG Academy' },
+          organizer: { '@type': 'Organization', name: 'AI Academy' },
         }}
       />
       {/* Top action bar */}

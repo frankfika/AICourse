@@ -86,7 +86,7 @@ function useFooterColumns(): Array<{ title: string; links: Array<{ label: string
     {
       title: '公司',
       links: [
-        { label: '关于我们', path: 'https://opencsg.com' },
+        { label: '关于我们', path: '/about' },
         { label: '企业培训', path: '/enterprise' },
         { label: '价格', path: '/courses' },
       ],
@@ -174,7 +174,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <GraduationCap className="w-4 h-4" />
             </span>
             <span className="uppercase text-neutral-900 dark:text-neutral-900">
-              OpenCSG Academy
+              AI Academy
             </span>
           </Link>
 
@@ -502,9 +502,9 @@ function SiteFooter() {
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 rounded-md bg-[#171717] flex items-center justify-center text-white font-bold text-sm">
-                O
+                A
               </div>
-              <span className="font-semibold text-neutral-900">OpenCSG Academy</span>
+              <span className="font-semibold text-neutral-900">AI Academy</span>
             </div>
             <p className="text-sm text-neutral-600 max-w-xs">
               {tagline}
@@ -547,7 +547,7 @@ function SiteFooter() {
             // 备案号走 env 注入, 避免硬编码假 ICP 引发合规风险
             // 设了 VITE_ICP 就显示, 没设就显示"备案号待补"(绝不展示假数字)
             const platformName =
-              import.meta.env.VITE_PUBLIC_PLATFORM_NAME ?? 'OpenCSG Academy';
+              import.meta.env.VITE_PUBLIC_PLATFORM_NAME ?? 'AI Academy';
             const icp = import.meta.env.VITE_ICP?.trim();
             return (
               <span>

@@ -125,12 +125,12 @@ export function ServerErrorPage({ error, onRetry }: ServerErrorPageProps) {
               />
             </p>
             <a
-              href={`mailto:support@opencsg.com?subject=${encodeURIComponent(
+              href={`mailto:support@ai-academy.local?subject=${encodeURIComponent(
                 `[${errorId}] Server Error Report`,
               )}`}
               className="text-[#171717] underline underline-offset-4 hover:text-[#262626] font-bold"
             >
-              support@opencsg.com
+              support@ai-academy.local
             </a>
           </div>
 

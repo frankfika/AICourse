@@ -12,7 +12,7 @@
 | 3 | L120 `FALLBACK_ICONS` | 删;新增 `ICON_MAP: Record<string, ComponentType>` (L23-29),把 CMS 数据里 `icon: 'Target'` 字符串映射到 lucide-react |
 | 4 | L129-153 3 步法 inline | 改用 `LIST_FALLBACK['enterprise-methods']` 兜底,icon 字段走 `ICON_MAP` |
 | 5 | L184 `['Beijing','Shanghai','Shenzhen']` | 改成空数组 `[]` fallback,没配 site_settings 就不显示地址行 (L441) |
-| 6 | L186 `enterprise@opencsg.com` | 改成 `import.meta.env.VITE_PUBLIC_ENTERPRISE_EMAIL?.trim() ?? ''`,没设时不渲染邮箱行 (L424) |
+| 6 | L186 `enterprise\@ai-academy.local` | 改成 `import.meta.env.VITE_PUBLIC_ENTERPRISE_EMAIL?.trim() ?? ''`,没设时不渲染邮箱行 (L424) |
 | 7 | L263-266 4 stat label | 走 `pickPage(entPages, 'stat.*', 'zh-CN', t('company.stat.*', ''))` (L196-199) |
 | 8 | L440 `/ 03 Inquiry` 硬编号 | 改用 `pickPage(entPages, 'inquiry.eyebrow.form', ..., '/ Inquiry')` (L218) |
 | 9 | L446-508 7 form label | 走 `pickPage(entPages, 'form.{name,email,company,phone,team_size,topic,description}', ..., t('company.contact.field.*', ''))` (L202-209) |

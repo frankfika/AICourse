@@ -1,9 +1,9 @@
 {
-  "name": "@opencsg/academy-api",
+  "name": "@ai-academy/api",
   "version": "1.5.0",
   "private": true,
-  "description": "OpenCSG Academy API - NestJS backend",
-  "author": "OpenCSG",
+  "description": "AI Academy API - NestJS backend",
+  "author": "AI Academy",
   "license": "MIT",
   "prisma": {
     "schema": "../../prisma/schema.prisma"

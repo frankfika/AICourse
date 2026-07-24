@@ -160,7 +160,7 @@ export class UrlImportService {
         const res = await fetch(url, {
           signal: controller.signal,
           headers: {
-            'User-Agent': 'OpenCSG-Academy-Importer/1.0',
+            'User-Agent': 'AI-Academy-Importer/1.0',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
           },
         });

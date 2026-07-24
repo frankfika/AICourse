@@ -1295,7 +1295,7 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
             label="视频 URL"
             value={videoUrl}
             onChange={setVideoUrl}
-            placeholder="https://cdn.opencsg.ai/lessons/...mp4"
+            placeholder="https://cdn.example.com/lessons/...mp4"
           />
           {/* 2026-07-24 P0: 视频上传 (presigned MinIO/S3) */}
           <div className="mt-1.5 flex items-center gap-2 text-[10px] text-[#666666]">

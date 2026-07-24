@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { CourseProgress, LearningStats } from '@opencsg/shared-types';
+import type { CourseProgress, LearningStats } from '@ai-academy/shared-types';
 
 export interface CompleteLessonResponse {
   record: any;

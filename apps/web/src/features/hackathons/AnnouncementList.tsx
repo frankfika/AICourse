@@ -1,5 +1,5 @@
 import { Megaphone, Pin } from 'lucide-react';
-import type { Announcement } from '@opencsg/shared-types';
+import type { Announcement } from '@ai-academy/shared-types';
 
 interface AnnouncementListProps {
   announcements?: Announcement[];

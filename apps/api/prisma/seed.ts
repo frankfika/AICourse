@@ -31,9 +31,9 @@ async function main() {
   const adminPassword = await bcrypt.hash('admin123', 12);
   const admin = await prisma.user.create({
     data: {
-      email: 'admin@opencsg.com',
+      email: 'admin@ai-academy.local',
       passwordHash: adminPassword,
-      name: 'OpenCSG Admin',
+      name: 'AI Academy Admin',
       role: UserRole.admin,
       passwordResetRequired: true,
     },
@@ -440,7 +440,7 @@ async function main() {
     {
       title: '数字安全卫士',
       description: '成为每个人都信赖的技术守护者。',
-      learningPoints: JSON.stringify(['构建个人与企业的数字防御体系', '掌握基础渗透测试工具', '分析并响应网络安全事件', '获得 OpenCSG 认证初级安全分析师资格']),
+      learningPoints: JSON.stringify(['构建个人与企业的数字防御体系', '掌握基础渗透测试工具', '分析并响应网络安全事件', '获得 AI Academy 认证初级安全分析师资格']),
       price: 399,
       icon: 'shield',
       costType: CostType.paid,
@@ -574,7 +574,7 @@ async function main() {
         organizerId: admin.id,
         judges: {
           create: [
-            { name: '李明', title: 'OpenCSG 技术总监', bio: '专注大模型工程化落地 10 年。' },
+            { name: '李明', title: 'AI Academy 技术总监', bio: '专注大模型工程化落地 10 年。' },
             { name: 'Sarah Chen', title: 'AI 产品经理', bio: '曾主导多款百万用户级 AI 产品。' },
           ],
         },

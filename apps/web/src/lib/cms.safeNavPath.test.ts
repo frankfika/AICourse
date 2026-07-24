@@ -16,7 +16,7 @@ describe('safeNavPath — nav path 白名单 (P0 2026-07-23)', () => {
   });
 
   it('http(s) 外部 URL 放行', () => {
-    expect(safeNavPath('https://opencsg.com')).toBe('https://opencsg.com');
+    expect(safeNavPath('https://ai-academy.local')).toBe('https://ai-academy.local');
     expect(safeNavPath('http://example.com/foo')).toBe('http://example.com/foo');
   });
 

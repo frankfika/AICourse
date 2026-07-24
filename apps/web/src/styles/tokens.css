@@ -5,27 +5,27 @@
  * 亮色走 :root(light),暗色走 .dark(<html class="dark"> 触发)。
  *
  * 每个色值同时声明两个形式:
- *   - --brand-500:        #1D8C80  (人读 + spec 字段 + 直接 var() 引用)
- *   - --brand-500-rgb:    29 140 128  (无 #,空格分隔,供 Tailwind 消费)
+ *   - --brand-500:        #3B82F6  (人读 + spec 字段 + 直接 var() 引用)
+ *   - --brand-500-rgb:    59 130 246  (无 #,空格分隔,供 Tailwind 消费)
  *
  * Tailwind 颜色走 `rgb(var(--brand-500-rgb) / <alpha-value>)` 形式,
  * .dark class 翻转 tokens 时,Tailwind utility 自动跟随。
  */
 
 :root {
-  /* === 品牌主色:OpenCSG 深青绿 === */
-  --brand-50:     #E6F5F2;
-  --brand-50-rgb: 230 245 242;
-  --brand-100:     #BFEAE0;
-  --brand-100-rgb: 191 234 224;
-  --brand-300:     #66CFB7;
-  --brand-300-rgb: 102 207 183;
-  --brand-500:     #1D8C80;
-  --brand-500-rgb: 29 140 128;
-  --brand-700:     #146358;
-  --brand-700-rgb: 20 99 88;
-  --brand-900:     #0A3A33;
-  --brand-900-rgb: 10 58 51;
+  /* === 品牌主色:通用深蓝 (Blue-500) === */
+  --brand-50:     #EFF6FF;
+  --brand-50-rgb: 239 246 255;
+  --brand-100:    #DBEAFE;
+  --brand-100-rgb: 219 234 254;
+  --brand-300:    #93C5FD;
+  --brand-300-rgb: 147 197 253;
+  --brand-500:    #3B82F6;
+  --brand-500-rgb: 59 130 246;
+  --brand-700:    #1D4ED8;
+  --brand-700-rgb: 29 78 216;
+  --brand-900:    #1E3A8A;
+  --brand-900-rgb: 30 58 138;
 
   /* === 中性灰(暖偏,不用纯灰) === */
   --neutral-0:      #FFFFFF;
@@ -66,8 +66,8 @@
   --info-100-rgb:    219 234 254;
 
   /* === 学习专用色(进度 / 等级 / 积分) === */
-  --progress-500:     #1D8C80;
-  --progress-500-rgb: 29 140 128;
+  --progress-500:     #3B82F6;
+  --progress-500-rgb: 59 130 246;
   --xp-500:           #8B5CF6;
   --xp-500-rgb:       139 92 246;
   --xp-100:           #EDE9FE;
@@ -110,7 +110,7 @@
   --shadow-sm:   0 1px 2px 0 rgb(0 0 0 / 0.04);
   --shadow-md:   0 4px 8px -2px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
   --shadow-lg:   0 12px 24px -6px rgb(0 0 0 / 0.08), 0 4px 8px -4px rgb(0 0 0 / 0.04);
-  --shadow-glow: 0 0 0 1px rgb(29 140 128 / 0.2), 0 8px 24px -8px rgb(29 140 128 / 0.3);
+  --shadow-glow: 0 0 0 1px rgb(59 130 246 / 0.2), 0 8px 24px -8px rgb(59 130 246 / 0.3);
 }
 
 /* ============================================================
@@ -144,8 +144,8 @@
   --danger-500-rgb:  239 68 68;
   --info-500:        #3B82F6;
   --info-500-rgb:    59 130 246;
-  --brand-500:       #2BA89B;
-  --brand-500-rgb:   43 168 155;
+  --brand-500:       #60A5FA;
+  --brand-500-rgb:   96 165 250;
   --xp-500:          #A78BFA;
   --xp-500-rgb:      167 139 250;
   --cert-500:        #FBBF24;

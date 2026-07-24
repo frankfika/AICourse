@@ -5,7 +5,7 @@ import type {
   CreatePracticeProjectRequest,
   UpdatePracticeProjectRequest,
   CompletePracticeRequest,
-} from '@opencsg/shared-types';
+} from '@ai-academy/shared-types';
 
 export const practicesApi = {
   // 获取课程的实践项目列表

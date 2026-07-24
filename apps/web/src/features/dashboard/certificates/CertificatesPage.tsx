@@ -25,7 +25,7 @@ import {
   Code2,
   Trophy,
 } from 'lucide-react';
-import type { Certificate, CertificateType } from '@opencsg/shared-types';
+import type { Certificate, CertificateType } from '@ai-academy/shared-types';
 import { certificatesApi } from '../../../lib/certificatesApi';
 import { useToast } from '../../../components/auth/Toast';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -237,7 +237,7 @@ function CertificateCard({
         <div className="relative text-center px-4">
           <Award className="w-10 h-10 text-white mx-auto mb-2" />
           <div className="text-white/80 text-xs font-mono tracking-wider mb-1">
-            OpenCSG Academy
+            AI Academy
           </div>
           <div className="text-white text-base font-bold leading-tight">
             {TYPE_LABEL[typeKey] ?? '证书'}

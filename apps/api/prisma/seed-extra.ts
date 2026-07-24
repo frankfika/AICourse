@@ -21,23 +21,23 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 const SAMPLE_STUDENTS = [
-  { email: 'alice@opencsg.com', name: 'Alice 王' },
-  { email: 'bob@opencsg.com', name: 'Bob 李' },
-  { email: 'carol@opencsg.com', name: 'Carol 张' },
-  { email: 'david@opencsg.com', name: 'David 陈' },
-  { email: 'emma@opencsg.com', name: 'Emma 刘' },
-  { email: 'frank@opencsg.com', name: 'Frank 周' },
-  { email: 'grace@opencsg.com', name: 'Grace 吴' },
-  { email: 'henry@opencsg.com', name: 'Henry 郑' },
-  { email: 'ivy@opencsg.com', name: 'Ivy 林' },
-  { email: 'jack@opencsg.com', name: 'Jack 黄' },
+  { email: 'alice@ai-academy.local', name: 'Alice 王' },
+  { email: 'bob@ai-academy.local', name: 'Bob 李' },
+  { email: 'carol@ai-academy.local', name: 'Carol 张' },
+  { email: 'david@ai-academy.local', name: 'David 陈' },
+  { email: 'emma@ai-academy.local', name: 'Emma 刘' },
+  { email: 'frank@ai-academy.local', name: 'Frank 周' },
+  { email: 'grace@ai-academy.local', name: 'Grace 吴' },
+  { email: 'henry@ai-academy.local', name: 'Henry 郑' },
+  { email: 'ivy@ai-academy.local', name: 'Ivy 林' },
+  { email: 'jack@ai-academy.local', name: 'Jack 黄' },
 ];
 
 const SAMPLE_PRACTICES = [
   {
     title: '搭建你的第一个 RAG 系统',
     description: '用 LangChain + OpenAI + Chroma 搭一个能"问文档"的 chatbot',
-    projectUrl: 'https://github.com/opencsg-academy/practice-rag-basics',
+    projectUrl: 'https://github.com/ai-academy/practice-rag-basics',
     projectType: ProjectType.repository,
     estimatedTime: 120,
     difficulty: 'intermediate' as const,
@@ -48,7 +48,7 @@ const SAMPLE_PRACTICES = [
   {
     title: 'Fine-tune 一个 LLM 做客服分类',
     description: '用 Hugging Face Transformers + LoRA 微调一个小模型',
-    projectUrl: 'https://github.com/opencsg-academy/practice-finetune-classifier',
+    projectUrl: 'https://github.com/ai-academy/practice-finetune-classifier',
     projectType: ProjectType.model_training,
     estimatedTime: 180,
     difficulty: 'advanced' as const,
@@ -59,7 +59,7 @@ const SAMPLE_PRACTICES = [
   {
     title: 'Prompt Engineering 实验报告',
     description: '对比 zero-shot / few-shot / CoT 在客服场景的效果',
-    projectUrl: 'https://github.com/opencsg-academy/practice-prompt-experiments',
+    projectUrl: 'https://github.com/ai-academy/practice-prompt-experiments',
     projectType: ProjectType.notebook,
     estimatedTime: 60,
     difficulty: 'beginner' as const,

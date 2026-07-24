@@ -756,7 +756,7 @@ function InstructorsSection() {
   const instructors: Instructor[] = useMemo(() => {
     if (!courses) return [];
     const seen = new Set<string>();
-    // 4 宫格讲师 cover 色板 — 走 OpenCSG 品牌色 token (#171717 / #262626)
+    // 4 宫格讲师 cover 色板 — 走品牌色 token (#171717 / #262626)
     // (设计 token, 不通过 CMS 配; 跟 .archive 暗色化 token 体系一致)
     const palette = [
       { cover: 'bg-[#171717]' },
@@ -887,7 +887,7 @@ function HeroPreviewCard() {
           <div className="w-2 h-2 rounded-full bg-warning-500" />
           <div className="w-2 h-2 rounded-full bg-success-500" />
           <span className="ml-2 text-xs text-[#666666] font-mono">
-            academy.opencsg / learn
+            academy.ai / learn
           </span>
         </div>
         <div className="text-[10px] font-mono text-[#666666] mb-2 uppercase tracking-widest">
@@ -961,7 +961,7 @@ function HeroPreviewCard() {
       <div className="flex items-center gap-2 mb-4">
         <div className="w-2 h-2 rounded-full bg-success-500" />
         <span className="ml-2 text-xs text-[#666666] font-mono">
-          academy.opencsg / my-learning
+          academy.ai / my-learning
         </span>
       </div>
       <div className="text-[10px] font-mono text-[#666666] mb-2 uppercase tracking-widest">
@@ -1054,7 +1054,7 @@ export function HomePage() {
   return (
     <div className="bg-[#F5F4F0] text-[#171717] transition-colors">
       <Seo
-        title={pickSite(heroSite, 'brand.hero.headline', 'zh-CN', 'OpenCSG Academy — AI 时代的能力可被看见').replace(/\n/g, ' ')}
+        title={pickSite(heroSite, 'brand.hero.headline', 'zh-CN', 'AI Academy — AI 时代的能力可被看见').replace(/\n/g, ' ')}
         description={subheadline.replace(/\n/g, ' ')}
         path="/"
       />

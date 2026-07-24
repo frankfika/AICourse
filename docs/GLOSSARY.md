@@ -1,6 +1,6 @@
-# OpenCSG Academy 术语表 (Glossary)
+# AI Academy 术语表 (Glossary)
 
-> OpenCSG Academy 涉及的核心 AI / LLM / 教育领域术语速查。
+> AI Academy 涉及的核心 AI / LLM / 教育领域术语速查。
 > 用户在课程、文档、AI 助教回答中会高频遇到这些词,本表用「学习者能懂的语言」解释。
 >
 > 最后更新:2026-07-19
@@ -10,7 +10,7 @@
 ## 通用 AI / 大模型
 
 ### **LLM (Large Language Model)**
-大语言模型。OpenCSG Academy 课程的核心,泛指参数规模亿级以上的语言模型(ChatGPT、Claude、Llama、Qwen、DeepSeek 等都是 LLM)。
+大语言模型。AI Academy 课程的核心,泛指参数规模亿级以上的语言模型(ChatGPT、Claude、Llama、Qwen、DeepSeek 等都是 LLM)。
 **用法**:"这门课讲 LLM 推理优化"。
 
 ### **Prompt / 提示词**
@@ -129,7 +129,7 @@ Prompt 评估框架,批量跑 prompt 看哪个效果最好。
 ## 教育 / 课程术语
 
 ### **Nano Degree / 纳米学位**
-多门课的体系化打包(OpenCSG Academy 术语)。完成全部课程 + 项目 → 颁发学位证书。源自 Udacity 的产品形态。
+多门课的体系化打包(AI Academy 术语)。完成全部课程 + 项目 → 颁发学位证书。源自 Udacity 的产品形态。
 
 ### **Capstone / 毕业项目**
 学位路径的最后一关,通常需要提交一个完整作品(代码 / 报告 / 演示)。是「**做出来才算**」的核心理念。
@@ -147,7 +147,7 @@ Prompt 评估框架,批量跑 prompt 看哪个效果最好。
 学这门课前需要掌握的知识 / 学过的其他课。报名前要看。
 
 ### **Cohort / 同期班**
-同期学习同一门课的一批人(常见于有开课时间的 MOOC,OpenCSG Academy 是 self-paced 所以不强调 cohort,但某些学位会开 cohort)。
+同期学习同一门课的一批人(常见于有开课时间的 MOOC,AI Academy 是 self-paced 所以不强调 cohort,但某些学位会开 cohort)。
 
 ---
 
@@ -169,7 +169,7 @@ Prompt 评估框架,批量跑 prompt 看哪个效果最好。
 完成课程 / 学位 / 黑客松后颁发的电子凭证,可在 `/verify/:serial` 公开验证。
 
 ### **Hackathon / 黑客松**
-限时编程 / 创意比赛。OpenCSG Academy 聚焦 AI / LLM 应用。
+限时编程 / 创意比赛。AI Academy 聚焦 AI / LLM 应用。
 
 ### **Verification / 验证**
 公开 URL `/verify/:serial` 给第三方核实证书真伪的机制。
@@ -179,19 +179,19 @@ Prompt 评估框架,批量跑 prompt 看哪个效果最好。
 ## 安全 / 合规
 
 ### **SSRF (Server-Side Request Forgery)**
-攻击者让服务器请求恶意内部 URL(比如 169.254.169.254 AWS metadata 服务)。OpenCSG Academy 的 URL 导入做了 SSRF 防护,只允许白名单 host。
+攻击者让服务器请求恶意内部 URL(比如 169.254.169.254 AWS metadata 服务)。AI Academy 的 URL 导入做了 SSRF 防护,只允许白名单 host。
 
 ### **CSRF (Cross-Site Request Forgery)**
-跨站请求伪造。OpenCSG Academy 用 httpOnly Cookie + SameSite 防护。
+跨站请求伪造。AI Academy 用 httpOnly Cookie + SameSite 防护。
 
 ### **XSS (Cross-Site Scripting)**
-跨站脚本。OpenCSG Academy 用 React 默认转义 + CSP 头防 XSS。Access token 不存 localStorage(防 XSS 盗取)。
+跨站脚本。AI Academy 用 React 默认转义 + CSP 头防 XSS。Access token 不存 localStorage(防 XSS 盗取)。
 
 ### **Rate Limiting / 限流**
-限制单位时间请求数,防滥用和暴力破解。OpenCSG Academy 全局 60 req/min/IP,登录 5 req/min。
+限制单位时间请求数,防滥用和暴力破解。AI Academy 全局 60 req/min/IP,登录 5 req/min。
 
 ### **JWT (JSON Web Token)**
-自包含的认证令牌。OpenCSG Academy 用 access token (15 min, 内存) + refresh token (7 day, httpOnly cookie) 双 token 机制。
+自包含的认证令牌。AI Academy 用 access token (15 min, 内存) + refresh token (7 day, httpOnly cookie) 双 token 机制。
 
 ### **httpOnly Cookie**
 JS 读不到的 cookie。XSS 攻击拿不到它,适合放 refresh token。
@@ -201,23 +201,23 @@ JS 读不到的 cookie。XSS 攻击拿不到它,适合放 refresh token。
 ## 商业 / 支付
 
 ### **SKU (Stock Keeping Unit)**
-最小商品单元。OpenCSG Academy 的 SKU = 一门课 / 一个学位 / 一次黑客松报名。
+最小商品单元。AI Academy 的 SKU = 一门课 / 一个学位 / 一次黑客松报名。
 
 ### **Stripe**
-国际信用卡支付通道。OpenCSG Academy 用它处理海外用户(Visa / Master / Amex)。
+国际信用卡支付通道。AI Academy 用它处理海外用户(Visa / Master / Amex)。
 
 ### **退款窗口 / Refund Window**
-用户可申请退款的时间段。OpenCSG Academy 政策见 `USER_MANUAL.md` §12.4。
+用户可申请退款的时间段。AI Academy 政策见 `USER_MANUAL.md` §12.4。
 
 ### **公益课 / Charity Course**
-OpenCSG Academy 的特色定价模型。**0 元购 + 全额捐赠**:用户免费学,平台把等额金额捐给公益项目(根据课程页说明)。
+AI Academy 的特色定价模型。**0 元购 + 全额捐赠**:用户免费学,平台把等额金额捐给公益项目(根据课程页说明)。
 
 ---
 
 ## 其他
 
 ### **OIDC (OpenID Connect)**
-基于 OAuth 2.0 的身份认证协议。OpenCSG Academy Phase 2+ 会接入 Google / GitHub / 微信等 OIDC。
+基于 OAuth 2.0 的身份认证协议。AI Academy Phase 2+ 会接入 Google / GitHub / 微信等 OIDC。
 
 ### **SAML**
 企业 SSO 用的协议,比 OIDC 老。Phase 2+ 企业版会支持。
@@ -229,7 +229,7 @@ HTTP 响应头,告诉浏览器「这个页面只能加载这些资源」,防 XSS
 强制浏览器用 HTTPS 访问。
 
 ### **Monorepo**
-一个 Git 仓库管多个子项目。OpenCSG Academy 是 monorepo(`apps/api` + `apps/web` + `packages/shared-types`)。
+一个 Git 仓库管多个子项目。AI Academy 是 monorepo(`apps/api` + `apps/web` + `packages/shared-types`)。
 
 ### **HMR (Hot Module Replacement)**
 开发时改代码不刷页面就能看到效果。Vite 默认开启。

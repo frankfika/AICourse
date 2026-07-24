@@ -27,7 +27,7 @@ interface AuthState {
 //     HMR 多次 reload 一起,会导致 user role 出现 race (登 admin 写 store, 但
 //     localStorage 'auth-user' 还残留旧 student, 下次 hydrate 又被覆盖)
 //   - Frank 实际症状: 登 admin 后 store.user 看着是 admin (Header 显示
-//     "OpenCSG Admin"), 但 ProtectedRoute 拿到 user.role !== 'admin' 跳 /
+//     "AI Academy Admin"), 但 ProtectedRoute 拿到 user.role !== 'admin' 跳 /
 //
 // 修法: 全部内存, 不持久化 user。hard reload 后由 AuthProvider boot 调
 // POST /auth/refresh (走 httpOnly refresh_token cookie) 拿新 accessToken + user,

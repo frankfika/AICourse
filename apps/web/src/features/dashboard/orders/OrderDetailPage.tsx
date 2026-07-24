@@ -27,7 +27,7 @@ import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
 import { LazyImage } from '../../../components/ui/LazyImage';
 import { QueryErrorState } from '../../../components/QueryErrorState';
-import type { OrderStatus, OrderType } from '@opencsg/shared-types';
+import type { OrderStatus, OrderType } from '@ai-academy/shared-types';
 import { cn } from '../../../lib/cn';
 import { useEnum } from '../../../lib/cms';
 

@@ -4,7 +4,7 @@
  * 用法:
  *   <Seo
  *     title="课程详情"
- *     description="OpenCSG Academy 课程..."
+ *     description="AI Academy 课程..."
  *     path="/courses/123"
  *     image="https://..."
  *     type="article"
@@ -38,12 +38,12 @@ export interface SeoProps {
   jsonLd?: Record<string, any> | Record<string, any>[];
 }
 
-const DEFAULT_SITE_NAME = 'OpenCSG Academy';
+const DEFAULT_SITE_NAME = 'AI Academy';
 const DEFAULT_IMAGE = '/og-default.png';
 const BASE_URL =
   typeof window !== 'undefined'
     ? `${window.location.protocol}//${window.location.host}`
-    : 'https://opencsg-academy.example.com';
+    : 'https://ai-academy.local';
 
 export function Seo({
   title,

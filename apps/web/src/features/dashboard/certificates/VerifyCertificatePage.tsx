@@ -6,7 +6,7 @@
  * 设计:
  *   - 顶部: 大 ✓ 绿色对勾 / ✗ 红色叉 (valid: true/false)
  *   - 证书信息 (holder / title / issuedAt / serial)
- *   - 底部: "返回 OpenCSG Academy"
+ *   - 底部: "返回 AI Academy"
  *
  * 响应式: mobile 单列, 居中卡片
  */
@@ -90,7 +90,7 @@ export function VerifyCertificatePage() {
           </h1>
           <p className="text-sm text-neutral-600 dark:text-neutral-600">
             {valid
-              ? '该证书已通过 OpenCSG Academy 官方验证'
+              ? '该证书已通过 AI Academy 官方验证'
               : reason === 'revoked'
                 ? '该证书已被撤销, 不再有效'
                 : reason === 'not_found'
@@ -140,11 +140,11 @@ export function VerifyCertificatePage() {
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-sm font-medium transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            返回 OpenCSG Academy
+            返回 AI Academy
           </Link>
           <p className="text-xs text-neutral-400 flex items-center justify-center gap-1">
             <ShieldCheck className="w-3 h-3" />
-            证书验证由 OpenCSG Academy 官方提供
+            证书验证由 AI Academy 官方提供
           </p>
         </div>
       </div>

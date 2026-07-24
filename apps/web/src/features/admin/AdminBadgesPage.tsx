@@ -10,7 +10,7 @@ import type {
   BadgeCriteriaType,
   BadgeCriteriaRule,
   BadgeCriteriaOp,
-} from '@opencsg/shared-types';
+} from '@ai-academy/shared-types';
 
 const criteriaTypeOptions: { value: BadgeCriteriaType; label: string }[] = [
   { value: 'course_completed', label: '完成课程' },

@@ -158,7 +158,7 @@ P0-6 在 spec §7.1 P0-6 排, 跟 P0-5 顺序依赖 (共享 AI 助教 FAB 模式
 ## 9. Build 状态
 
 ```
-pnpm --filter @opencsg/academy-web build:
+pnpm --filter @ai-academy/academy-web build:
 ✓ built in 626ms
 dist/assets/index-BCN4TFJI.css   47.24 kB │ gzip:   8.63 kB
 dist/assets/index-C2Y1lKba.js   643.31 kB │ gzip: 178.28 kB

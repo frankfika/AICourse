@@ -1,6 +1,6 @@
-# OpenCSG Academy
+# AI Academy
 
-OpenCSG Academy 是一个现代化的在线教育平台，专注于 AI 和大模型技术培训。
+AI Academy 是一个现代化的在线教育平台，专注于 AI 和大模型技术培训。
 
 ## 产品功能
 
@@ -77,7 +77,7 @@ npm run build
 
 | 角色 | 邮箱 | 密码 | 说明 |
 |------|------|------|------|
-| 管理员 | admin@opencsg.com | admin123 | 可访问管理后台 |
+| 管理员 | admin\@ai-academy.local | admin123 | 可访问管理后台 |
 | 学员 | 自行注册 | 自定义 | 普通学员账号 |
 
 ---

@@ -1,14 +1,14 @@
-# 【部署需求】OpenCSG Academy 在线教育平台上线
+# 【部署需求】AI Academy 在线教育平台上线
 
 ## 背景
 
-我们开发了一个在线教育平台 **OpenCSG Academy**，用于 AI 和大模型相关课程的展示和学习，现需要部署上线。
+我们开发了一个在线教育平台 **AI Academy**，用于 AI 和大模型相关课程的展示和学习，现需要部署上线。
 
 ## 仓库信息
 
 - **仓库地址**：https://github.com/frankfika/AICourse
 - **技术栈**：React 19 + TypeScript + Vite + Supabase (PostgreSQL)
-- **默认管理员**：admin@opencsg.com / admin123
+- **默认管理员**：admin\@ai-academy.local / admin123
 
 ## 产品功能
 

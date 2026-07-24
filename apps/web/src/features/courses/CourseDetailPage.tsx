@@ -239,8 +239,8 @@ export function CourseDetailPage() {
           description: course.description,
           provider: {
             '@type': 'Organization',
-            name: 'OpenCSG Academy',
-            sameAs: 'https://opencsg.com',
+            name: 'AI Academy',
+            sameAs: 'https://ai-academy.local',
           },
           educationalLevel: course.level,
           timeRequired: course.duration,

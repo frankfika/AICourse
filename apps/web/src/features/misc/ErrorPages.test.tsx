@@ -171,9 +171,9 @@ describe('ForbiddenPage', () => {
 
   it('footer 显示联系客服 email', () => {
     renderWithProviders(<ForbiddenPage />);
-    const link = screen.getByText('support@opencsg.com');
+    const link = screen.getByText('support@ai-academy.local');
     expect(link).toBeInTheDocument();
-    expect(link.closest('a')).toHaveAttribute('href', 'mailto:support@opencsg.com');
+    expect(link.closest('a')).toHaveAttribute('href', 'mailto:support@ai-academy.local');
   });
 });
 

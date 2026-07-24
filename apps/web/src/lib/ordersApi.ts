@@ -3,7 +3,7 @@ import type {
   CreateOrderRequest,
   CreateOrderResponse,
   OrderWithItems,
-} from '@opencsg/shared-types';
+} from '@ai-academy/shared-types';
 
 export const ordersApi = {
   myOrders: async (): Promise<OrderWithItems[]> => {

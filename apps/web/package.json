@@ -1,5 +1,5 @@
 {
-  "name": "@opencsg/academy-web",
+  "name": "@ai-academy/web",
   "private": true,
   "version": "1.5.0",
   "type": "module",
@@ -15,7 +15,7 @@
     "e2e:debug": "playwright test --debug"
   },
   "dependencies": {
-    "@opencsg/shared-types": "workspace:*",
+    "@ai-academy/shared-types": "workspace:*",
     "@tanstack/react-query": "^5.101.0",
     "axios": "^1.7.0",
     "lucide-react": "^0.555.0",

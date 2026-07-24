@@ -429,7 +429,7 @@ export function EnterprisePage() {
               {addressCities.length > 0 ? (
                 <div className="flex items-center gap-4 text-sm font-medium text-white/70">
                   <Building2 className="w-4 h-4 text-white/50" />
-                  <span>OpenCSG · {addressCities.join(' · ')}</span>
+                  <span>AI Academy · {addressCities.join(' · ')}</span>
                 </div>
               ) : null}
             </div>

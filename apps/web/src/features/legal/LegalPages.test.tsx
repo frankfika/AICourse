@@ -118,24 +118,24 @@ describe('LegalPage 通用底层', () => {
     replaceStateSpy.mockRestore();
   });
 
-  it('contact section 用默认 email legal@opencsg.com', () => {
+  it('contact section 用默认 email legal@ai-academy.local', () => {
     renderWithProviders(
       <LegalPage eyebrow="x" title="x" lastUpdated="x" sections={sampleSections} />,
     );
-    expect(screen.getByText('legal@opencsg.com')).toBeInTheDocument();
+    expect(screen.getByText('legal@ai-academy.local')).toBeInTheDocument();
   });
 
-  it('contact section 用自定义 email (Privacy 用 privacy@opencsg.com)', () => {
+  it('contact section 用自定义 email (Privacy 用 privacy@ai-academy.local)', () => {
     renderWithProviders(
       <LegalPage
         eyebrow="x"
         title="x"
         lastUpdated="x"
         sections={sampleSections}
-        contactEmail="privacy@opencsg.com"
+        contactEmail="privacy@ai-academy.local"
       />,
     );
-    expect(screen.getByText('privacy@opencsg.com')).toBeInTheDocument();
+    expect(screen.getByText('privacy@ai-academy.local')).toBeInTheDocument();
   });
 
   it('空 sections 不报错', () => {
@@ -172,9 +172,9 @@ describe('TermsPage 服务条款', () => {
     expect(screen.getByRole('heading', { name: '争议解决与司法管辖', level: 2 })).toBeInTheDocument();
   });
 
-  it('包含"OpenCSG" 主体声明', () => {
+  it('包含"AI Academy" 主体声明', () => {
     renderWithProviders(<TermsPage />);
-    expect(screen.getAllByText(/OpenCSG/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/AI Academy/).length).toBeGreaterThan(0);
   });
 
   it('包含退款页内链', () => {
@@ -195,11 +195,11 @@ describe('PrivacyPage 隐私政策', () => {
     expect(screen.getByRole('heading', { name: '未成年人保护', level: 2 })).toBeInTheDocument();
   });
 
-  it('contact email 走 privacy@opencsg.com', () => {
+  it('contact email 走 privacy@ai-academy.local', () => {
     renderWithProviders(<PrivacyPage />);
     // contact section 用 mailto: link
-    const link = screen.getByRole('link', { name: 'privacy@opencsg.com' });
-    expect(link).toHaveAttribute('href', 'mailto:privacy@opencsg.com');
+    const link = screen.getByRole('link', { name: 'privacy@ai-academy.local' });
+    expect(link).toHaveAttribute('href', 'mailto:privacy@ai-academy.local');
   });
 
   it('提到公开证书 /verify 接口', () => {

@@ -17,8 +17,8 @@
 
 ### P1(装饰性,影响判断但非核心)
 - [features/enterprise/EnterprisePage.tsx:210-219] 8 个行业卡片是硬编码 enum — 现状:`金融/电商/制造/...` 8 个,产品页长期不变 — 建议:挪到后端 `industry` 表,或保留但顶部加 "示例" 角标
-- [features/enterprise/EnterprisePage.tsx:255, 259] 假联系信息 — 现状:`enterprise@opencsg.com` / `+86 400-xxx-xxxx` — 建议:env 注入
-- [features/auth/BindingsPage.tsx:171-176] demo 模式 fallback 用户 — 现状:`user ?? { id: 'demo-user', email: 'k.chen@opencsg.ai', name: 'K. Chen' }` — 建议:仅在 `?demo=with-google` query 时才显示,默认空态
+- [features/enterprise/EnterprisePage.tsx:255, 259] 假联系信息 — 现状:`enterprise\@ai-academy.local` / `+86 400-xxx-xxxx` — 建议:env 注入
+- [features/auth/BindingsPage.tsx:171-176] demo 模式 fallback 用户 — 现状:`user ?? { id: 'demo-user', email: 'k.chen\@ai-academy.local', name: 'K. Chen' }` — 建议:仅在 `?demo=with-google` query 时才显示,默认空态
 - [components/auth/AuthShell.tsx:119-135] 学员感言(已知保留)— K. Chen testimonial 同上 fallback 用户
 
 ### P2(占位示例,可保留但需标注)

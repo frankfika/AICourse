@@ -232,12 +232,12 @@ const siteSettings: Array<{
   description?: string;
 }> = [
   { key: 'brand.hero.headline', value: { 'zh-CN': '与 AI 一起, 构建未来' }, description: '首页 hero 主标题' },
-  { key: 'brand.hero.subheadline', value: { 'zh-CN': 'OpenCSG Academy — 与世界级 AI 工程师一起实战' }, description: '首页 hero 副标题' },
-  { key: 'brand.footer.tagline', value: { 'zh-CN': 'OpenCSG Academy · 实战驱动的 AI 工程师培养平台' }, description: 'footer 一句话定位' },
-  { key: 'brand.footer.signature', value: { 'zh-CN': '© 2026 OpenCSG · 保留所有权利' }, description: 'footer 版权信息' },
-  { key: 'brand.auth.shell_headline', value: { 'zh-CN': '加入 OpenCSG 学员社区' }, description: 'AuthShell (登录/注册页) 品牌侧标题' },
+  { key: 'brand.hero.subheadline', value: { 'zh-CN': 'AI Academy — 与世界级 AI 工程师一起实战' }, description: '首页 hero 副标题' },
+  { key: 'brand.footer.tagline', value: { 'zh-CN': 'AI Academy · 实战驱动的 AI 工程师培养平台' }, description: 'footer 一句话定位' },
+  { key: 'brand.footer.signature', value: { 'zh-CN': '© 2026 AI Academy · 保留所有权利' }, description: 'footer 版权信息' },
+  { key: 'brand.auth.shell_headline', value: { 'zh-CN': '加入 AI Academy 学员社区' }, description: 'AuthShell (登录/注册页) 品牌侧标题' },
   { key: 'brand.auth.shell_subline', value: { 'zh-CN': '在 30 天内构建可上线的 AI 应用' }, description: 'AuthShell 品牌侧副标题' },
-  { key: 'brand.global.product_name', value: { 'zh-CN': 'OpenCSG Academy' }, description: '全站通用产品名' },
+  { key: 'brand.global.product_name', value: { 'zh-CN': 'AI Academy' }, description: '全站通用产品名' },
   { key: 'nav.top_items', value: { items: ['课程', '学位', '黑客松', '企业培训'] }, description: '顶部导航 4 项 label' },
   {
     key: 'footer.columns',
@@ -250,7 +250,7 @@ const siteSettings: Array<{
     },
     description: 'footer 3 列结构',
   },
-  { key: 'meta.default_title', value: { 'zh-CN': 'OpenCSG Academy' }, description: '默认 page title' },
+  { key: 'meta.default_title', value: { 'zh-CN': 'AI Academy' }, description: '默认 page title' },
   { key: 'meta.default_description', value: { 'zh-CN': '实战驱动的 AI 工程师培养平台' }, description: '默认 meta description' },
   { key: 'meta.default_og_image', value: { url: '/og-default.png' }, description: '默认 OG 图片' },
 ];
@@ -290,7 +290,7 @@ const pageSettings: Array<{
   { page: 'hackathons', key: 'empty.title', value: { 'zh-CN': '暂无黑客松' } },
 
   // enterprise
-  { page: 'enterprise', key: 'hero.headline', value: { 'zh-CN': 'OpenCSG 企业培训' } },
+  { page: 'enterprise', key: 'hero.headline', value: { 'zh-CN': 'AI Academy 企业培训' } },
   { page: 'enterprise', key: 'hero.subline', value: { 'zh-CN': '为团队定制 AI 实战培训方案' } },
   { page: 'enterprise', key: 'form.submit_label', value: { 'zh-CN': '提交咨询' } },
   { page: 'enterprise', key: 'form.success', value: { 'zh-CN': '已收到您的咨询, 我们会尽快联系' } },
@@ -441,7 +441,7 @@ const testimonials: Array<{
   {
     name: 'K. Chen',
     title: 'LLM 应用工程师学位 · 已毕业',
-    quote: '在 OpenCSG Academy 的 9 个月里, 我从零基础到能独立交付一个上线 LLM 应用, 导师的 1v1 陪跑是关键。',
+    quote: '在 AI Academy 的 9 个月里, 我从零基础到能独立交付一个上线 LLM 应用, 导师的 1v1 陪跑是关键。',
     avatar: 'K',
   },
 ];

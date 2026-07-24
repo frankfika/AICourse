@@ -391,9 +391,9 @@ export const PAGE_FALLBACK: Record<string, Record<string, any>> = {
       headline: { 'zh-CN': 'LEARNING\nPATHS', 'en-US': 'LEARNING\nPATHS' },
       sub: {
         'zh-CN':
-          '体系化课程路径,从入门到进阶一站式打通,拿下 OpenCSG 认证学位。',
+          '体系化课程路径,从入门到进阶一站式打通,拿下 AI Academy 认证学位。',
         'en-US':
-          'Systematic learning paths — from beginner to advanced in one stream, with an OpenCSG-certified degree.',
+          'Systematic learning paths — from beginner to advanced in one stream, with an AI Academy-certified degree.',
       },
     },
     detail: {
@@ -628,7 +628,7 @@ export const LIST_FALLBACK: Record<ListResource, any[]> = {
     {
       title: '公司',
       links: [
-        { label: '关于我们', path: 'https://opencsg.com' },
+        { label: '关于我们', path: '/about' },
         { label: '企业培训', path: '/enterprise' },
         { label: '价格', path: '/courses' },
       ],
@@ -682,8 +682,8 @@ export const I18N_FALLBACK: Record<string, string> = {
   'dashboard.no_course.desc': '先去课程大厅选一门课开始学习',
   'identity.empty.title': '还没有绑定任何登录方式',
   'identity.empty.desc': '请先绑定至少一种第三方登录方式',
-  'auth.merged_hint': '已登录过 OpenCSG?系统会自动合并到你的账号',
-  'auth.merged_hint.register': '已有 OpenCSG 账号?系统会自动合并到你的账号',
+  'auth.merged_hint': '已登录过本平台?系统会自动合并到你的账号',
+  'auth.merged_hint.register': '已有本平台账号?系统会自动合并到你的账号',
   // loading
   'common.loading': '加载中...',
   'common.loading.dots': '加载中…',
@@ -741,7 +741,7 @@ export const I18N_FALLBACK: Record<string, string> = {
   'common.search.empty.desc': '试试其他关键词',
   // company address
   'company.address.placeholder': '电话可通过邮件联系获取',
-  'company.address.line': 'OpenCSG · {cities}',
+  'company.address.line': 'AI Academy · {cities}',
   'company.contact.form.title': '告诉我们你的需求',
   'company.contact.form.desc': '简单描述你的团队现状、痛点、想要达成的目标...',
   'company.contact.topic.placeholder': '例:LLM 应用开发 / RAG 系统 / Agent 工程化',
@@ -888,8 +888,8 @@ export const I18N_FALLBACK: Record<string, string> = {
   'footer.cols.learn': '学习',
   'footer.cols.company': '公司',
   'footer.cols.legal': '法律',
-  'footer.brand': 'OpenCSG Academy',
-  'footer.platform_name': 'OpenCSG Academy',
+  'footer.brand': 'AI Academy',
+  'footer.platform_name': 'AI Academy',
   'footer.copyright': '© 2026 {platform}',
   'footer.icp.pending': '· 备案号待补',
   'footer.icp.filled': '· 备案号 {icp}',

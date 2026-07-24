@@ -2,7 +2,7 @@
  * CertificateDetailPage — P1-8 证书详情
  *
  * 设计:
- *   - 大证书视图(mock 证书样式, brutalist 黑底 + 装饰 + OpenCSG logo + 标题 + holder + serial + 颁发日期)
+ *   - 大证书视图(mock 证书样式, brutalist 黑底 + 装饰 + 平台 logo + 标题 + holder + serial + 颁发日期)
  *   - 底部操作: 下载(mock) + 验证(跳 /verify/:serial) + 返回
  *   - 公开页面(任何人都能看), 响应式
  */
@@ -19,7 +19,7 @@ import {
   Code2,
   Trophy,
 } from 'lucide-react';
-import type { CertificateType } from '@opencsg/shared-types';
+import type { CertificateType } from '@ai-academy/shared-types';
 import { certificatesApi } from '../../../lib/certificatesApi';
 import { useToast } from '../../../components/auth/Toast';
 import { Skeleton } from '../../../components/ui/Skeleton';
@@ -176,7 +176,7 @@ export function CertificateDetailPage() {
                   <Award className="w-6 h-6" />
                 </div>
                 <span className="text-sm font-mono tracking-[0.2em] uppercase">
-                  OpenCSG Academy
+                  AI Academy
                 </span>
               </div>
 

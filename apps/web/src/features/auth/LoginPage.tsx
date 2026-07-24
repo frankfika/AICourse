@@ -135,7 +135,7 @@ export function LoginPage() {
           onProviderClick={handleGrayscaleProviderClick}
         />
         <p className="mt-2 text-[10px] text-center text-neutral-400">
-          {t('auth.merged_hint', '已登录过 OpenCSG?系统会自动合并到你的账号')}
+          {t('auth.merged_hint', '已登录过此平台?系统会自动合并到你的账号')}
         </p>
       </section>
 

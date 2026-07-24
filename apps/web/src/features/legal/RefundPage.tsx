@@ -19,7 +19,7 @@ const SECTIONS: LegalSection[] = [
     content: (
       <>
         <p>
-          OpenCSG Academy 致力于提供高质量的学习体验。如果您对购买的课程或学位不满意,本政策说明您可以申请退款的情形、流程和时间。
+          AI Academy 致力于提供高质量的学习体验。如果您对购买的课程或学位不满意,本政策说明您可以申请退款的情形、流程和时间。
         </p>
         <p>
           <strong>核心原则</strong>:
@@ -139,7 +139,7 @@ const SECTIONS: LegalSection[] = [
     content: (
       <>
         <p>
-          如对退款决定有异议,可通过 <code>support@opencsg.com</code> 提交申诉,会由客服主管复核。
+          如对退款决定有异议,可通过 <code>support@ai-academy.local</code> 提交申诉,会由客服主管复核。
         </p>
         <p>
           复核结果仍无法达成一致的,按 <a href="/terms">《服务条款》</a> 第 9 条 (争议解决) 处理。
@@ -165,7 +165,7 @@ export function RefundPage() {
     <LegalPage
       eyebrow="/ Legal · Refund"
       title="退款政策"
-      subtitle="OpenCSG Academy 课程与学位退款规则 — 24 小时试听窗口 + 平台原因 + 支付错误三种情形"
+      subtitle="AI Academy 课程与学位退款规则 — 24 小时试听窗口 + 平台原因 + 支付错误三种情形"
       lastUpdated="2026-07-24"
       sections={SECTIONS}
     />

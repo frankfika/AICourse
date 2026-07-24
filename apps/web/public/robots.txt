@@ -4,4 +4,4 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /dashboard/
 
-Sitemap: https://opencsg-academy.example.com/sitemap.xml
+Sitemap: https://ai-academy.local/sitemap.xml

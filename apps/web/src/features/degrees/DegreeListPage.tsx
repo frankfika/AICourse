@@ -5,7 +5,7 @@ import { Seo } from '../../components/Seo';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import api from '../../lib/api';
-import type { NanoDegreeWithPath } from '@opencsg/shared-types';
+import type { NanoDegreeWithPath } from '@ai-academy/shared-types';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
@@ -25,7 +25,7 @@ export function DegreeListPage() {
   const { data: pageData } = usePageSettings('degrees', ['list.eyebrow', 'list.headline', 'list.sub']);
   const eyebrow = pickPage(pageData, 'list.eyebrow', 'zh-CN', t('degree.eyebrow.list', '/ 02 Nano Degrees'));
   const headline = pickPage(pageData, 'list.headline', 'zh-CN', t('degree.headline.list', 'LEARNING\nPATHS'));
-  const sub = pickPage(pageData, 'list.sub', 'zh-CN', t('degree.list.sub', '体系化课程路径，从入门到进阶一站式打通，拿下 OpenCSG 认证学位。'));
+  const sub = pickPage(pageData, 'list.sub', 'zh-CN', t('degree.list.sub', '体系化课程路径，从入门到进阶一站式打通，拿下 AI Academy 认证学位。'));
   const headlineLines = headline.split('\n');
 
   // 向下滚 → 收起顶部 hero, 向上滚 → 展开 (iOS Safari / Twitter 风格)

@@ -1,4 +1,4 @@
-# OpenCSG Academy Changelog
+# AI Academy Changelog
 
 > 详细 release notes。每次 release 都跑 `pnpm test` + `pnpm build` + tsc 双 0 错 才打 tag。
 >
@@ -216,7 +216,7 @@
 
 ## v1.3.3 (2026-07-14)
 
-### 公开页去 OpenCSG 品牌色
+### 公开页去 AI Academy 品牌色
 - HomePage 39 处 / CourseListPage 15 处 / DegreeDetailPage 1 处
 - 全 brutalist 黑白
 

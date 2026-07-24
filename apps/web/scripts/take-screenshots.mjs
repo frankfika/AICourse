@@ -22,7 +22,7 @@ const MOCK_AUTH_USER = {
   state: {
     user: {
       id: 'demo-user-1',
-      email: 'k.chen@opencsg.ai',
+      email: 'k.chen@ai-academy.local',
       name: 'K. Chen',
       role: 'student',
     },

@@ -73,7 +73,7 @@ async function bootstrap() {
   // Swagger documentation — disabled in production to avoid leaking API surface.
   if (configService.get<string>('NODE_ENV') !== 'production') {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('OpenCSG Academy API')
+      .setTitle('AI Academy API')
       .setDescription('AI and LLM education platform API')
       .setVersion('1.0')
       .addBearerAuth()

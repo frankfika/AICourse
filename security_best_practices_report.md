@@ -1,4 +1,4 @@
-# OpenCSG Academy — Security Best Practices Report
+# AI Academy — Security Best Practices Report
 
 > 审计时间：2026-06-28
 > 修复时间：2026-06-29
@@ -11,7 +11,7 @@
 
 ## 0. 执行摘要（Executive Summary）
 
-本次审计在 OpenCSG Academy 代码库中发现 **18 项安全问题**，全部已修复：
+本次审计在 AI Academy 代码库中发现 **18 项安全问题**，全部已修复：
 
 | 严重度 | 数量 | 修复状态 |
 | --- | --- | --- |
@@ -244,7 +244,7 @@
 
 ### L-03 · `.env` 入库（已被 .gitignore 忽略，但开发流程依赖）
 
-`.gitignore:26` 已忽略 `.env`，但本地开发仍然依赖弱密码（`opencsg_pass` / `minioadmin` / `opencsg_root`）。生产部署文档需强调：**生产 secret 必须独立生成**。
+`.gitignore:26` 已忽略 `.env`，但本地开发仍然依赖弱密码（`ai_academy_pass` / `minioadmin` / `ai_academy_root`）。生产部署文档需强调：**生产 secret 必须独立生成**。
 
 ---
 

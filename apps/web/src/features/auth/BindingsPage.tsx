@@ -202,7 +202,7 @@ export function BindingsPage() {
   // demo 模式下:用 demo email 代替真实 user.email
   const displayUser = user ?? {
     id: 'demo-user',
-    email: 'k.chen@opencsg.ai',
+    email: 'k.chen@ai-academy.local',
     name: 'K. Chen',
     role: 'student' as const,
   };

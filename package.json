@@ -1,21 +1,21 @@
 {
-  "name": "opencsg-academy",
+  "name": "ai-academy",
   "version": "1.0.0",
   "private": true,
-  "description": "OpenCSG Academy - AI and LLM education platform",
+  "description": "AI Academy - AI and LLM education platform",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
-    "dev:web": "pnpm --filter @opencsg/academy-web dev",
-    "dev:api": "pnpm --filter @opencsg/academy-api dev",
+    "dev:web": "pnpm --filter @ai-academy/web dev",
+    "dev:api": "pnpm --filter @ai-academy/api dev",
     "build": "pnpm -r build",
-    "build:web": "pnpm --filter @opencsg/academy-web build",
-    "build:api": "pnpm --filter @opencsg/academy-api build",
-    "start": "pnpm --filter @opencsg/academy-api start",
+    "build:web": "pnpm --filter @ai-academy/web build",
+    "build:api": "pnpm --filter @ai-academy/api build",
+    "start": "pnpm --filter @ai-academy/api start",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "db:migrate": "pnpm --filter @opencsg/academy-api db:migrate",
-    "db:studio": "pnpm --filter @opencsg/academy-api db:studio",
-    "db:seed": "pnpm --filter @opencsg/academy-api db:seed"
+    "db:migrate": "pnpm --filter @ai-academy/api db:migrate",
+    "db:studio": "pnpm --filter @ai-academy/api db:studio",
+    "db:seed": "pnpm --filter @ai-academy/api db:seed"
   },
   "devDependencies": {
     "@prisma/client": "6.2.0",

@@ -130,7 +130,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
               <GraduationCap className="w-4 h-4" />
             </div>
             <span className="font-semibold text-lg">
-              OpenCSG <span className="text-[#171717]">Academy</span>
+              AI <span className="text-[#171717]">Academy</span>
             </span>
           </Link>
           <div className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
               <div className="w-10 h-10 rounded-md bg-neutral-0 flex items-center justify-center text-[#171717] font-bold">
                 <GraduationCap className="w-5 h-5" />
               </div>
-              <span className="font-semibold text-lg">OpenCSG Academy</span>
+              <span className="font-semibold text-lg">AI Academy</span>
             </Link>
             <h1 className="text-4xl xl:text-display-lg font-bold leading-[1.1]">
               {headlineLines[0] ?? shellHeadline}

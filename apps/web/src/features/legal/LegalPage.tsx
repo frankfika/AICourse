@@ -34,7 +34,7 @@ export interface LegalPageProps {
   eyebrow: string;
   /** 主标题 (e.g. "服务条款") */
   title: string;
-  /** 副标题/简介 (e.g. "OpenCSG Academy 平台服务协议") */
+  /** 副标题/简介 (e.g. "AI Academy 平台服务协议") */
   subtitle?: string;
   /** 最后更新日期 ISO 字符串 (e.g. "2026-07-24") */
   lastUpdated: string;
@@ -50,7 +50,7 @@ export function LegalPage({
   subtitle,
   lastUpdated,
   sections,
-  contactEmail = 'legal@opencsg.com',
+  contactEmail = 'legal@ai-academy.local',
 }: LegalPageProps) {
   // 当前活跃 section (用于 sidebar 高亮 + scroll-spy)
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? '');

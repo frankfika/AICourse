@@ -5,7 +5,7 @@ import type {
   CreateBadgeRequest,
   UpdateBadgeRequest,
   AdminGamificationStats,
-} from '@opencsg/shared-types';
+} from '@ai-academy/shared-types';
 
 export const badgesApi = {
   getAll: async (): Promise<Badge[]> => {

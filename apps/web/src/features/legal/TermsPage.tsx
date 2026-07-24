@@ -18,9 +18,9 @@ const SECTIONS: LegalSection[] = [
     content: (
       <>
         <p>
-          欢迎使用 <strong>OpenCSG Academy</strong>
-          (以下简称"本平台")。本平台由 OpenCSG
-          (北京希格斯矩阵科技有限公司) 运营。
+          欢迎使用 <strong>AI Academy</strong>
+          (以下简称"本平台")。本平台由 AI Academy
+          团队运营。
         </p>
         <p>
           通过访问、注册、登录或以任何方式使用本平台提供的服务 (包括但不限于浏览课程、购买学位、参赛黑客松、获取 AI
@@ -117,7 +117,7 @@ const SECTIONS: LegalSection[] = [
       <>
         <h3>平台内容</h3>
         <p>
-          本平台上的所有课程视频、文档、案例代码、题库、UI 设计、品牌标识等,均归 OpenCSG
+          本平台上的所有课程视频、文档、案例代码、题库、UI 设计、品牌标识等,均归 AI Academy
           或授权方所有,受《著作权法》《专利法》《商标法》保护。
         </p>
         <h3>用户内容</h3>
@@ -224,7 +224,7 @@ export function TermsPage() {
     <LegalPage
       eyebrow="/ Legal · Terms"
       title="服务条款"
-      subtitle="OpenCSG Academy 平台服务协议 — 您与 OpenCSG 之间关于使用本平台服务的法律协议"
+      subtitle="AI Academy 平台服务协议 — 您与 AI Academy 之间关于使用本平台服务的法律协议"
       lastUpdated="2026-07-24"
       sections={SECTIONS}
     />

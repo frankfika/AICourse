@@ -25,6 +25,9 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+*.bak
+*.lock
+openhackathon-external-ai-plan.md
 
 # vercel
 .vercel

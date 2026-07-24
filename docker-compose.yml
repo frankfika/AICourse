@@ -3,13 +3,13 @@ version: '3.8'
 services:
   mysql:
     image: mysql:8.0
-    container_name: opencsg-academy-mysql
+    container_name: ai-academy-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-opencsg_root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-opencsg_academy}
-      MYSQL_USER: ${MYSQL_USER:-opencsg}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-opencsg_pass}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-ai_academy_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ai_academy}
+      MYSQL_USER: ${MYSQL_USER:-ai_academy}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ai_academy_pass}
     ports:
       - "${MYSQL_PORT:-3307}:3306"
     volumes:
@@ -23,7 +23,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: opencsg-academy-redis
+    container_name: ai-academy-redis
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6380}:6379"
@@ -37,7 +37,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: opencsg-academy-minio
+    container_name: ai-academy-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:

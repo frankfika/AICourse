@@ -26,7 +26,7 @@ import {
   Undo2,
   Search,
 } from 'lucide-react';
-import type { OrderWithItems, OrderStatus } from '@opencsg/shared-types';
+import type { OrderWithItems, OrderStatus } from '@ai-academy/shared-types';
 import { ordersApi } from '../../../lib/ordersApi';
 import { useToast } from '../../../components/auth/Toast';
 import { EmptyState } from '../../../components/ui/EmptyState';

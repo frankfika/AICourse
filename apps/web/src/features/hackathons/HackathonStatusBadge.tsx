@@ -1,4 +1,4 @@
-import type { HackathonStatus } from '@opencsg/shared-types';
+import type { HackathonStatus } from '@ai-academy/shared-types';
 import { useEnum } from '../../lib/cms';
 
 // Fallback(API 失败时) —— 跟 review/cms-audit-labels.md §3 hackathon_status 当前值一致

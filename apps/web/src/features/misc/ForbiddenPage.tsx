@@ -100,10 +100,10 @@ export function ForbiddenPage() {
             />
           </p>
           <a
-            href="mailto:support@opencsg.com"
+            href="mailto:support@ai-academy.local"
             className="text-[#171717] underline underline-offset-4 hover:text-[#262626] font-bold"
           >
-            support@opencsg.com
+            support@ai-academy.local
           </a>
         </div>
       }

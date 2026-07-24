@@ -71,8 +71,8 @@ helper:
 ## build + tsc 结果
 
 ```
-$ pnpm --filter @opencsg/academy-api build
-> @opencsg/academy-api@1.5.0 build /Users/fangchen/Baidu/GitHub/AICourse/apps/api
+$ pnpm --filter @ai-academy/api build
+> @ai-academy/api@1.5.0 build /Users/fangchen/Baidu/GitHub/AICourse/apps/api
 > nest build
 (0 errors)
 

@@ -1,5 +1,5 @@
 /**
- * ESLint v9 flat config — OpenCSG Academy API
+ * ESLint v9 flat config — AI Academy API
  *
  * v9 必须用 flat config(legacy .eslintrc.* 已被废弃)
  * 规则集:TypeScript 推荐 + 实用规则

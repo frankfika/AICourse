@@ -18,12 +18,12 @@
 - `components/auth/AuthShell.tsx:133-134` — auth sub `… 名工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。` — 建议: `site_settings.brand.auth.shell_sub`(stats 走模板)
 - `components/auth/AuthShell.tsx:162-179` — `学员故事 · 占位示例` + K. Chen 整段 testimonial + `LLM 应用工程师学位 · 占位示例` — 建议: 独立表 `testimonials(id, name, title, degree_label, quote, avatar_initial, sort_order)`;或先抽 `site_settings.brand.auth.testimonial` 整体字段
 - `components/auth/AuthShell.tsx:230` / `:238` / `LoginPage.tsx:113-118` / `RegisterPage.tsx:129-134` / `BindingsPage.tsx:178` — 5 处 auth 页主标题/副标题(`登录` / `注册` tab + `欢迎回来` + `继续你的 AI 时代学习路径` + `创建账号` + `注册后立即开始学习 AI 课程` + `绑定第三方账号,登录更便捷`) — 建议: `page_settings.auth.{tab_login,tab_register,h1_login,h1_register,sub_login,sub_register,h1_bindings}`
-- `features/auth/BindingsPage.tsx:163-165` — demo 假账号 `k.chen@opencsg.ai` / `K. Chen`(写在 component 内,生产 demo mode 才用) — 建议: `VITE_PUBLIC_DEMO_EMAIL` / `VITE_PUBLIC_DEMO_NAME` env
+- `features/auth/BindingsPage.tsx:163-165` — demo 假账号 `k.chen\@ai-academy.local` / `K. Chen`(写在 component 内,生产 demo mode 才用) — 建议: `VITE_PUBLIC_DEMO_EMAIL` / `VITE_PUBLIC_DEMO_NAME` env
 - `features/enterprise/EnterprisePage.tsx:107-118` — `/ Enterprise Training` 标 + `Build Your AI Team.` + `1v1 咨询 + 定制化课程路径…` — 建议: `page_settings.enterprise.hero.{eyebrow,headline,sub}`
 - `features/enterprise/EnterprisePage.tsx:174-201` — `/ 01 Method` + `How We Work` + 3 步法(战略对齐 / 路径设计 / 实战交付 + 各自 desc + bullets) — 建议: 表 `enterprise_methods(id, num, title, desc, bullets jsonb, sort_order)`
 - `features/enterprise/EnterprisePage.tsx:244-283` — `/ 02 Cases` + `Trusted By` + 8 行业(金融 / 电商 / 制造 / 医疗 / 教育 / 政企 / 汽车 / 媒体 + 描述) — 建议: 表 `industries(id, key, label, desc, sort_order)`
 - `features/enterprise/EnterprisePage.tsx:295-303` — `Get In Touch` + `Start The Conversation` + `填写右侧表单,我们的解决方案顾问会在 1 个工作日内联系你…` — 建议: `page_settings.enterprise.inquiry.{eyebrow,headline,sub}`
-- `features/enterprise/EnterprisePage.tsx:329` — `OpenCSG · Beijing · Shanghai · Shenzhen`(地址行) — 建议: `site_settings.brand.company.addresses`(数组,默认填 3 城,后续可改)
+- `features/enterprise/EnterprisePage.tsx:329` — `AI Academy · Beijing · Shanghai · Shenzhen`(地址行) — 建议: `site_settings.brand.company.addresses`(数组,默认填 3 城,后续可改)
 
 ### P1 — 二三级页面 hero / 列表 / section title
 
@@ -32,7 +32,7 @@
 - `features/courses/CourseListPage.tsx:289-298` — `热门:` + 5 关键词 chips(LangChain / RAG / Agent / vLLM / Fine-tuning) — 建议: 表 `hot_keywords(keyword, sort_order)`
 - `features/courses/CourseListPage.tsx:558-561` / `:600-602` — 排序标签 + 搜索空状态 — 建议: `page_settings.courses.list.{sort_options,empty_title_template,empty_desc}`
 - `features/courses/CourseListPage.tsx:265` — placeholder `搜索课程 / 讲师 / 技能,如 LangChain / RAG / Agent` — 建议: `page_settings.courses.list.search_placeholder`
-- `features/degrees/DegreeListPage.tsx:22-29` — `/ 02 Nano Degrees` + `LEARNING PATHS` + `体系化课程路径…拿下 OpenCSG 认证学位。` — 建议: `page_settings.degrees.list.{eyebrow,headline,sub}`
+- `features/degrees/DegreeListPage.tsx:22-29` — `/ 02 Nano Degrees` + `LEARNING PATHS` + `体系化课程路径…拿下 AI Academy 认证学位。` — 建议: `page_settings.degrees.list.{eyebrow,headline,sub}`
 - `features/degrees/DegreeListPage.tsx:63` — `Nano Degree` 徽章 — 建议: `site_settings.brand.degree.badge`
 - `features/degrees/DegreeDetailPage.tsx:155` / `:189-204` / `:257` / `:286-315` / `:343` / `:375` — `Back To Degrees` / stats 4 项 label / `学位概览` `课程` tab / `/ 01 Overview` `/ 02 What You Will Learn` `/ 03 Coming Next` / `学位时长` / `该学位下暂无课程` — 建议: `page_settings.degrees.detail.{back,stats_labels,tabs,section_eyebrows,sidebar_hours_label,empty_courses}`
 - `features/degrees/DegreeDetailPage.tsx:47-52` — 4 个 P2 占位卡(路径阶段图 / 同班排名 / 证书预览 / 学员评价 + `后端 X API 设计中` sub) — 建议: 表 `coming_next_cards(icon, title, sub)`
@@ -53,17 +53,17 @@
 - 公共 / 列表 / 详情 / 404:`HomePage.tsx:253-254 / :385-386 / :579-580 / :626 / :323-325 / :461 / :634`、`DegreeDetailPage.tsx:377`、`HackathonDetailPage.tsx:67`、`CoursePracticesTab.tsx:107-110` — 7 处 `暂无X` + 3 处 `数据加载失败…` / `正在准备中…` / `正在筹备中…`
 - Dashboard / 订单 / 证书 / 通知:`DashboardPage.tsx:487-488 / :521-522 / :532-533 / :875-876` + `OrdersPage.tsx:197-198 / :243-244 / :254-255` + `CertificatesPage.tsx:155-156` + `NotificationsPage.tsx:198-199 / :290-291` — 13 处 `还没有X` / 确认弹窗 / 描述段
 - 黑客松子页:`TeamPanel.tsx:73 / :189` + `SubmissionPanel.tsx:118 / :257` + `AnnouncementList.tsx:13` — 5 处 `报名后可…` / `还没有X` / `暂无公告`
-- 基础设施缺口:`index.html:6` — `<title>OpenCSG Academy</title>` 整站固定,全站 0 SEO meta;建议 `react-helmet-async` + `page_settings.<route>.seo.{title,description}`
+- 基础设施缺口:`index.html:6` — `<title>AI Academy</title>` 整站固定,全站 0 SEO meta;建议 `react-helmet-async` + `page_settings.<route>.seo.{title,description}`
 
 ## 2. 文案分类归纳(后端 schema 建议)
 
 | 类型 | 示例 | Schema | 说明 |
 |---|---|---|---|
-| **全局品牌**(hero / footer / auth / nav) | hero headline、footer tagline、auth shell 标题、K. Chen 学员故事、`OpenCSG Academy` 品牌名、nav 4 项、footer 4 列 | `site_settings(key, value jsonb, locale)` | key-value,高频访问,客户端 5min cache;中英文双列 |
+| **全局品牌**(hero / footer / auth / nav) | hero headline、footer tagline、auth shell 标题、K. Chen 学员故事、`AI Academy` 品牌名、nav 4 项、footer 4 列 | `site_settings(key, value jsonb, locale)` | key-value,高频访问,客户端 5min cache;中英文双列 |
 | **页面级 hero / section** | HomePage 5 段副标题、CourseListPage header、EnterprisePage hero、DegreeDetailPage 4 个 eyebrow | `page_settings(page, key, value jsonb, locale)` | `(page, key)` 唯一,按 page 路由打 group,客户端按路由 lazy load |
 | **结构化列表**(industries / testimonials / methods / status) | 企业 8 行业、3 步法、5 状态、K. Chen 学员故事 | 独立表 `industries` / `enterprise_methods` / `hackathon_status_labels` / `testimonials` | 增删改要带 sort_order;支持多语言用 `i18n` 表;运营可改 |
 | **空状态 / loading / error**(通用 i18n) | `暂无课程` / `数据加载失败` / `还没有订单` | `i18n_messages(key, zh, en, category)` | 集中维护,避免每个页面重复;前端 useTranslation 风格 |
-| **系统常量 / 演示数据** | demo 账号 `k.chen@opencsg.ai` / `K. Chen` / `demo@gmail.com` | env(`VITE_PUBLIC_DEMO_*`)+ fixture JSON | 不进 CMS,只在 dev / 截图用 |
+| **系统常量 / 演示数据** | demo 账号 `k.chen\@ai-academy.local` / `K. Chen` / `demo@gmail.com` | env(`VITE_PUBLIC_DEMO_*`)+ fixture JSON | 不进 CMS,只在 dev / 截图用 |
 | **表单 placeholder 短文案** | `you@company.com` / `••••••••` | 不进 CMS,代码常量 | 长度 < 8 字符 / 标准 i18n key,不值得 CMS |
 | **SEO meta** | `<title>` / `og:description` | `page_settings.<route>.seo.{title,description}` | 目前全站 0 个 meta,接入 react-helmet-async 后按路由渲染 |
 

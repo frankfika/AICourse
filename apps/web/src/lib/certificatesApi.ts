@@ -9,7 +9,7 @@
  * 撤销 (POST /certificates/revoke/:id) 不暴露给前端 API, 仅 admin 后台。
  */
 import api from './api';
-import type { Certificate, VerifyCertificateResult } from '@opencsg/shared-types';
+import type { Certificate, VerifyCertificateResult } from '@ai-academy/shared-types';
 
 export const certificatesApi = {
   getMyCertificates: async (type?: string): Promise<Certificate[]> => {

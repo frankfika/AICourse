@@ -160,7 +160,7 @@ export function CookiesPage() {
     <LegalPage
       eyebrow="/ Legal · Cookies"
       title="Cookie 政策"
-      subtitle="OpenCSG Academy 使用的 Cookie 和同类技术说明"
+      subtitle="AI Academy 使用的 Cookie 和同类技术说明"
       lastUpdated="2026-07-24"
       sections={SECTIONS}
     />

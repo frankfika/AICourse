@@ -141,7 +141,7 @@ export function RegisterPage() {
           onProviderClick={handleGrayscaleProviderClick}
         />
         <p className="mt-2 text-[10px] text-center text-neutral-400">
-          已有 OpenCSG 账号?系统会自动合并到你的账号
+          已有本平台账号?系统会自动合并到你的账号
         </p>
       </section>
 

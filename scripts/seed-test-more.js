@@ -4,8 +4,8 @@ const prisma = new PrismaClient();
 async function main() {
   const partner = await prisma.course.create({
     data: {
-      title: 'OpenCSG x 清华 大模型微调实战',
-      description: 'OpenCSG 与清华大学联合推出的企业级大模型微调课程，涵盖 LoRA、QLoRA、全参数微调等核心技术。',
+      title: 'AI Academy x 清华 大模型微调实战',
+      description: 'AI Academy 与清华大学联合推出的企业级大模型微调课程，涵盖 LoRA、QLoRA、全参数微调等核心技术。',
       learningPoints: JSON.stringify(['掌握 LoRA 微调原理', '实现 QLoRA 低显存训练', '部署企业级推理服务']),
       instructor: '清华大学 · 刘知远团队',
       level: 'Advanced',

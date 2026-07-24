@@ -64,7 +64,7 @@ describe('ResourcesController (lessons/:lessonId/resources)', () => {
   // ── create ──────────────────────────────────────────────────────────
 
   describe('create', () => {
-    const validDto = { title: 'PDF 讲义', url: 'https://cdn.opencsg.ai/lessons/1.pdf', type: 'pdf' as const };
+    const validDto = { title: 'PDF 讲义', url: 'https://cdn.ai-academy.local/lessons/1.pdf', type: 'pdf' as const };
 
     it('缺 title → BadRequestException', async () => {
       await expect(

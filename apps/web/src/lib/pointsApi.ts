@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { UserPoints } from '@opencsg/shared-types';
+import type { UserPoints } from '@ai-academy/shared-types';
 
 export const pointsApi = {
   getMyPoints: async (): Promise<UserPoints> => {

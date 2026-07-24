@@ -1,4 +1,4 @@
-# OpenCSG Academy 整体重设计 Spec(2026 v2)
+# AI Academy 整体重设计 Spec(2026 v2)
 
 > 角色:synthesis。输入是 3 份 audit(web-ux / admin / data-api),输出是**可拍板 / 可切片执行**的整体重设计。
 > 目标:Frank 看完直接说"开干",我们切成 N 个 plan 落地。
@@ -8,7 +8,7 @@
 
 ## §1 品牌 / 定位一句话
 
-**我们是谁**——OpenCSG Academy 是面向 AI 时代的系统化学习平台,把"课程 + 学位 + 实践 + 黑客松 + AI 助教"做成一条连续的学习回路,不是又一个 MOOC 视频站。
+**我们是谁**——AI Academy 是面向 AI 时代的系统化学习平台,把"课程 + 学位 + 实践 + 黑客松 + AI 助教"做成一条连续的学习回路,不是又一个 MOOC 视频站。
 
 **给谁**——三类人:**想转岗 / 进阶的工程师**(已会写代码,要补 ML/LLM/Agent 系统能力);**AI-native 创业者**(要快速建立对模型、评测、工程链路的全景认知);**企业 CTO / 培训负责人**(要给团队配结构化路径 + 学情数据)。
 
@@ -18,7 +18,7 @@
 - 课程结构 → 对标 **DeepLearning.AI**(短而精 + Andrew 风格的"一课一概念");**不**做 Coursera 那种学期制
 - 学位路径 → 对标 **Coursera Degrees / KubeVirt Academy Nano-Degree**,但要**真给证书 + 能力图谱**,不是印个 PDF
 - AI 助教 → 对标 **Anthropic Academy 的 prompt 沙盒 + GitHub Copilot 的上下文式辅助**,每节课旁边都有,不藏抽屉里
-- 气质 → **OpenCSG 自己的**:技术严肃感 + 开源社区氛围 + 工程师味,不要花花绿绿的卡通插画
+- 气质 → **AI Academy 自己的**:技术严肃感 + 开源社区氛围 + 工程师味,不要花花绿绿的卡通插画
 
 ---
 
@@ -31,11 +31,11 @@
 ```css
 /* CSS variables — 写在 apps/web/src/styles/tokens.css,根 :root + .dark 翻转 */
 :root {
-  /* 品牌主色:OpenCSG 深青绿,延伸到产品 */
+  /* 品牌主色:AI Academy 深青绿,延伸到产品 */
   --brand-50:  #E6F5F2;  /* tint */
   --brand-100: #BFEAE0;
   --brand-300: #66CFB7;
-  --brand-500: #1D8C80;  /* PRIMARY — OpenCSG teal */
+  --brand-500: #1D8C80;  /* PRIMARY — AI Academy teal */
   --brand-700: #146358;
   --brand-900: #0A3A33;  /* dark mode 文字 */
 
@@ -213,7 +213,7 @@ module.exports = {
     ├── /dashboard/settings/notifications 登录  通知偏好
     └── /dashboard/settings/billing  登录  支付方式 / 发票抬头
 
-/admin                               admin  后台(独立子域 admin.opencsg.academy 可选)
+/admin                               admin  后台(独立子域 admin.ai-academy.local 可选)
 ├── /admin/dashboard                 admin  数据看板(GMV / 留存 / 转化 / AI 成本)
 ├── /admin/users                     admin  用户管理
 │   ├── /admin/users/:id             admin  用户详情(身份 / 订单 / 进度 / Identity)
@@ -610,7 +610,7 @@ model Lesson {
 6. **支付:** Stripe(海外)还是微信 / 支付宝(国内)?**双通道还是单通道**?
 7. **暗色模式默认:** system / 暗 / 亮?Frank 倾向哪种?
 8. **国际化范围:** P1 只做 zh-CN + en-US,还是加 ja-JP / es-ES?
-9. **后台独立子域**(`admin.opencsg.academy`)还是继续共域 `/admin`?
+9. **后台独立子域**(`admin.ai-academy.local`)还是继续共域 `/admin`?
 10. **AI 助教是否给学生看完整推理?** 一些课(P0 阶段 2 + 实践项目)希望"AI 不直接给答案,只给提示",这要单独的 `aiTone` 字段 + admin 配置。
 11. **讲师主页是否对外公开?** 内部讲师 vs 外部讲师是否同一种 model?
 12. **证书生成:** 自动 PDF / 可验证区块链证书 / 可挂 LinkedIn?
@@ -843,8 +843,8 @@ export class OidcStrategy implements AuthStrategy {
         ? await this.prisma.user.findUnique({ where: { email: profile.email } })
         : null;
       const user = existingUser ?? await this.prisma.user.create({
-        data: { email: profile.email ?? `${provider.name}-${profile.providerUserId}@noreply.opencsg.academy`,
-                name: profile.name ?? 'OpenCSG User', passwordHash: null },
+        data: { email: profile.email ?? `${provider.name}-${profile.providerUserId}\@noreply.ai-academy.local`,
+                name: profile.name ?? 'AI Academy User', passwordHash: null },
       });
       identity = await this.prisma.identity.create({
         data: {
