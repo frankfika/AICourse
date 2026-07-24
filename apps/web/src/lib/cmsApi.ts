@@ -292,6 +292,7 @@ const LIST_ENDPOINTS: Record<string, string> = {
   'auth-providers': '/api/v1/auth-providers',
   'top-nav': '/api/v1/top-nav',
   'footer-columns': '/api/v1/footer-columns',
+  'team-sizes': '/api/v1/team-sizes',
 };
 
 export type ListResource = keyof typeof LIST_ENDPOINTS;

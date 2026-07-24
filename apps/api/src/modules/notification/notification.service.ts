@@ -261,24 +261,13 @@ export class NotificationService {
   }
 
   private async send(opts: { to: string; subject: string; body: string }) {
-    switch (this.provider) {
-      case 'sendgrid':
-        await this.sendViaSendGrid(opts);
-        break;
-      case 'ses':
-        await this.sendViaSes(opts);
-        break;
-      default:
-        // console
-        break;
+    // P0 (audit 2026-07-24): 删 sendgrid / ses stub, 统一走 console logger.
+    // 真实接 email provider 等 P2 重做通知模块时, 在这里加 case.
+    if (this.provider === 'sendgrid' || this.provider === 'ses') {
+      this.logger.warn(
+        `[notification] EMAIL_PROVIDER='${this.provider}' not yet implemented, falling back to console`,
+      );
     }
-  }
-
-  private async sendViaSendGrid(_opts: { to: string; subject: string; body: string }) {
-    this.logger.warn('[sendgrid] stub — P1-8 真实接入');
-  }
-
-  private async sendViaSes(_opts: { to: string; subject: string; body: string }) {
-    this.logger.warn('[ses] stub — TODO');
+    this.logger.log(`[email:${this.provider}] to=${opts.to} subject=${opts.subject}`);
   }
 }

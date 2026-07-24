@@ -166,7 +166,16 @@ export const router = createBrowserRouter([
     ],
   },
   // P0-4 设计系统演示页 — 临时挂载,后续 worktree 跑完移除
-  { path: '/__design-system', element: <PublicSuspense><DesignSystemPage /></PublicSuspense> },
+  // (仅 dev mode — prod build 时 import.meta.env.DEV === false, 整段被 tree-shake 掉
+  //  防止投资人直链进 /__design-system 看到内部色板/字号 token)
+  ...(import.meta.env.DEV
+    ? [
+        {
+          path: '__design-system',
+          element: <PublicSuspense><DesignSystemPage /></PublicSuspense>,
+        },
+      ]
+    : []),
   // P1-9 错误页演示路由 (仅 dev mode — 用来截图/QA 验证 4 个错误页)
   // 路径: /__error-demo/:type  (type = 404|403|500|network)
   // prod build 时 import.meta.env.DEV === false, 整段被 tree-shake 掉

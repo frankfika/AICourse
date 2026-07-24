@@ -23,6 +23,9 @@ export class LearningEventsController {
   constructor(private readonly service: LearningEventsService) {}
 
   @Post()
+  // P0 (audit v1.5.0 P2-2): createOne 单条无限流, 攻击者绕 batch 限制单条灌
+  // learning_events 表撑爆. 改: 短窗 5/1s 平衡正常使用, 中窗 60/60s 防滥用
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: '上报单条学习事件（complete / note 等）' })
   async createOne(@Request() req: any, @Body() dto: CreateLearningEventDto) {
     const event = await this.service.createOne(req.user.userId, dto);

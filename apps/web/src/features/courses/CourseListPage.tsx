@@ -53,7 +53,7 @@ import { Button } from '../../components/ui/Button';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { I18nText } from '../../components/I18nText';
 import { cn } from '../../lib/cn';
-import { useEnum, useList, usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import { useEnum, useList, usePageSettings, useI18n, pickPage, LIST_FALLBACK } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { usePagination } from '../../hooks/usePagination';
 
@@ -105,31 +105,23 @@ const DURATION_LABELS: Record<ReturnType<typeof durationBucket>, string> = {
   gt12: '12 小时以上',
 };
 
-// CMS-driven 6 分类(后端 course_categories 表 + LIST_FALLBACK)
-// 原始硬编码 CATEGORIES 数组(6 项)由 useCategories() 替
-const FALLBACK_CATEGORIES = [
-  { key: 'llm_app', label: 'LLM 应用' },
-  { key: 'rag', label: 'RAG / 检索' },
-  { key: 'agent', label: 'Agent' },
-  { key: 'mlops', label: 'MLOps / 部署' },
-  { key: 'fine_tune', label: 'Fine-tuning' },
-  { key: 'theory', label: '基础理论' },
-];
+// CMS-driven 6 分类(后端 course_categories 表 + LIST_FALLBACK 集中定义)
+// P0 (audit 2026-07-24): 删 inline FALLBACK_CATEGORIES, 改用 LIST_FALLBACK['course-categories']
+// (cms.ts:575 集中定义, 改一处生效)
 function useCategories() {
   const { data } = useList<{ key: string; label: string; isActive?: boolean }>('course-categories');
   if (data && data.length > 0) {
     return data.filter((c) => c.isActive !== false).map((c) => ({ key: c.key, label: c.label }));
   }
-  return FALLBACK_CATEGORIES;
+  return (LIST_FALLBACK['course-categories'] as Array<{ key: string; label: string }>).map((c) => ({
+    key: c.key,
+    label: c.label,
+  }));
 }
 
 const LEVELS: Array<Course['level']> = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
-const FALLBACK_LEVEL_LABELS: Record<Course['level'], string> = {
-  Beginner: '入门',
-  Intermediate: '进阶',
-  Advanced: '高级',
-  Expert: '专家',
-};
+// P0 (audit 2026-07-24): 删 inline FALLBACK_LEVEL_LABELS, useEnum('course_level') 内部
+// __FALLBACK_ENUMS__ 已有 course_level fallback. levelLabel 调用方式不变.
 
 // =============================================================
 // 主组件
@@ -138,7 +130,7 @@ export function CourseListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlQ = searchParams.get('q') ?? '';
   const { getLabel: getLevelLabel } = useEnum('course_level');
-  const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || FALLBACK_LEVEL_LABELS[lv];
+  const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || lv;
 
   // CMS-driven copy
   const CATEGORIES = useCategories();
@@ -220,7 +212,6 @@ export function CourseListPage() {
       if (selectedInstructors.size > 0 && !selectedInstructors.has(c.instructor)) return false;
       if (minRating > 0) {
         // 后端没 rating 字段,客户端用 description 关键词做兜底(几乎都通过)
-        // 这是已知偏差,在 mock 数据下不影响演示
         const hasRatingHint = /star|★|rating/i.test(c.description ?? '');
         if (minRating >= 4 && !hasRatingHint) {
           // 不强过滤,只在"评分"明确被点击时显示一个 friendly 提示
@@ -715,7 +706,7 @@ function CourseCardLink({ course }: { course: Course }) {
   const isFree = course.costType === 'free';
   const isCharity = course.costType === 'charity';
   const { getLabel: getLevelLabel } = useEnum('course_level');
-  const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || FALLBACK_LEVEL_LABELS[lv];
+  const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || lv;
   return (
     <Link
       to={course.externalUrl && course.courseType === 'third_party' ? course.externalUrl : `/courses/${course.id}`}

@@ -16,15 +16,17 @@ import { CheckCircle2, XCircle, ShieldCheck, ArrowLeft, Award } from 'lucide-rea
 import { certificatesApi } from '../../../lib/certificatesApi';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
+import { QueryErrorState } from '../../../components/QueryErrorState';
 import { cn } from '../../../lib/cn';
 
 export function VerifyCertificatePage() {
   const { serial = '' } = useParams<{ serial: string }>();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['certificates', 'verify', serial],
     queryFn: () => certificatesApi.verifyCertificate(serial),
     enabled: !!serial,
+    retry: 0,
   });
 
   if (isLoading) {
@@ -33,6 +35,23 @@ export function VerifyCertificatePage() {
         <div className="max-w-2xl mx-auto space-y-4">
           <Skeleton variant="rectangle" className="h-32 w-full" />
           <Skeleton variant="rectangle" className="h-48 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // P0 (audit 2026-07-24): 网络错 / 后端挂 不能错把 "未找到证书" 显示给第三方
+  // 验证人,要明确区分"挂了"和"没找到"
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 p-6">
+        <div className="max-w-2xl mx-auto">
+          <QueryErrorState
+            error={error}
+            onRetry={() => refetch()}
+            title="验证服务暂不可用"
+            description="无法连接验证服务, 请稍后重试或联系发证方"
+          />
         </div>
       </div>
     );

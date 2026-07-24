@@ -22,6 +22,7 @@ import { Card } from '../../components/ui/Card';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { useToast } from '../../components/auth/Toast';
 import { useAuth } from '../../lib/auth/AuthProvider';
+import { useI18n } from '../../lib/cms';
 import { api } from '../../lib/api';
 
 const forgotSchema = z.object({
@@ -33,6 +34,7 @@ export function ForgotPasswordPage() {
   const navigate = useNavigate();
   const { isAuthenticating } = useAuth();
   const { showToast } = useToast();
+  const { t } = useI18n();
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   const {
@@ -85,7 +87,7 @@ export function ForgotPasswordPage() {
             已注册,我们会向该邮箱发送重置密码的链接。
           </p>
           <p className="mt-1 text-xs text-neutral-400">
-            链接 30 分钟内有效,请尽快点击。
+            {t('auth.forgot.expiry_hint', '链接 30 分钟内有效,请尽快点击。')}
           </p>
           <div className="mt-6 flex flex-col gap-2">
             <Button

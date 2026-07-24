@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Seo } from '../../components/Seo';
+import { useToast } from '../../components/auth/Toast';
 import {
   Building2,
   ArrowUpRight,
@@ -17,9 +18,17 @@ import {
   Briefcase,
 } from 'lucide-react';
 import api from '../../lib/api';
-import { useList, usePageSettings, useSiteSettings, useI18n, pickPage, pickSite } from '../../lib/cms';
+import { useList, usePageSettings, useSiteSettings, useI18n, pickPage, pickSite, LIST_FALLBACK } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
+
+// CMS LIST_FALLBACK['enterprise-methods'] 用 icon 字符串名 (e.g. 'Target') 表示图标,
+// 这里建个 string→Component 映射表,这样 fallback 数组保持纯数据,不嵌 React component
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Target,
+  GraduationCap,
+  Briefcase,
+};
 
 // 复用 site/stats 的 KPI,4 个 slot 都从真实数据映射, 避免假数字
 interface SiteStats {
@@ -63,13 +72,11 @@ const initialForm: InquiryForm = {
   description: '',
 };
 
-const TEAM_SIZES = ['1-10', '11-50', '51-200', '201-1000', '1000+'];
-
 export function EnterprisePage() {
   const [form, setForm] = useState<InquiryForm>(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   // 公开站点统计(后端 GET /api/v1/site/stats 已就绪)
   const { data: stats } = useQuery({
@@ -86,9 +93,13 @@ export function EnterprisePage() {
   const { t } = useI18n();
   const { data: entPages } = usePageSettings('enterprise', [
     'hero.eyebrow', 'hero.headline', 'hero.sub', 'hero.cta_primary', 'hero.cta_secondary',
-    'inquiry.eyebrow', 'inquiry.headline', 'inquiry.sub',
+    'inquiry.eyebrow', 'inquiry.headline', 'inquiry.sub', 'inquiry.eyebrow.form',
     'method.eyebrow', 'method.headline',
     'cases.eyebrow', 'cases.headline', 'cases.tag', 'cases.eyebrow_us',
+    'stat.active_learners', 'stat.total_courses', 'stat.total_projects', 'stat.total_degrees',
+    'form.name', 'form.email', 'form.company', 'form.phone',
+    'form.team_size', 'form.topic', 'form.description',
+    'form.placeholder.topic', 'form.placeholder.description',
   ]);
   const { data: industriesData } = useList<{
     id: string; key: string; label: string; description?: string | null;
@@ -96,58 +107,39 @@ export function EnterprisePage() {
     isActive?: boolean; orderIndex: number;
   }>('industries');
   const { data: methodsData } = useList<{
-    id: string; num: string; title: string; desc: string; bullets: string[];
+    id: string; num: string; icon?: string; title: string; desc: string; bullets: string[];
     isActive?: boolean; orderIndex: number;
   }>('enterprise-methods');
+  const { data: teamSizesData } = useList<{ key?: string; label: string }>('team-sizes');
   const { data: siteData } = useSiteSettings(['brand.company.addresses']);
 
-  // 把 industries 8 宫格拉成 list
-  const industries = industriesData && industriesData.length > 0
-    ? industriesData.filter((i) => i.isActive !== false).map((i) => ({ label: i.label, desc: i.description ?? '' }))
-    : [
-        { label: '金融 / Fintech', desc: '风控、量化、智能客服' },
-        { label: '电商 / Retail', desc: '推荐系统、搜索、营销' },
-        { label: '制造 / Manufacturing', desc: '质检、排产、预测维护' },
-        { label: '医疗 / Healthcare', desc: '影像诊断、临床辅助' },
-        { label: '教育 / Education', desc: '个性化学习、智能评测' },
-        { label: '政企 / Government', desc: '文档处理、数据分析' },
-        { label: '汽车 / Auto', desc: '自动驾驶、智能座舱' },
-        { label: '媒体 / Media', desc: '内容生成、推荐分发' },
-      ];
+  // 把 industries 8 宫格拉成 list — 数据源: API → LIST_FALLBACK.industries (无 inline 硬编码)
+  const industries = (industriesData && industriesData.length > 0
+    ? industriesData
+    : LIST_FALLBACK.industries as { key: string; label: string; description?: string | null; isActive?: boolean; orderIndex: number }[]
+  )
+    .filter((i) => i.isActive !== false)
+    .map((i) => ({ label: i.label, desc: i.description ?? '' }));
 
-  // 把 3 步法拉成 list
-  const FALLBACK_ICONS = [Target, GraduationCap, Briefcase];
-  const methods = methodsData && methodsData.length > 0
-    ? methodsData.filter((m) => m.isActive !== false).map((m, i) => ({
-        num: m.num,
-        icon: FALLBACK_ICONS[i] ?? Target,
-        title: m.title,
-        desc: m.desc,
-        bullets: m.bullets ?? [],
-      }))
-    : [
-        {
-          num: '01',
-          icon: Target,
-          title: '战略对齐',
-          desc: '深入理解业务目标与团队现状,识别 AI 应用的高价值场景,输出定制化能力地图。',
-          bullets: ['业务场景调研', 'AI 能力评估', 'ROI 测算', '实施路线图'],
-        },
-        {
-          num: '02',
-          icon: GraduationCap,
-          title: '路径设计',
-          desc: '基于岗位与职级,定制从入门到专家的培养路径,理论与实战项目深度结合。',
-          bullets: ['岗位能力模型', '课程组合设计', '实战项目选题', '考核评估机制'],
-        },
-        {
-          num: '03',
-          icon: Briefcase,
-          title: '实战交付',
-          desc: '用真实业务问题驱动学习,导师全程陪跑,交付可量化的业务成果。',
-          bullets: ['1v1 导师陪跑', '项目代码评审', '业务指标达成', '长期社区支持'],
-        },
-      ];
+  // 把 3 步法拉成 list — icon 字段是字符串名,ICON_MAP 映射到 lucide-react component
+  const methods = (methodsData && methodsData.length > 0
+    ? methodsData
+    : LIST_FALLBACK['enterprise-methods'] as { num: string; icon?: string; title: string; desc: string; bullets?: string[]; isActive?: boolean; orderIndex: number }[]
+  )
+    .filter((m) => m.isActive !== false)
+    .map((m) => ({
+      num: m.num,
+      icon: ICON_MAP[m.icon as string] ?? Target,
+      title: m.title,
+      desc: m.desc,
+      bullets: m.bullets ?? [],
+    }));
+
+  // 团队规模选项 (CMS list 兜底,无 inline 数组)
+  const teamSizes = (teamSizesData && teamSizesData.length > 0
+    ? teamSizesData
+    : LIST_FALLBACK['team-sizes'] as { label: string }[]
+  ).map((s) => s.label);
 
   // Hero copy
   const heroEyebrow = pickPage(entPages, 'hero.eyebrow', 'zh-CN', t('enterprise.eyebrow.hero', '/ Enterprise Training'));
@@ -173,27 +165,50 @@ export function EnterprisePage() {
   const inquiryHeadline = pickPage(entPages, 'inquiry.headline', 'zh-CN', t('enterprise.headline.inquiry', 'Start\nThe\nConversation'));
   const inquiryHeadlineLines = inquiryHeadline.split('\n');
   const inquirySub = pickPage(entPages, 'inquiry.sub', 'zh-CN', t('enterprise.inquiry.sub', '填写右侧表单,我们的解决方案顾问会在 1 个工作日内联系你,提供 1v1 定制咨询。'));
-  // Address line
+  // Address line — 没配 site_settings 时为空数组,不显示假地址
   const addressCities = (siteData?.['brand.company.addresses'] && Array.isArray(siteData['brand.company.addresses'])
     ? siteData['brand.company.addresses']
-    : ['Beijing', 'Shanghai', 'Shenzhen']) as string[];
+    : []) as string[];
 
-  // 联系信息走 env 注入, 没设时:email 兜底到 enterprise@opencsg.com,
-  // phone 不设则不显示该行(避免假电话 +86 400-xxx-xxxx)
+  // 联系信息走 env 注入,没设时不显示该行(避免硬编码邮箱/电话)
   const enterpriseEmail =
-    import.meta.env.VITE_PUBLIC_ENTERPRISE_EMAIL ?? 'enterprise@opencsg.com';
+    import.meta.env.VITE_PUBLIC_ENTERPRISE_EMAIL?.trim() ?? '';
   const enterprisePhone = import.meta.env.VITE_PUBLIC_ENTERPRISE_PHONE?.trim();
+
+  // Stats 标签 (CMS 优先,i18n 兜底,空字符串兜底)
+  const statActiveLearners = pickPage(entPages, 'stat.active_learners', 'zh-CN', t('company.stat.active_learners', ''));
+  const statTotalCourses = pickPage(entPages, 'stat.total_courses', 'zh-CN', t('company.stat.total_courses', ''));
+  const statTotalProjects = pickPage(entPages, 'stat.total_projects', 'zh-CN', t('company.stat.total_projects', ''));
+  const statTotalDegrees = pickPage(entPages, 'stat.total_degrees', 'zh-CN', t('company.stat.total_degrees', ''));
+
+  // 表单 label (CMS 优先,i18n 兜底,空字符串兜底)
+  const labelName = pickPage(entPages, 'form.name', 'zh-CN', t('company.contact.field.name', ''));
+  const labelEmail = pickPage(entPages, 'form.email', 'zh-CN', t('company.contact.field.email', ''));
+  const labelCompany = pickPage(entPages, 'form.company', 'zh-CN', t('company.contact.field.company', ''));
+  const labelPhone = pickPage(entPages, 'form.phone', 'zh-CN', t('company.contact.field.phone', ''));
+  const labelTeamSize = pickPage(entPages, 'form.team_size', 'zh-CN', t('company.contact.field.team_size', ''));
+  const labelTopic = pickPage(entPages, 'form.topic', 'zh-CN', t('company.contact.field.topic', ''));
+  const labelDescription = pickPage(entPages, 'form.description', 'zh-CN', t('company.contact.field.description', ''));
+
+  // 表单 placeholder
+  const placeholderTopic = pickPage(entPages, 'form.placeholder.topic', 'zh-CN', t('company.contact.topic.placeholder', ''));
+  const placeholderDescription = pickPage(entPages, 'form.placeholder.description', 'zh-CN', t('company.contact.form.desc', ''));
+
+  // 表单 section eyebrow — 不要硬编码 "/ 03 Inquiry",由 CMS 配
+  const formEyebrow = pickPage(entPages, 'inquiry.eyebrow.form', 'zh-CN', t('company.contact.form.eyebrow', '/ Inquiry'));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setSubmitting(true);
     try {
       await api.post('/api/v1/enterprise/inquiries', form);
       setSuccess(true);
       setForm(initialForm);
+      showToast(t('company.contact.success', '已收到您的咨询,我们会尽快联系您'), 'success', 4000);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? t('company.contact.error', '提交失败，请稍后再试'));
+      const msg = err?.response?.data?.message ?? t('company.contact.error', '提交失败，请稍后再试');
+      // P0 (audit 2026-07-24): 改用 showToast 跟全项目一致, 弃 inline 红条
+      showToast(msg, 'error', 4000);
     } finally {
       setSubmitting(false);
     }
@@ -260,10 +275,10 @@ export function EnterprisePage() {
       <section className="border-b border-[#171717] bg-white">
         <div className="grid grid-cols-2 md:grid-cols-4">
           {[
-            { num: formatStatNumber(stats?.activeLearners), label: '累计培训学员' },
-            { num: formatStatNumber(stats?.totalCourses), label: '系统化课程' },
-            { num: formatStatNumber(stats?.totalProjects), label: '已交付项目' },
-            { num: formatStatNumber(stats?.totalDegrees), label: '学位项目' },
+            { num: formatStatNumber(stats?.activeLearners), label: statActiveLearners },
+            { num: formatStatNumber(stats?.totalCourses), label: statTotalCourses },
+            { num: formatStatNumber(stats?.totalProjects), label: statTotalProjects },
+            { num: formatStatNumber(stats?.totalDegrees), label: statTotalDegrees },
           ].map((s, i) => (
             <div
               key={s.label}
@@ -388,15 +403,17 @@ export function EnterprisePage() {
             </p>
 
             <div className="space-y-4 border-t border-white/20 pt-8">
-              <div className="flex items-center gap-4 text-sm font-medium text-white/70">
-                <Mail className="w-4 h-4 text-white/50" />
-                <a
-                  href={`mailto:${enterpriseEmail}`}
-                  className="hover:text-white transition-colors underline underline-offset-4"
-                >
-                  {enterpriseEmail}
-                </a>
-              </div>
+              {enterpriseEmail ? (
+                <div className="flex items-center gap-4 text-sm font-medium text-white/70">
+                  <Mail className="w-4 h-4 text-white/50" />
+                  <a
+                    href={`mailto:${enterpriseEmail}`}
+                    className="hover:text-white transition-colors underline underline-offset-4"
+                  >
+                    {enterpriseEmail}
+                  </a>
+                </div>
+              ) : null}
               {enterprisePhone ? (
                 <div className="flex items-center gap-4 text-sm font-medium text-white/70">
                   <Phone className="w-4 h-4 text-white/50" />
@@ -409,10 +426,12 @@ export function EnterprisePage() {
                   <span>{t('company.address.placeholder', '电话可通过邮件联系获取')}</span>
                 </div>
               )}
-              <div className="flex items-center gap-4 text-sm font-medium text-white/70">
-                <Building2 className="w-4 h-4 text-white/50" />
-                <span>OpenCSG · {addressCities.join(' · ')}</span>
-              </div>
+              {addressCities.length > 0 ? (
+                <div className="flex items-center gap-4 text-sm font-medium text-white/70">
+                  <Building2 className="w-4 h-4 text-white/50" />
+                  <span>OpenCSG · {addressCities.join(' · ')}</span>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -437,20 +456,20 @@ export function EnterprisePage() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-6">
-                  / 03 Inquiry
+                  {formEyebrow}
                 </div>
                 <h3 className="text-3xl font-black tracking-tighter mb-8 break-words">{t('company.contact.form.title', '告诉我们你的需求')}</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field
-                    label="姓名"
+                    label={labelName}
                     icon={UserIcon}
                     value={form.name}
                     onChange={(v) => setForm({ ...form, name: v })}
                     required
                   />
                   <Field
-                    label="邮箱"
+                    label={labelEmail}
                     icon={Mail}
                     type="email"
                     value={form.email}
@@ -458,14 +477,14 @@ export function EnterprisePage() {
                     required
                   />
                   <Field
-                    label="公司"
+                    label={labelCompany}
                     icon={Building}
                     value={form.company}
                     onChange={(v) => setForm({ ...form, company: v })}
                     required
                   />
                   <Field
-                    label="电话"
+                    label={labelPhone}
                     icon={Phone}
                     value={form.phone}
                     onChange={(v) => setForm({ ...form, phone: v })}
@@ -474,10 +493,10 @@ export function EnterprisePage() {
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#666666] mb-2 block">
-                    团队规模
+                    {labelTeamSize}
                   </label>
                   <div className="flex flex-wrap border border-[#171717]">
-                    {TEAM_SIZES.map((size, i) => (
+                    {teamSizes.map((size, i) => (
                       <button
                         key={size}
                         type="button"
@@ -486,7 +505,7 @@ export function EnterprisePage() {
                           form.teamSize === size
                             ? 'bg-[#171717] text-white'
                             : 'bg-white text-[#171717] hover:bg-[#EEEDE9]'
-                        } ${i < TEAM_SIZES.length - 1 ? 'border-r border-[#171717]' : ''}`}
+                        } ${i < teamSizes.length - 1 ? 'border-r border-[#171717]' : ''}`}
                       >
                         {size}
                       </button>
@@ -495,33 +514,28 @@ export function EnterprisePage() {
                 </div>
 
                 <Field
-                  label="培训主题"
+                  label={labelTopic}
                   icon={Zap}
                   value={form.topic}
                   onChange={(v) => setForm({ ...form, topic: v })}
-                  placeholder="例：LLM 应用开发 / RAG 系统 / Agent 工程化"
+                  placeholder={placeholderTopic}
                   required
                 />
 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#666666] mb-2 block">
-                    详细描述
+                    {labelDescription}
                   </label>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     rows={4}
-                    placeholder="简单描述你的团队现状、痛点、想要达成的目标..."
+                    placeholder={placeholderDescription}
                     className="w-full px-4 py-3 bg-white border border-[#171717] text-sm focus:outline-none focus:bg-[#EEEDE9] focus:ring-2 focus:ring-[#171717] transition-colors resize-none"
                   />
                 </div>
 
-                {error && (
-                  <div className="px-4 py-3 border border-red-600 bg-red-50 text-red-700 text-sm">
-                    {error}
-                  </div>
-                )}
-
+                {/* P0 (audit 2026-07-24): 错误改走 showToast (上方), 删 inline 红条 */}
                 <button
                   type="submit"
                   disabled={submitting}
@@ -532,7 +546,7 @@ export function EnterprisePage() {
                 </button>
 
                 <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] flex items-center gap-2">
-                  <Sparkles className="w-3 h-3" /> AI Pre-fill supported in admin
+                  <Sparkles className="w-3 h-3" /> {t('company.contact.prefill.supported', 'AI Pre-fill supported in admin')}
                 </div>
               </form>
             )}

@@ -19,6 +19,7 @@ import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { Seo } from '../../components/Seo';
 import { Tabs, TabPanel } from '../../components/ui/Tabs';
 import { LazyImage } from '../../components/ui/LazyImage';
+import { QueryErrorState } from '../../components/QueryErrorState';
 
 const TABS = [
   { key: 'overview', label: '概览', icon: ScrollText },
@@ -31,10 +32,11 @@ export function HackathonDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
-  const { data: hackathon, isLoading } = useQuery<HackathonWithDetails>({
+  const { data: hackathon, isLoading, isError, error, refetch } = useQuery<HackathonWithDetails>({
     queryKey: ['hackathon', id],
     queryFn: () => hackathonsApi.getById(id!),
     enabled: !!id,
+    retry: 0,
   });
 
   const { data: announcements } = useQuery({
@@ -42,6 +44,20 @@ export function HackathonDetailPage() {
     queryFn: () => hackathonsApi.getAnnouncements(id!),
     enabled: !!id,
   });
+
+  // P0 (audit 2026-07-24): 区分"网络挂"和"找不到"
+  if (isError) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <QueryErrorState
+          error={error}
+          onRetry={() => refetch()}
+          title="无法加载黑客松详情"
+          description="请检查网络后重试"
+        />
+      </div>
+    );
+  }
 
   const formatDate = (d: Date | string) => new Date(d).toLocaleDateString('zh-CN');
 

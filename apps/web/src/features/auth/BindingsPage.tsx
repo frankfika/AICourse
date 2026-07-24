@@ -35,6 +35,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ProviderButtons } from '../../components/auth/ProviderButtons';
 import { useToast } from '../../components/auth/Toast';
 import { useAuth } from '../../lib/auth/AuthProvider';
@@ -105,6 +106,9 @@ export function BindingsPage() {
   const user = useAuthStore((s) => s.user);
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
+  // P0 (audit 2026-07-24): 改用 ConfirmDialog, 跟 OrdersPage / NotificationsPage
+  // 风格一致 (弃用 window.confirm — 不能 i18n, 不能定制 variant)
+  const [confirmUnbind, setConfirmUnbind] = useState<Identity | null>(null);
   const [params] = useSearchParams();
   // Demo 模式:有 ?demo=with-google 时,即使没真实 session 也渲染带 Google 的视图
   // 用于离线截图 / 视觉验证
@@ -161,9 +165,6 @@ export function BindingsPage() {
       showToast(t('auth.toast.local_primary', '本地账号是主登录,无法解绑'), 'warning');
       return;
     }
-    if (!window.confirm(`解绑 ${meta?.label ?? id.provider} 后,你将无法再用此账号登录。确定?`)) {
-      return;
-    }
     setBusyId(id.id);
     try {
       await unbindProvider(id.id);
@@ -179,6 +180,15 @@ export function BindingsPage() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  // ConfirmDialog 触发: 点"解绑"按钮只 setConfirmUnbind, 用户在弹层确认后才真解绑
+  const requestUnbind = (id: Identity) => {
+    if (id.provider === 'local') {
+      showToast(t('auth.toast.local_primary', '本地账号是主登录,无法解绑'), 'warning');
+      return;
+    }
+    setConfirmUnbind(id);
   };
 
   const handleBindClick = (_providerId: string, label: string) => {
@@ -287,7 +297,7 @@ export function BindingsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleUnbind(id)}
+                        onClick={() => requestUnbind(id)}
                         isLoading={busyId === id.id}
                         leftIcon={<Trash2 className="h-3.5 w-3.5" />}
                         className="text-danger-500 hover:bg-danger-100"
@@ -355,6 +365,26 @@ export function BindingsPage() {
           </Button>
         </div>
       </div>
+
+      {/* P0 (audit 2026-07-24): 二次确认走 ConfirmDialog 跟全项目一致 */}
+      <ConfirmDialog
+        open={!!confirmUnbind}
+        onClose={() => setConfirmUnbind(null)}
+        onConfirm={async () => {
+          if (confirmUnbind) await handleUnbind(confirmUnbind);
+        }}
+        title={t('auth.unbind.confirm_title', '确认解绑?')}
+        description={
+          confirmUnbind
+            ? t(
+                'auth.unbind.confirm_desc',
+                `解绑 ${providerMeta[confirmUnbind.provider]?.label ?? confirmUnbind.provider} 后,你将无法再用此账号登录。`,
+              )
+            : ''
+        }
+        variant="warning"
+        confirmText={t('auth.unbind.confirm_btn', '确认解绑')}
+      />
     </div>
   );
 }

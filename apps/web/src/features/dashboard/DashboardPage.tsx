@@ -48,6 +48,9 @@ import { progressApi } from '../../lib/progressApi';
 import { createEventBuffer, learningEventsApi } from '../../lib/learningEventsApi';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
+import { useToast } from '../../components/auth/Toast';
+import { useList } from '../../lib/cms';
 import { cn } from '../../lib/cn';
 
 // =============================================================
@@ -113,8 +116,9 @@ interface ChatMessage {
   challenge?: { title: string; description: string };
 }
 
-// AI 助教快捷提示 chips(纯 UI,不是数据 mock)
-const QUICK_PROMPTS = ['📌 解释这节课', '💡 ReAct vs CoT', '🧪 给个练习', '🛠️ 这段代码怎么改'];
+// AI 助教快捷提示 chips — 走 useList('quick-prompts') 拉 CMS 数据, 跟 admin 后台
+// (AdminSettingsPage ListCrudTab) 同步. hook 返空时退化为空数组, 不再硬编码占位.
+// P0 (audit 2026-07-24): 4 chip 之前 inline 硬编码, 投资人海外站改不了.
 
 // =============================================================
 // 工具函数
@@ -574,6 +578,9 @@ function AiAssistant({
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  // 快捷提示 — 走 useList('quick-prompts') 拉 CMS 数据, 跟 DashboardPage 同源
+  const { data: quickPromptsData } = useList<{ emoji: string; label: string; promptText: string }>('quick-prompts');
+  const quickPrompts: string[] = (quickPromptsData ?? []).map((p) => `${p.emoji} ${p.label}`);
 
   // P2:chat module 后端未建,目前是 placeholder UI。等后端 /api/v1/chat/sessions 上线后:
   //  - onSend POST /api/v1/chat/sessions
@@ -640,9 +647,9 @@ function AiAssistant({
         )}
       </div>
 
-      {/* 快捷提示 */}
+      {/* 快捷提示 — 走 useList('quick-prompts') 拉 CMS 数据, 投资人海外站改 chip 可改后台 */}
       <div className="px-4 py-2 border-b border-neutral-200 dark:border-neutral-200 flex gap-2 overflow-x-auto shrink-0">
-        {QUICK_PROMPTS.map((p) => (
+        {quickPrompts.map((p) => (
           <button
             key={p}
             onClick={() => handleQuick(p)}
@@ -751,6 +758,7 @@ function AiAssistant({
 // =============================================================
 export function DashboardPage() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   // 移动端顶部 tab 切换(大纲 / 视频 / AI)
   const [mobileTab, setMobileTab] = useState<'outline' | 'video' | 'ai'>('video');
@@ -768,6 +776,10 @@ export function DashboardPage() {
     },
     retry: 0,
   });
+
+  // 0) AI 助教快捷提示 — CMS 驱动, fallback 走 LIST_FALLBACK['quick-prompts']
+  const { data: quickPromptsData } = useList<{ emoji: string; label: string; promptText: string }>('quick-prompts');
+  const quickPrompts: string[] = (quickPromptsData ?? []).map((p) => `${p.emoji} ${p.label}`);
 
   // 2) 拉当前 in-progress 课程详情
   const courseQuery = useQuery({
@@ -825,6 +837,11 @@ export function DashboardPage() {
           /* noop */
         });
     },
+    onError: (err) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? '标记课时完成失败,请重试';
+      showToast(msg, 'error', 4000);
+    },
   });
 
   // 章节切换时,切到 video tab(mobile)
@@ -846,6 +863,28 @@ export function DashboardPage() {
   const isInitialLoading =
     coursesQuery.isLoading ||
     (!!coursesQuery.data?.[0]?.id && courseQuery.isLoading);
+
+  // 任意一个核心 query 失败 → 走 QueryErrorState (不要错把"错"显示成"还没有可学习的课程"空态)
+  const dashboardError =
+    coursesQuery.error || courseQuery.error || progressQuery.error;
+  const dashboardRefetch = () => {
+    coursesQuery.refetch();
+    courseQuery.refetch();
+    progressQuery.refetch();
+  };
+
+  if (dashboardError && !isInitialLoading) {
+    return (
+      <div className="h-[calc(100vh-3.5rem)] flex items-center justify-center">
+        <QueryErrorState
+          error={dashboardError}
+          onRetry={dashboardRefetch}
+          title="无法加载学习中心"
+          description="请检查网络后重试,或联系管理员"
+        />
+      </div>
+    );
+  }
 
   if (isInitialLoading) {
     return (

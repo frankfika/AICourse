@@ -24,6 +24,7 @@ import { certificatesApi } from '../../../lib/certificatesApi';
 import { useToast } from '../../../components/auth/Toast';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
+import { QueryErrorState } from '../../../components/QueryErrorState';
 import { cn } from '../../../lib/cn';
 
 const TYPE_LABEL: Record<CertificateType, string> = {
@@ -49,10 +50,11 @@ export function CertificateDetailPage() {
   const { showToast } = useToast();
   const certRef = useRef<HTMLDivElement>(null);
 
-  const { data: cert, isLoading } = useQuery({
+  const { data: cert, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['certificates', id],
     queryFn: () => certificatesApi.getCertificate(id),
     enabled: !!id,
+    retry: 0,
   });
 
   /**
@@ -85,6 +87,22 @@ export function CertificateDetailPage() {
         <div className="max-w-4xl mx-auto space-y-4">
           <Skeleton variant="text" className="h-8 w-1/3" />
           <Skeleton variant="rectangle" className="h-80 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // P0 (audit 2026-07-24): 区分"网络挂"和"找不到"
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 p-6">
+        <div className="max-w-4xl mx-auto">
+          <QueryErrorState
+            error={error}
+            onRetry={() => refetch()}
+            title="无法加载证书详情"
+            description="请检查网络后重试"
+          />
         </div>
       </div>
     );

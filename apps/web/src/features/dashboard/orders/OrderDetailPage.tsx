@@ -26,6 +26,7 @@ import { useToast } from '../../../components/auth/Toast';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { Card } from '../../../components/ui/Card';
 import { LazyImage } from '../../../components/ui/LazyImage';
+import { QueryErrorState } from '../../../components/QueryErrorState';
 import type { OrderStatus, OrderType } from '@opencsg/shared-types';
 import { cn } from '../../../lib/cn';
 import { useEnum } from '../../../lib/cms';
@@ -65,10 +66,11 @@ export function OrderDetailPage() {
   const queryClient = useQueryClient();
   const { getLabel, getColor } = useEnum('order_status');
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['orders', id],
     queryFn: () => ordersApi.get(id),
     enabled: !!id,
+    retry: 0,
   });
 
   const payMutation = useMutation({
@@ -105,6 +107,22 @@ export function OrderDetailPage() {
           <Skeleton variant="text" className="h-8 w-1/3" />
           <Skeleton variant="rectangle" className="h-40 w-full" />
           <Skeleton variant="rectangle" className="h-32 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // P0 (audit 2026-07-24): 区分"网络挂"和"找不到"
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 p-6">
+        <div className="max-w-4xl mx-auto">
+          <QueryErrorState
+            error={error}
+            onRetry={() => refetch()}
+            title="无法加载订单详情"
+            description="请检查网络后重试"
+          />
         </div>
       </div>
     );

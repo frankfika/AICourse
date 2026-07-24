@@ -56,6 +56,10 @@ export class CoursesReviewsController {
   @Post(':id/reviews')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  // P0 (audit v1.5.0 P2-1): 写评价靠全局 5/sec 兜底太松, 攻击者 1 凭证可 5 req/sec
+  // 刷评价. 对比 :79 helpful 已加 medium 10/60s, POST 反而更危险却不限流.
+  // 改: 短窗 1/3s 防双击, 中窗 10/60s 限制刷评价速率
+  @Throttle({ short: { limit: 1, ttl: 3000 }, medium: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: '写课程评价（登录用户）' })
   @ApiParam({ name: 'id', description: '课程ID' })
   async create(

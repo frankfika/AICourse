@@ -135,7 +135,9 @@ export function NotFoundPage() {
                   showIcon={false}
                   ariaLabel={cat.en}
                 >
-                  <span className="text-xs">{cat.label}</span>
+                  <span className="text-xs">
+                    <I18nText k={`error.404.hot.${cat.key}.label`} default={cat.label} />
+                  </span>
                 </ActionButton>
               ))}
             </div>

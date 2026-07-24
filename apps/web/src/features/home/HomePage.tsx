@@ -279,7 +279,7 @@ function CoursesSection() {
                     className={`aspect-video ${getCourseCoverBg(course.tags)} relative flex items-end p-4`}
                   >
                     <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
-                      {course.tags || 'LLM 应用'}
+                      {course.tags || t('home.course.tag_fallback', 'LLM 应用')}
                     </span>
                     <span className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-cert-500 text-white font-medium">
                       {course.level}
@@ -756,6 +756,8 @@ function InstructorsSection() {
   const instructors: Instructor[] = useMemo(() => {
     if (!courses) return [];
     const seen = new Set<string>();
+    // 4 宫格讲师 cover 色板 — 走 OpenCSG 品牌色 token (#171717 / #262626)
+    // (设计 token, 不通过 CMS 配; 跟 .archive 暗色化 token 体系一致)
     const palette = [
       { cover: 'bg-[#171717]' },
       { cover: 'bg-[#262626]' },
@@ -771,7 +773,8 @@ function InstructorsSection() {
       result.push({
         id: `i-${name}`,
         name,
-        title: '课程讲师', // 后端目前没有 instructor.title 字段,统一占位
+        // P0 (audit 2026-07-24): 改 useI18n, 投资人海外站改占位文案可走 i18n message
+        title: t('home.instructor.title_fallback', '课程讲师'),
         initials: name.charAt(0),
         cover: palette[result.length].cover,
       });

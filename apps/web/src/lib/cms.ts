@@ -608,6 +608,13 @@ export const LIST_FALLBACK: Record<ListResource, any[]> = {
     { label: '黑客松', path: '/hackathons' },
     { label: '企业培训', path: '/enterprise' },
   ],
+  'team-sizes': [
+    { label: '1-10' },
+    { label: '11-50' },
+    { label: '51-200' },
+    { label: '201-1000' },
+    { label: '1000+' },
+  ],
   'footer-columns': [
     {
       title: '学习',
@@ -745,6 +752,12 @@ export const I18N_FALLBACK: Record<string, string> = {
   'company.contact.field.team_size': '团队规模',
   'company.contact.field.topic': '培训主题',
   'company.contact.field.description': '详细描述',
+  'company.contact.form.eyebrow': '/ Inquiry',
+  'company.contact.prefill.supported': 'AI Pre-fill supported in admin',
+  'company.stat.active_learners': '累计培训学员',
+  'company.stat.total_courses': '系统化课程',
+  'company.stat.total_projects': '已交付项目',
+  'company.stat.total_degrees': '学位项目',
   'company.contact.submit': '提交咨询',
   'company.contact.submitting': '提交中...',
   'company.contact.success.title': '收到!',

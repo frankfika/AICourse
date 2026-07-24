@@ -13,8 +13,14 @@
  *
  * enum-translations 主键是组合 (enumType, enumValue, locale), 路径用复合 ID
  *   即 :id 形式为 "course_level:Beginner:zh-CN", 拆分后调 service.
+ *
+ * P0-1 2026-07-24: 22 个 createX/updateX endpoint 改用 class-validator DTO
+ *   (cms-admin.dto.ts), 删掉 `as never` 强转. valueJson / config 跑
+ *   validateJsonValue + assertJsonSize; topNav.path / footer.link.path 跑
+ *   assertSafeNavPath (拒 javascript: / data: / vbscript: / 协议相对).
  */
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -34,6 +40,41 @@ import { CmsEnumService } from './cms-enum.service';
 import { CmsConfigService } from './cms-config.service';
 import { CmsContentService } from './cms-content.service';
 import { CmsI18nService } from './cms-i18n.service';
+import { assertSafeNavPath } from './cms-admin.dto';
+import {
+  CreateAppSettingDto,
+  UpdateAppSettingDto,
+  CreateSiteSettingDto,
+  UpdateSiteSettingDto,
+  CreatePageSettingDto,
+  UpdatePageSettingDto,
+  CreateDateFormatTemplateDto,
+  UpdateDateFormatTemplateDto,
+  CreateEnumTranslationDto,
+  UpdateEnumTranslationDto,
+  CreateIndustryDto,
+  UpdateIndustryDto,
+  CreateEnterpriseMethodDto,
+  UpdateEnterpriseMethodDto,
+  CreateTestimonialDto,
+  UpdateTestimonialDto,
+  CreateQuickPromptDto,
+  UpdateQuickPromptDto,
+  CreateCourseCategoryDto,
+  UpdateCourseCategoryDto,
+  CreatePopularSearchDto,
+  UpdatePopularSearchDto,
+  CreateHotKeywordDto,
+  UpdateHotKeywordDto,
+  CreateAuthProviderDto,
+  UpdateAuthProviderDto,
+  CreateTopNavItemDto,
+  UpdateTopNavItemDto,
+  CreateFooterColumnDto,
+  UpdateFooterColumnDto,
+  CreateI18nMessageDto,
+  UpdateI18nMessageDto,
+} from './cms-admin.dto';
 
 @ApiTags('cms-admin')
 @ApiBearerAuth()
@@ -58,33 +99,22 @@ export class CmsAdminController {
 
   @Post('app-settings')
   @ApiOperation({ summary: 'Admin: 创建 app_setting' })
-  createAppSetting(
-    @Body()
-    body: {
-      key: string;
-      valueJson: unknown;
-      scope?: string;
-      description?: string;
-    },
-  ) {
+  createAppSetting(@Body() dto: CreateAppSettingDto) {
     return this.cmsConfigService.createAppSetting({
-      key: body.key,
-      valueJson: body.valueJson as never,
-      scope: body.scope,
-      description: body.description,
+      key: dto.key,
+      valueJson: dto.valueJson as never,
+      scope: dto.scope,
+      description: dto.description,
     });
   }
 
   @Patch('app-settings/:key')
   @ApiOperation({ summary: 'Admin: 更新 app_setting' })
-  updateAppSetting(
-    @Param('key') key: string,
-    @Body() body: { valueJson?: unknown; scope?: string; description?: string },
-  ) {
+  updateAppSetting(@Param('key') key: string, @Body() dto: UpdateAppSettingDto) {
     return this.cmsConfigService.updateAppSetting(key, {
-      valueJson: body.valueJson as never,
-      scope: body.scope,
-      description: body.description,
+      valueJson: dto.valueJson as never,
+      scope: dto.scope,
+      description: dto.description,
     });
   }
 
@@ -108,29 +138,31 @@ export class CmsAdminController {
 
   @Post('enum-translations')
   @ApiOperation({ summary: 'Admin: 创建 enum_translation' })
-  createEnumTranslation(
-    @Body()
-    body: {
-      enumType: string;
-      enumValue: string;
-      locale: string;
-      label: string;
-      colorClass?: string;
-      icon?: string;
-      sortOrder?: number;
-    },
-  ) {
-    return this.cmsEnumService.createEnumTranslation(body);
+  createEnumTranslation(@Body() dto: CreateEnumTranslationDto) {
+    return this.cmsEnumService.createEnumTranslation({
+      enumType: dto.enumType,
+      enumValue: dto.enumValue,
+      locale: dto.locale,
+      label: dto.label,
+      colorClass: dto.colorClass,
+      icon: dto.icon,
+      sortOrder: dto.sortOrder,
+    });
   }
 
   @Patch('enum-translations/:id')
   @ApiOperation({ summary: 'Admin: 更新 enum_translation' })
   updateEnumTranslation(
     @Param('id') id: string,
-    @Body() body: { label?: string; colorClass?: string; icon?: string; sortOrder?: number },
+    @Body() dto: UpdateEnumTranslationDto,
   ) {
     const [enumType, enumValue, locale] = id.split(':');
-    return this.cmsEnumService.updateEnumTranslation(enumType, enumValue, locale, body);
+    return this.cmsEnumService.updateEnumTranslation(enumType, enumValue, locale, {
+      label: dto.label,
+      colorClass: dto.colorClass,
+      icon: dto.icon,
+      sortOrder: dto.sortOrder,
+    });
   }
 
   @Delete('enum-translations/:id')
@@ -150,20 +182,24 @@ export class CmsAdminController {
 
   @Post('date-format-templates')
   @ApiOperation({ summary: 'Admin: 创建 date_format_template' })
-  createDateFormatTemplate(
-    @Body() body: { scope: string; locale: string; template: string },
-  ) {
-    return this.cmsEnumService.createDateFormatTemplate(body);
+  createDateFormatTemplate(@Body() dto: CreateDateFormatTemplateDto) {
+    return this.cmsEnumService.createDateFormatTemplate({
+      scope: dto.scope,
+      locale: dto.locale,
+      template: dto.template,
+    });
   }
 
   @Patch('date-format-templates/:id')
   @ApiOperation({ summary: 'Admin: 更新 date_format_template' })
   updateDateFormatTemplate(
     @Param('id') id: string,
-    @Body() body: { template: string },
+    @Body() dto: UpdateDateFormatTemplateDto,
   ) {
     const [scope, locale] = id.split(':');
-    return this.cmsEnumService.updateDateFormatTemplate(scope, locale, body);
+    return this.cmsEnumService.updateDateFormatTemplate(scope, locale, {
+      template: dto.template,
+    });
   }
 
   @Delete('date-format-templates/:id')
@@ -183,27 +219,22 @@ export class CmsAdminController {
 
   @Post('site-settings')
   @ApiOperation({ summary: 'Admin: 创建 site_setting' })
-  createSiteSetting(
-    @Body() body: { key: string; value: unknown; scope?: string; description?: string },
-  ) {
+  createSiteSetting(@Body() dto: CreateSiteSettingDto) {
     return this.cmsConfigService.createSiteSetting({
-      key: body.key,
-      value: body.value as never,
-      scope: body.scope,
-      description: body.description,
+      key: dto.key,
+      value: dto.valueJson as never,
+      scope: dto.scope,
+      description: dto.description,
     });
   }
 
   @Patch('site-settings/:key')
   @ApiOperation({ summary: 'Admin: 更新 site_setting' })
-  updateSiteSetting(
-    @Param('key') key: string,
-    @Body() body: { value?: unknown; scope?: string; description?: string },
-  ) {
+  updateSiteSetting(@Param('key') key: string, @Body() dto: UpdateSiteSettingDto) {
     return this.cmsConfigService.updateSiteSetting(key, {
-      value: body.value as never,
-      scope: body.scope,
-      description: body.description,
+      value: dto.valueJson as never,
+      scope: dto.scope,
+      description: dto.description,
     });
   }
 
@@ -223,14 +254,12 @@ export class CmsAdminController {
 
   @Post('page-settings')
   @ApiOperation({ summary: 'Admin: 创建 page_setting' })
-  createPageSetting(
-    @Body() body: { page: string; key: string; value: unknown; description?: string },
-  ) {
+  createPageSetting(@Body() dto: CreatePageSettingDto) {
     return this.cmsConfigService.createPageSetting({
-      page: body.page,
-      key: body.key,
-      value: body.value as never,
-      description: body.description,
+      page: dto.page,
+      key: dto.key,
+      value: dto.valueJson as never,
+      description: dto.description,
     });
   }
 
@@ -238,12 +267,12 @@ export class CmsAdminController {
   @ApiOperation({ summary: 'Admin: 更新 page_setting' })
   updatePageSetting(
     @Param('id') id: string,
-    @Body() body: { value?: unknown; description?: string },
+    @Body() dto: UpdatePageSettingDto,
   ) {
     const [page, key] = id.split(':');
     return this.cmsConfigService.updatePageSetting(page, key, {
-      value: body.value as never,
-      description: body.description,
+      value: dto.valueJson as never,
+      description: dto.description,
     });
   }
 
@@ -264,14 +293,14 @@ export class CmsAdminController {
 
   @Post('industries')
   @ApiOperation({ summary: 'Admin: 创建 industry' })
-  createIndustry(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createIndustry(body as never);
+  createIndustry(@Body() dto: CreateIndustryDto) {
+    return this.cmsContentService.createIndustry(dto as never);
   }
 
   @Patch('industries/:id')
   @ApiOperation({ summary: 'Admin: 更新 industry' })
-  updateIndustry(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateIndustry(id, body as never);
+  updateIndustry(@Param('id') id: string, @Body() dto: UpdateIndustryDto) {
+    return this.cmsContentService.updateIndustry(id, dto as never);
   }
 
   @Delete('industries/:id')
@@ -290,14 +319,14 @@ export class CmsAdminController {
 
   @Post('enterprise-methods')
   @ApiOperation({ summary: 'Admin: 创建 enterprise_method' })
-  createEnterpriseMethod(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createEnterpriseMethod(body as never);
+  createEnterpriseMethod(@Body() dto: CreateEnterpriseMethodDto) {
+    return this.cmsContentService.createEnterpriseMethod(dto as never);
   }
 
   @Patch('enterprise-methods/:id')
   @ApiOperation({ summary: 'Admin: 更新 enterprise_method' })
-  updateEnterpriseMethod(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateEnterpriseMethod(id, body as never);
+  updateEnterpriseMethod(@Param('id') id: string, @Body() dto: UpdateEnterpriseMethodDto) {
+    return this.cmsContentService.updateEnterpriseMethod(id, dto as never);
   }
 
   @Delete('enterprise-methods/:id')
@@ -316,14 +345,14 @@ export class CmsAdminController {
 
   @Post('testimonials')
   @ApiOperation({ summary: 'Admin: 创建 testimonial' })
-  createTestimonial(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createTestimonial(body as never);
+  createTestimonial(@Body() dto: CreateTestimonialDto) {
+    return this.cmsContentService.createTestimonial(dto as never);
   }
 
   @Patch('testimonials/:id')
   @ApiOperation({ summary: 'Admin: 更新 testimonial' })
-  updateTestimonial(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateTestimonial(id, body as never);
+  updateTestimonial(@Param('id') id: string, @Body() dto: UpdateTestimonialDto) {
+    return this.cmsContentService.updateTestimonial(id, dto as never);
   }
 
   @Delete('testimonials/:id')
@@ -342,14 +371,14 @@ export class CmsAdminController {
 
   @Post('quick-prompts')
   @ApiOperation({ summary: 'Admin: 创建 quick_prompt' })
-  createQuickPrompt(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createQuickPrompt(body as never);
+  createQuickPrompt(@Body() dto: CreateQuickPromptDto) {
+    return this.cmsContentService.createQuickPrompt(dto as never);
   }
 
   @Patch('quick-prompts/:id')
   @ApiOperation({ summary: 'Admin: 更新 quick_prompt' })
-  updateQuickPrompt(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateQuickPrompt(id, body as never);
+  updateQuickPrompt(@Param('id') id: string, @Body() dto: UpdateQuickPromptDto) {
+    return this.cmsContentService.updateQuickPrompt(id, dto as never);
   }
 
   @Delete('quick-prompts/:id')
@@ -368,14 +397,14 @@ export class CmsAdminController {
 
   @Post('course-categories')
   @ApiOperation({ summary: 'Admin: 创建 course_category' })
-  createCourseCategory(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createCourseCategory(body as never);
+  createCourseCategory(@Body() dto: CreateCourseCategoryDto) {
+    return this.cmsContentService.createCourseCategory(dto as never);
   }
 
   @Patch('course-categories/:id')
   @ApiOperation({ summary: 'Admin: 更新 course_category' })
-  updateCourseCategory(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateCourseCategory(id, body as never);
+  updateCourseCategory(@Param('id') id: string, @Body() dto: UpdateCourseCategoryDto) {
+    return this.cmsContentService.updateCourseCategory(id, dto as never);
   }
 
   @Delete('course-categories/:id')
@@ -394,14 +423,14 @@ export class CmsAdminController {
 
   @Post('popular-searches')
   @ApiOperation({ summary: 'Admin: 创建 popular_search' })
-  createPopularSearch(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createPopularSearch(body as never);
+  createPopularSearch(@Body() dto: CreatePopularSearchDto) {
+    return this.cmsContentService.createPopularSearch(dto as never);
   }
 
   @Patch('popular-searches/:id')
   @ApiOperation({ summary: 'Admin: 更新 popular_search' })
-  updatePopularSearch(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updatePopularSearch(id, body as never);
+  updatePopularSearch(@Param('id') id: string, @Body() dto: UpdatePopularSearchDto) {
+    return this.cmsContentService.updatePopularSearch(id, dto as never);
   }
 
   @Delete('popular-searches/:id')
@@ -420,14 +449,14 @@ export class CmsAdminController {
 
   @Post('hot-keywords')
   @ApiOperation({ summary: 'Admin: 创建 hot_keyword' })
-  createHotKeyword(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createHotKeyword(body as never);
+  createHotKeyword(@Body() dto: CreateHotKeywordDto) {
+    return this.cmsContentService.createHotKeyword(dto as never);
   }
 
   @Patch('hot-keywords/:id')
   @ApiOperation({ summary: 'Admin: 更新 hot_keyword' })
-  updateHotKeyword(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateHotKeyword(id, body as never);
+  updateHotKeyword(@Param('id') id: string, @Body() dto: UpdateHotKeywordDto) {
+    return this.cmsContentService.updateHotKeyword(id, dto as never);
   }
 
   @Delete('hot-keywords/:id')
@@ -446,14 +475,14 @@ export class CmsAdminController {
 
   @Post('auth-providers')
   @ApiOperation({ summary: 'Admin: 创建 auth_provider' })
-  createAuthProvider(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createAuthProvider(body as never);
+  createAuthProvider(@Body() dto: CreateAuthProviderDto) {
+    return this.cmsContentService.createAuthProvider(dto as never);
   }
 
   @Patch('auth-providers/:id')
   @ApiOperation({ summary: 'Admin: 更新 auth_provider' })
-  updateAuthProvider(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateAuthProvider(id, body as never);
+  updateAuthProvider(@Param('id') id: string, @Body() dto: UpdateAuthProviderDto) {
+    return this.cmsContentService.updateAuthProvider(id, dto as never);
   }
 
   @Delete('auth-providers/:id')
@@ -472,14 +501,16 @@ export class CmsAdminController {
 
   @Post('top-nav')
   @ApiOperation({ summary: 'Admin: 创建 top_nav_item' })
-  createTopNavItem(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createTopNavItem(body as never);
+  createTopNavItem(@Body() dto: CreateTopNavItemDto) {
+    assertSafeNavPath(dto.path, 'path');
+    return this.cmsContentService.createTopNavItem(dto as never);
   }
 
   @Patch('top-nav/:id')
   @ApiOperation({ summary: 'Admin: 更新 top_nav_item' })
-  updateTopNavItem(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateTopNavItem(id, body as never);
+  updateTopNavItem(@Param('id') id: string, @Body() dto: UpdateTopNavItemDto) {
+    if (dto.path !== undefined) assertSafeNavPath(dto.path, 'path');
+    return this.cmsContentService.updateTopNavItem(id, dto as never);
   }
 
   @Delete('top-nav/:id')
@@ -498,14 +529,16 @@ export class CmsAdminController {
 
   @Post('footer-columns')
   @ApiOperation({ summary: 'Admin: 创建 footer_column' })
-  createFooterColumn(@Body() body: Record<string, unknown>) {
-    return this.cmsContentService.createFooterColumn(body as never);
+  createFooterColumn(@Body() dto: CreateFooterColumnDto) {
+    dto.links?.forEach((link, i) => assertSafeNavPath(link.path, `links[${i}].path`));
+    return this.cmsContentService.createFooterColumn(dto as never);
   }
 
   @Patch('footer-columns/:id')
   @ApiOperation({ summary: 'Admin: 更新 footer_column' })
-  updateFooterColumn(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.cmsContentService.updateFooterColumn(id, body as never);
+  updateFooterColumn(@Param('id') id: string, @Body() dto: UpdateFooterColumnDto) {
+    dto.links?.forEach((link, i) => assertSafeNavPath(link.path, `links[${i}].path`));
+    return this.cmsContentService.updateFooterColumn(id, dto as never);
   }
 
   @Delete('footer-columns/:id')
@@ -527,18 +560,21 @@ export class CmsAdminController {
 
   @Post('i18n/messages')
   @ApiOperation({ summary: 'Admin: 创建 i18n_message' })
-  createI18nMessage(@Body() body: Record<string, unknown>) {
-    return this.cmsI18nService.createMessage(body as never);
+  createI18nMessage(@Body() dto: CreateI18nMessageDto) {
+    return this.cmsI18nService.createMessage(dto as never);
   }
 
   @Patch('i18n/messages/:id')
   @ApiOperation({ summary: 'Admin: 更新 i18n_message' })
   updateI18nMessage(
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @Body() dto: UpdateI18nMessageDto,
   ) {
     const [key, locale] = id.split(':');
-    return this.cmsI18nService.updateMessage(key, locale, body as never);
+    if (!key || !locale) {
+      throw new BadRequestException('i18n message id must be "key:locale"');
+    }
+    return this.cmsI18nService.updateMessage(key, locale, dto as never);
   }
 
   @Delete('i18n/messages/:id')

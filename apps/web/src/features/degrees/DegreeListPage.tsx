@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { BookOpen, GraduationCap, Sparkles, ArrowUpRight } from 'lucide-react';
 import { Seo } from '../../components/Seo';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import api from '../../lib/api';
 import type { NanoDegreeWithPath } from '@opencsg/shared-types';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
@@ -9,12 +11,13 @@ import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
 
 export function DegreeListPage() {
-  const { data: degrees, isLoading } = useQuery({
+  const { data: degrees, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['degrees'],
     queryFn: async () => {
       const { data } = await api.get<NanoDegreeWithPath[]>('/api/v1/degrees');
       return data;
     },
+    retry: 0,
   });
 
   // CMS-driven copy
@@ -60,9 +63,26 @@ export function DegreeListPage() {
 
       {/* Degrees list */}
       <section className="border-b border-[#171717]">
-        {isLoading ? (
+        {isError ? (
+          <div className="max-w-7xl mx-auto px-6 py-32">
+            <QueryErrorState
+              error={error}
+              onRetry={() => refetch()}
+              title="无法加载学位列表"
+              description="请检查网络后重试"
+            />
+          </div>
+        ) : isLoading ? (
           <div className="max-w-7xl mx-auto px-6 py-32 text-center text-[#666666] font-medium">
             {t('common.loading', '加载中...')}
+          </div>
+        ) : (degrees?.length ?? 0) === 0 ? (
+          <div className="max-w-7xl mx-auto px-6 py-32">
+            <EmptyState
+              icon={<GraduationCap className="w-5 h-5" />}
+              title={t('degree.empty.title', '暂无学位')}
+              description={t('degree.empty.sub', '学位项目即将上线,敬请期待')}
+            />
           </div>
         ) : (
           <div>
@@ -131,14 +151,14 @@ export function DegreeListPage() {
                     {/* Stats column */}
                     <div className="lg:col-span-3 p-8 border-b lg:border-b-0 lg:border-r border-[#171717] flex flex-col justify-center gap-3">
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
-                        <BookOpen className="w-3 h-3" /> {degree.stats.courseCount} Courses
+                        <BookOpen className="w-3 h-3" /> {degree.stats.courseCount} {t('degree.stats.courses', 'Courses')}
                       </div>
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
-                        <GraduationCap className="w-3 h-3" /> {degree.stats.totalChapters} Chapters
+                        <GraduationCap className="w-3 h-3" /> {degree.stats.totalChapters} {t('degree.stats.chapters', 'Chapters')}
                       </div>
                       <div className="text-3xl font-black tracking-tighter">
                         {degree.stats.estimatedHours}
-                        <span className="text-sm text-[#666666] ml-1">小时</span>
+                        <span className="text-sm text-[#666666] ml-1">{t('degree.stats.hours', '小时')}</span>
                       </div>
                     </div>
 

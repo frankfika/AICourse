@@ -18,7 +18,7 @@
  */
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon, Bell, ShoppingBag } from 'lucide-react';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme, useThemeStore } from '../../stores/themeStore';
 import { pointsApi } from '../../lib/pointsApi';
@@ -42,7 +42,7 @@ export function DashboardLayout() {
   const onLearning = location.pathname.includes('/learning');
 
   // 课程名: 优先用 URL 的 courseId 拿, 否则拉最近一个 enrollment
-  const { data: courseFromUrl } = useQuery({
+  const { data: courseFromUrl, error: courseFromUrlError } = useQuery({
     queryKey: ['course', params.courseId],
     queryFn: async () => {
       if (!params.courseId) return null;
@@ -51,9 +51,16 @@ export function DashboardLayout() {
     },
     enabled: !!params.courseId,
     staleTime: 60_000,
+    retry: 1,
   });
+  useEffect(() => {
+    if (courseFromUrlError) {
+      // eslint-disable-next-line no-console
+      console.warn('[DashboardLayout] courseFromUrl failed:', courseFromUrlError);
+    }
+  }, [courseFromUrlError]);
 
-  const { data: myEnrollments } = useQuery({
+  const { data: myEnrollments, error: enrollmentsError } = useQuery({
     queryKey: ['home', 'my-enrollment', user?.id],
     queryFn: async () => {
       const { data } = await api.get<Array<{ course: { id: string; title: string } | null }>>(
@@ -63,23 +70,44 @@ export function DashboardLayout() {
     },
     enabled: !!user && !params.courseId,
     staleTime: 60_000,
+    retry: 1,
   });
+  useEffect(() => {
+    if (enrollmentsError) {
+      // eslint-disable-next-line no-console
+      console.warn('[DashboardLayout] myEnrollments failed:', enrollmentsError);
+    }
+  }, [enrollmentsError]);
 
   // 课程进度: 来自 progressApi (只在选了课的 context 用)
-  const { data: courseProgress } = useQuery({
+  const { data: courseProgress, error: courseProgressError } = useQuery({
     queryKey: ['progress', 'course', params.courseId, user?.id],
     queryFn: () => progressApi.getCourseProgress(params.courseId!),
     enabled: !!user && !!params.courseId,
     staleTime: 30_000,
+    retry: 1,
   });
+  useEffect(() => {
+    if (courseProgressError) {
+      // eslint-disable-next-line no-console
+      console.warn('[DashboardLayout] courseProgress failed:', courseProgressError);
+    }
+  }, [courseProgressError]);
 
   // 积分 + 等级
-  const { data: userPoints } = useQuery({
+  const { data: userPoints, error: userPointsError } = useQuery({
     queryKey: ['points', 'me', user?.id],
     queryFn: () => pointsApi.getMyPoints(),
     enabled: !!user,
     staleTime: 30_000,
+    retry: 1,
   });
+  useEffect(() => {
+    if (userPointsError) {
+      // eslint-disable-next-line no-console
+      console.warn('[DashboardLayout] userPoints failed:', userPointsError);
+    }
+  }, [userPointsError]);
 
   // 推导标题: 优先 URL > 最近 enrollment > 学习中心
   const courseTitle = courseFromUrl?.title
