@@ -1,8 +1,8 @@
 # OpenCSG Academy
 
-> **v1.5.0** (2026-07-23) — CMS 化重构(16 表 + 5 controller + 13 tab AdminSettings) + Auth hard reload 修 + Hackathon 极简化
+> **v1.5.1** (2026-07-24) — 维护 release:3 audit 修复 (安全 + UX + 死代码/mockup) + 5 张表 scope String→enum 落地 + 22 处零硬编码
 >
-> 30+ 处硬编码清零 · 141 测试 0 fail (106 jest + 35 vitest) · 0 tsc / 0 build 错
+> 253 测试 0 fail (154 api jest + 99 web vitest) · 0 tsc / 0 nest build 错 · dev 跑通 (vite 5500 + api 8080)
 
 OpenCSG Academy 是一个现代化的在线教育平台，专注于 AI 和大模型技术培训。
 
@@ -129,7 +129,7 @@ pnpm dev:web
 
 ### 6. 访问应用
 
-- 前端：http://localhost:5500(Vite 默认 3000,本地 5500)
+- 前端：http://localhost:5500 (Vite 锁定 5500, 见 `apps/web/vite.config.ts` server.port)
 - 后端 API：http://localhost:8080/api
 - API 文档(Swagger)：http://localhost:8080/api/docs
 - Prisma Studio：`pnpm db:studio`
@@ -529,10 +529,71 @@ v1.5.0 起,**投资人/客户外部看到的所有内容**(文案 / 枚举 / 列
 
 ---
 
+## 🔧 v1.5.1 维护 release(2026-07-24)
+
+3 audit agent 并行跑 (`security-audit-round2.md` / `ux-audit-2026-07-24.md` / 死代码 mockup), 找出 5 新 P0 + 4 v1.5.0 待修 + 22 零硬编码违反. 全修 + push (3 commit: `8f1da3a` / `b4fb90c` / `0cb3c32`)。
+
+### P0 安全 (2 新)
+
+- **cms-admin 22 端点 DTO 校验** — `apps/api/src/modules/cms/cms-admin.dto.ts` (12 resource × 2 DTO + FooterLinkDto + `assertSafeNavPath` + `TransformJsonField`)。`valueJson` / `authProvider.config` 走 `validateJsonValue` + `assertJsonSize` 防 DoS (≤64KB, depth ≤10, 拒 Date/循环引用)。`topNav.path` / `footer.links[].path` 走 `safeNavPath` 白名单 (拒 `javascript:` / `data:` / `vbscript:` / 协议相对 URL, 跟前端 `safeNavPath()` 一致)。
+- **uploads sign / complete 限流** — `@Throttle({ short: 3/10s + medium: 60/60s })` for sign, `short: 10/1s + medium: 120/60s` for complete。1 user 凭证不再能刷 presigned URL 灌存储账单。
+
+### P0 UX (3)
+
+- **`__design-system` 路由包 `import.meta.env.DEV` 三元** — 投资人直链 `/__design-system` 不再能看到内部色板 (与 `ErrorDemoPage` 守卫一致)。
+- **`DashboardPage` 3 useQuery 加 `isError` 分支** + `completeLessonMutation` 加 `onError` toast (line 16 注释 vs 870 实际矛盾修了)。
+- **`VerifyCertificatePage` 公开证书验证加 `isError`** — 网络挂不再错显示"未找到证书" (第三方验证场景致命)。
+
+### P0 UX 错误态 (扩展 5 个 page)
+
+`DashboardLayout` 4× useQuery 加 retry + warn / `HackathonDetailPage` / `DegreeListPage` (+ EmptyState) / `OrderDetailPage` / `CertificateDetailPage` 加 `isError` 分支, 7 个 page 全用 `QueryErrorState` 统一错态, 跟已有 6 个 page pattern 一致。
+
+### P1 死代码清理
+
+- 删 `CoursePracticesTab.tsx` (296 行, 0 引用真死)
+- `notification service` sendgrid/ses stub 改 console + warn (P1-8 邮件 P2 重做, Frank "不留 stub" 硬约束落地)
+- `BindingsPage` 弃 `window.confirm` 改 `<ConfirmDialog>` (跟 OrdersPage 一致, 可 i18n)
+- `EnterprisePage` inline 错误红条 → `useToast()` (跟全项目一致)
+
+### v1.5.0 6 待修 (5 修了, 1 大改)
+
+- ✅ **P1-1** `HotKeyword.keyword` `@unique`
+- ✅ **P1-3** `EnterpriseMethod.num` `@unique`
+- ✅ **P1-4** AI `sanitize` 扩 `system:` / `<|im_start|>` / `[INST]` / `<<SYS>>` 关键标识 (防 prompt role hijack)
+- ✅ **P2-1** Reviews POST `@Throttle` (1/3s + 10/60s, 防刷评价)
+- ✅ **P2-2** learning-events createOne `@Throttle` (5/1s + 60/60s)
+- ✅ **P1-2** 5 张表 `scope String→enum` (AppSettingScope / SiteSettingScope / DateFormatTemplateScope / QuickPromptScope / HotKeywordScope), `prisma db push` 同步, 154 行 schema diff
+
+### 22 零硬编码违反清理
+
+- `EnterprisePage` 11 处 (sub-agent 跑): `TEAM_SIZES` / 8 行业宫格 / 3 步法 / 4 stat label / 7 form label / 2 placeholder / 3 地址 / email fallback / `'/ 03 Inquiry'` 硬编号 全部走 `usePageSettings` / `useList` / `useI18n` / `LIST_FALLBACK`
+- 其他 11 处: `HomePage` 2 / `CourseListPage` 2 + 1 stale 注释 / `DegreeListPage` 3 stat / `DashboardPage` QUICK_PROMPTS / `NotFoundPage` HOT_CATEGORIES / `ForgotPasswordPage` "30 分钟"
+
+### 报告
+
+| 报告 | 范围 | 状态 |
+|------|------|------|
+| [security-audit-round2.md](./security-audit-round2.md) | 安全 (2 新 P0 + 4 v1.5.0 待修 + 4 v1.5.0 已修验证) | ✅ 全修 |
+| [ux-audit-2026-07-24.md](./ux-audit-2026-07-24.md) | UX (3 P0 + 6 P1 + 22 硬编码违反) | ✅ 全修 |
+| [cms-admin-dto-fix-2026-07-24.md](./cms-admin-dto-fix-2026-07-24.md) | cms-admin DTO 改造明细 | ✅ |
+| [enterprise-page-hardcode-fix-2026-07-24.md](./enterprise-page-hardcode-fix-2026-07-24.md) | EnterprisePage 11 处硬编码修法 | ✅ |
+| [scope-enum-migration-prep-2026-07-24.md](./scope-enum-migration-prep-2026-07-24.md) | P1-2 schema enum 化 + db push 步骤 | ✅ |
+
+### ⚠️ Frank 注意 (dev workflow 已知问题)
+
+1. **migration history drift** — Frank 之前的 `20260714020000_add_p2_models` migration 在 prisma shadow DB 验证失败 (跟 P1-2 无关, Frank dev 留下的 shadow 顺序问题)。v1.5.1 这次 P1-2 用 `prisma db push` 直接同步, 没生成 migration 文件。建议周末 fix migration history (修 add_p2_models 跟 add_reviews 顺序, 或删 + regenerate)。
+2. **HotKeyword DTO breaking** — DTO enum 从 `['homepage','search','course','all']` 改 `['courses','home','search','all']` 跟 prisma default + LIST_FALLBACK 对齐。生产 migrate 前先 `UPDATE hot_keywords SET scope='courses' WHERE scope IN ('homepage','course');`。
+3. **5 张表 db push 不是 migration** — 后续 `prisma migrate dev` 会 drift, 建议下个 release 跑 `prisma migrate dev --name sync_db_state` 生成 baseline migration。
+
+---
+
+---
+
 ## 📋 版本历史
 
 | 版本 | 日期 | 主要改动 |
 |------|------|---------|
+| **v1.5.1** | 2026-07-24 | 维护 release: 3 audit 修复 + 5 张表 scope String→enum 落地 + 22 处零硬编码清理(详见下方"v1.5.1 维护 release"段) |
 | **v1.5.0** | 2026-07-23 | **CMS 化重构**(16 表 + 5 controller + 13 tab AdminSettings) + Auth hard reload 401 修 + Hackathon 极简化 + 整体优化(P0 4 + P1 6) + 前端全量去 mock |
 | v1.4.1 | 2026-07-21 | 主题 store 重构 + admin 30+ 暗色化 + AdminCourses 三栏 mobile toggle + LearningEvent 后端 |
 | v1.4.0 | 2026-07-21 | AI 智能填充完善 + 整体 mobile 适配收口 + 5 audit 报告 |
@@ -642,8 +703,12 @@ openssl rand -hex 32
 - `POST /enterprise/inquiries`：3 次/分钟
 - `POST /courses/import-from-url`：10 次/分钟
 - `POST /courses/import-batch-from-urls`：5 次/分钟
+- **`POST /uploads/sign`**：3/10s + 60/60s (v1.5.1 加, 防刷 presigned URL)
+- **`POST /uploads/complete`**：10/1s + 120/60s (v1.5.1 加)
+- **`POST /courses/:id/reviews`**：1/3s + 10/60s (v1.5.1 加, 防刷评价)
+- **`POST /learning-events`**：5/1s + 60/60s (v1.5.1 加)
 
-详细审查报告：[security_best_practices_report.md](./security_best_practices_report.md)
+详细审查报告：[security_best_practices_report.md](./security_best_practices_report.md) + [security-audit-round2.md](./security-audit-round2.md)
 
 ---
 
