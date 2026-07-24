@@ -164,7 +164,6 @@ model Course {
   description    String       @db.Text
   learningPoints String       @map("learning_points") @db.Text
   instructor     String
-  instructorId   String?      @map("instructor_id")
   level          CourseLevel
   duration       String
   thumbnail      String
@@ -186,6 +185,8 @@ model Course {
   degreeCourses    DegreeCourse[]
   practiceProjects PracticeProject[]
   reviews          Review[]
+  // 2026-07-24: 讲师/导师多对多 (替代死字段 instructorId)
+  courseLinks      CourseInstructorLink[]
   // P1 修复(2026-07-24): 课程挂行业/分类 (FK, 之前 Industry/CourseCategory 模型孤立)
   industry         Industry?      @relation(fields: [industryId], references: [id], onDelete: SetNull)
   industryId       String?        @map("industry_id")
@@ -196,7 +197,6 @@ model Course {
   @@index([costType])
   @@index([courseType])
   @@index([level])
-  @@index([instructorId])
   @@index([createdAt])
   @@index([industryId])
   @@index([categoryId])
@@ -293,6 +293,127 @@ enum ResourceType {
   link
   video
   audio
+}
+
+// ==================== 讲师 / 导师 (2026-07-24) ====================
+// 设计: 独立表, 不挂 User; 管理员后台统一维护
+// 讲师/导师同一表, 课程通过多对多联表 CourseInstructorLink 挂载, 带 role + isPrimary
+// 字段命名: 中文为主源 (zh), 英文/拼音别名为可选 (nameEn / titleEn / headlineEn / bioEn)
+// 多语言: per-entity 自由文本直接放表列 (中英双语), 不走 i18n_messages (key-value 不适合 per-entity)
+// publishedAt 软发布: null = 草稿态, 前台不显示; admin 手动设置才进前台
+// 注意: id 用 cuid() 而非 uuid() (跟 Order 一致, 自增可读性更好)
+
+model Instructor {
+  id                String    @id @default(cuid())
+  // URL slug, /instructors/{slug}, 唯一, 拼音+hash 兜底, admin 可改
+  slug              String    @unique
+  // 中文主显示名 (主源)
+  name              String
+  // 英文/拼音别名 (可选)
+  nameEn            String?   @map("name_en")
+  // 头衔: "首席科学家" / "AI 工程师" / "清华教授" (自由文本, 不做 enum, 长度限制 120)
+  title             String?   @db.VarChar(120)
+  titleEn           String?   @map("title_en") @db.VarChar(120)
+  // 短标语 (一句话简介, 首页讲师卡 / 列表摘要用)
+  headline          String?   @db.VarChar(255)
+  headlineEn        String?   @map("headline_en") @db.VarChar(255)
+  // 长 bio, 富文本存 markdown
+  bio               String?   @db.Text
+  bioEn             String?   @map("bio_en") @db.Text
+  // 头像 URL
+  avatarUrl         String?   @map("avatar_url")
+  // 当前就职公司
+  company           String?   @db.VarChar(120)
+  // 从业年限 (int)
+  yearsOfExperience Int?      @map("years_of_experience")
+  // 社交链接
+  linkedinUrl       String?   @map("linkedin_url")
+  githubUrl         String?   @map("github_url")
+  twitterUrl        String?   @map("twitter_url")
+  websiteUrl        String?   @map("website_url")
+  // 联系邮箱 (admin 可见, 前台不暴露)
+  contactEmail      String?   @map("contact_email")
+  // 内部备注 (admin 抽屉)
+  notes             String?   @db.Text
+  // 排序: 拖拽改值, 前台讲师墙/讲师列表按此升序
+  orderIndex        Int       @default(0) @map("order_index")
+  // 发布态: null = 草稿 (前台不显示), 否则取发布时间
+  publishedAt       DateTime? @map("published_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  courseLinks    CourseInstructorLink[]
+  expertiseLinks InstructorExpertiseLink[]
+
+  @@index([publishedAt, orderIndex])
+  @@index([name])
+  @@map("instructors")
+}
+
+// 课程-讲师 多对多联表
+// 同一课程可有 主讲师(instructor) + 导师(mentor), 通过 role 区分
+// 助教(co_instructor) 不做, 跟 instructor 合并 (UI 上统一叫"讲师")
+// isPrimary: 该课程主讲师标记, 前台课程详情默认显示, 最多 1 个
+// Service 层强制: 同一 (courseId, role) 最多 1 个 isPrimary=true
+model CourseInstructorLink {
+  id           String               @id @default(cuid())
+  courseId     String               @map("course_id")
+  instructorId String               @map("instructor_id")
+  // role i18n label 走 enum_translations(enumType='instructor_role')
+  role         CourseInstructorRole @default(instructor)
+  isPrimary    Boolean              @default(false) @map("is_primary")
+  // 同 role 内的展示顺序
+  orderIndex   Int                  @default(0) @map("order_index")
+  createdAt    DateTime             @default(now()) @map("created_at")
+
+  course     Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, instructorId, role])
+  @@index([instructorId, role])
+  @@index([courseId, isPrimary])
+  @@map("course_instructor_links")
+}
+
+enum CourseInstructorRole {
+  instructor
+  mentor
+}
+
+// 专长 (AI / LLM / RAG / Agent / 编程教学 ...), 独立表 + 联表 (参考 course_category 模式)
+// admin 后台管理, key 是程序内英文标识, label 是显示名
+model InstructorExpertise {
+  id         String   @id @default(cuid())
+  // 程序内唯一标识 (admin 后台英文 key), 前端不展示
+  key        String   @unique
+  // 中文 label (主源)
+  label      String
+  // 英文 label (可选, 前端按 locale 切换)
+  labelEn    String?  @map("label_en")
+  // 上下架
+  isActive   Boolean  @default(true) @map("is_active")
+  // 列表排序
+  orderIndex Int      @default(0) @map("order_index")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  instructorLinks InstructorExpertiseLink[]
+
+  @@index([isActive, orderIndex])
+  @@map("instructor_expertises")
+}
+
+model InstructorExpertiseLink {
+  instructorId String @map("instructor_id")
+  expertiseId  String @map("expertise_id")
+  orderIndex   Int    @default(0) @map("order_index")
+
+  instructor Instructor          @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  expertise  InstructorExpertise @relation(fields: [expertiseId], references: [id], onDelete: Cascade)
+
+  @@id([instructorId, expertiseId])
+  @@index([expertiseId])
+  @@map("instructor_expertise_links")
 }
 
 // ==================== 学位 ====================

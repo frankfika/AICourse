@@ -32,6 +32,7 @@ import { LearningEventsModule } from './modules/learning-events/learning-events.
 import { SiteModule } from './modules/site/site.module';
 import { CmsModule } from './modules/cms/cms.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { InstructorsModule } from './modules/instructors/instructors.module';
 import { GeminiModule } from './common/gemini/gemini.module';
 
 @Module({
@@ -80,6 +81,7 @@ import { GeminiModule } from './common/gemini/gemini.module';
     LearningEventsModule,
     SiteModule,
     CmsModule,
+    InstructorsModule,
     GeminiModule,
     ChatModule,
   ],
