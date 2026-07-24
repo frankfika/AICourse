@@ -3,6 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { OriginCheckMiddleware } from './common/middleware/origin-check.middleware';
+import { AdminController } from './modules/admin/admin.controller';
+import { CmsAdminController } from './modules/cms/cms-admin.controller';
+import { AuditLogController } from './modules/audit/audit-log.controller';
 import { AppController } from './app.controller';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -89,9 +92,15 @@ export class AppModule implements NestModule {
    *       公开端点本来就不要鉴权, CSRF 没什么意义。
    */
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(OriginCheckMiddleware).forRoutes(
-      'api/v1/admin*',
-      'api/v1/audit-logs*',
-    );
+    // 用 controller class 而非 path 字符串 — path-to-regexp v8 + NestJS
+    // globalPrefix + URI versioning 一起处理, string path 容易踩坑。
+    // (P0 2026-07-23 修复: 之前用 'api/v1/admin/{*path}' 字符串 path 不生效)
+    consumer
+      .apply(OriginCheckMiddleware)
+      .forRoutes(
+        AdminController,
+        CmsAdminController,
+        AuditLogController,
+      );
   }
 }
