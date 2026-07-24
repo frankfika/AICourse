@@ -4,6 +4,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { validateJsonValue, assertJsonSize } from './cms-config.validator';
 
 @Injectable()
 export class CmsConfigService {
@@ -28,6 +29,8 @@ export class CmsConfigService {
     scope?: string;
     description?: string;
   }) {
+    validateJsonValue(data.valueJson);
+    assertJsonSize(data.valueJson);
     return this.prisma.appSetting.create({ data });
   }
 
@@ -35,6 +38,10 @@ export class CmsConfigService {
     key: string,
     data: { valueJson?: Prisma.InputJsonValue; scope?: string; description?: string },
   ) {
+    if (data.valueJson !== undefined) {
+      validateJsonValue(data.valueJson);
+      assertJsonSize(data.valueJson);
+    }
     return this.prisma.appSetting.update({ where: { key }, data });
   }
 
@@ -77,6 +84,8 @@ export class CmsConfigService {
     scope?: string;
     description?: string;
   }) {
+    validateJsonValue(data.value);
+    assertJsonSize(data.value);
     return this.prisma.siteSetting.create({ data });
   }
 
@@ -84,6 +93,10 @@ export class CmsConfigService {
     key: string,
     data: { value?: Prisma.InputJsonValue; scope?: string; description?: string },
   ) {
+    if (data.value !== undefined) {
+      validateJsonValue(data.value);
+      assertJsonSize(data.value);
+    }
     return this.prisma.siteSetting.update({ where: { key }, data });
   }
 
@@ -127,6 +140,8 @@ export class CmsConfigService {
     value: Prisma.InputJsonValue;
     description?: string;
   }) {
+    validateJsonValue(data.value);
+    assertJsonSize(data.value);
     return this.prisma.pageSetting.create({ data });
   }
 
@@ -135,6 +150,10 @@ export class CmsConfigService {
     key: string,
     data: { value?: Prisma.InputJsonValue; description?: string },
   ) {
+    if (data.value !== undefined) {
+      validateJsonValue(data.value);
+      assertJsonSize(data.value);
+    }
     return this.prisma.pageSetting.update({ where: { page_key: { page, key } }, data });
   }
 
