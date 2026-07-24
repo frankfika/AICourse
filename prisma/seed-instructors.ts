@@ -169,12 +169,12 @@ async function main() {
       data: {
         action: 'instructor.seed.migrate',
         entity: 'instructor',
-        details: {
+        details: JSON.stringify({
           instructorCount: instructorByName.size,
           linkedCount,
           skippedCount,
           source: 'Course.instructor 字符串',
-        },
+        }),
       },
     });
   } catch (e) {

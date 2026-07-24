@@ -61,21 +61,34 @@ export function LoginPage() {
   });
 
   // 已登录用户访问 /auth/login 自动重定向
+  // P0 2026-07-24 修复: admin role 也跳 /admin (而非 from 默认 /)
+  // — 之前 from 默认 '/', admin 登录后/已登录访问 login 页都停在首页看不出身份差异
   useEffect(() => {
     if (!isAuthenticating && user) {
-      navigate(from, { replace: true });
+      const target = user.role === 'admin' ? '/admin' : from;
+      navigate(target, { replace: true });
     }
   }, [isAuthenticating, user, from, navigate]);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await signIn({
+      const session = await signIn({
         kind: 'local',
         email: values.email,
         password: values.password,
       });
+      // eslint-disable-next-line no-console
+      console.log(
+        '[LoginPage.onSubmit] signIn ok user=',
+        session.user,
+        'role=',
+        session.user.role,
+      );
       showToast('登录成功', 'success');
-      navigate(from, { replace: true });
+      // P0 2026-07-24 修复: admin 登录后默认跳 /admin (而非 /)
+      // — 之前 from 默认 '/', admin 登录后停在首页看不出身份差异
+      const target = session.user.role === 'admin' ? '/admin' : from;
+      navigate(target, { replace: true });
     } catch (err: unknown) {
       const msg = extractErrorMessage(err) ?? '登录失败,请检查邮箱或密码';
       showToast(msg, 'error', 4000);

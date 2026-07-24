@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { AiService } from './ai.service';
+import { GeminiService } from '../../common/gemini/gemini.service';
 import { CourseLevel, CostType } from '@prisma/client';
 
 describe('AiService', () => {
@@ -15,6 +16,11 @@ describe('AiService', () => {
           useValue: {
             get: jest.fn(),
           },
+        },
+        {
+          // 测试只走 fallback 路径, gemini 永远不被调到. 留个空 stub 占位.
+          provide: GeminiService,
+          useValue: { generateText: jest.fn() },
         },
       ],
     }).compile();

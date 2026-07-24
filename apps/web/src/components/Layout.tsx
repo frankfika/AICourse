@@ -32,7 +32,9 @@ import { Suspense, useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useAuth } from '../lib/auth/AuthProvider';
 import { useTheme, useThemeStore } from '../stores/themeStore';
+import { useWebAssistantStore } from '../stores/webAssistantStore';
 import { CommandPalette } from './CommandPalette';
+import { WebAssistantDrawer } from './WebAssistant/WebAssistantDrawer';
 import { cn } from '../lib/cn';
 import { Skeleton } from './ui/Skeleton';
 import { useList, useSiteSettings, useI18n, pickSite, safeNavPath } from '../lib/cms';
@@ -94,6 +96,8 @@ function useFooterColumns(): Array<{ title: string; links: Array<{ label: string
       links: [
         { label: '服务条款', path: '/terms' },
         { label: '隐私政策', path: '/privacy' },
+        { label: 'Cookie 政策', path: '/cookies' },
+        { label: '退款政策', path: '/refund' },
       ],
     },
   ];
@@ -110,6 +114,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const openWebAssistant = useWebAssistantStore((s) => s.openDrawer);
+  // 移动 tab "AI" 入口的 active 高亮(走 drawer.open 判定)
+  const isAssistantOpen = useWebAssistantStore((s) => s.open);
+
+  // P1-9+: 点 FAB / 移动 tab AI 入口:已登录 → 打开 drawer;未登录 → 跳登录
+  const handleOpenWebAssistant = () => {
+    if (!user) {
+      navigate('/auth/login', { replace: false });
+      return;
+    }
+    openWebAssistant();
+  };
 
   // 全局 ⌘K / Ctrl+K 触发 CommandPalette
   useEffect(() => {
@@ -134,6 +150,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
     // signOut 内部: await adapter.signOut() (POST /auth/logout 清 cookie) → setAccessToken(null) → clearAuth
     // await 让 logout 请求飞完再 navigate,否则 navigate 触发 unmount 会 cancel
     await signOut();
+    // P0 (verifier audit 2026-07-24): logout 必须清 webAssistantStore, 否则
+    // 共享设备 / 同浏览器换账号时上一个用户的 sessionId + 消息缓存仍可见.
+    useWebAssistantStore.getState().reset();
     navigate('/');
   };
 
@@ -312,19 +331,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 
       {/* ============================================================
-       * AI 助教 FAB(P0-5 placeholder → 跳 /dashboard/learning)
-       * fixed 右下角,所有断点都显
+       * AI 网页助手 FAB(P1-9+ 改:触发 floating chat drawer)
+       * 跟 dashboard/learning 的课程内小助手互不干扰(那个走前端 mock)
+       * 未登录 → 跳 /auth/login;已登录 → 打开 drawer
        * mobile:bottom-20(在 bottom tab 之上)
        * md+:bottom-6
        * ============================================================ */}
-      <Link
-        to="/dashboard/learning"
+      <button
+        type="button"
+        onClick={handleOpenWebAssistant}
         className="fixed right-6 bottom-20 md:bottom-6 w-14 h-14 rounded-full bg-[#171717] text-white hover:bg-[#262626] transition-all hover:scale-105 flex items-center justify-center z-40"
-        aria-label="打开 AI 助教"
-        title="AI 助教"
+        aria-label="打开 AI 网页助手"
+        title="AI 网页助手"
+        data-testid="web-assistant-fab"
       >
         <Sparkles className="w-6 h-6" />
-      </Link>
+      </button>
 
       {/* ============================================================
        * 移动端 bottom tab(< 768px 显示)
@@ -354,11 +376,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             icon={GraduationCap}
             active={isActive('/degrees')}
           />
-          <BottomTabLink
-            to="/dashboard/learning"
-            label="AI"
-            icon={Sparkles}
-            active={isActive('/dashboard/learning') || isActive('/dashboard')}
+          {/* P1-9+: 5 宫格的"AI"入口跟 FAB 同源,触发 drawer
+             不再跳 /dashboard/learning(那是课程内小助手,跟 web assistant 互不干扰)
+             active 走 drawer.open(drawer 开时高亮) */}
+          <MobileAssistantTab
+            onClick={handleOpenWebAssistant}
+            active={isAssistantOpen}
           />
           <BottomTabLink
             to={user ? '/profile' : '/login'}
@@ -368,6 +391,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           />
         </div>
       </nav>
+
+      {/* ============================================================
+       * P1-9+: 全站 AI 网页助手 floating chat drawer
+       * 触发:上面那个 FAB + mobile bottom tab AI 入口
+       * 关闭:backdrop / X / Esc / 选中 source 后 navigate
+       * 跟 dashboard/learning 的课程内小助手互不干扰
+       * ============================================================ */}
+      <WebAssistantDrawer />
     </div>
   );
 }
@@ -397,6 +428,27 @@ function BottomTabLink({
       <Icon className="w-5 h-5" />
       <span className="text-[10px] font-medium leading-tight">{label}</span>
     </Link>
+  );
+}
+
+// P1-9+: 移动 bottom tab 的"AI"入口(button 变种,不跳路由,触发 web assistant drawer)
+// 视觉跟 BottomTabLink 一致,只 active 高亮走 drawer.open 判定
+function MobileAssistantTab({ onClick, active }: { onClick: () => void; active: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="打开 AI 网页助手"
+      data-testid="web-assistant-mobile-tab"
+      className={`flex flex-col items-center justify-center gap-0.5 min-h-[48px] min-w-[48px] py-1.5 px-2 transition-colors ${
+        active
+          ? 'text-[#171717]'
+          : 'text-neutral-600 dark:text-neutral-600 hover:text-[#171717]'
+      }`}
+    >
+      <Sparkles className="w-5 h-5" />
+      <span className="text-[10px] font-medium leading-tight">AI</span>
+    </button>
   );
 }
 

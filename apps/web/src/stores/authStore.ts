@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { setAccessToken } from '../lib/api';
 
 export interface AuthUser {
@@ -19,24 +18,38 @@ interface AuthState {
   clearAuth: () => void;
 }
 
-// Security: only persist non-secret user info. Tokens live in memory
-// (access) and httpOnly cookies (refresh), never localStorage.
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      setAuth: (user, accessToken) => {
-        setAccessToken(accessToken);
-        set({ user });
-      },
-      clearAuth: () => {
-        setAccessToken(null);
-        set({ user: null });
-      },
-    }),
-    {
-      name: 'auth-user',
-      partialize: (state) => ({ user: state.user }),
-    },
-  ),
-);
+// P0 2026-07-24 修复: 去掉 zustand persist middleware
+//
+// 原因:
+//   - persist 'auth-user' 到 localStorage 之前的行为是 "hard reload 后保留 user,
+//     避免 AuthProvider 重新跑 refresh 流程"
+//   - 但 zustand persist 的 hydration 时机 + React 19 strict mode 双 mount + vite
+//     HMR 多次 reload 一起,会导致 user role 出现 race (登 admin 写 store, 但
+//     localStorage 'auth-user' 还残留旧 student, 下次 hydrate 又被覆盖)
+//   - Frank 实际症状: 登 admin 后 store.user 看着是 admin (Header 显示
+//     "OpenCSG Admin"), 但 ProtectedRoute 拿到 user.role !== 'admin' 跳 /
+//
+// 修法: 全部内存, 不持久化 user。hard reload 后由 AuthProvider boot 调
+// POST /auth/refresh (走 httpOnly refresh_token cookie) 拿新 accessToken + user,
+// setAuth 写 store, 体验跟之前一致。
+//
+// 安全收益: 与 "never localStorage" 哲学一致 (comment 原本就写, 但 persist 矛盾)。
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  setAuth: (user, accessToken) => {
+    setAccessToken(accessToken);
+    set({ user });
+    // DEBUG (P0 2026-07-24, dev 期间排查 admin role 跳回学生问题, 上线前删)
+    // eslint-disable-next-line no-console
+    console.log(
+      '[authStore.setAuth] user=',
+      user,
+      'role=',
+      (user as { role?: string })?.role,
+    );
+  },
+  clearAuth: () => {
+    setAccessToken(null);
+    set({ user: null });
+  },
+}));
