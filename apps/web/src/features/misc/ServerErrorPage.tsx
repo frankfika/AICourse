@@ -26,6 +26,21 @@ import { ErrorShell, ActionButton } from './ErrorShell';
 import { I18nText } from '../../components/I18nText';
 import { RefreshCw, Home, ServerCrash, Mail, Copy } from 'lucide-react';
 
+// v1.5.4 build fix: ISO 日期字符串 strip pattern.
+// v1.5.4 解决: Tailwind v3.4.19 defaultExtractor 会扫源码(含注释)把 ISO 日期
+// 字符类误识别为 Tailwind class, 生成伪 CSS 规则, lightningcss minify 直接拒
+// 导致 vite build 失败. 用 fromCharCode 拼字符类, 源码(含注释)里不出现字面量,
+// 绕开 extractor 扫描. 详见 CHANGELOG v1.5.4.
+const ISO_DATE_STRIP_RE = new RegExp(
+  '[' +
+    String.fromCharCode(45) +
+    String.fromCharCode(58) +
+    String.fromCharCode(84) +
+    String.fromCharCode(46) +
+    ']',
+  'g',
+);
+
 interface ServerErrorPageProps {
   error?: unknown;
   onRetry?: () => void;
@@ -36,7 +51,7 @@ export function ServerErrorPage({ error, onRetry }: ServerErrorPageProps) {
   const errorId = useMemo(() => {
     const ts = new Date()
       .toISOString()
-      .replace(/[-:T.]/g, '')
+      .replace(ISO_DATE_STRIP_RE, '')
       .slice(0, 14); // 20260724094530
     const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
     return `ERR-${ts}-${rand}`;
