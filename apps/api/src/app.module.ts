@@ -1,12 +1,12 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { APP_GUARD } from '@nestjs/core';
 import { OriginCheckMiddleware } from './common/middleware/origin-check.middleware';
 import { AdminController } from './modules/admin/admin.controller';
 import { CmsAdminController } from './modules/cms/cms-admin.controller';
 import { AuditLogController } from './modules/audit/audit-log.controller';
-import { AppController } from './app.controller';
 import { PrismaModule } from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -33,6 +33,9 @@ import { SiteModule } from './modules/site/site.module';
 import { CmsModule } from './modules/cms/cms.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { InstructorsModule } from './modules/instructors/instructors.module';
+import { HealthModule } from './modules/health/health.module';
+import { RedisModule } from './common/redis/redis.module';
+import { RedisService } from './common/redis/redis.service';
 import { GeminiModule } from './common/gemini/gemini.module';
 
 @Module({
@@ -41,21 +44,30 @@ import { GeminiModule } from './common/gemini/gemini.module';
       isGlobal: true,
       envFilePath: ['../../.env', '.env'],
     }),
+    RedisModule,
     // Security: global rate limiting (H-01). Defaults to 60 req/min per IP.
-    // Security: global rate limiting (H-01). Defaults to 60 req/min per IP.
-    // 走 env 覆盖, 默认安全值; screenshot / 测试场景可调大.
-    ThrottlerModule.forRoot([
-      {
-        name: 'short',
-        ttl: 1000,
-        limit: Number(process.env.THROTTLE_SHORT) || 5,
-      },
-      {
-        name: 'medium',
-        ttl: 60000,
-        limit: Number(process.env.THROTTLE_MEDIUM) || 60,
-      },
-    ]),
+    // P0 v1.5.4 横向扩展: 改用 Redis storage 共享计数 (key 走 THROTTLER_REDIS_PREFIX
+    // 命名空间, 多实例部署下不会重复计数). 复用在 RedisModule 里创建的同一个 ioredis 连接,
+    // 不再额外开连接.
+    ThrottlerModule.forRootAsync({
+      imports: [RedisModule],
+      inject: [RedisService],
+      useFactory: (redis: RedisService) => ({
+        throttlers: [
+          {
+            name: 'short',
+            ttl: 1000,
+            limit: Number(process.env.THROTTLE_SHORT) || 5,
+          },
+          {
+            name: 'medium',
+            ttl: 60000,
+            limit: Number(process.env.THROTTLE_MEDIUM) || 60,
+          },
+        ],
+        storage: new ThrottlerStorageRedisService(redis.getClient()),
+      }),
+    }),
     PrismaModule,
     AuditModule,
     AuthModule,
@@ -84,8 +96,8 @@ import { GeminiModule } from './common/gemini/gemini.module';
     InstructorsModule,
     GeminiModule,
     ChatModule,
+    HealthModule,
   ],
-  controllers: [AppController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
