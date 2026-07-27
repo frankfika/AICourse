@@ -15,7 +15,7 @@ import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
 import { useAuthStore } from './stores/authStore';
 
 // ──────────────────────────────────────────────────────────────────────
-// Code-split: 懒加载非首屏路由,让首屏 bundle 从 873KB → 拆 3-4 个 chunk
+// Code-split: 懒加载非首屏路由,首屏 LCP 路由保留同步 import
 //
 // 同步保留(首屏 LCP / 高频导航):
 //   - HomePage, CourseList/Detail, DegreeList/Detail,

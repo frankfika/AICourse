@@ -1,9 +1,9 @@
 /**
- * ProfilePage — P0-6 改为薄壳
+ * ProfilePage — /profile 老链接薄壳
  *
- * 旧版个人中心(原 /profile 路由)由 P0-6 新版「学习中心」(/dashboard)取代。
- * 保留本文件 + ProfilePage export,仅作为 /profile 老链接的 redirect target,
- * 不再渲染任何旧版 UI。后续若确认无人访问 /profile,可直接删除本文件。
+ * 旧版个人中心(原 /profile 路由)由「学习中心」(/dashboard)取代。
+ * 保留本文件 + ProfilePage export,作为 /profile 老链接的 redirect target,
+ * 不渲染任何旧版 UI。
  *
  * 重定向:`/profile` → `/dashboard`(replace,不污染 history)
  */

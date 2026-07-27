@@ -13,11 +13,9 @@
  *
  * 数据策略:
  *   - 1) 优先用 coursesApi + progressApi 拉真实数据
- *   - 2) 失败 / 401 / 网络错 → 渲染 EmptyState(无 mock fallback)
- *   - 3) 在 mock 模式下,前置"lesson 1.3"为 in-progress,1.1/1.2 已完成
+ *   - 2) 失败 / 401 / 网络错 → 渲染 QueryErrorState(v1.4.1 修复,无 mock fallback)
+ *   - 3) LearningEvent 视频上报走真实后端(v1.4.1 上线)
  *
- * TODO(后端):
- *   - LearningEvent 视频上报后端未建,目前 console.log + 内存计数
  *   - AI 助教 chat 走前端 mock,等 chat module 上线后改调 /api/v1/chat/sessions
  */
 

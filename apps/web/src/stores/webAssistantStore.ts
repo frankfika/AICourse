@@ -7,34 +7,30 @@
  *   - messagesBySession: per-session message 缓存(避免切 session 重拉)
  *   - draftInput: 输入区草稿(关闭 drawer 不丢)
  *
- * 持久化:
- *   - currentSessionId 写到 localStorage('webAssistant.currentSessionId'),
- *     跟 authUser 的策略一致(localStorage 不是敏感字段,只一个 id 字符串)。
+ * 持久化 (v1.5.3 改):
+ *   - currentSessionId 改走 sessionStorage, **不再 localStorage**
+ *   - 跟 accessToken 同策略 (lib/persistence.ts sessionPersist):
+ *     跨 reload 留存 / close tab 自动清 / 跨 tab 隔离
+ *   - 改 localStorage → sessionStorage 原因: 共享设备/同浏览器换账号时
+ *     (b8cc017 P0 verifier audit 2026-07-24 反馈), account A 的 sessionId
+ *     不能污染 account B
  *
  * 跟 authStore 关系:
  *   - 不读 user:点击 FAB 的登录态判断由 Layout / Drawer 各自做(用 useAuthStore)。
- *   - logout 时上层代码 reset() 清空。
+ *   - logout 时上层代码 reset() 清空 (Layout.handleLogout)。
  */
 import { create } from 'zustand';
 import type { ChatMessage } from '../lib/chatApi';
+import { sessionPersist } from '../lib/persistence';
 
 const SESSION_ID_KEY = 'webAssistant.currentSessionId';
 
 function readPersistedSessionId(): string | null {
-  try {
-    return localStorage.getItem(SESSION_ID_KEY);
-  } catch {
-    return null;
-  }
+  return sessionPersist.read(SESSION_ID_KEY);
 }
 
 function writePersistedSessionId(id: string | null): void {
-  try {
-    if (id) localStorage.setItem(SESSION_ID_KEY, id);
-    else localStorage.removeItem(SESSION_ID_KEY);
-  } catch {
-    /* localStorage 不可用时忽略 */
-  }
+  sessionPersist.write(SESSION_ID_KEY, id);
 }
 
 interface WebAssistantState {

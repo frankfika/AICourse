@@ -38,10 +38,13 @@ const makeStorage = () => {
 };
 
 const installStorage = () => {
-  const stub = makeStorage();
+  // v1.5.3: localStorage 和 sessionStorage 各自独立 stub
+  // (之前共用同一 stub, 导致 test 没法验证两个 storage 的隔离行为)
+  const localStub = makeStorage();
+  const sessionStub = makeStorage();
   try {
     Object.defineProperty(window, 'localStorage', {
-      value: stub,
+      value: localStub,
       writable: true,
       configurable: true,
     });
@@ -51,11 +54,11 @@ const installStorage = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).localStorage;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).localStorage = stub;
+    (window as any).localStorage = localStub;
   }
   try {
     Object.defineProperty(window, 'sessionStorage', {
-      value: stub,
+      value: sessionStub,
       writable: true,
       configurable: true,
     });
@@ -63,7 +66,7 @@ const installStorage = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (window as any).sessionStorage;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).sessionStorage = stub;
+    (window as any).sessionStorage = sessionStub;
   }
 };
 installStorage();

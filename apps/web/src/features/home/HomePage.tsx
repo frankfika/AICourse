@@ -14,7 +14,7 @@
  * 设计约束:
  *   - 全部用现成 Button / Card / Skeleton / EmptyState 4 个 P0-4 基础组件
  *   - 不写新组件 / 不引新依赖
- *   - 数据拉取 4xx/5xx 时,自动 fallback 到 mock data(4 课程/3 学位/3 黑客松/4 讲师)
+ *   - 数据拉取 4xx/5xx 时,走 QueryErrorState 显示错误 + 重试(v1.5.0 修复:不再 silent fallback mock)
  *   - 暗色:用 token,跟随 <html class="dark">
  *
  * 备注:Layout 负责顶部 nav / theme toggle / FAB / bottom tab,
