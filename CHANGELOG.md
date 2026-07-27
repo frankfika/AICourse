@@ -6,6 +6,88 @@
 
 ---
 
+## v1.5.4 (2026-07-27)
+
+> **主线:横向扩展基础 + 测试黑洞扫尾** — Redis throttler store 真接上 + 6 模块测试补完 + pre-existing vite build 修。
+>
+> v1.5.0 release notes 早就标了 "v1.5.1 重点补测试黑洞", 3 个 release 没动, 本次扫完 6 个核心模块 (P0+P1)。
+
+### Redis throttler store (主线 — 横向扩展)
+
+- 装 `@nest-lab/throttler-storage-redis@1.2.0` + `ioredis@5.11.1`
+  - **包名纠正**: npm 上是 `@nest-lab` scope (jmcdo29, 跟 `@nestjs/throttler` 同作者), 不是 `@nestjs`
+- `apps/api/src/app.module.ts` ThrottlerModule 改 `forRootAsync` 复用同一 ioredis 连接
+  - 多实例部署时 rate limit 共享计数, 投资人"可扩展"故事点
+- 新 `apps/api/src/common/redis/` 模块: `@Global()` RedisService
+  - `getClient()` / `ping()` / `OnModuleDestroy` 优雅关闭
+  - lazyConnect=false 但 maxRetriesPerRequest=3 避免拖死 app
+
+### Health check endpoint (主线 — 运维基础)
+
+- `GET /api/v1/health`: 永远 200 (liveness, k8s livenessProbe)
+- `GET /api/v1/health/ready`: redis/mysql/minio 任意 fail → 503
+  - minio 走 `/minio/health/live` HTTP HEAD, 跟 docker-compose healthcheck 同源
+- 删 `apps/api/src/app.controller.ts` (trivial 9 行 `/health` 跟新 HealthController 撞路由)
+
+### vite build 修复 (pre-existing)
+
+- `apps/web/src/features/misc/ServerErrorPage.tsx:39` 原本 `replace(/[-:T.]/g, '')` 字面量
+- Tailwind v3.4.19 defaultExtractor 把字符类 `[-:T.]` 误识别为 Tailwind class, 生成伪 CSS 规则
+  ```css
+  .\[-:T\.\]{ -: T.; }   /* 不是合法 CSS */
+  ```
+- lightningcss minify 直接拒, `pnpm build` 失败
+- 改用 `String.fromCharCode(45/58/84/46)` 拼字符类, 源码 + 注释里完全不出现 5 字符连续, 绕开 extractor
+- 沿革: pre-existing on main (b4182fd 之前), 试过 cssMinify=esbuild (vite 8 走 rolldown 不带 esbuild) + downgrade lightningcss 1.30 (同 bug) 都不行, 真因在 source 不在 minifier
+
+### 测试黑洞 6 模块 (主线)
+
+| 模块 | 旧 spec | 新 spec | 关键覆盖 |
+|------|---------|---------|----------|
+| auth | 0 | 16 | 三 provider 调度 / refresh token rotation / 用户 lifecycle |
+| users | 0 | 14 | CRUD / soft delete (不用物理 delete) / bcrypt hash |
+| progress | 0 | 13 | completeLesson 幂等 / 跨设备同步 / 课程 100% 触发 |
+| enrollments | 0 | 8 | enrollFreeCourse 6 路径 / 重复 enroll 幂等 / badges 联动 |
+| hackathons | 0 | 20 | register 状态机 / createTeam 事务 / teamFull 满员 |
+| notification | 0 | 17 | list / markRead / markAllRead / softDelete / 4 类 enum 防御 |
+
+- 合计 **88 新 spec 测试** + **17 健康/Redis 测试** = **105 新测试**
+- 全 api: 22 suites / **259 tests** 0 fail (上次 14/154)
+- 前端 web: 11 files / 105 tests 0 fail
+- tsc 双 0 错
+- vite build 0 错
+
+### 沿革 (ROADMAP-1.6.md)
+
+- v1.5.4 范围按 `docs/ROADMAP-1.6.md` §1 挑选 3 项最稳的, 全部跑完
+- v1.5.3 已 commit (a93b81e) — 死代码 / 持久化统一 / stale 注释
+- v1.5.4 = 上面 Redis + build 修 + 测试黑洞
+- ROADMAP-1.6.md 完整规划见 `docs/ROADMAP-1.6.md`
+
+### Sub-agent 发现的源码缺口 (不修, 留 v1.5.5)
+
+- **P0 安全**: `auth.service` 无 `logout(refreshToken)` 方法, controller logout 只 clearCookie, DB 旧 token 仍 7 天有效 (跟 refresh rotation 不一致)
+- **P0 防护**: `users.service.delete(id)` 不接 actor, admin 可软删自己
+- **P1 业务**: `hackathons.service.register` checked_in 状态撞 Prisma unique
+- **P1 race**: `progress.completeLesson` findUnique + upsert 非原子, pointsService `@@unique` 救场但 badgesService.checkAndAward 没幂等
+- **P1 UX**: `notification.list.total` 永远是 unread 计数, 跟 unreadCount 含义重叠
+- 详见 commit 17acd72 + e2e7763 commit message
+
+---
+
+## v1.5.3 (2026-07-25)
+
+> **主线:工程干净度** — 死代码清理 + 持久化策略统一 + stale 注释清理, 不动新功能。
+
+- 删 2 个 0 调用方 hook (useClientPagination / usePresignedUpload, 94 行)
+- 新 `apps/web/src/lib/persistence.ts` 三档策略 (memory / session / local)
+- webAssistantStore 改 localStorage → sessionStorage (多账号不污染)
+- 6 个新 webAssistantStore 持久化测试
+- 4 处 stale 注释清理 (router / HomePage / DashboardPage / ProfilePage)
+- 3 个子包 version 1.5.0 → 1.5.3
+
+---
+
 ## v1.5.0 (2026-07-23)
 
 > **主线:CMS 化重构** — 投资人/客户外部看到的页面,所有文案 / 枚举 / 列表 / 业务规则全部后台可配置,零硬编码。
