@@ -27,7 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from './ui/Skeleton';
 import { EmptyState } from './ui/EmptyState';
 import { cn } from '../lib/cn';
-import { searchAll, groupResults, FALLBACK_HOT_SEARCHES, HOT_SEARCHES, type SearchResult, type SearchResultType } from '../lib/searchApi';
+import { searchAll, groupResults, FALLBACK_HOT_SEARCHES, type SearchResult, type SearchResultType } from '../lib/searchApi';
 import { useList, useI18n } from '../lib/cms';
 
 interface CommandPaletteProps {
@@ -63,7 +63,8 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['search', debouncedQuery],
     queryFn: () => searchAll(debouncedQuery),
-    enabled: open,
+    // 空查询只展示热门词，不需要向四个搜索端点各发一次请求。
+    enabled: open && debouncedQuery.trim().length > 0,
     staleTime: 30_000,
   });
 

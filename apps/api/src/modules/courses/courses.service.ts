@@ -1,7 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { CreateCourseDto, UpdateCourseDto, LinkDegreesDto } from './courses.dto';
+import {
+  CourseSort,
+  CreateCourseDto,
+  UpdateCourseDto,
+  LinkDegreesDto,
+} from './courses.dto';
 import { CourseStatus, CourseType } from '@prisma/client';
 
 export interface RatingDistribution {
@@ -48,9 +53,19 @@ export class CoursesService {
     category: { select: { id: true, key: true, label: true } },
   };
 
-  async findAll(params: { status?: CourseStatus; courseType?: CourseType; search?: string }) {
+  async findAll(params: {
+    status?: CourseStatus;
+    courseType?: CourseType;
+    search?: string;
+    sort?: CourseSort;
+    allowNonPublished?: boolean;
+  }) {
     const where: any = {};
-    if (params.status) where.status = params.status;
+    // Public list must never expose draft/archived courses by omission.
+    where.status = params.allowNonPublished
+      ? params.status
+      : CourseStatus.published;
+    if (where.status === undefined) delete where.status;
     if (params.courseType) where.courseType = params.courseType;
     if (params.search) {
       where.OR = [
@@ -60,13 +75,55 @@ export class CoursesService {
       ];
     }
 
-    return this.prisma.course.findMany({
+    const courses = await this.prisma.course.findMany({
       where,
-      include: this.courseInclude,
+      include: {
+        ...this.courseInclude,
+        reviews: {
+          where: { deletedAt: null },
+          select: { rating: true },
+        },
+        _count: {
+          select: {
+            enrollments: { where: { deletedAt: null } },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
       // P1-7 防御: 默认 50, max 100, 防 DoS (公开 list 拉全表 OOM)
       take: 100,
     });
+
+    const shaped = courses.map(({ reviews, _count, ...course }) => ({
+      ...course,
+      rating:
+        reviews.length === 0
+          ? 0
+          : Math.round(
+              (reviews.reduce((sum, review) => sum + review.rating, 0) /
+                reviews.length) *
+                10,
+            ) / 10,
+      reviewCount: reviews.length,
+      enrollmentCount: _count.enrollments,
+    }));
+
+    switch (params.sort) {
+      case CourseSort.rating:
+        return shaped.sort(
+          (a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount,
+        );
+      case CourseSort.popular:
+        return shaped.sort(
+          (a, b) =>
+            b.enrollmentCount - a.enrollmentCount ||
+            b.createdAt.getTime() - a.createdAt.getTime(),
+        );
+      case CourseSort.newest:
+      case CourseSort.recent:
+      default:
+        return shaped;
+    }
   }
 
   async findOne(id: string, includeDraft = false) {

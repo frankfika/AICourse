@@ -155,7 +155,7 @@ describe('InstructorsService', () => {
         publishedAt: null,
       });
 
-      const result = await service.softDelete('i1');
+      await service.softDelete('i1');
 
       expect(mockPrisma.courseInstructorLink.deleteMany).toHaveBeenCalledWith({
         where: { instructorId: 'i1' },

@@ -17,7 +17,12 @@ import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guar
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole, CourseStatus, CourseType } from '@prisma/client';
-import { CreateCourseDto, UpdateCourseDto, LinkDegreesDto } from './courses.dto';
+import {
+  CreateCourseDto,
+  UpdateCourseDto,
+  LinkDegreesDto,
+  ListCoursesQueryDto,
+} from './courses.dto';
 
 @ApiTags('courses')
 @Controller('courses')
@@ -25,16 +30,20 @@ export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: '获取课程列表（公开）' })
   @ApiQuery({ name: 'status', required: false, enum: CourseStatus, description: '课程状态过滤' })
   @ApiQuery({ name: 'courseType', required: false, enum: CourseType, description: '课程类型过滤' })
   @ApiQuery({ name: 'search', required: false, description: '标题/描述/讲师模糊搜索' })
+  @ApiQuery({ name: 'sort', required: false, enum: ['newest', 'recent', 'rating', 'popular'] })
   async findAll(
-    @Query('status') status?: CourseStatus,
-    @Query('courseType') courseType?: CourseType,
-    @Query('search') search?: string,
+    @Query() query: ListCoursesQueryDto,
+    @Req() req: { user?: { role?: UserRole } },
   ) {
-    return this.coursesService.findAll({ status, courseType, search });
+    return this.coursesService.findAll({
+      ...query,
+      allowNonPublished: req.user?.role === UserRole.admin,
+    });
   }
 
   // Security: only admins can fetch draft/archived courses by id. Public

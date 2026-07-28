@@ -4,6 +4,7 @@ import { OrdersService } from './orders.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { AuditLogService } from '../audit/audit-log.service';
+import { NotificationService } from '../notification/notification.service';
 import { OrderType, OrderStatus, CostType } from '@prisma/client';
 
 // Mock PrismaService
@@ -47,6 +48,9 @@ const mockCertificatesService: any = {
 const mockAuditLog: any = {
   log: jest.fn().mockResolvedValue({ id: 'audit-1' }),
 };
+const mockNotificationService = {
+  create: jest.fn().mockResolvedValue({ id: 'notification-1' }),
+};
 
 describe('OrdersService', () => {
   let service: OrdersService;
@@ -69,12 +73,14 @@ describe('OrdersService', () => {
     mockPrisma.lesson.count.mockReset();
     mockCertificatesService.issueCertificate.mockClear();
     mockAuditLog.log.mockClear();
+    mockNotificationService.create.mockClear();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: CertificatesService, useValue: mockCertificatesService },
         { provide: AuditLogService, useValue: mockAuditLog },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
@@ -173,6 +179,13 @@ describe('OrdersService', () => {
 
       expect(result!.status).toBe(OrderStatus.paid);
       expect(mockPrisma.enrollment.upsert).toHaveBeenCalled();
+      expect(mockNotificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'u1',
+          type: 'order',
+          title: '支付成功',
+        }),
+      );
     });
 
     it('should trigger certificate issuance for degree orders', async () => {
@@ -279,6 +292,13 @@ describe('OrdersService', () => {
 
       const result = await service.refundOrder('u1', 'o1');
       expect(result.status).toBe(OrderStatus.refunded);
+      expect(mockNotificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'u1',
+          type: 'order',
+          title: '退款申请已完成',
+        }),
+      );
     });
 
     it('should throw BadRequestException for non-paid order', async () => {

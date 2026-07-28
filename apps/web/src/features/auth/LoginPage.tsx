@@ -44,7 +44,11 @@ function extractErrorMessage(err: unknown): string | undefined {
 export function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const from = params.get('from') ?? '/';
+  const requestedFrom = params.get('from');
+  const from =
+    requestedFrom?.startsWith('/') && !requestedFrom.startsWith('//')
+      ? requestedFrom
+      : '/';
   const { signIn, user, isAuthenticating } = useAuth();
   const { showToast } = useToast();
   const { t } = useI18n();
@@ -77,13 +81,6 @@ export function LoginPage() {
         email: values.email,
         password: values.password,
       });
-      // eslint-disable-next-line no-console
-      console.log(
-        '[LoginPage.onSubmit] signIn ok user=',
-        session.user,
-        'role=',
-        session.user.role,
-      );
       showToast('登录成功', 'success');
       // P0 2026-07-24 修复: admin 登录后默认跳 /admin (而非 /)
       // — 之前 from 默认 '/', admin 登录后停在首页看不出身份差异

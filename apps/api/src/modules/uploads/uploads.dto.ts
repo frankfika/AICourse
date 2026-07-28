@@ -1,21 +1,23 @@
 /**
  * uploads.dto.ts — sign / complete 的请求 DTO
  */
-import { IsString, IsEnum, IsNumber, IsOptional, IsUUID, Min, Max } from 'class-validator';
+import { IsString, IsIn, IsNumber, IsOptional, IsUUID, Min, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UploadScope } from './uploads.config';
 
 export class SignUploadDto {
   @ApiProperty({ enum: ['lesson-video', 'resource', 'course-thumbnail', 'degree-thumbnail', 'hackathon-banner', 'hackathon-judge-avatar', 'hackathon-sponsor-logo', 'submission-video', 'user-avatar'] })
-  @IsString()
+  @IsIn(['lesson-video', 'resource', 'course-thumbnail', 'degree-thumbnail', 'hackathon-banner', 'hackathon-judge-avatar', 'hackathon-sponsor-logo', 'submission-video', 'user-avatar'])
   scope: UploadScope;
 
   @ApiProperty({ description: '原始文件名, 用于扩展名推断' })
   @IsString()
+  @MaxLength(255)
   filename: string;
 
   @ApiProperty({ description: 'MIME type' })
   @IsString()
+  @MaxLength(100)
   mimeType: string;
 
   @ApiProperty({ description: '文件字节数' })
@@ -32,10 +34,11 @@ export class SignUploadDto {
 export class CompleteUploadDto {
   @ApiProperty()
   @IsString()
+  @MaxLength(1024)
   key: string;
 
   @ApiProperty({ enum: ['lesson-video', 'resource', 'course-thumbnail', 'degree-thumbnail', 'hackathon-banner', 'hackathon-judge-avatar', 'hackathon-sponsor-logo', 'submission-video', 'user-avatar'] })
-  @IsString()
+  @IsIn(['lesson-video', 'resource', 'course-thumbnail', 'degree-thumbnail', 'hackathon-banner', 'hackathon-judge-avatar', 'hackathon-sponsor-logo', 'submission-video', 'user-avatar'])
   scope: UploadScope;
 
   @ApiPropertyOptional({ description: '目标 entity id (e.g. lessonId / userId). 留空 = 只 confirm object 存在, 不写库 (前端用 publicUrl 走原 create/update flow)' })

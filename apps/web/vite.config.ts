@@ -46,6 +46,29 @@ export default defineConfig(({ mode }) => {
         },
       },
       plugins: [react(), devCspPlugin],
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks(id) {
+              if (!id.includes('node_modules')) return undefined;
+              if (
+                id.includes('/react/') ||
+                id.includes('/react-dom/') ||
+                id.includes('/react-router') ||
+                id.includes('/scheduler/')
+              ) {
+                return 'vendor-react';
+              }
+              if (id.includes('/@tanstack/')) return 'vendor-query';
+              if (id.includes('/axios/')) return 'vendor-http';
+              if (id.includes('/react-hook-form/') || id.includes('/zod/')) {
+                return 'vendor-forms';
+              }
+              return undefined;
+            },
+          },
+        },
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

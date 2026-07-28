@@ -4,16 +4,14 @@ import {
   IsEnum,
   IsNumber,
   IsUUID,
-  IsBoolean,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CourseLevel, CostType, CourseStatus, CourseType, ResourceType } from '@prisma/client';
+import { CourseLevel, CostType, CourseStatus, CourseType } from '@prisma/client';
 import { CreateLessonDto as NestedCreateLessonDto } from './lessons.dto';
 import { CreateResourceDto as NestedCreateResourceDto } from './resources.dto';
-import { SafeUrl } from '../../common/validators/safe-url.decorator';
 
 // P0 修复(2026-07-24): 直接 extends resources.dto.ts 的 CreateResourceDto, 共享 @SafeUrl url 校验
 // 之前 courses.dto.ts 重复定义 CreateResourceDto, url 字段只有 @IsString 没 @SafeUrl
@@ -159,4 +157,30 @@ export class LinkDegreesDto {
   @ApiProperty({ type: [String], description: '要追加到的学位 UUID 列表' })
   @IsUUID('all', { each: true })
   degreeIds: string[];
+}
+
+export enum CourseSort {
+  newest = 'newest',
+  recent = 'recent',
+  rating = 'rating',
+  popular = 'popular',
+}
+
+export class ListCoursesQueryDto {
+  @IsOptional()
+  @IsEnum(CourseStatus)
+  status?: CourseStatus;
+
+  @IsOptional()
+  @IsEnum(CourseType)
+  courseType?: CourseType;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
+
+  @IsOptional()
+  @IsEnum(CourseSort)
+  sort?: CourseSort = CourseSort.recent;
 }

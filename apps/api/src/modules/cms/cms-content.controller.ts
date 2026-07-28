@@ -14,7 +14,7 @@
  *
  * 不走 JwtAuthGuard. 默认只返回 isActive=true 的.
  */
-import { Controller, Get, Query, ParseBoolPipe } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CmsContentService } from './cms-content.service';

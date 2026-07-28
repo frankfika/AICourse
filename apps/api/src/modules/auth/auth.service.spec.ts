@@ -14,7 +14,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { createHash, randomBytes } from 'crypto';
+import { createHash } from 'crypto';
 import { AuthService, AUTH_PROVIDERS } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthProvider, AuthIdentity } from './providers/auth-provider.types';
@@ -34,12 +34,13 @@ const mockPrisma: any = {
   refreshToken: {
     findUnique: jest.fn(),
     create: jest.fn(),
-    delete: jest.fn(),
+    deleteMany: jest.fn(),
   },
 };
 
 const mockJwtService: any = {
   sign: jest.fn((payload: any) => `jwt.${payload.sub}.${payload.role}`),
+  verify: jest.fn(),
 };
 
 // 三个 provider 桩 — 用 class 让 AuthService 能 new Map(providers)
@@ -73,6 +74,9 @@ class StubGoogleProvider extends AuthProvider {
     };
   }
   async link(): Promise<void> {}
+  createAuthorizationUrl(state: string) {
+    return `https://accounts.example/authorize?state=${state}`;
+  }
 }
 
 class StubSsoProvider extends AuthProvider {
@@ -150,6 +154,12 @@ describe('AuthService', () => {
     });
     mockJwtService.sign.mockReset();
     mockJwtService.sign.mockImplementation((p: any) => `jwt.${p.sub}.${p.role}`);
+    mockJwtService.verify.mockReset();
+    mockJwtService.verify.mockReturnValue({
+      purpose: 'oauth-state',
+      providerId: 'oauth.google',
+    });
+    mockPrisma.refreshToken.deleteMany.mockResolvedValue({ count: 1 });
 
     providers = [
       new StubEmailPasswordProvider(),
@@ -226,7 +236,10 @@ describe('AuthService', () => {
       mockPrisma.user.update.mockResolvedValueOnce({ id: 'u2' });
       mockPrisma.refreshToken.create.mockResolvedValueOnce({ id: 'rt2' });
 
-      const result = await service.authenticate('oauth.google', { code: 'oauth-code' });
+      const result = await service.authenticate('oauth.google', {
+        code: 'oauth-code',
+        state: 'signed-oauth-state',
+      });
 
       expect(result.user.email).toBe('g@example.com');
       // OAuth 用户 passwordHash 应为空, passwordResetRequired=true
@@ -299,7 +312,10 @@ describe('AuthService', () => {
       mockPrisma.user.update.mockResolvedValueOnce({ id: 'u-existing' });
       mockPrisma.refreshToken.create.mockResolvedValueOnce({ id: 'rt1' });
 
-      const result = await service.authenticate('oauth.google', { code: 'c' });
+      const result = await service.authenticate('oauth.google', {
+        code: 'c',
+        state: 'signed-oauth-state',
+      });
 
       expect(result.user.id).toBe('u-existing');
       // 不应再查 email 找 user
@@ -320,7 +336,10 @@ describe('AuthService', () => {
       mockPrisma.user.update.mockResolvedValueOnce({ id: 'u-existing' });
       mockPrisma.refreshToken.create.mockResolvedValueOnce({ id: 'rt1' });
 
-      const result = await service.authenticate('oauth.google', { code: 'c' });
+      const result = await service.authenticate('oauth.google', {
+        code: 'c',
+        state: 'signed-oauth-state',
+      });
 
       expect(result.user.id).toBe('u-existing');
       expect(result.user.email).toBe('shared@x.com');
@@ -347,7 +366,6 @@ describe('AuthService', () => {
       const rawToken = 'old-refresh-token';
       const stored = makeStoredToken(rawToken, 'u1');
       mockPrisma.refreshToken.findUnique.mockResolvedValueOnce(stored);
-      mockPrisma.refreshToken.delete.mockResolvedValueOnce({ token: stored.token });
       mockPrisma.refreshToken.create.mockResolvedValueOnce({ id: 'rt-new' });
 
       const result = await service.refresh(rawToken);
@@ -357,8 +375,11 @@ describe('AuthService', () => {
         where: { token: sha256(rawToken) },
         include: { user: true },
       });
-      expect(mockPrisma.refreshToken.delete).toHaveBeenCalledWith({
-        where: { token: sha256(rawToken) },
+      expect(mockPrisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: {
+          token: sha256(rawToken),
+          expiresAt: { gte: expect.any(Date) },
+        },
       });
       // 发了新 token
       expect(result.refreshToken).toMatch(/^[0-9a-f]{64}$/);
@@ -377,7 +398,7 @@ describe('AuthService', () => {
       mockPrisma.refreshToken.findUnique.mockResolvedValueOnce(null);
 
       await expect(service.refresh('unknown')).rejects.toThrow(UnauthorizedException);
-      expect(mockPrisma.refreshToken.delete).not.toHaveBeenCalled();
+      expect(mockPrisma.refreshToken.deleteMany).not.toHaveBeenCalled();
     });
 
     it('token 已过期 → UnauthorizedException (即使 hash 命中)', async () => {
@@ -386,7 +407,7 @@ describe('AuthService', () => {
       mockPrisma.refreshToken.findUnique.mockResolvedValueOnce(stored);
 
       await expect(service.refresh(rawToken)).rejects.toThrow(/Invalid refresh token/);
-      expect(mockPrisma.refreshToken.delete).not.toHaveBeenCalled();
+      expect(mockPrisma.refreshToken.deleteMany).not.toHaveBeenCalled();
     });
 
     it('token 已轮换 (旧 token reuse) → DB 已无, 走 not found 路径', async () => {
@@ -394,7 +415,7 @@ describe('AuthService', () => {
       mockPrisma.refreshToken.findUnique.mockResolvedValueOnce(null);
 
       await expect(service.refresh('reused-token')).rejects.toThrow(UnauthorizedException);
-      expect(mockPrisma.refreshToken.delete).not.toHaveBeenCalled();
+      expect(mockPrisma.refreshToken.deleteMany).not.toHaveBeenCalled();
     });
 
     it('空 token → UnauthorizedException (短路, 不查 DB)', async () => {
@@ -428,6 +449,21 @@ describe('AuthService', () => {
     });
   });
 
+  describe('logout(token)', () => {
+    it('revokes the persisted refresh token', async () => {
+      await service.logout('raw-refresh-token');
+
+      expect(mockPrisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { token: sha256('raw-refresh-token') },
+      });
+    });
+
+    it('is idempotent when no cookie is present', async () => {
+      await service.logout();
+      expect(mockPrisma.refreshToken.deleteMany).not.toHaveBeenCalled();
+    });
+  });
+
   describe('register(dto) 兼容入口', () => {
     it('只返回 user, 不返回 token (前端需要再走 login)', async () => {
       mockPrisma.userProviderAccount.findUnique.mockResolvedValueOnce(null);
@@ -452,6 +488,9 @@ describe('AuthService', () => {
       // register 不暴露 token
       expect((result as any).accessToken).toBeUndefined();
       expect((result as any).refreshToken).toBeUndefined();
+      expect(mockPrisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { token: expect.any(String) },
+      });
     });
   });
 
@@ -481,6 +520,42 @@ describe('AuthService', () => {
       expect(email).toEqual(
         expect.objectContaining({ id: 'email_password', label: 'Email', type: 'email_password' }),
       );
+    });
+  });
+
+  describe('OAuth state flow', () => {
+    it('creates a short-lived signed authorization URL', () => {
+      mockJwtService.sign.mockReturnValueOnce('signed-state');
+      const result = service.createAuthorization('oauth.google');
+
+      expect(result).toEqual({
+        providerId: 'oauth.google',
+        authorizationUrl:
+          'https://accounts.example/authorize?state=signed-state',
+        expiresIn: 600,
+      });
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purpose: 'oauth-state',
+          providerId: 'oauth.google',
+          nonce: expect.any(String),
+        }),
+        { audience: 'oauth', expiresIn: '10m' },
+      );
+    });
+
+    it('rejects a callback whose signed state belongs to another provider', async () => {
+      mockJwtService.verify.mockReturnValueOnce({
+        purpose: 'oauth-state',
+        providerId: 'oauth.github',
+      });
+
+      await expect(
+        service.authenticate('oauth.google', {
+          code: 'code',
+          state: 'wrong-state',
+        }),
+      ).rejects.toThrow(/Invalid or expired OAuth state/);
     });
   });
 });

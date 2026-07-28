@@ -3,7 +3,10 @@ import type {
   CreateOrderRequest,
   CreateOrderResponse,
   OrderWithItems,
+  PaymentMethod,
 } from '@ai-academy/shared-types';
+
+export const DEFAULT_PAYMENT_METHOD: PaymentMethod = 'wechat';
 
 export const ordersApi = {
   myOrders: async (): Promise<OrderWithItems[]> => {
@@ -19,7 +22,10 @@ export const ordersApi = {
     const { data } = await api.post<CreateOrderResponse>('/api/v1/orders', req);
     return data;
   },
-  pay: async (orderId: string, paymentMethod = 'mock'): Promise<OrderWithItems> => {
+  pay: async (
+    orderId: string,
+    paymentMethod: PaymentMethod = DEFAULT_PAYMENT_METHOD,
+  ): Promise<OrderWithItems> => {
     const { data } = await api.post<OrderWithItems>(`/api/v1/orders/${orderId}/pay`, {
       paymentMethod,
     });

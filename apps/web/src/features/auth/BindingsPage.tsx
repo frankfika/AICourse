@@ -156,7 +156,7 @@ export function BindingsPage() {
   // 未登录且非 demo 模式:硬重定向到登录页(带 ?next= 登录后回弹)
   // 原 EmptyState + 按钮改为 <Navigate>, 避免给未登录访客看到 "请先登录" 卡片
   if (!user && !showWithGoogleDemo) {
-    return <Navigate to="/auth/login?next=/dashboard/settings/bindings" replace />;
+    return <Navigate to="/auth/login?from=/dashboard/settings/bindings" replace />;
   }
 
   const handleUnbind = async (id: Identity) => {
@@ -341,14 +341,14 @@ export function BindingsPage() {
                 : t('auth.identity.warning_title', '安全提醒')}
             </p>
             <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-600">
-              {t('auth.identity.warning_desc', '解绑会立即吊销对应 provider 的 refresh token。')} {t('auth.identity.security_link_prefix', '如发现异常登录,前往')}{' '}
+              {t('auth.identity.warning_desc', '解绑会立即吊销对应 provider 的 refresh token。')} 如发现异常登录，请
               <a
-                href="/dashboard/settings/security"
+                href="mailto:support@ai-academy.local"
                 className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white"
               >
-                安全设置
-              </a>{' '}
-              撤销所有设备。
+                联系支持团队
+              </a>
+              协助撤销所有设备。
             </p>
           </div>
         </div>

@@ -53,8 +53,8 @@ interface ProvidersResponse {
  * 后端 /auth/providers 返回的列表若空(没接 env)就 fallback 到这组,保证 UI 始终有 6 宫格
  */
 const GRAYSCALE_PROVIDERS: ProviderInfo[] = [
-  { id: 'google', label: 'Google', type: 'oauth', enabled: false },
-  { id: 'github', label: 'GitHub', type: 'oauth', enabled: false },
+  { id: 'oauth.google', label: 'Google', type: 'oauth', enabled: false },
+  { id: 'oauth.github', label: 'GitHub', type: 'oauth', enabled: false },
   { id: 'wechat', label: '微信', type: 'oauth', enabled: false },
   { id: 'wecom', label: '企业微信', type: 'oauth', enabled: false },
   { id: 'feishu', label: '飞书', type: 'oauth', enabled: false },
@@ -75,11 +75,13 @@ export class LocalAuthAdapter implements AuthAdapter {
     }
 
     if (input.kind === 'oauth-redirect') {
-      // Phase 1 灰度:所有 oauth 都 disabled,根本不该调到这;防御性 throw
-      throw new Error(
-        `OAuth provider "${input.provider}" is not enabled in Phase 1 (gray mode). ` +
-          `Set AUTH_PROVIDERS env to enable.`,
+      const { data } = await api.get<{ authorizationUrl: string }>(
+        `/api/v1/auth/${encodeURIComponent(input.provider)}/start`,
       );
+      window.location.assign(data.authorizationUrl);
+      // Navigation normally interrupts this promise; keep a typed fallback for
+      // test environments where location.assign is mocked.
+      throw new Error('Redirecting to OAuth provider…');
     }
 
     // exhaustiveness check
@@ -150,19 +152,8 @@ export class LocalAuthAdapter implements AuthAdapter {
    */
   async listMyIdentities(user: { id: string; email: string; name: string } | null): Promise<Identity[]> {
     if (!user) return [];
-    // Phase 1: 只返回 local identity,等后端 P2 接真接口
-    return [
-      {
-        id: `local-${user.id}`,
-        provider: 'local',
-        providerUserId: user.id,
-        email: user.email,
-        displayName: user.name,
-        linkedAt: new Date().toISOString(),
-        lastUsedAt: new Date().toISOString(),
-        isPrimary: true,
-      },
-    ];
+    const { data } = await api.get<Identity[]>('/api/v1/auth/identities');
+    return data;
   }
 
   /**
@@ -171,9 +162,7 @@ export class LocalAuthAdapter implements AuthAdapter {
    * TODO(backend): 后端 P2 实现 DELETE /auth/identities/:id
    * Phase 1: 不支持解绑 local(主登录),其他 provider 也不存在,所以总是抛错
    */
-  async unbindProvider(_identityId: string): Promise<void> {
-    throw new Error(
-      'unbindProvider: 后端 P2 实现待定 (spec §9.3 DELETE /auth/identities/:id)',
-    );
+  async unbindProvider(identityId: string): Promise<void> {
+    await api.delete(`/api/v1/auth/identities/${encodeURIComponent(identityId)}`);
   }
 }

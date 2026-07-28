@@ -39,6 +39,8 @@ model User {
   pointTransactions   PointTransaction[]
   organizedHackathons Hackathon[]             @relation("OrganizedHackathons")
   reviews             Review[]
+  reviewHelpfulVotes  ReviewHelpful[]
+  notes               Note[]
   notifications       Notification[]
   // P1-8: 证书（学位 / 课程 / 黑客松完成时签发）
   certificates        Certificate[]
@@ -265,6 +267,7 @@ model Lesson {
   // P2 关联
   learningEvents LearningEvent[]
   chatSessions   ChatSession[]
+  notes          Note[]
 
   @@index([chapterId, deletedAt])
   @@map("lessons")
@@ -1042,12 +1045,42 @@ model Review {
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  helpfulVotes ReviewHelpful[]
 
   @@unique([userId, courseId])
   @@index([courseId, createdAt])
   @@index([courseId, helpful])
   @@index([courseId, deletedAt])
   @@map("reviews")
+}
+
+model ReviewHelpful {
+  reviewId  String   @map("review_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([reviewId, userId])
+  @@index([userId, createdAt])
+  @@map("review_helpful_votes")
+}
+
+model Note {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  lessonId    String   @map("lesson_id")
+  content     String   @db.Text
+  positionSec Int?     @map("position_sec")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lessonId, positionSec])
+  @@map("notes")
 }
 
 // ==================== 通知中心（P1-7）====================

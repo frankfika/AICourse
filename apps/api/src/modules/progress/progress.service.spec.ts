@@ -21,6 +21,8 @@ import { ProgressService } from './progress.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
 import { BadgesService } from '../badges/badges.service';
+import { CertificatesService } from '../certificates/certificates.service';
+import { NotificationService } from '../notification/notification.service';
 
 // =================== 桩 ===================
 
@@ -51,6 +53,12 @@ const mockPointsService: any = {
 
 const mockBadgesService: any = {
   checkAndAward: jest.fn().mockResolvedValue([]),
+};
+const mockCertificatesService = {
+  issueCertificate: jest.fn(),
+};
+const mockNotificationService = {
+  create: jest.fn(),
 };
 
 // 工具: 返回 course + chapters + lessons 完整结构
@@ -83,6 +91,10 @@ describe('ProgressService', () => {
     mockPointsService.award.mockReset();
     mockBadgesService.checkAndAward.mockReset();
     mockBadgesService.checkAndAward.mockResolvedValue([]);
+    mockCertificatesService.issueCertificate.mockReset();
+    mockCertificatesService.issueCertificate.mockResolvedValue({ id: 'cert-1' });
+    mockNotificationService.create.mockReset();
+    mockNotificationService.create.mockResolvedValue({ id: 'notification-1' });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -90,6 +102,8 @@ describe('ProgressService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: PointsService, useValue: mockPointsService },
         { provide: BadgesService, useValue: mockBadgesService },
+        { provide: CertificatesService, useValue: mockCertificatesService },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     }).compile();
 
@@ -149,6 +163,20 @@ describe('ProgressService', () => {
       );
       // 验证 badge 检查
       expect(mockBadgesService.checkAndAward).toHaveBeenCalledWith('u1');
+      expect(mockCertificatesService.issueCertificate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'u1',
+          type: 'course',
+          refId: 'c1',
+        }),
+      );
+      expect(mockNotificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'u1',
+          type: 'announcement',
+          linkUrl: '/certificates/cert-1',
+        }),
+      );
     });
 
     it('幂等: 重复 complete 同一 lesson → 不双倍 award, pointsAwarded=0', async () => {
@@ -183,6 +211,11 @@ describe('ProgressService', () => {
       expect(mockPointsService.award).not.toHaveBeenCalled();
       // badge check 也不调 (避免重复发徽章)
       expect(mockBadgesService.checkAndAward).not.toHaveBeenCalled();
+      // 证书签发自身幂等；重复完成时仍重试，防止首次完成时下游瞬时失败。
+      expect(mockCertificatesService.issueCertificate).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'u1', refId: 'c1' }),
+      );
+      expect(mockNotificationService.create).not.toHaveBeenCalled();
       // 但 upsert 还是调了 (更新 completedAt)
       expect(mockPrisma.progressRecord.upsert).toHaveBeenCalled();
     });

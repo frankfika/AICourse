@@ -65,7 +65,7 @@ export function PurchaseModal({
   });
 
   const payMutation = useMutation({
-    mutationFn: (orderId: string) => ordersApi.pay(orderId, 'mock'),
+    mutationFn: (orderId: string) => ordersApi.pay(orderId),
   });
 
   if (!open) return null;

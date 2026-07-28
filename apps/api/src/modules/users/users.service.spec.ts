@@ -26,7 +26,6 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';

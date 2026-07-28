@@ -39,14 +39,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: (user, accessToken) => {
     setAccessToken(accessToken);
     set({ user });
-    // DEBUG (P0 2026-07-24, dev 期间排查 admin role 跳回学生问题, 上线前删)
-    // eslint-disable-next-line no-console
-    console.log(
-      '[authStore.setAuth] user=',
-      user,
-      'role=',
-      (user as { role?: string })?.role,
-    );
   },
   clearAuth: () => {
     setAccessToken(null);

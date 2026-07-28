@@ -8,8 +8,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ResourceType } from '@prisma/client';
 import { SafeUrl } from '../../common/validators/safe-url.decorator';
 
-const ALLOWED_TYPES: ResourceType[] = ['pdf', 'code', 'link', 'video', 'audio'];
-
 export class CreateResourceDto {
   @ApiProperty()
   @IsString()

@@ -72,4 +72,7 @@ export abstract class AuthProvider {
    * 不实现的 provider 不暴露给前端
    */
   describe?(): { id: AuthProviderId; label: string; iconUrl?: string; type: AuthProviderType };
+
+  /** OAuth providers can expose a browser authorization URL. */
+  createAuthorizationUrl?(state: string): string;
 }

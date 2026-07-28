@@ -12,13 +12,6 @@
  *     <App />
  *   </ErrorBoundary>
  *
- * 新增 type prop (基于 audit-web-ux-long.md:54 错误页缺口):
- *   - 'crash'  (默认) — 通用 React 错误兜底,中性卡片风
- *   - '404'           — 路由/资源不存在 (走 NotFoundPage)
- *   - '403'           — 无权限 (走 ForbiddenPage)
- *   - '500'           — 后端 5xx (走 ServerErrorPage,带 error + reset)
- *   - 'network'       — 网络错误 (走 NetworkErrorPage,带 reset)
- *
  * 设计:
  *   - 用 class component(getDerivedStateFromError + componentDidCatch)
  *     function component 没 lifecycle,不能做 error boundary
@@ -29,30 +22,11 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { NotFoundPage } from '../features/misc/NotFoundPage';
-import { ForbiddenPage } from '../features/misc/ForbiddenPage';
-import { ServerErrorPage } from '../features/misc/ServerErrorPage';
-import { NetworkErrorPage } from '../features/misc/NetworkErrorPage';
-
-export type ErrorBoundaryType = 'crash' | '404' | '403' | '500' | 'network';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
   /** 自定义错误兜底 UI(高级用法,默认按 type 走对应页面) */
   fallback?: (err: Error, reset: () => void) => ReactNode;
-  /**
-   * 错误类型:
-   *   - 'crash'  (默认) 组件 throw / unhandled rejection
-   *   - '404'    路由/资源不存在
-   *   - '403'    无权限
-   *   - '500'    后端 5xx
-   *   - 'network' 网络错误
-   *
-   * 注意: '404'/'403'/'500'/'network' 不会真的等错误发生才渲染 — 在生产环境
-   *       你应该直接用对应错误页组件而不是 ErrorBoundary 包一层。本 prop 主要
-   *       用来统一 reset() 行为(重试 → reset → 重新渲染子树)。
-   */
-  type?: ErrorBoundaryType;
 }
 
 interface ErrorBoundaryState {
@@ -84,23 +58,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         return this.props.fallback(this.state.error, this.reset);
       }
 
-      // 2. 按 type 路由到对应错误页
-      const { type = 'crash' } = this.props;
-      const err = this.state.error;
-
-      switch (type) {
-        case '404':
-          return <NotFoundPage />;
-        case '403':
-          return <ForbiddenPage />;
-        case '500':
-          return <ServerErrorPage error={err} onRetry={this.reset} />;
-        case 'network':
-          return <NetworkErrorPage onRetry={this.reset} />;
-        case 'crash':
-        default:
-          return <ErrorFallback error={err} reset={this.reset} />;
-      }
+      return <ErrorFallback error={this.state.error} reset={this.reset} />;
     }
     return this.props.children;
   }

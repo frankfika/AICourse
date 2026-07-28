@@ -166,7 +166,7 @@
 
 **附 5 份原报告路径**:
 - 前端核心 UX: 见 conversation context (输出已 inline)
-- Admin: `/Users/fangchen/Baidu/GitHub/AICourse/admin-audit-report.md`
+- Admin: `/Users/fangchen/Baidu/GitHub/AICourse/review/archive/admin-audit-report.md`
 - 性能/a11y/SEO/i18n: `/Users/fangchen/Baidu/GitHub/AICourse/review/audit-frontend-perf-a11y-seo-i18n.md`
 - 后端 API: `/tmp/audit-reports/AICourse-backend-audit.md`
 - DB schema: 见 conversation context (输出已 inline)

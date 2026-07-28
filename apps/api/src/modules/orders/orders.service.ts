@@ -8,10 +8,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { OrderType, OrderStatus, CostType } from '@prisma/client';
+import { OrderType, OrderStatus, CostType, PaymentMethod } from '@prisma/client';
 import { CreateOrderDto } from './orders.dto';
 import { CertificatesService } from '../certificates/certificates.service';
 import { AuditLogService } from '../audit/audit-log.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class OrdersService {
@@ -22,6 +23,7 @@ export class OrdersService {
     @Inject(forwardRef(() => CertificatesService))
     private readonly certificatesService: CertificatesService,
     private readonly auditLog: AuditLogService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -171,7 +173,11 @@ export class OrdersService {
    * "完成 = 自动发证书" 业务规则的简化)。course 订单不在此发,
    * 等 course 完成钩子(P2 接入)。
    */
-  async mockPay(userId: string, orderId: string, paymentMethod?: string) {
+  async mockPay(
+    userId: string,
+    orderId: string,
+    paymentMethod?: PaymentMethod,
+  ) {
     // Security: lock the order row first to fail fast on auth/status checks
     // without entering a transaction. The real write below is conditional
     // and atomic (updateMany with status guard + transaction).
@@ -195,7 +201,9 @@ export class OrdersService {
         data: {
           status: OrderStatus.paid,
           paidAt: new Date(),
-          paymentMethod: (paymentMethod ?? existing.paymentMethod ?? 'mock') as 'wechat' | 'alipay' | 'stripe',
+          // Prisma 只允许真实支付渠道枚举；mock 体现在 transactionId，
+          // 不能写入一个 schema 不接受的 "mock" paymentMethod。
+          paymentMethod: paymentMethod ?? existing.paymentMethod ?? PaymentMethod.alipay,
           transactionId,
         },
       });
@@ -250,6 +258,13 @@ export class OrdersService {
       entity: 'Order',
       entityId: orderId,
       details: { paymentMethod, transactionId, type: existing.type },
+    });
+    await this.notificationService.create({
+      userId,
+      type: 'order',
+      title: '支付成功',
+      body: '订单已支付成功，相关课程内容现已解锁。',
+      linkUrl: `/orders/${orderId}`,
     });
 
     return paidOrder;
@@ -346,6 +361,13 @@ export class OrdersService {
         refundAmount,
         originalAmount: fullAmount,
       },
+    });
+    await this.notificationService.create({
+      userId,
+      type: 'order',
+      title: '退款申请已完成',
+      body: `订单退款已处理，退款金额 ¥${refundAmount.toFixed(2)}。`,
+      linkUrl: `/orders/${orderId}`,
     });
     return { ...updated, refundAmount };
   }

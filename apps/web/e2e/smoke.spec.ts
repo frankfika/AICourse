@@ -109,4 +109,61 @@ test.describe('Smoke', () => {
       timeout: 5_000,
     });
   });
+
+  test('footer 关于我们链接可到达', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: '关于我们' }).click();
+    await page.waitForURL(/\/about$/);
+    await expect(page.getByRole('heading', { name: /让 AI 时代的能力/ })).toBeVisible();
+  });
+
+  test('讲师详情页使用公开 slug 与统计接口', async ({ page }) => {
+    await page.route('**/api/v1/instructors/alice', (route) =>
+      route.fulfill({
+        json: {
+          id: 'inst-1',
+          slug: 'alice',
+          name: 'Alice',
+          title: 'AI 工程师',
+          headline: '专注于可落地的 AI 应用',
+          expertiseLinks: [],
+          _count: { courseLinks: 1 },
+          courseLinks: [],
+        },
+      }),
+    );
+    await page.route('**/api/v1/instructors/inst-1/stats', (route) =>
+      route.fulfill({
+        json: {
+          instructorId: 'inst-1',
+          name: 'Alice',
+          courseCount: 1,
+          studentCount: 20,
+          completionRate: 0.75,
+          averageRating: 4.8,
+          reviewCount: 10,
+        },
+      }),
+    );
+
+    await page.goto('/instructors/alice');
+    await expect(page.getByRole('heading', { name: 'Alice' })).toBeVisible();
+    await expect(page.getByText('4.8')).toBeVisible();
+  });
+
+  test('课程排序把真实 sort 参数发送给后端', async ({ page, isMobile }) => {
+    const requestedSorts: string[] = [];
+    await page.route('**/api/v1/courses?**', (route) => {
+      requestedSorts.push(new URL(route.request().url()).searchParams.get('sort') ?? '');
+      return route.fulfill({ json: [] });
+    });
+
+    await page.goto('/courses');
+    if (isMobile) {
+      await page.getByLabel('课程排序').selectOption('rating');
+    } else {
+      await page.getByRole('button', { name: '评分' }).last().click();
+    }
+    await expect.poll(() => requestedSorts).toContain('rating');
+  });
 });

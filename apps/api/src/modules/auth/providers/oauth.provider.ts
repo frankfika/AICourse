@@ -36,6 +36,10 @@ export class OAuthProvider extends AuthProvider {
       userinfo: 'https://api.github.com/user',
     },
   };
+  private static readonly AUTHORIZE_ENDPOINTS: Record<string, string> = {
+    'oauth.google': 'https://accounts.google.com/o/oauth2/v2/auth',
+    'oauth.github': 'https://github.com/login/oauth/authorize',
+  };
 
   constructor(
     id: string,
@@ -77,8 +81,7 @@ export class OAuthProvider extends AuthProvider {
     });
 
     if (!tokenRes.ok) {
-      const body = await tokenRes.text();
-      this.logger.error(`Token exchange failed: ${tokenRes.status} ${body}`);
+      this.logger.error(`Token exchange failed with HTTP ${tokenRes.status}`);
       throw new UnauthorizedException('OAuth token exchange failed');
     }
 
@@ -173,5 +176,23 @@ export class OAuthProvider extends AuthProvider {
   describe() {
     const label = this.id === 'oauth.google' ? 'Google' : this.id === 'oauth.github' ? 'GitHub' : this.id;
     return { id: this.id, label, type: this.type };
+  }
+
+  createAuthorizationUrl(state: string): string {
+    const endpoint = OAuthProvider.AUTHORIZE_ENDPOINTS[this.id];
+    if (!endpoint) {
+      throw new UnauthorizedException(`Unsupported OAuth provider: ${this.id}`);
+    }
+    const url = new URL(endpoint);
+    url.searchParams.set('client_id', this.config.clientId);
+    url.searchParams.set('redirect_uri', this.config.redirectUri);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('scope', this.config.scopes.join(' '));
+    url.searchParams.set('state', state);
+    if (this.id === 'oauth.google') {
+      url.searchParams.set('access_type', 'offline');
+      url.searchParams.set('prompt', 'select_account');
+    }
+    return url.toString();
   }
 }

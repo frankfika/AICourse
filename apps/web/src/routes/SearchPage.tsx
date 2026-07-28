@@ -4,7 +4,7 @@
  * URL: /search?q=langchain
  *
  * 结构:
- *   - 顶部:大搜索词(读 URL ?q=) + 命中数 + 排序(相关/最新)
+ *   - 顶部:大搜索词(读 URL ?q=) + 命中数
  *   - 4 tab:全部 (default) / 课程 / 学位 / 黑客松 / 讲师
  *   - 列表:内联卡片(按 type 渲染对应卡片,简化复用 P0-5 home 的风格)
  *   - 加载:Skeleton (rectangle h-32 count=6)
@@ -14,7 +14,7 @@
  *
  * 设计约束:
  *   - 不引新依赖,复用 P0-4 基础组件 + searchApi
- *   - 排序客户端做(后端 search 端点没暴露 sort)
+ *   - 后端尚未暴露可验证的时间字段，因此不展示无效的“最新”排序
  *   - 暗色:全部走 token
  */
 
@@ -38,8 +38,6 @@ import { Button } from '../components/ui/Button';
 import { searchAll, groupResults, type SearchResult, type SearchResultType } from '../lib/searchApi';
 import { cn } from '../lib/cn';
 
-type SortKey = 'relevance' | 'recent';
-
 const TYPE_TABS: { key: SearchResultType | 'all'; label: string }[] = [
   { key: 'all', label: '全部' },
   { key: 'course', label: '课程' },
@@ -61,12 +59,14 @@ function getCourseCoverGradient(tags: string | undefined): string {
 export function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlQ = searchParams.get('q') ?? '';
-  const urlType = (searchParams.get('type') as SearchResultType | 'all' | null) ?? 'all';
+  const requestedType = searchParams.get('type');
+  const urlType: SearchResultType | 'all' = TYPE_TABS.some((tab) => tab.key === requestedType)
+    ? requestedType as SearchResultType | 'all'
+    : 'all';
 
   const [input, setInput] = useState(urlQ);
   const [debouncedQ, setDebouncedQ] = useState(urlQ);
   const [activeType, setActiveType] = useState<SearchResultType | 'all'>(urlType);
-  const [sort, setSort] = useState<SortKey>('relevance');
 
   // 同步 URL → state
   useEffect(() => {
@@ -95,6 +95,7 @@ export function SearchPage() {
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['search-page', debouncedQ],
     queryFn: () => searchAll(debouncedQ),
+    enabled: debouncedQ.trim().length > 0,
     staleTime: 30_000,
   });
 
@@ -110,10 +111,6 @@ export function SearchPage() {
     if (!data) return 0;
     return data.counts.course + data.counts.degree + data.counts.hackathon + data.counts.instructor;
   }, [data]);
-
-  // 排序:'recent' 时按 meta 字符串降序(简单实现 — 后端无时间字段时按 title)
-  // 实际 recent 排序要看后端 sort 参数,这里只做 relevance / 未变顺序
-  // (relevance 是默认顺序,后端 search 已做匹配,这里不动)
 
   const handleTypeChange = (t: SearchResultType | 'all') => {
     setActiveType(t);
@@ -171,10 +168,10 @@ export function SearchPage() {
         </div>
       </section>
 
-      {/* Tabs + 排序 */}
+      {/* 结果类型筛选 */}
       <section className="bg-neutral-0 dark:bg-neutral-100 border-b border-neutral-200 sticky top-16 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label="搜索结果类型">
             {TYPE_TABS.map((t) => {
               const count = t.key === 'all'
                 ? totalCount
@@ -183,6 +180,9 @@ export function SearchPage() {
               return (
                 <button
                   key={t.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => handleTypeChange(t.key)}
                   className={cn(
                     'px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-colors rounded-md',
@@ -198,34 +198,6 @@ export function SearchPage() {
                 </button>
               );
             })}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-widest text-neutral-600 dark:text-neutral-600">
-              排序
-            </span>
-            <button
-              onClick={() => setSort('relevance')}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                sort === 'relevance'
-                  ? 'bg-[#171717] text-white'
-                  : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-600 dark:text-neutral-600 hover:bg-neutral-200',
-              )}
-            >
-              相关
-            </button>
-            <button
-              onClick={() => setSort('recent')}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                sort === 'recent'
-                  ? 'bg-[#171717] text-white'
-                  : 'bg-neutral-100 dark:bg-neutral-100 text-neutral-600 dark:text-neutral-600 hover:bg-neutral-200',
-              )}
-            >
-              最新
-            </button>
           </div>
         </div>
       </section>
