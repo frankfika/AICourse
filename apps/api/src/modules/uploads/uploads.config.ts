@@ -115,10 +115,13 @@ export const UPLOAD_SCOPES: Record<UploadScope, ScopeConfig> = {
     keyPrefix: 'hackathons/sponsors/logos',
     allowedRoles: [UserRole.admin],
     maxSizeMB: 3,
-    allowedMime: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'],
+    // SVG can execute script when served from a public object origin. Keep
+    // sponsor logos to inert raster formats unless SVG is sanitized and served
+    // from a separate, non-application origin.
+    allowedMime: ['image/jpeg', 'image/png', 'image/webp'],
     presignTtlSec: 10 * 60,
     publicRead: true,
-    description: '赞助商 logo (jpg/png/webp/svg, max 3MB)',
+    description: '赞助商 logo (jpg/png/webp, max 3MB)',
   },
   'submission-video': {
     // hackathon 团队成员可上传作品 demo 视频

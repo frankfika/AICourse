@@ -95,6 +95,12 @@ export class AuthService {
       include: { user: true },
     });
 
+    if (existingAccount?.deletedAt || existingAccount?.user.deletedAt) {
+      // The compound unique key remains reserved after unlinking. Do not
+      // silently revive an identity that the user explicitly removed.
+      throw new UnauthorizedException('Identity is not available');
+    }
+
     if (existingAccount) {
       return { user: existingAccount.user, isNewUser: false };
     }
@@ -105,6 +111,14 @@ export class AuthService {
     });
 
     if (existingUser) {
+      if (existingUser.deletedAt) {
+        throw new UnauthorizedException('Account is disabled');
+      }
+      // Linking a third-party identity to an existing account solely by email
+      // is safe only when that provider attests that the email is verified.
+      if (providerId !== 'email_password' && !identity.profile.emailVerified) {
+        throw new UnauthorizedException('OAuth email is not verified');
+      }
       await this.prisma.userProviderAccount.create({
         data: {
           userId: existingUser.id,
@@ -154,7 +168,7 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!stored || stored.expiresAt < new Date()) {
+    if (!stored || stored.expiresAt < new Date() || stored.user.deletedAt) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 

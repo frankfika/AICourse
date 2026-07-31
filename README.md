@@ -31,7 +31,7 @@ AI Academy 是一个可二次品牌化的在线教育平台，面向 AI/LLM 课�
 ### 环境要求
 
 - Node.js 20+
-- pnpm 9+
+- pnpm 11.12+ (由 Corepack 管理)
 - Docker Desktop / Docker Compose
 
 ### 安装与配置
@@ -39,6 +39,7 @@ AI Academy 是一个可二次品牌化的在线教育平台，面向 AI/LLM 课�
 ```bash
 pnpm install
 cp .env.example .env
+corepack enable
 ```
 
 至少设置一个非占位的 `JWT_SECRET`（建议 `openssl rand -hex 32`），并确认 `DATABASE_URL` 与 Docker 端口一致。
@@ -95,10 +96,10 @@ pnpm db:studio   # Prisma Studio
 pnpm db:seed     # 开发种子数据
 ```
 
-Web 端到端测试要求服务已启动：
+Web 浏览器 smoke 测试会自动启动前端服务：
 
 ```bash
-pnpm --filter @ai-academy/web e2e
+pnpm e2e
 ```
 
 ## 环境变量

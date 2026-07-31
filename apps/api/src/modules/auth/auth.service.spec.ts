@@ -54,7 +54,7 @@ class StubEmailPasswordProvider extends AuthProvider {
   async verify(_creds: any): Promise<AuthIdentity> {
     return {
       providerUserId: 'u@example.com',
-      profile: { email: 'u@example.com', name: 'User' },
+      profile: { email: 'u@example.com', name: 'User', emailVerified: true },
     };
   }
   async link(): Promise<void> {}
@@ -70,7 +70,12 @@ class StubGoogleProvider extends AuthProvider {
   async verify(_creds: any): Promise<AuthIdentity> {
     return {
       providerUserId: 'google-sub-123',
-      profile: { email: 'g@example.com', name: 'G User', avatarUrl: 'https://x/a.png' },
+      profile: {
+        email: 'g@example.com',
+        name: 'G User',
+        avatarUrl: 'https://x/a.png',
+        emailVerified: true,
+      },
     };
   }
   async link(): Promise<void> {}
@@ -89,7 +94,7 @@ class StubSsoProvider extends AuthProvider {
   async verify(_creds: any): Promise<AuthIdentity> {
     return {
       providerUserId: 'saml-name-id',
-      profile: { email: 'sso@example.com', name: 'SSO User' },
+      profile: { email: 'sso@example.com', name: 'SSO User', emailVerified: true },
     };
   }
   async link(): Promise<void> {}
@@ -132,7 +137,7 @@ function makeStoredToken(rawToken: string, userId: string, expired = false) {
     token: sha256(rawToken),
     userId,
     expiresAt,
-    user: { id: userId, email: `${userId}@x.com`, role: 'student', name: 'User' },
+    user: { id: userId, email: `${userId}@x.com`, role: 'student', name: 'User', deletedAt: null as Date | null },
   };
 }
 
@@ -324,6 +329,39 @@ describe('AuthService', () => {
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
     });
 
+    it('已解绑的 provider account → 拒绝登录，不会尝试重新创建 account', async () => {
+      mockPrisma.userProviderAccount.findUnique.mockResolvedValueOnce({
+        provider: 'oauth.google',
+        providerUserId: 'google-sub-123',
+        deletedAt: new Date(),
+        user: {
+          id: 'u-existing', email: 'existing@x.com', name: 'Existing', role: 'student', deletedAt: null,
+        },
+      });
+
+      await expect(service.authenticate('oauth.google', {
+        code: 'c', state: 'signed-oauth-state',
+      })).rejects.toThrow(UnauthorizedException);
+      expect(mockPrisma.userProviderAccount.create).not.toHaveBeenCalled();
+      expect(mockPrisma.refreshToken.create).not.toHaveBeenCalled();
+    });
+
+    it('绑定的 user 已删除 → 拒绝 OAuth 登录', async () => {
+      mockPrisma.userProviderAccount.findUnique.mockResolvedValueOnce({
+        provider: 'oauth.google',
+        providerUserId: 'google-sub-123',
+        deletedAt: null,
+        user: {
+          id: 'u-deleted', email: 'deleted@x.com', name: 'Deleted', role: 'student', deletedAt: new Date(),
+        },
+      });
+
+      await expect(service.authenticate('oauth.google', {
+        code: 'c', state: 'signed-oauth-state',
+      })).rejects.toThrow(UnauthorizedException);
+      expect(mockPrisma.refreshToken.create).not.toHaveBeenCalled();
+    });
+
     it('provider account 不存在 + 同 email user 存在 → link provider account 到现有 user', async () => {
       mockPrisma.userProviderAccount.findUnique.mockResolvedValueOnce(null);
       mockPrisma.user.findUnique.mockResolvedValueOnce({
@@ -354,6 +392,24 @@ describe('AuthService', () => {
         }),
       );
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
+    });
+
+    it('未验证邮箱不能自动绑定到已有 user', async () => {
+      const unverifiedOAuth = new StubGoogleProvider();
+      jest.spyOn(unverifiedOAuth, 'verify').mockResolvedValueOnce({
+        providerUserId: 'unverified-google',
+        profile: { email: 'shared@x.com', name: 'Unverified' },
+      });
+      (service as any).providers.set('oauth.google', unverifiedOAuth);
+      mockPrisma.userProviderAccount.findUnique.mockResolvedValueOnce(null);
+      mockPrisma.user.findUnique.mockResolvedValueOnce({
+        id: 'u-existing', email: 'shared@x.com', name: 'Shared', role: 'student', deletedAt: null,
+      });
+
+      await expect(service.authenticate('oauth.google', {
+        code: 'c', state: 'signed-oauth-state',
+      })).rejects.toThrow(/not verified/);
+      expect(mockPrisma.userProviderAccount.create).not.toHaveBeenCalled();
     });
   });
 
@@ -408,6 +464,17 @@ describe('AuthService', () => {
 
       await expect(service.refresh(rawToken)).rejects.toThrow(/Invalid refresh token/);
       expect(mockPrisma.refreshToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('user 已删除 → 拒绝 refresh，且不签发新 token', async () => {
+      const rawToken = 'deleted-user-token';
+      const stored = makeStoredToken(rawToken, 'u1');
+      stored.user.deletedAt = new Date();
+      mockPrisma.refreshToken.findUnique.mockResolvedValueOnce(stored);
+
+      await expect(service.refresh(rawToken)).rejects.toThrow(/Invalid refresh token/);
+      expect(mockPrisma.refreshToken.deleteMany).not.toHaveBeenCalled();
+      expect(mockPrisma.refreshToken.create).not.toHaveBeenCalled();
     });
 
     it('token 已轮换 (旧 token reuse) → DB 已无, 走 not found 路径', async () => {

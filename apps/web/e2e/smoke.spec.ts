@@ -9,7 +9,8 @@
  *   5) 暗色主题切换
  *   6) 移动端 bottom tab 出现(< md)
  *
- * 不需要后端:大部分页面有 mock fallback,空数据也算"渲染成功"。
+ * 此套件只验证前端壳层交互；真实 API 与依赖连通性由 CI 的 api-integration
+ * job 通过 GET /api/v1/health/ready 单独门禁，不能以本套件替代。
  */
 import { test, expect } from '@playwright/test';
 

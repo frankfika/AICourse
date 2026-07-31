@@ -11,9 +11,20 @@ allowBuilds:
   prisma: true
   protobufjs: true
 
+auditConfig:
+  ignoreGhsas:
+    - GHSA-qwww-vcr4-c8h2
+
+minimumReleaseAgeExclude:
+  - js-yaml@5.2.2
+  - react-router@8.3.0
+  - tar@7.5.21
+  - postcss@8.5.18
+  - brace-expansion@5.0.8
+
 overrides:
-  tar: '>=7.5.11'
-  js-yaml: '>=4.2.0'
+  tar: '>=7.5.21'
+  js-yaml: '>=5.2.2'
   multer: '>=2.2.0'
   # Keep security fixes within the majors this repository has validated.
   # A lower-bound override (">=") silently upgraded Vite 6 → 8 and Vitest 2 → 4.
@@ -26,3 +37,6 @@ overrides:
   semver: '>=6.3.1'
   tmp: '>=0.2.6'
   fast-uri: '>=3.1.4'
+  brace-expansion@<=5.0.7: ^5.0.8
+  postcss@<=8.5.17: ^8.5.18
+  tar@<=7.5.20: ^7.5.21

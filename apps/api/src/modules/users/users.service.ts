@@ -217,6 +217,9 @@ export class UsersService {
       select: { id: true, email: true, deletedAt: true },
     });
 
+    // A soft-deleted account must not keep a valid long-lived session.
+    await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
+
     await this.auditLog.log({
       userId: id,
       action: 'USER_SOFT_DELETE',

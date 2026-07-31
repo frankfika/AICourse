@@ -103,7 +103,13 @@ export class OAuthProvider extends AuthProvider {
     }
 
     // 3. 标准化 identity（不同 provider 的 userinfo 字段不同）
-    return this.normalize(this.id, await userRes.json());
+    const raw = await userRes.json();
+    if (this.id === 'oauth.github') {
+      // /user.email may be absent or private; only /user/emails exposes
+      // GitHub's verification status. The configured user:email scope is required.
+      raw.email = await this.fetchGitHubVerifiedEmail(tokenData.access_token);
+    }
+    return this.normalize(this.id, raw);
   }
 
   /**
@@ -113,13 +119,14 @@ export class OAuthProvider extends AuthProvider {
    */
   private normalize(providerId: string, raw: any): AuthIdentity {
     if (providerId === 'oauth.google') {
-      if (!raw.email) {
-        throw new UnauthorizedException('Google account has no email (scope missing?)');
+      if (!raw.email || raw.email_verified !== true) {
+        throw new UnauthorizedException('Google account has no verified email');
       }
       return {
         providerUserId: String(raw.sub),
         profile: {
           email: raw.email,
+          emailVerified: true,
           name: raw.name ?? raw.email.split('@')[0],
           avatarUrl: raw.picture,
           raw,
@@ -128,12 +135,15 @@ export class OAuthProvider extends AuthProvider {
     }
 
     if (providerId === 'oauth.github') {
-      // GitHub 可能把 email 设为 null（如果用户设成 private），需要额外查 /user/emails
-      const email = raw.email ?? `github_${raw.id}@users.noreply.github.com`;
+      if (!raw.email) {
+        throw new UnauthorizedException('GitHub account has no verified email');
+      }
+      const email = raw.email;
       return {
         providerUserId: String(raw.id),
         profile: {
           email,
+          emailVerified: true,
           name: raw.name ?? raw.login,
           avatarUrl: raw.avatar_url,
           raw,
@@ -142,6 +152,29 @@ export class OAuthProvider extends AuthProvider {
     }
 
     throw new UnauthorizedException(`No normalizer for ${providerId}`);
+  }
+
+  private async fetchGitHubVerifiedEmail(accessToken: string): Promise<string> {
+    const response = await fetch('https://api.github.com/user/emails', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new UnauthorizedException('Failed to fetch GitHub email addresses');
+    }
+    const emails = (await response.json()) as Array<{
+      email?: string;
+      verified?: boolean;
+      primary?: boolean;
+    }>;
+    const email = emails.find((entry) => entry.primary && entry.verified)?.email
+      ?? emails.find((entry) => entry.verified)?.email;
+    if (!email) {
+      throw new UnauthorizedException('GitHub account has no verified email');
+    }
+    return email;
   }
 
   /**

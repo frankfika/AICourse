@@ -12,6 +12,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CourseLevel, CostType, CourseStatus, CourseType } from '@prisma/client';
 import { CreateLessonDto as NestedCreateLessonDto } from './lessons.dto';
 import { CreateResourceDto as NestedCreateResourceDto } from './resources.dto';
+import { SafeUrl } from '../../common/validators/safe-url.decorator';
 
 // P0 修复(2026-07-24): 直接 extends resources.dto.ts 的 CreateResourceDto, 共享 @SafeUrl url 校验
 // 之前 courses.dto.ts 重复定义 CreateResourceDto, url 字段只有 @IsString 没 @SafeUrl
@@ -111,15 +112,11 @@ export class CreateCourseDto {
   courseType?: CourseType;
 
   @ApiPropertyOptional({ description: '外链课程 URL（外部跳转类型课程用）', maxLength: 500 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
+  @SafeUrl({ optional: true, maxLength: 500 })
   externalUrl?: string;
 
   @ApiPropertyOptional({ description: '原始视频源 URL（导入用）', maxLength: 500 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
+  @SafeUrl({ optional: true, maxLength: 500 })
   sourceVideoUrl?: string;
 
   @ApiPropertyOptional({ description: '来源平台标识', maxLength: 20 })

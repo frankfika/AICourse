@@ -73,13 +73,14 @@ export class EmailPasswordProvider extends AuthProvider {
       profile: {
         email: user.email,
         name: user.name,
+        emailVerified: true,
       },
     };
   }
 
   private async handleLogin(email: string, password: string): Promise<AuthIdentity> {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) {
+    if (!user || user.deletedAt) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -93,6 +94,7 @@ export class EmailPasswordProvider extends AuthProvider {
       profile: {
         email: user.email,
         name: user.name,
+        emailVerified: true,
         avatarUrl: user.avatarUrl ?? undefined,
       },
     };

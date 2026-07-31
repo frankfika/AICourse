@@ -197,6 +197,7 @@ export class UploadsService {
     if (!meta) {
       throw new NotFoundException(`上传 object 不存在: ${dto.key} (前端可能未完成 PUT)`);
     }
+    await this.validateCompletedObject(dto.scope, dto.key, meta);
 
     const publicUrl = `${this.storage.getPublicUrlBase()}/${dto.key}`;
 
@@ -219,6 +220,43 @@ export class UploadsService {
     });
 
     return { url: publicUrl, publicUrl, key: dto.key, writtenBack };
+  }
+
+  /**
+   * 预签名 URL 只能约束请求头，不能可靠地限制实际上传的字节数。
+   * 因此以对象存储返回的元数据作为完成上传前的最终准入依据。
+   */
+  private async validateCompletedObject(
+    scope: UploadScope,
+    key: string,
+    meta: { size: number; contentType?: string },
+  ): Promise<void> {
+    const cfg = UPLOAD_SCOPES[scope];
+    const maxBytes = cfg.maxSizeMB * 1024 * 1024;
+    const actualContentType = meta.contentType?.split(';', 1)[0].trim().toLowerCase();
+
+    if (meta.size > 0 && meta.size <= maxBytes && actualContentType && cfg.allowedMime.includes(actualContentType)) {
+      return;
+    }
+
+    // Invalid objects must not remain available through a public bucket after a
+    // failed confirmation. Deletion is best-effort so the validation error is
+    // still returned even if storage cleanup itself is temporarily unavailable.
+    try {
+      await this.storage.deleteObject(key);
+    } catch (error) {
+      this.logger.error(`删除不合规上传对象失败: ${key}`, error instanceof Error ? error.stack : undefined);
+    }
+
+    if (meta.size <= 0) {
+      throw new BadRequestException('上传文件为空');
+    }
+    if (meta.size > maxBytes) {
+      throw new BadRequestException(`${scope} 实际文件 ${meta.size} 字节超过上限 ${cfg.maxSizeMB}MB`);
+    }
+    throw new BadRequestException(
+      `${scope} 实际文件类型 ${meta.contentType ?? 'unknown'} 不被允许`,
+    );
   }
 
   private entityForScope(scope: UploadScope): string {
