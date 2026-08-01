@@ -16,7 +16,7 @@
  * 风格: jest mock prisma + points / badges service (参考 orders.service.spec.ts)
  */
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ProgressService } from './progress.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
@@ -42,6 +42,7 @@ const mockPrisma: any = {
     findUnique: jest.fn(),
   },
   enrollment: {
+    findFirst: jest.fn(),
     upsert: jest.fn(),
   },
 };
@@ -120,7 +121,7 @@ describe('ProgressService', () => {
       mockPrisma.lesson.findUnique.mockResolvedValueOnce({
         id: 'l1',
         title: 'L1',
-        chapter: { courseId: 'c1' },
+        chapter: { courseId: 'c1', course: { costType: 'free' } },
       });
       // wasAlreadyCompleted 查 → null (首次)
       mockPrisma.progressRecord.findUnique.mockResolvedValueOnce(null);
@@ -183,7 +184,7 @@ describe('ProgressService', () => {
       mockPrisma.lesson.findUnique.mockResolvedValueOnce({
         id: 'l1',
         title: 'L1',
-        chapter: { courseId: 'c1' },
+        chapter: { courseId: 'c1', course: { costType: 'free' } },
       });
       // wasAlreadyCompleted 查 → 已存在且 status=completed
       mockPrisma.progressRecord.findUnique.mockResolvedValueOnce({
@@ -225,7 +226,7 @@ describe('ProgressService', () => {
       mockPrisma.lesson.findUnique.mockResolvedValueOnce({
         id: 'l1',
         title: 'L1',
-        chapter: { courseId: 'c1' },
+        chapter: { courseId: 'c1', course: { costType: 'free' } },
       });
       mockPrisma.progressRecord.findUnique.mockResolvedValueOnce({
         id: 'pr1',
@@ -253,6 +254,37 @@ describe('ProgressService', () => {
       // 任何写入都不应发生
       expect(mockPrisma.progressRecord.upsert).not.toHaveBeenCalled();
       expect(mockPointsService.award).not.toHaveBeenCalled();
+    });
+
+    it('拒绝未报名用户完成付费课程课时', async () => {
+      mockPrisma.lesson.findUnique.mockResolvedValueOnce({
+        id: 'paid-l1',
+        title: 'Paid lesson',
+        chapter: { courseId: 'paid-c1', course: { costType: 'paid' } },
+      });
+      mockPrisma.enrollment.findFirst.mockResolvedValueOnce(null);
+
+      await expect(service.completeLesson('u1', 'paid-l1')).rejects.toThrow(ForbiddenException);
+      expect(mockPrisma.progressRecord.upsert).not.toHaveBeenCalled();
+      expect(mockPrisma.enrollment.upsert).not.toHaveBeenCalled();
+    });
+
+    it('允许有效报名用户完成付费课程课时', async () => {
+      mockPrisma.lesson.findUnique.mockResolvedValueOnce({
+        id: 'paid-l1',
+        title: 'Paid lesson',
+        chapter: { courseId: 'paid-c1', course: { costType: 'paid' } },
+      });
+      mockPrisma.enrollment.findFirst.mockResolvedValueOnce({ id: 'e1' });
+      mockPrisma.progressRecord.findUnique.mockResolvedValueOnce({ status: 'completed' });
+      mockPrisma.progressRecord.upsert.mockResolvedValueOnce({ id: 'pr1', status: 'completed' });
+      mockPrisma.course.findUnique.mockResolvedValueOnce(makeCourse('paid-c1', ['paid-l1']));
+      mockPrisma.progressRecord.count.mockResolvedValueOnce(1);
+
+      await expect(service.completeLesson('u1', 'paid-l1')).resolves.toBeDefined();
+      expect(mockPrisma.enrollment.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ userId: 'u1', courseId: 'paid-c1', deletedAt: null }),
+      }));
     });
   });
 
@@ -403,7 +435,7 @@ describe('ProgressService', () => {
       mockPrisma.lesson.findUnique.mockResolvedValueOnce({
         id: 'l1',
         title: 'L1',
-        chapter: { courseId: 'c1' },
+        chapter: { courseId: 'c1', course: { costType: 'free' } },
       });
       mockPrisma.progressRecord.findUnique.mockResolvedValueOnce(null); // 首次
       mockPrisma.enrollment.upsert.mockResolvedValueOnce({ id: 'e1' });

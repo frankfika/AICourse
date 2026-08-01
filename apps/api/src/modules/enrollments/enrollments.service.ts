@@ -12,7 +12,11 @@ export class EnrollmentsService {
 
   async findByUser(userId: string) {
     return this.prisma.enrollment.findMany({
-      where: { userId },
+      where: {
+        userId,
+        deletedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
       include: { course: true, degree: true },
       // P1-7 防御: max 100, 防 DoS
       take: 100,
@@ -39,7 +43,12 @@ export class EnrollmentsService {
           courseId,
         },
       },
-      update: {},
+      update: {
+        deletedAt: null,
+        expiresAt: null,
+        enrolledAt: new Date(),
+        source: 'direct',
+      },
       create: {
         userId,
         courseId,

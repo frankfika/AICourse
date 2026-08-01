@@ -482,7 +482,12 @@ describe('UsersService', () => {
       expect(mockPrisma.enrollment.upsert).toHaveBeenCalledTimes(2);
       expect(mockPrisma.enrollment.upsert).toHaveBeenNthCalledWith(1, {
         where: { userId_courseId: { userId: 'u1', courseId: 'c1' } },
-        update: {},
+        update: {
+          deletedAt: null,
+          expiresAt: null,
+          enrolledAt: expect.any(Date),
+          source: 'direct',
+        },
         create: { userId: 'u1', courseId: 'c1', source: 'direct' },
       });
       // audit log
@@ -511,7 +516,12 @@ describe('UsersService', () => {
       expect(result.granted).toBe(3);
       expect(mockPrisma.enrollment.upsert).toHaveBeenNthCalledWith(1, {
         where: { userId_degreeId: { userId: 'u1', degreeId: 'd1' } },
-        update: {},
+        update: {
+          deletedAt: null,
+          expiresAt: null,
+          enrolledAt: expect.any(Date),
+          source: 'direct',
+        },
         create: { userId: 'u1', degreeId: 'd1', source: 'direct' },
       });
     });

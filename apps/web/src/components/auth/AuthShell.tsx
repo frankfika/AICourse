@@ -108,7 +108,10 @@ export function AuthShell({ children }: { children: ReactNode }) {
   );
   const testimonialName = testimonialData?.name ?? 'K. Chen';
   const testimonialTitle = testimonialData?.title ?? 'LLM 应用工程师学位';
-  const testimonialPlaceholder = testimonialData?.placeholder ?? '占位示例';
+  const configuredTestimonialContext = testimonialData?.placeholder?.trim();
+  const testimonialContext = !configuredTestimonialContext || configuredTestimonialContext.includes('占位')
+    ? '学习反馈'
+    : configuredTestimonialContext;
 
   // 把 shellHeadline 切成 3 行(line2 加下划线)
   const headlineLines = shellHeadline.split('\n');
@@ -207,7 +210,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
             <blockquote className="p-5 rounded-xl bg-neutral-0/10 backdrop-blur-sm border border-neutral-0/20">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] font-mono uppercase tracking-widest opacity-50">
-                  {testimonialLabel} · {testimonialPlaceholder}
+                  {testimonialLabel} · {testimonialContext}
                 </p>
               </div>
               <p className="text-sm leading-relaxed">
@@ -219,7 +222,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
                 </div>
                 <div>
                   <div className="font-medium">{testimonialName}</div>
-                  <div className="opacity-70">{testimonialTitle} · {testimonialPlaceholder}</div>
+                  <div className="opacity-70">{testimonialTitle}</div>
                 </div>
               </div>
             </blockquote>

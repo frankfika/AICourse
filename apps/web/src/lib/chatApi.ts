@@ -4,7 +4,7 @@
  * 端点: /api/v1/chat/*
  * - 与 admin 智能填充 aiApi 共享 axios 实例(api),但路由 / URL 隔离。
  * - 用途: 全站 FAB 触发的 floating chat drawer,跟 dashboard/learning
- *   课程内小助手互不干扰(那个走前端 mock,见 DashboardPage.tsx)。
+ *   课程内小助手与全站入口复用同一套真实会话。
  */
 import api from './api';
 

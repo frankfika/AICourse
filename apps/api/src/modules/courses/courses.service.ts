@@ -78,7 +78,6 @@ export class CoursesService {
     const courses = await this.prisma.course.findMany({
       where,
       include: {
-        ...this.courseInclude,
         reviews: {
           where: { deletedAt: null },
           select: { rating: true },
@@ -126,16 +125,45 @@ export class CoursesService {
     }
   }
 
-  async findOne(id: string, includeDraft = false) {
+  async findOne(
+    id: string,
+    access: { includeDraft?: boolean; userId?: string; isAdmin?: boolean } = {},
+  ) {
     const course = await this.prisma.course.findFirst({
       where: {
         id,
-        ...(includeDraft ? {} : { status: 'published' }),
+        ...(access.includeDraft ? {} : { status: 'published' }),
       },
       include: this.courseInclude,
     });
     if (!course) throw new NotFoundException('Course not found');
-    return course;
+    let hasAccess = access.isAdmin || course.costType === 'free' || course.costType === 'charity';
+    if (!hasAccess && access.userId) {
+      hasAccess = !!(await this.prisma.enrollment.findFirst({
+        where: {
+          userId: access.userId,
+          courseId: id,
+          deletedAt: null,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        select: { id: true },
+      }));
+    }
+    if (hasAccess) return course;
+    return {
+      ...course,
+      chapters: course.chapters.map((chapter) => ({
+        ...chapter,
+        lessons: chapter.lessons.map((lesson) => ({
+          ...lesson,
+          videoUrl: lesson.isPreview ? lesson.videoUrl : null,
+          resources: lesson.resources.map((resource) => ({
+            ...resource,
+            url: resource.isLocked ? '' : resource.url,
+          })),
+        })),
+      })),
+    };
   }
 
   async create(dto: CreateCourseDto) {
@@ -268,6 +296,6 @@ export class CoursesService {
       details: { appended, skipped, requested: dto.degreeIds.length },
     });
 
-    return this.findOne(courseId, true);
+    return this.findOne(courseId, { includeDraft: true, isAdmin: true });
   }
 }

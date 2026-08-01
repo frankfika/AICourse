@@ -7,13 +7,14 @@
 ```bash
 cp .env.production.example .env.production
 chmod 600 .env.production
+pnpm deploy:validate
 docker compose --env-file .env.production -f docker-compose.production.yml config
 docker compose --env-file .env.production -f docker-compose.production.yml build
 docker compose --env-file .env.production -f docker-compose.production.yml up -d
 docker compose --env-file .env.production -f docker-compose.production.yml ps
 ```
 
-必须替换模板中的所有 `replace-with-*` 值，并确保 `DATABASE_URL` 中的密码与 `MYSQL_PASSWORD` 完全一致。建议用 `openssl rand -hex 32` 分别生成数据库、Redis、JWT、MinIO 和加密密钥；不要复用密钥。
+必须使用独立的 HTTPS 域名，替换模板中的所有占位值，并确保 `DATABASE_URL` 中的密码与 `MYSQL_PASSWORD` 完全一致。`pnpm deploy:validate` 会在构建前检查域名、密钥强度、数据库密码、对象存储地址和 OAuth 回调的一致性。建议用 `openssl rand -hex 32` 分别生成数据库、Redis、JWT、MinIO 和加密密钥；不要复用密钥。
 
 默认只启用邮箱密码登录。启用 Google 或 GitHub 时，把对应 provider 加入 `AUTH_PROVIDERS`，并填写 client ID、secret 和与 `PUBLIC_URL` 同源的 `/auth/oauth/callback`；缺少任一配置时 API 会拒绝启动，避免展示不可用的登录按钮。
 
@@ -41,6 +42,7 @@ location / {
 发布前先备份 MySQL 和 MinIO 数据卷。更新代码后执行：
 
 ```bash
+pnpm deploy:validate
 docker compose --env-file .env.production -f docker-compose.production.yml build
 docker compose --env-file .env.production -f docker-compose.production.yml up -d
 curl --fail http://127.0.0.1:8088/healthz

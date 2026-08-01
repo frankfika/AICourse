@@ -3,12 +3,13 @@
  *
  * 两种模式(由 URL ?tab= 决定):
  *   1) /admin/courses           → 列表模式(保留原 AdminCoursesPage 的 list + 新增/导入)
- *   2) /admin/courses?tab=...   → 编辑模式(4 tab:info / chapters / pricing / publish)
+ *   2) /admin/courses?tab=...   → 编辑模式(5 tab:info / chapters / practices / pricing / publish)
  *
- * 4 tab 全部接真后端:
+ * 5 tab 全部接真后端:
  *   - info      PATCH /api/v1/courses/:id          基本信息
  *   - chapters  GET/POST/PATCH/DELETE /chapters + /lessons + /resources
  *                                                 章节树 + 课时 CRUD + 每课时资源 CRUD
+ *   - practices GET/POST/PATCH/DELETE /api/v1/practices
  *   - pricing   PATCH /api/v1/courses/:id (costType + price)
  *   - publish   PATCH /api/v1/courses/:id (status)
  *
@@ -56,11 +57,13 @@ import api from '../../lib/api';
 import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
 import { coursesAdminApi, type Chapter, type ChapterLesson, type ChapterResource, type ResourceType } from '../../lib/coursesAdminApi';
+import { practicesApi } from '../../lib/practicesApi';
 import { FileUploadButton } from '../../components/admin/FileUploadButton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { useEnum, useI18n } from '../../lib/cms';
 import { I18nText } from '../../components/I18nText';
+import type { PracticeProject, ProjectDifficulty, ProjectType } from '@ai-academy/shared-types';
 
 // ──────────────────────────────────────────────────────────────────────────
 // 1) 列表模式(原 AdminCoursesPage,几乎原样保留)
@@ -565,10 +568,10 @@ function CourseListView({
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// 2) 编辑模式:5 tab(v1.1.0 全部接真后端,无 mock)
+// 2) 编辑模式:5 tab(全部接真后端,无 mock)
 // ──────────────────────────────────────────────────────────────────────────
 
-type Tab = 'info' | 'chapters' | 'pricing' | 'publish';
+type Tab = 'info' | 'chapters' | 'practices' | 'pricing' | 'publish';
 
 interface CourseForEdit {
   id: string;
@@ -1514,6 +1517,200 @@ function ResourcesTab({ courseId: _courseId }: { courseId: string }) {
   );
 }
 
+const EMPTY_PRACTICE_FORM = {
+  title: '',
+  description: '',
+  projectUrl: '',
+  difficulty: 'beginner' as ProjectDifficulty,
+  estimatedTime: '60',
+  projectType: 'notebook' as ProjectType,
+  orderIndex: '0',
+  tags: '',
+  requirements: '',
+  objectives: '',
+  isActive: true,
+};
+
+function PracticesTab({ courseId }: { courseId: string }) {
+  const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(EMPTY_PRACTICE_FORM);
+
+  const projectsQuery = useQuery({
+    queryKey: ['admin-practices', courseId],
+    queryFn: () => practicesApi.getAdminProjectsByCourse(courseId),
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['admin-practices', courseId] });
+    queryClient.invalidateQueries({ queryKey: ['practices', 'course', courseId] });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        projectUrl: form.projectUrl.trim(),
+        difficulty: form.difficulty,
+        estimatedTime: Number(form.estimatedTime),
+        projectType: form.projectType,
+        orderIndex: Number(form.orderIndex),
+        tags: form.tags.trim() || undefined,
+        requirements: form.requirements.trim() || undefined,
+        objectives: form.objectives.trim() || undefined,
+        isActive: form.isActive,
+      };
+      if (editingId) return practicesApi.updateProject(editingId, payload);
+      return practicesApi.createProject({ courseId, ...payload });
+    },
+    onSuccess: () => {
+      refresh();
+      setEditingId(null);
+      setForm(EMPTY_PRACTICE_FORM);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => practicesApi.deleteProject(id),
+    onSuccess: refresh,
+  });
+
+  const editProject = (project: PracticeProject) => {
+    setEditingId(project.id);
+    setForm({
+      title: project.title,
+      description: project.description,
+      projectUrl: project.projectUrl,
+      difficulty: project.difficulty,
+      estimatedTime: String(project.estimatedTime),
+      projectType: project.projectType,
+      orderIndex: String(project.orderIndex),
+      tags: project.tags ?? '',
+      requirements: project.requirements ?? '',
+      objectives: project.objectives ?? '',
+      isActive: project.isActive,
+    });
+  };
+
+  const canSave = form.title.trim() && form.description.trim() && form.projectUrl.trim()
+    && Number(form.estimatedTime) > 0 && Number.isInteger(Number(form.estimatedTime));
+
+  return (
+    <div className="space-y-6">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canSave) saveMutation.mutate();
+        }}
+        className="border-2 border-[#171717] dark:border-neutral-50 p-5 space-y-4"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-black">{editingId ? '编辑实践项目' : '新增实践项目'}</h3>
+            <p className="text-xs text-[#666666] dark:text-neutral-400 mt-1">发布后，已报名学员可在课程详情页开始并完成项目。</p>
+          </div>
+          {editingId && (
+            <BrutalButton
+              variant="secondary"
+              size="sm"
+              onClick={() => { setEditingId(null); setForm(EMPTY_PRACTICE_FORM); }}
+            >
+              取消编辑
+            </BrutalButton>
+          )}
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <BrutalField label="项目名称" value={form.title} onChange={(title) => setForm((v) => ({ ...v, title }))} required />
+          <BrutalField label="项目地址" value={form.projectUrl} onChange={(projectUrl) => setForm((v) => ({ ...v, projectUrl }))} type="url" required />
+        </div>
+        <BrutalField label="项目说明" value={form.description} onChange={(description) => setForm((v) => ({ ...v, description }))} multiline required />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <BrutalSelect
+            label="难度"
+            value={form.difficulty}
+            onChange={(difficulty) => setForm((v) => ({ ...v, difficulty: difficulty as ProjectDifficulty }))}
+            options={[
+              { value: 'beginner', label: '入门' },
+              { value: 'intermediate', label: '进阶' },
+              { value: 'advanced', label: '高级' },
+              { value: 'expert', label: '专家' },
+            ]}
+          />
+          <BrutalSelect
+            label="项目类型"
+            value={form.projectType}
+            onChange={(projectType) => setForm((v) => ({ ...v, projectType: projectType as ProjectType }))}
+            options={[
+              { value: 'notebook', label: 'Notebook' },
+              { value: 'model_deployment', label: '模型部署' },
+              { value: 'model_training', label: '模型训练' },
+              { value: 'model_inference', label: '模型推理' },
+              { value: 'api_integration', label: 'API 集成' },
+              { value: 'sandbox', label: '沙盒' },
+              { value: 'repository', label: '代码仓库' },
+              { value: 'csghub_space', label: 'CSGHub Space' },
+            ]}
+          />
+          <BrutalField label="预计分钟" value={form.estimatedTime} onChange={(estimatedTime) => setForm((v) => ({ ...v, estimatedTime }))} type="number" required />
+          <BrutalField label="排序" value={form.orderIndex} onChange={(orderIndex) => setForm((v) => ({ ...v, orderIndex }))} type="number" />
+        </div>
+        <BrutalField label="标签" value={form.tags} onChange={(tags) => setForm((v) => ({ ...v, tags }))} placeholder="例如：部署, API, Python" />
+        <div className="grid sm:grid-cols-2 gap-4">
+          <BrutalField label="学习目标" value={form.objectives} onChange={(objectives) => setForm((v) => ({ ...v, objectives }))} multiline />
+          <BrutalField label="完成要求" value={form.requirements} onChange={(requirements) => setForm((v) => ({ ...v, requirements }))} multiline />
+        </div>
+        <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+          <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((v) => ({ ...v, isActive: event.target.checked }))} />
+          对学员可见
+        </label>
+        <div className="flex items-center gap-3">
+          <BrutalButton type="submit" disabled={!canSave || saveMutation.isPending}>
+            {saveMutation.isPending ? '保存中…' : editingId ? '保存修改' : '创建项目'}
+          </BrutalButton>
+          {saveMutation.isError && <span className="text-xs text-red-600">保存失败：{(saveMutation.error as any)?.message}</span>}
+        </div>
+      </form>
+
+      <div className="border-2 border-[#171717] dark:border-neutral-50">
+        <div className="px-5 py-3 border-b border-[#171717] dark:border-neutral-50 font-black text-sm">
+          实践项目 · {projectsQuery.data?.length ?? 0}
+        </div>
+        {projectsQuery.isLoading ? (
+          <div className="p-8 text-center text-sm text-[#666666]">加载中…</div>
+        ) : projectsQuery.isError ? (
+          <div className="p-8 text-center text-sm text-red-600">加载失败：{(projectsQuery.error as any)?.message}</div>
+        ) : projectsQuery.data?.length ? (
+          projectsQuery.data.map((project) => (
+            <div key={project.id} className="p-4 border-b border-[#EEEDE9] last:border-b-0 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-black text-sm">{project.title}</span>
+                  <span className="border border-[#171717] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest">{project.difficulty}</span>
+                  {!project.isActive && <span className="bg-[#EEEDE9] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest">未发布</span>}
+                </div>
+                <p className="text-xs text-[#666666] mt-1 line-clamp-2">{project.description}</p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <button onClick={() => editProject(project)} className="p-2 hover:bg-[#EEEDE9]" title="编辑"><Pencil className="w-4 h-4" /></button>
+                <button
+                  onClick={() => { if (confirm(`删除实践项目「${project.title}」?`)) deleteMutation.mutate(project.id); }}
+                  className="p-2 hover:bg-[#171717] hover:text-white"
+                  title="删除"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="p-8 text-center text-sm text-[#666666]">暂无实践项目，请在上方创建。</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // PricingTab — 价格(接 PATCH /api/v1/courses/:id 真后端)
 // ──────────────────────────────────────────────────────────────────────
@@ -1694,6 +1891,7 @@ function CourseEditInline({
   const TABS_DYNAMIC: { id: Tab; label: string; count?: string }[] = [
     { id: 'info', label: '基本信息' },
     { id: 'chapters', label: '章节大纲', count: `${chapters.length} 章` },
+    { id: 'practices', label: '实践项目' },
     { id: 'pricing', label: '价格 / 试看' },
     { id: 'publish', label: '发布设置' },
   ];
@@ -1792,6 +1990,7 @@ function CourseEditInline({
           <>
             {currentTab === 'info' && <InfoTab courseId={courseId} />}
             {currentTab === 'chapters' && <ChaptersTab courseId={courseId} />}
+            {currentTab === 'practices' && <PracticesTab courseId={courseId} />}
             {currentTab === 'pricing' && <PricingTab courseId={courseId} />}
             {currentTab === 'publish' && <PublishTab courseId={courseId} />}
           </>
@@ -1808,7 +2007,7 @@ function CourseEditInline({
 // (URL-based 路由兼容性保留:从 URL 直接进入会回退到列表 mode,不显示编辑)
 // ──────────────────────────────────────────────────────────────────────────
 
-const VALID_TABS: Tab[] = ['info', 'chapters', 'pricing', 'publish'];
+const VALID_TABS: Tab[] = ['info', 'chapters', 'practices', 'pricing', 'publish'];
 
 export function AdminCoursesPage() {
   const [params, setParams] = useSearchParams();

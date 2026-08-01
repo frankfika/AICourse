@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
 import { BadgesService } from '../badges/badges.service';
@@ -71,15 +71,20 @@ export class ProgressService {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },
       include: {
-        chapter: { select: { courseId: true } },
+        chapter: {
+          select: {
+            courseId: true,
+            course: { select: { costType: true } },
+          },
+        },
       },
     });
 
     if (!lesson) throw new NotFoundException('Lesson not found');
 
-    // 确保用户已报名该课程（自动创建 enrollment 如果不存在，与免费课程逻辑一致）
+    // 免费/公益课程可自动报名；付费课程必须已有有效报名，避免绕过付费墙。
     const courseId = lesson.chapter.courseId;
-    await this.ensureEnrollment(userId, courseId);
+    await this.ensureCourseAccess(userId, courseId, lesson.chapter.course.costType);
 
     const wasAlreadyCompleted = await this.prisma.progressRecord.findUnique({
       where: { userId_lessonId: { userId, lessonId } },
@@ -204,12 +209,31 @@ export class ProgressService {
 
   // ==================== 内部工具 ====================
 
-  private async ensureEnrollment(userId: string, courseId: string) {
-    await this.prisma.enrollment.upsert({
-      where: { userId_courseId: { userId, courseId } },
-      update: {},
-      create: { userId, courseId, source: 'direct' },
+  private async ensureCourseAccess(userId: string, courseId: string, costType: string) {
+    if (costType === 'free' || costType === 'charity') {
+      await this.prisma.enrollment.upsert({
+        where: { userId_courseId: { userId, courseId } },
+        update: {
+          deletedAt: null,
+          expiresAt: null,
+          enrolledAt: new Date(),
+          source: 'direct',
+        },
+        create: { userId, courseId, source: 'direct' },
+      });
+      return;
+    }
+
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: {
+        userId,
+        courseId,
+        deletedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: { id: true },
     });
+    if (!enrollment) throw new ForbiddenException('Course enrollment required');
   }
 
   private async computeStreakDays(userId: string): Promise<number> {

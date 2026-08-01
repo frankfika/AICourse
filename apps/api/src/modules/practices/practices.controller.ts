@@ -29,6 +29,28 @@ export class PracticesController {
     return this.practicesService.getProjectsByCourseId(courseId);
   }
 
+  @Get('courses/:courseId/access')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取当前用户可访问的课程实践项目' })
+  @ApiParam({ name: 'courseId', description: '课程ID' })
+  async getAccessibleProjectsByCourse(
+    @Request() req: { user: { userId: string } },
+    @Param('courseId') courseId: string,
+  ) {
+    return this.practicesService.getAccessibleProjectsByCourseId(req.user.userId, courseId);
+  }
+
+  @Get('admin/courses/:courseId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取课程的全部实践项目（管理员）' })
+  @ApiParam({ name: 'courseId', description: '课程ID' })
+  async getAdminProjectsByCourse(@Param('courseId') courseId: string) {
+    return this.practicesService.getAdminProjectsByCourseId(courseId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '获取实践项目详情' })
   @ApiParam({ name: 'id', description: '项目ID' })

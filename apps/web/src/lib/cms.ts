@@ -293,7 +293,7 @@ export const SITE_FALLBACK: Record<string, any> = {
         '我以为 RAG 就是把文档塞进向量库。学完才发现 prompt 模板、reranking、citation、evaluation 才是真正决定效果的地方。AI 助教在我卡壳时直接引用课里第几节第几分几秒 —— 救了我 3 个通宵。',
       name: 'K. Chen',
       title: 'LLM 应用工程师学位',
-      placeholder: '占位示例',
+      placeholder: '学习反馈',
     },
     'en-US': {
       label: 'Student Story',
@@ -558,7 +558,7 @@ export const LIST_FALLBACK: Record<ListResource, any[]> = {
   testimonials: [
     {
       name: 'K. Chen',
-      title: 'LLM 应用工程师学位 · 占位示例',
+      title: 'LLM 应用工程师学位',
       quote:
         '我以为 RAG 就是把文档塞进向量库。学完才发现 prompt 模板、reranking、citation、evaluation 才是真正决定效果的地方。AI 助教在我卡壳时直接引用课里第几节第几分几秒 —— 救了我 3 个通宵。',
       avatar: 'K',
@@ -891,10 +891,10 @@ export const I18N_FALLBACK: Record<string, string> = {
   'footer.brand': 'AI Academy',
   'footer.platform_name': 'AI Academy',
   'footer.copyright': '© 2026 {platform}',
-  'footer.icp.pending': '· 备案号待补',
+  'footer.icp.pending': '',
   'footer.icp.filled': '· 备案号 {icp}',
   // auth shell testimonial
-  'auth.shell.testimonial.label': '学员故事 · 占位示例',
+  'auth.shell.testimonial.label': '学员故事',
   // hackathon
   'hackathon.eyebrow.list': '/ Hackathons',
   'hackathon.headline.list': 'BUILD.\nSHIP.\nWIN.',

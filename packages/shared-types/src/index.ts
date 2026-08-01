@@ -482,7 +482,6 @@ export interface StartPracticeRequest {
 }
 
 export interface CompletePracticeRequest {
-  projectId: string;
   submissionUrl?: string;
   notes?: string;
 }

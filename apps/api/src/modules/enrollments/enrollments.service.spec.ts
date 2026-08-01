@@ -60,7 +60,11 @@ describe('EnrollmentsService', () => {
       expect(result).toEqual(mockList);
       expect(mockPrisma.enrollment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId: 'u1' },
+          where: {
+            userId: 'u1',
+            deletedAt: null,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+          },
           include: { course: true, degree: true },
           take: 100,
         }),
@@ -95,7 +99,12 @@ describe('EnrollmentsService', () => {
             courseId: 'c1',
             source: 'direct',
           }),
-          update: {},
+          update: {
+            deletedAt: null,
+            expiresAt: null,
+            enrolledAt: expect.any(Date),
+            source: 'direct',
+          },
         }),
       );
     });
@@ -143,7 +152,7 @@ describe('EnrollmentsService', () => {
         id: 'c1',
         costType: CostType.free,
       });
-      // upsert 行为: 找到已存在记录时, update={} 是 no-op, 返现记录
+      // upsert 行为: 找到已存在记录时恢复可能已软删除/过期的报名。
       const existing = {
         id: 'e-existing',
         userId: 'u1',

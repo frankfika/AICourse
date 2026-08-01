@@ -18,9 +18,11 @@ import {
   Award,
   Star,
   CheckCircle2 as CheckIcon,
+  Clock3,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { progressApi } from '../../lib/progressApi';
+import { practicesApi } from '../../lib/practicesApi';
 import { useAuthStore } from '../../stores/authStore';
 import { ProgressRing } from '../../components/ProgressRing';
 import { QueryErrorState } from '../../components/QueryErrorState';
@@ -29,6 +31,8 @@ import { Seo } from '../../components/Seo';
 import { Tabs, TabPanel } from '../../components/ui/Tabs';
 import { LazyImage } from '../../components/ui/LazyImage';
 import { parseCourseTags, parseStringList } from '../../lib/courseTags';
+import { isDirectVideoUrl, normalizeEmbeddedVideoUrl } from '../../lib/videoUrl';
+import type { PracticeCompletion, PracticeProject } from '@ai-academy/shared-types';
 
 interface Course {
   id: string;
@@ -120,7 +124,7 @@ export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'overview' | 'video' | 'resources'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'video' | 'resources' | 'practices'>('overview');
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [purchaseOpen, setPurchaseOpen] = useState(false);
@@ -153,6 +157,42 @@ export function CourseDetailPage() {
       return data as Array<{ id: string; courseId?: string | null; degreeId?: string | null }>;
     },
     enabled: !!user,
+  });
+
+  const enrolled = !!myEnrollments?.some((e) => e.courseId === id);
+  const isUnlocked = course?.costType === 'free' || course?.costType === 'charity' || enrolled;
+
+  const { data: publicPracticeProjects = [] } = useQuery<PracticeProject[]>({
+    queryKey: ['practices', 'course', id],
+    queryFn: () => practicesApi.getProjectsByCourse(id!),
+    enabled: !!id,
+  });
+
+  const { data: accessiblePracticeProjects } = useQuery<PracticeProject[]>({
+    queryKey: ['practices', 'course', id, 'accessible'],
+    queryFn: () => practicesApi.getAccessibleProjectsByCourse(id!),
+    enabled: !!id && !!user && !!isUnlocked,
+  });
+
+  const practiceProjects = accessiblePracticeProjects ?? publicPracticeProjects;
+
+  const { data: practiceProgress = [] } = useQuery<PracticeCompletion[]>({
+    queryKey: ['practices', 'progress', id],
+    queryFn: () => practicesApi.getUserProgress(id),
+    enabled: !!id && !!user && !!isUnlocked,
+  });
+
+  const startPracticeMutation = useMutation({
+    mutationFn: (projectId: string) => practicesApi.startProject(projectId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['practices', 'progress', id] }),
+  });
+
+  const completePracticeMutation = useMutation({
+    mutationFn: (projectId: string) => practicesApi.completeProject(projectId, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['practices', 'progress', id] });
+      queryClient.invalidateQueries({ queryKey: ['my-badges'] });
+    },
   });
 
   const completedLessonIds = new Set(
@@ -189,9 +229,6 @@ export function CourseDetailPage() {
       }
     },
   });
-
-  const enrolled = !!myEnrollments?.some((e) => e.courseId === id);
-  const isUnlocked = course?.costType === 'free' || course?.costType === 'charity' || enrolled;
 
   if (isLoading) return <div className="text-center py-32 text-[#666666]">加载中...</div>;
   if (isError) {
@@ -382,7 +419,7 @@ export function CourseDetailPage() {
       {/* Tabs bar — P1-3 用公共 Tabs,加 role/aria-selected */}
       <section className="border-b border-[#171717] bg-white sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-6 flex overflow-x-auto scrollbar-hide">
-          <Tabs<'overview' | 'video' | 'resources'>
+          <Tabs<'overview' | 'video' | 'resources' | 'practices'>
             value={activeTab}
             onChange={(k) => setActiveTab(k)}
             ariaLabel="课程详情"
@@ -390,6 +427,7 @@ export function CourseDetailPage() {
               { key: 'overview', label: '课程概览', icon: BookOpen },
               { key: 'video', label: '视频课程', icon: PlayCircle },
               { key: 'resources', label: `学习资源 (${totalResources})`, icon: FileText },
+              { key: 'practices', label: `实践项目 (${practiceProjects.length})`, icon: Code },
             ]}
             idPrefix="course-detail"
             className="flex divide-x divide-[#EEEDE9]"
@@ -470,7 +508,7 @@ export function CourseDetailPage() {
           <TabPanel value={activeTab} tabKey="video" idPrefix="course-detail">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                {!isUnlocked ? (
+                {activeLesson && !activeLesson.isPreview && !isUnlocked ? (
                   <div className="aspect-video bg-[#171717] flex items-center justify-center text-white">
                     <div className="text-center">
                       <Lock className="w-12 h-12 mx-auto mb-4" />
@@ -494,13 +532,29 @@ export function CourseDetailPage() {
                     </div>
                   </div>
                 ) : activeLesson?.videoUrl ? (
-                  <div className="aspect-video bg-[#171717] border border-[#171717] overflow-hidden">
-                    <iframe
-                      src={activeLesson.videoUrl}
-                      title={activeLesson.title}
-                      className="w-full h-full"
-                      allowFullScreen
-                    />
+                  <div className="aspect-video bg-[#171717] border border-[#171717] overflow-hidden relative">
+                    {isDirectVideoUrl(activeLesson.videoUrl) ? (
+                      <video src={activeLesson.videoUrl} title={activeLesson.title} className="w-full h-full" controls playsInline />
+                    ) : (
+                      <>
+                        <iframe
+                          src={normalizeEmbeddedVideoUrl(activeLesson.videoUrl)}
+                          title={activeLesson.title}
+                          className="w-full h-full"
+                          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          allowFullScreen
+                        />
+                        <a
+                          href={activeLesson.videoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute top-3 right-3 z-10 bg-white text-[#171717] px-3 py-2 text-[10px] font-black uppercase tracking-widest border border-[#171717]"
+                        >
+                          无法播放？新窗口打开 ↗
+                        </a>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="aspect-video bg-white border border-[#171717] flex items-center justify-center text-[#666666]">
@@ -574,27 +628,7 @@ export function CourseDetailPage() {
 
           <TabPanel value={activeTab} tabKey="resources" idPrefix="course-detail">
             <div>
-              {!isUnlocked ? (
-                <div className="text-center py-24 bg-white border border-[#171717]">
-                  <Lock className="w-10 h-10 mx-auto mb-4 text-[#666666]" />
-                  <div className="text-lg font-black tracking-tighter mb-6">报名后可下载全部学习资源</div>
-                  {user ? (
-                    <button
-                      onClick={() => setPurchaseOpen(true)}
-                      className="px-6 py-3 bg-[#171717] text-white font-black uppercase tracking-widest text-xs hover:bg-[#262626]"
-                    >
-                      {isFree ? 'Free Enroll' : `Buy ¥${course.price}`}
-                    </button>
-                  ) : (
-                    <Link
-                      to="/login"
-                      className="px-6 py-3 bg-[#171717] text-white font-black uppercase tracking-widest text-xs hover:bg-[#262626]"
-                    >
-                      Login
-                    </Link>
-                  )}
-                </div>
-              ) : resourcesByChapter.length === 0 ? (
+              {resourcesByChapter.length === 0 ? (
                 <div className="text-center py-24 text-[#666666]">暂无附加资源</div>
               ) : (
                 <div className="border border-[#171717]">
@@ -608,16 +642,12 @@ export function CourseDetailPage() {
                       </div>
                       <div>
                         {lessons.flatMap((lesson) =>
-                          lesson.resources.map((res) => (
-                            <a
-                              key={res.id}
-                              href={res.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-4 px-4 py-3 border-t border-[#EEEDE9] bg-white hover:bg-[#F5F4F0] transition-colors group"
-                            >
+                          lesson.resources.map((res) => {
+                            const locked = res.isLocked && !isUnlocked;
+                            const content = (
+                              <>
                               <div className="shrink-0 w-9 h-9 bg-[#171717] text-white flex items-center justify-center">
-                                {resourceIcon(res.type)}
+                                {locked ? <Lock className="w-4 h-4" /> : resourceIcon(res.type)}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-black tracking-tight truncate">{res.title}</div>
@@ -626,10 +656,26 @@ export function CourseDetailPage() {
                                 </div>
                               </div>
                               <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] group-hover:text-[#171717]">
-                                Open →
+                                {locked ? '报名后解锁' : 'Open →'}
                               </span>
-                            </a>
-                          )),
+                              </>
+                            );
+                            return locked ? (
+                              <div key={res.id} className="flex items-center gap-4 px-4 py-3 border-t border-[#EEEDE9] bg-[#F5F4F0]">
+                                {content}
+                              </div>
+                            ) : (
+                              <a
+                                key={res.id}
+                                href={res.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-4 px-4 py-3 border-t border-[#EEEDE9] bg-white hover:bg-[#F5F4F0] transition-colors group"
+                              >
+                                {content}
+                              </a>
+                            );
+                          }),
                         )}
                       </div>
                     </div>
@@ -637,6 +683,110 @@ export function CourseDetailPage() {
                 </div>
               )}
             </div>
+          </TabPanel>
+
+          <TabPanel value={activeTab} tabKey="practices" idPrefix="course-detail">
+            {!isUnlocked ? (
+              <div className="text-center py-24 bg-white border border-[#171717]">
+                <Lock className="w-10 h-10 mx-auto mb-4 text-[#666666]" />
+                <div className="text-lg font-black tracking-tighter mb-2">报名后解锁实践项目</div>
+                <p className="text-sm text-[#666666] mb-6">完成真实项目，把课程知识变成可展示的成果。</p>
+                {user ? (
+                  <button
+                    onClick={() => setPurchaseOpen(true)}
+                    className="px-6 py-3 bg-[#171717] text-white font-black uppercase tracking-widest text-xs hover:bg-[#262626]"
+                  >
+                    {isFree ? 'Free Enroll' : `Buy ¥${course.price}`}
+                  </button>
+                ) : (
+                  <Link
+                    to="/auth/login"
+                    className="inline-flex px-6 py-3 bg-[#171717] text-white font-black uppercase tracking-widest text-xs hover:bg-[#262626]"
+                  >
+                    Login
+                  </Link>
+                )}
+              </div>
+            ) : practiceProjects.length === 0 ? (
+              <div className="text-center py-24 text-[#666666]">本课程暂未发布实践项目</div>
+            ) : (
+              <div className="grid gap-5 lg:grid-cols-2">
+                {practiceProjects.map((project, index) => {
+                  const completion = practiceProgress.find((item) => item.projectId === project.id);
+                  const completed = completion?.status === 'completed';
+                  const started = !!completion;
+                  return (
+                    <article key={project.id} className="border border-[#171717] bg-white flex flex-col">
+                      <div className="p-5 border-b border-[#171717] flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-[0.25em] text-[#666666] mb-2">
+                            Project {String(index + 1).padStart(2, '0')} · {project.difficulty}
+                          </div>
+                          <h3 className="text-xl font-black tracking-tight">{project.title}</h3>
+                        </div>
+                        <span className={`shrink-0 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${completed ? 'bg-[#171717] text-white' : 'border border-[#171717]'}`}>
+                          {completed ? '已完成' : started ? '进行中' : '未开始'}
+                        </span>
+                      </div>
+                      <div className="p-5 flex-1 space-y-4">
+                        <p className="text-sm leading-relaxed text-[#444444]">{project.description}</p>
+                        <div className="flex flex-wrap gap-3 text-[10px] font-black uppercase tracking-widest text-[#666666]">
+                          <span className="inline-flex items-center gap-1.5"><Clock3 className="w-3.5 h-3.5" /> {project.estimatedTime} min</span>
+                          <span>{project.projectType.replaceAll('_', ' ')}</span>
+                        </div>
+                        {project.objectives && (
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-widest mb-1">目标</div>
+                            <p className="text-sm whitespace-pre-line">{project.objectives}</p>
+                          </div>
+                        )}
+                        {project.requirements && (
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-widest mb-1">要求</div>
+                            <p className="text-sm whitespace-pre-line">{project.requirements}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4 border-t border-[#171717] flex flex-wrap gap-2">
+                        {!user ? (
+                          <Link to="/auth/login" className="px-4 py-2 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest">
+                            登录后开始
+                          </Link>
+                        ) : !started ? (
+                          <button
+                            onClick={() => startPracticeMutation.mutate(project.id)}
+                            disabled={startPracticeMutation.isPending}
+                            className="px-4 py-2 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                          >
+                            开始实践
+                          </button>
+                        ) : (
+                          <>
+                            <a
+                              href={project.projectUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 border border-[#171717] text-[10px] font-black uppercase tracking-widest hover:bg-[#EEEDE9]"
+                            >
+                              打开项目 ↗
+                            </a>
+                            {!completed && (
+                              <button
+                                onClick={() => completePracticeMutation.mutate(project.id)}
+                                disabled={completePracticeMutation.isPending}
+                                className="px-4 py-2 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-50"
+                              >
+                                标记完成
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </TabPanel>
         </div>
       </section>

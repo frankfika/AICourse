@@ -4,14 +4,6 @@
  * 全部数据来自 `GET /api/v1/degrees/:id` (NanoDegreeWithPath)
  * 失败 → 渲染 EmptyState, 无 mock fallback
  *
- * v1.0 阶段未实现 (后端 module 暂未提供,显示 P2 占位):
- *   - 路径阶段图 (PathDiagram)
- *   - 课程矩阵 + 必修/选修 chip
- *   - 排名图 (Leaderboard)
- *   - 证书预览
- *   - 讲师墙
- *   - 学员评价
- *
  * 真实可用:
  *   - Hero (title / description / learningPoints)
  *   - 课程列表 (degree.courses[])
@@ -31,9 +23,6 @@ import {
   Sparkles,
   PlayCircle,
   ChevronRight,
-  Layers,
-  Trophy,
-  Star,
   CheckCircle2,
   ArrowUpRight,
 } from 'lucide-react';
@@ -47,13 +36,6 @@ import { PurchaseModal } from './PurchaseModal';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { Tabs, TabPanel } from '../../components/ui/Tabs';
 import { LazyImage } from '../../components/ui/LazyImage';
-
-const P2_PLACEHOLDERS = [
-  { icon: Layers, title: '路径阶段图', sub: '后端 stage API 设计中' },
-  { icon: Trophy, title: '同班排名', sub: '后端 leaderboard API 设计中' },
-  { icon: GraduationCap, title: '证书预览', sub: '后端 certificate 模块设计中' },
-  { icon: Star, title: '学员评价', sub: '后端 degree-level review API 设计中' },
-];
 
 export function DegreeDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -340,31 +322,6 @@ export function DegreeDetailPage() {
                   </div>
                 )}
 
-                {/* P2 增强功能占位 */}
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
-                    / 03 Coming Next
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {P2_PLACEHOLDERS.map((p) => {
-                      const Icon = p.icon;
-                      return (
-                        <div
-                          key={p.title}
-                          className="border border-dashed border-[#171717] p-4 flex items-start gap-3 bg-[#F5F4F0]"
-                        >
-                          <div className="shrink-0 w-9 h-9 bg-[#EEEDE9] flex items-center justify-center text-[#999999]">
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-semibold text-[#171717]">{p.title}</div>
-                            <div className="text-[10px] text-[#666666] mt-0.5">{p.sub}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
 
               {/* Sidebar */}

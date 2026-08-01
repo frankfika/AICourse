@@ -85,12 +85,19 @@ export class OrdersService {
       const existing = await this.prisma.enrollment.findUnique({
         where: { userId_courseId: { userId, courseId: dto.courseId } },
       });
-      if (existing) throw new ConflictException('Already enrolled');
+      if (this.isEnrollmentActive(existing)) throw new ConflictException('Already enrolled');
 
       if (costType === CostType.free) {
         // 免费课程直接注册
-        const enrollment = await this.prisma.enrollment.create({
-          data: { userId, courseId: dto.courseId, source: 'direct' },
+        const enrollment = await this.prisma.enrollment.upsert({
+          where: { userId_courseId: { userId, courseId: dto.courseId } },
+          update: {
+            deletedAt: null,
+            expiresAt: null,
+            enrolledAt: new Date(),
+            source: 'direct',
+          },
+          create: { userId, courseId: dto.courseId, source: 'direct' },
         });
         await this.auditLog.log({
           userId,
@@ -114,11 +121,18 @@ export class OrdersService {
       const existing = await this.prisma.enrollment.findUnique({
         where: { userId_degreeId: { userId, degreeId: dto.degreeId } },
       });
-      if (existing) throw new ConflictException('Already enrolled');
+      if (this.isEnrollmentActive(existing)) throw new ConflictException('Already enrolled');
 
       if (costType === CostType.free) {
-        const enrollment = await this.prisma.enrollment.create({
-          data: { userId, degreeId: dto.degreeId, source: 'direct' },
+        const enrollment = await this.prisma.enrollment.upsert({
+          where: { userId_degreeId: { userId, degreeId: dto.degreeId } },
+          update: {
+            deletedAt: null,
+            expiresAt: null,
+            enrolledAt: new Date(),
+            source: 'direct',
+          },
+          create: { userId, degreeId: dto.degreeId, source: 'direct' },
         });
         // 报名学位同步报名底下所有课程
         await this.enrollAllDegreeCourses(userId, dto.degreeId);
@@ -219,7 +233,12 @@ export class OrdersService {
               courseId: existing.courseId,
             },
           },
-          update: {},
+          update: {
+            deletedAt: null,
+            expiresAt: null,
+            enrolledAt: new Date(),
+            source: 'order',
+          },
           create: { userId, courseId: existing.courseId, source: 'order' },
         });
       } else if (existing.type === OrderType.degree && existing.degreeId) {
@@ -230,7 +249,12 @@ export class OrdersService {
               degreeId: existing.degreeId,
             },
           },
-          update: {},
+          update: {
+            deletedAt: null,
+            expiresAt: null,
+            enrolledAt: new Date(),
+            source: 'order',
+          },
           create: { userId, degreeId: existing.degreeId, source: 'order' },
         });
         await this.enrollAllDegreeCoursesTx(tx, userId, existing.degreeId);
@@ -345,10 +369,38 @@ export class OrdersService {
     const fullAmount = Number(order.amount);
     const refundAmount = check.feeRate ? fullAmount * (1 - check.feeRate) : fullAmount;
 
-    // 3) mock 改状态 + 写 audit
-    const updated = await this.prisma.order.update({
-      where: { id: orderId },
-      data: { status: OrderStatus.refunded },
+    // 3) 原子更新订单状态并撤销该订单授予的访问权。
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.order.update({
+        where: { id: orderId },
+        data: { status: OrderStatus.refunded },
+      });
+      const revokedAt = new Date();
+      if (order.type === OrderType.course && order.courseId) {
+        await tx.enrollment.updateMany({
+          where: { userId, courseId: order.courseId, source: 'order', deletedAt: null },
+          data: { deletedAt: revokedAt },
+        });
+      } else if (order.type === OrderType.degree && order.degreeId) {
+        await tx.enrollment.updateMany({
+          where: { userId, degreeId: order.degreeId, source: 'order', deletedAt: null },
+          data: { deletedAt: revokedAt },
+        });
+        const links = await tx.degreeCourse.findMany({
+          where: { degreeId: order.degreeId },
+          select: { courseId: true },
+        });
+        await tx.enrollment.updateMany({
+          where: {
+            userId,
+            courseId: { in: links.map((link) => link.courseId) },
+            source: 'degree',
+            deletedAt: null,
+          },
+          data: { deletedAt: revokedAt },
+        });
+      }
+      return result;
     });
     await this.auditLog.log({
       userId,
@@ -462,8 +514,13 @@ export class OrdersService {
         where: {
           userId_courseId: { userId, courseId: link.courseId },
         },
-        update: {},
-        create: { userId, courseId: link.courseId, source: 'order' },
+        update: {
+          deletedAt: null,
+          expiresAt: null,
+          enrolledAt: new Date(),
+          source: 'degree',
+        },
+        create: { userId, courseId: link.courseId, source: 'degree' },
       });
     }
   }
@@ -483,9 +540,22 @@ export class OrdersService {
         where: {
           userId_courseId: { userId, courseId: link.courseId },
         },
-        update: {},
-        create: { userId, courseId: link.courseId, source: 'order' },
+        update: {
+          deletedAt: null,
+          expiresAt: null,
+          enrolledAt: new Date(),
+          source: 'degree',
+        },
+        create: { userId, courseId: link.courseId, source: 'degree' },
       });
     }
+  }
+
+  private isEnrollmentActive(
+    enrollment: { deletedAt?: Date | null; expiresAt?: Date | null } | null,
+  ) {
+    return !!enrollment
+      && enrollment.deletedAt == null
+      && (enrollment.expiresAt == null || enrollment.expiresAt > new Date());
   }
 }

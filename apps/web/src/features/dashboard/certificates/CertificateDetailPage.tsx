@@ -2,8 +2,8 @@
  * CertificateDetailPage — P1-8 证书详情
  *
  * 设计:
- *   - 大证书视图(mock 证书样式, brutalist 黑底 + 装饰 + 平台 logo + 标题 + holder + serial + 颁发日期)
- *   - 底部操作: 下载(mock) + 验证(跳 /verify/:serial) + 返回
+ *   - 大证书视图：brutalist 黑底 + 装饰 + 平台 logo + 标题 + holder + serial + 颁发日期
+ *   - 底部操作：浏览器打印为 PDF + 验证(跳 /verify/:serial) + 返回
  *   - 公开页面(任何人都能看), 响应式
  */
 import { useRef } from 'react';

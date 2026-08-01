@@ -50,6 +50,7 @@ import { useToast } from '../../components/auth/Toast';
 import { cn } from '../../lib/cn';
 import { useWebAssistantStore } from '../../stores/webAssistantStore';
 import { notesApi, type LessonNote } from '../../lib/notesApi';
+import { isDirectVideoUrl, normalizeEmbeddedVideoUrl } from '../../lib/videoUrl';
 
 const WebAssistantDrawer = lazy(() =>
   import('../../components/WebAssistant/WebAssistantDrawer').then((module) => ({
@@ -502,6 +503,8 @@ function VideoCenter({
 }) {
   const [centerTab, setCenterTab] = useState<CenterTab>('notes');
   const [videoTime, setVideoTime] = useState(0);
+  const [mediaDuration, setMediaDuration] = useState(0);
+  const lastReportedSecond = useRef(-1);
 
   // v1.4.1: LearningEvent 上报 — 用缓冲器每 5s push,30s flush 一次
   // 改用真实后端 /api/v1/learning-events/batch,跨设备同步
@@ -517,26 +520,25 @@ function VideoCenter({
     };
   }, []);
 
-  // 模拟视频播放(每秒 +1,做进度条视觉)
   useEffect(() => {
     setVideoTime(0);
-    const interval = setInterval(() => {
-      setVideoTime((t) => {
-        const next = t + 1;
-        // 每 5s 入队一条 progress 事件,30s flush 到后端
-        if (next % 5 === 0) {
-          eventBufferRef.current?.push({
-            eventType: 'play',
-            lessonId: currentLesson.id,
-            positionSec: next,
-            metadata: { courseId: course.id },
-          });
-        }
-        return next >= currentLesson.videoDuration ? currentLesson.videoDuration : next;
+    setMediaDuration(currentLesson.videoDuration ?? 0);
+    lastReportedSecond.current = -1;
+  }, [currentLesson.id, currentLesson.videoDuration]);
+
+  const handleVideoTimeUpdate = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    const positionSec = Math.floor(event.currentTarget.currentTime);
+    setVideoTime(event.currentTarget.currentTime);
+    if (positionSec > 0 && positionSec % 5 === 0 && positionSec !== lastReportedSecond.current) {
+      lastReportedSecond.current = positionSec;
+      eventBufferRef.current?.push({
+        eventType: 'play',
+        lessonId: currentLesson.id,
+        positionSec,
+        metadata: { courseId: course.id },
       });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [currentLesson.id, currentLesson.videoDuration, course.id]);
+    }
+  };
 
   const isCurrentCompleted = completedSet.has(currentLesson.id);
   const allLessons = course.chapters.flatMap((c) => c.lessons);
@@ -554,38 +556,43 @@ function VideoCenter({
     <div className="flex flex-col h-full bg-neutral-50 dark:bg-neutral-50">
       {/* 视频区 16:9 */}
       <div className="aspect-video bg-black relative flex items-center justify-center text-white shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#171717]/40 to-[#262626]/20" />
-        <div className="relative text-center">
-          <button
-            className="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition mx-auto"
-            aria-label="播放"
-          >
-            <PlayCircle className="w-10 h-10 ml-1" />
-          </button>
-          <p className="mt-4 text-sm opacity-80">{currentLesson.title}</p>
-        </div>
-        {/* 视频控件 */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/80 to-transparent">
-          <div className="h-1 rounded-full bg-white/30 overflow-hidden mb-2">
-            <div
-              className="h-full bg-[#171717] transition-all"
-              style={{
-                width: `${currentLesson.videoDuration ? (videoTime / currentLesson.videoDuration) * 100 : 0}%`,
-              }}
+        {!currentLesson.videoUrl ? (
+          <div className="text-center px-6">
+            <PlayCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p className="text-sm">本课时暂未上传视频</p>
+          </div>
+        ) : isDirectVideoUrl(currentLesson.videoUrl) ? (
+          <video
+            key={currentLesson.id}
+            src={currentLesson.videoUrl}
+            title={currentLesson.title}
+            className="w-full h-full"
+            controls
+            playsInline
+            onLoadedMetadata={(event) => setMediaDuration(event.currentTarget.duration || currentLesson.videoDuration || 0)}
+            onTimeUpdate={handleVideoTimeUpdate}
+          />
+        ) : (
+          <>
+            <iframe
+              key={currentLesson.id}
+              src={normalizeEmbeddedVideoUrl(currentLesson.videoUrl)}
+              title={currentLesson.title}
+              className="w-full h-full border-0"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
             />
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-            <button className="text-white hover:opacity-70 transition-opacity min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="播放/暂停">
-              <PlayCircle className="w-5 h-5" />
-            </button>
-            <span className="font-mono text-[10px] sm:text-xs">
-              {formatDuration(videoTime)} / {formatDuration(currentLesson.videoDuration || 0)}
-            </span>
-            <div className="flex-1" />
-            <button className="hidden sm:inline-block px-2 py-0.5 rounded bg-white/20 text-xs">1.0×</button>
-            <button className="hidden sm:inline-block px-2 py-0.5 rounded bg-white/20 text-xs">CC</button>
-          </div>
-        </div>
+            <a
+              href={currentLesson.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute top-3 right-3 z-10 bg-white text-[#171717] px-3 py-2 text-[10px] font-black uppercase tracking-widest border border-[#171717]"
+            >
+              无法播放？新窗口打开 ↗
+            </a>
+          </>
+        )}
       </div>
 
       {/* 课程标题 + lesson 标题 + 讲师 */}
@@ -601,7 +608,7 @@ function VideoCenter({
           <span>讲师 {course.instructor}</span>
           <span>·</span>
           <Clock className="w-3.5 h-3.5" />
-          <span>{formatDuration(currentLesson.videoDuration || 0)}</span>
+          <span>{formatDuration(mediaDuration || currentLesson.videoDuration || 0)}</span>
           {isCurrentCompleted && (
             <span className="ml-auto inline-flex items-center gap-1 text-success-500">
               <CheckCircle2 className="w-3.5 h-3.5" /> 已完成

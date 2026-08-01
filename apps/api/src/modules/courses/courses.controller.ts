@@ -38,7 +38,7 @@ export class CoursesController {
   @ApiQuery({ name: 'sort', required: false, enum: ['newest', 'recent', 'rating', 'popular'] })
   async findAll(
     @Query() query: ListCoursesQueryDto,
-    @Req() req: { user?: { role?: UserRole } },
+    @Req() req: { user?: { userId?: string; role?: UserRole } },
   ) {
     return this.coursesService.findAll({
       ...query,
@@ -54,10 +54,14 @@ export class CoursesController {
   @ApiParam({ name: 'id', description: '课程ID' })
   async findOne(
     @Param('id') id: string,
-    @Req() req: { user?: { role?: UserRole } },
+    @Req() req: { user?: { userId?: string; role?: UserRole } },
   ) {
-    const includeDraft = req.user?.role === UserRole.admin;
-    return this.coursesService.findOne(id, includeDraft);
+    const isAdmin = req.user?.role === UserRole.admin;
+    return this.coursesService.findOne(id, {
+      includeDraft: isAdmin,
+      isAdmin,
+      userId: req.user?.userId,
+    });
   }
 
   @Post()

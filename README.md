@@ -2,7 +2,7 @@
 
 AI Academy 是一个可二次品牌化的在线教育平台，面向 AI/LLM 课程、学位项目、学习进度、证书和黑客松活动场景。项目采用 pnpm monorepo，前端和 API 可独立构建、部署。
 
-> 当前支付仍是开发期 mock 流程。本轮没有修改支付实现；生产环境必须在接入真实支付网关和 webhook 验签前禁用支付入口。
+> 真实支付网关和 webhook 尚未接入；生产构建会明确禁用支付与退款操作，开发环境仍保留 mock 流程供联调。
 
 ## 项目状态
 
@@ -10,8 +10,8 @@ AI Academy 是一个可二次品牌化的在线教育平台，面向 AI/LLM 课�
 - Web：React 19、TypeScript、Vite、React Router、TailwindCSS、React Query
 - 存储：开发环境 MinIO，生产可接 S3/OSS
 - OAuth：Google/GitHub 支持配置驱动的授权、state 校验和回调；SAML 需要完整 IdP 配置后启用
-- 已实现：课程真实评分/热度排序、学习笔记 CRUD、评价 helpful 去重、课程完成证书、订单/证书通知、讲师详情页、真实 AI 助手
-- 验证结果：API 27 suites / 282 tests；Web 15 files / 113 tests；生产构建和 TypeScript 检查通过
+- 已实现：课程真实评分/热度排序、学习笔记 CRUD、实践项目与进度、评价 helpful 去重、课程完成证书、订单/证书通知、讲师详情页、真实 AI 助手
+- 验证结果：API 34 suites / 316 tests；Web 20 files / 127 tests；浏览器 E2E 25 passed / 1 skipped；生产构建和 TypeScript 检查通过
 
 ## 目录
 
@@ -104,6 +104,12 @@ Web 浏览器 smoke 测试会自动启动前端服务：
 pnpm e2e
 ```
 
+生产发布前校验 `.env.production`：
+
+```bash
+pnpm deploy:validate
+```
+
 ## 环境变量
 
 完整模板见 [`.env.example`](./.env.example)。常用配置如下：
@@ -125,7 +131,7 @@ pnpm e2e
 
 ### 支付上线前置条件
 
-当前订单支付仍是 mock。不要仅通过设置支付密钥就把它视为生产支付。正式上线前需要：
+开发环境订单支付仍是 mock，生产环境接口与 UI 均会拒绝支付操作。不要仅通过设置支付密钥就把它视为生产支付。正式开放付费前需要：
 
 1. 接入真实支付网关 SDK；
 2. 服务端校验 webhook 签名、金额、币种、订单号和幂等键；
@@ -136,6 +142,7 @@ pnpm e2e
 
 - 用户注册、登录、refresh token 轮换、OAuth/SAML 配置化登录
 - 课程、章节、课时、资源、学位和报名
+- 实践项目：后台 CRUD、学员开始/完成状态与徽章联动
 - 学习进度、完成证书和证书验证
 - 课程评价、评分分布、helpful 投票防重复
 - 课程笔记：按课时保存内容和视频时间点，支持本人编辑/删除
@@ -156,7 +163,7 @@ pnpm e2e
 
 ## 部署检查清单
 
-1. 使用生产 `.env`，不要提交密钥和本地账号。
+1. 使用生产 `.env`，不要提交密钥和本地账号，并执行 `pnpm deploy:validate`。
 2. 执行 `prisma migrate deploy`，确认 notes/helpful 迁移已应用。
 3. 执行 `pnpm check` 或在 CI 中执行等价检查。
 4. 配置 HTTPS、CORS、Redis 密码、对象存储和日志采集。

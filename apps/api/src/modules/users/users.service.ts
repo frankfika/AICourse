@@ -304,7 +304,12 @@ export class UsersService {
       dto.courseIds.map((courseId) =>
         this.prisma.enrollment.upsert({
           where: { userId_courseId: { userId, courseId } },
-          update: {},
+          update: {
+            deletedAt: null,
+            expiresAt: null,
+            enrolledAt: new Date(),
+            source: 'direct',
+          },
           create: { userId, courseId, source: 'direct' },
         }),
       ),
@@ -326,7 +331,12 @@ export class UsersService {
       dto.degreeIds.map((degreeId) =>
         this.prisma.enrollment.upsert({
           where: { userId_degreeId: { userId, degreeId } },
-          update: {},
+          update: {
+            deletedAt: null,
+            expiresAt: null,
+            enrolledAt: new Date(),
+            source: 'direct',
+          },
           create: { userId, degreeId, source: 'direct' },
         }),
       ),

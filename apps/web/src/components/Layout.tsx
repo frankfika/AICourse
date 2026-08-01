@@ -350,7 +350,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ============================================================
        * AI 网页助手 FAB(P1-9+ 改:触发 floating chat drawer)
-       * 跟 dashboard/learning 的课程内小助手互不干扰(那个走前端 mock)
+       * dashboard/learning 与全站入口复用同一套真实会话
        * 未登录 → 跳 /auth/login;已登录 → 打开 drawer
        * mobile:bottom-20(在 bottom tab 之上)
        * md+:bottom-6
@@ -566,15 +566,14 @@ function SiteFooter() {
         </div>
         <div className="mt-8 pt-8 border-t border-neutral-200 text-xs text-neutral-600 flex flex-wrap items-center justify-between gap-4">
           {(() => {
-            // 备案号走 env 注入, 避免硬编码假 ICP 引发合规风险
-            // 设了 VITE_ICP 就显示, 没设就显示"备案号待补"(绝不展示假数字)
+            // 备案号走 env 注入；未配置时不展示未完成态或虚假号码。
             const platformName =
               import.meta.env.VITE_PUBLIC_PLATFORM_NAME ?? 'AI Academy';
             const icp = import.meta.env.VITE_ICP?.trim();
             return (
               <span>
                 © 2026 {platformName}
-                {icp ? ` · 备案号 ${icp}` : ' · 备案号待补'}
+                {icp ? ` · 备案号 ${icp}` : ''}
               </span>
             );
           })()}

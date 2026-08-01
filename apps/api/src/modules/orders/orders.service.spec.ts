@@ -19,6 +19,7 @@ const mockPrisma: any = {
     findUnique: jest.fn(),
     create: jest.fn(),
     upsert: jest.fn(),
+    updateMany: jest.fn(),
   },
   order: {
     findUnique: jest.fn(),
@@ -68,6 +69,7 @@ describe('OrdersService', () => {
     mockPrisma.enrollment.findUnique.mockReset();
     mockPrisma.enrollment.create.mockReset();
     mockPrisma.enrollment.upsert.mockReset();
+    mockPrisma.enrollment.updateMany.mockReset();
     mockPrisma.degreeCourse.findMany.mockReset();
     mockPrisma.progressRecord.count.mockReset();
     mockPrisma.lesson.count.mockReset();
@@ -95,7 +97,7 @@ describe('OrdersService', () => {
         price: 0,
       });
       mockPrisma.enrollment.findUnique.mockResolvedValue(null);
-      mockPrisma.enrollment.create.mockResolvedValue({ id: 'e1', userId: 'u1', courseId: 'c1' });
+      mockPrisma.enrollment.upsert.mockResolvedValue({ id: 'e1', userId: 'u1', courseId: 'c1' });
 
       const result = await service.createOrder('u1', {
         type: OrderType.course,
@@ -103,9 +105,10 @@ describe('OrdersService', () => {
       });
 
       expect(result.enrolled).toBe(true);
-      expect(mockPrisma.enrollment.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ userId: 'u1', courseId: 'c1', source: 'direct' }),
-      });
+      expect(mockPrisma.enrollment.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        where: { userId_courseId: { userId: 'u1', courseId: 'c1' } },
+        create: expect.objectContaining({ userId: 'u1', courseId: 'c1', source: 'direct' }),
+      }));
     });
 
     it('should throw ConflictException if already enrolled', async () => {
@@ -119,6 +122,28 @@ describe('OrdersService', () => {
       await expect(
         service.createOrder('u1', { type: OrderType.course, courseId: 'c1' }),
       ).rejects.toThrow(ConflictException);
+    });
+
+    it('should reactivate a soft-deleted free enrollment', async () => {
+      mockPrisma.course.findUnique.mockResolvedValue({
+        id: 'c1',
+        costType: CostType.free,
+        price: 0,
+      });
+      mockPrisma.enrollment.findUnique.mockResolvedValue({
+        id: 'e1',
+        deletedAt: new Date(),
+        expiresAt: null,
+      });
+      mockPrisma.enrollment.upsert.mockResolvedValue({ id: 'e1', deletedAt: null });
+
+      await expect(service.createOrder('u1', {
+        type: OrderType.course,
+        courseId: 'c1',
+      })).resolves.toMatchObject({ enrolled: true });
+      expect(mockPrisma.enrollment.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ deletedAt: null, expiresAt: null, source: 'direct' }),
+      }));
     });
 
     it('should throw NotFoundException if course not found', async () => {
@@ -292,6 +317,10 @@ describe('OrdersService', () => {
 
       const result = await service.refundOrder('u1', 'o1');
       expect(result.status).toBe(OrderStatus.refunded);
+      expect(mockPrisma.enrollment.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'u1', courseId: 'c1', source: 'order', deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
+      });
       expect(mockNotificationService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: 'u1',
@@ -381,7 +410,7 @@ describe('OrdersService', () => {
         paidAt: new Date(),
         status: OrderStatus.paid,
       });
-      mockPrisma.degreeCourse.findMany.mockResolvedValueOnce([{ courseId: 'c1' }, { courseId: 'c2' }]);
+      mockPrisma.degreeCourse.findMany.mockResolvedValue([{ courseId: 'c1' }, { courseId: 'c2' }]);
       mockPrisma.progressRecord.count.mockResolvedValueOnce(0); // 0 课程已开始
       mockPrisma.order.update.mockResolvedValue({ id: 'o1', status: OrderStatus.refunded });
 

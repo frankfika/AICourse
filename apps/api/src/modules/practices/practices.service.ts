@@ -12,10 +12,28 @@ export class PracticesService {
 
   // 获取课程的所有实践项目
   async getProjectsByCourseId(courseId: string) {
-    return this.prisma.practiceProject.findMany({
+    const projects = await this.prisma.practiceProject.findMany({
       where: { courseId, isActive: true },
       orderBy: { orderIndex: 'asc' },
       // P1-7 防御: max 100, 防 DoS
+      take: 100,
+    });
+    return projects.map((project) => ({ ...project, projectUrl: '' }));
+  }
+
+  async getAccessibleProjectsByCourseId(userId: string, courseId: string) {
+    await this.assertCourseAccess(userId, courseId);
+    return this.prisma.practiceProject.findMany({
+      where: { courseId, isActive: true },
+      orderBy: { orderIndex: 'asc' },
+      take: 100,
+    });
+  }
+
+  async getAdminProjectsByCourseId(courseId: string) {
+    return this.prisma.practiceProject.findMany({
+      where: { courseId },
+      orderBy: { orderIndex: 'asc' },
       take: 100,
     });
   }
@@ -39,7 +57,7 @@ export class PracticesService {
       throw new NotFoundException('Practice project not found');
     }
 
-    return project;
+    return { ...project, projectUrl: '' };
   }
 
   // 创建实践项目（管理员）
@@ -135,6 +153,7 @@ export class PracticesService {
     if (!project.isActive) {
       throw new ForbiddenException('This practice project is not active');
     }
+    await this.assertCourseAccess(userId, project.courseId);
 
     // 检查是否已经开始
     const existing = await this.prisma.practiceCompletion.findUnique({
@@ -165,6 +184,7 @@ export class PracticesService {
 
   // 完成实践项目
   async completeProject(userId: string, projectId: string, dto: CompletePracticeDto) {
+    await this.assertProjectAccess(userId, projectId);
     const completion = await this.prisma.practiceCompletion.findUnique({
       where: {
         userId_projectId: {
@@ -207,6 +227,7 @@ export class PracticesService {
 
   // 跳过实践项目
   async skipProject(userId: string, projectId: string) {
+    await this.assertProjectAccess(userId, projectId);
     const completion = await this.prisma.practiceCompletion.findUnique({
       where: {
         userId_projectId: {
@@ -231,5 +252,34 @@ export class PracticesService {
         status: 'skipped',
       },
     });
+  }
+
+  private async assertProjectAccess(userId: string, projectId: string) {
+    const project = await this.prisma.practiceProject.findUnique({
+      where: { id: projectId },
+      select: { courseId: true, isActive: true },
+    });
+    if (!project) throw new NotFoundException('Practice project not found');
+    if (!project.isActive) throw new ForbiddenException('This practice project is not active');
+    await this.assertCourseAccess(userId, project.courseId);
+  }
+
+  private async assertCourseAccess(userId: string, courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { costType: true },
+    });
+    if (!course) throw new NotFoundException('Course not found');
+    if (course.costType === 'free' || course.costType === 'charity') return;
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: {
+        userId,
+        courseId,
+        deletedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: { id: true },
+    });
+    if (!enrollment) throw new ForbiddenException('Course enrollment required');
   }
 }

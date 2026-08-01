@@ -469,7 +469,7 @@ model Enrollment {
   course Course?     @relation(fields: [courseId], references: [id], onDelete: SetNull)
   degree NanoDegree? @relation(fields: [degreeId], references: [id], onDelete: SetNull)
 
-  // 软删后重新报名 → Service 强制逻辑:findFirst({ userId, courseId, deletedAt: null }) 不存在才建新
+  // 软删后重新报名由 Service 使用 upsert 恢复同一条唯一记录。
   @@unique([userId, courseId])
   @@unique([userId, degreeId])
   @@index([userId, deletedAt])
