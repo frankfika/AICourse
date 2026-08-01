@@ -169,11 +169,10 @@ describe('ForbiddenPage', () => {
     expect(screen.getByText(/没有访问该资源的权限/)).toBeInTheDocument();
   });
 
-  it('footer 显示联系客服 email', () => {
+  it('footer 提供可用的站内联系入口', () => {
     renderWithProviders(<ForbiddenPage />);
-    const link = screen.getByText('support@ai-academy.local');
-    expect(link).toBeInTheDocument();
-    expect(link.closest('a')).toHaveAttribute('href', 'mailto:support@ai-academy.local');
+    const link = screen.getByRole('link', { name: '提交联系申请' });
+    expect(link).toHaveAttribute('href', '/enterprise#inquiry');
   });
 });
 
@@ -201,10 +200,10 @@ describe('ServerErrorPage', () => {
     expect(code.textContent).toMatch(/^ERR-\d{14}-[A-Z0-9]{4}$/);
   });
 
-  it('mailto 链接包含错误码 subject', () => {
+  it('提供站内联系入口并提示附上错误码', () => {
     renderWithProviders(<ServerErrorPage />);
-    const link = document.querySelector('a[href^="mailto:"]')!;
-    expect(link.getAttribute('href')).toMatch(/subject=.*ERR-/);
+    const link = screen.getByRole('link', { name: '提交联系申请并附上错误码' });
+    expect(link).toHaveAttribute('href', '/enterprise#inquiry');
   });
 
   it('dev 模式显示原 error message', () => {

@@ -18,7 +18,11 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SitemapController {
   constructor(private readonly prisma: PrismaService) {}
 
-  private static readonly BASE_URL = process.env.SITE_URL || 'https://ai-academy.local';
+  private static readonly BASE_URL = (
+    process.env.SITE_URL ||
+    process.env.PUBLIC_URL ||
+    'http://localhost'
+  ).replace(/\/$/, '');
 
   @Get('sitemap.xml')
   async sitemap(@Res() res: Response) {

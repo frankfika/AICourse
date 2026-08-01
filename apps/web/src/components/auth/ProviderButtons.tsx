@@ -1,23 +1,23 @@
 /**
  * ProviderButtons — 6 宫格第三方登录按钮网格
  *
- * Phase 1 灰度模式:全部 disabled + tooltip "即将推出, 灰度开放中"
- * 真实 OIDC 接入是 Phase 2+ 的事
- *
- * 6 provider 来自 mock-auth.html:
- *   Google / GitHub / 微信 / 企业微信 / 飞书 / Apple
+ * 登录/注册页传入后端 GET /auth/providers 的结果：已配置的 OAuth
+ * provider 可点击，未配置项保持灰度。账号绑定页可继续强制 grayscale。
  *
  * 设计:
  *   - 灰度灰底 + 锁定图标,hover 不变
- *   - 点击 → 跳 toast 提示,不调任何 OIDC
+ *   - 已启用按钮由调用方启动真实 OAuth 跳转
  */
 import { Lock } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import type { ProviderInfo } from '../../lib/auth/types';
 
 export interface ProviderButtonsProps {
-  /** Phase 1: 总是 true。Phase 2+ 跟据后端 provider.enabled 切 */
+  /** 强制全部禁用（用于尚未实现专用绑定回调的账号绑定页） */
   grayscale?: boolean;
-  /** 点击 provider(灰度模式下:弹 tooltip + toast) */
+  /** 后端能力列表；只渲染第三方 provider，不渲染 email_password */
+  providers?: ProviderInfo[];
+  /** 点击已启用的 provider */
   onProviderClick?: (providerId: string, label: string) => void;
   className?: string;
 }
@@ -26,6 +26,7 @@ interface ProviderDef {
   id: string;
   label: string;
   icon: React.ReactNode;
+  enabled: boolean;
 }
 
 function GoogleIcon() {
@@ -119,23 +120,40 @@ function AppleIcon() {
 }
 
 const PROVIDERS: ProviderDef[] = [
-  { id: 'google', label: 'Google', icon: <GoogleIcon /> },
-  { id: 'github', label: 'GitHub', icon: <GitHubIcon /> },
-  { id: 'wechat', label: '微信', icon: <WechatIcon /> },
-  { id: 'wecom', label: '企业微信', icon: <WecomIcon /> },
-  { id: 'feishu', label: '飞书', icon: <FeishuIcon /> },
-  { id: 'apple', label: 'Apple', icon: <AppleIcon /> },
+  { id: 'oauth.google', label: 'Google', icon: <GoogleIcon />, enabled: false },
+  { id: 'oauth.github', label: 'GitHub', icon: <GitHubIcon />, enabled: false },
+  { id: 'wechat', label: '微信', icon: <WechatIcon />, enabled: false },
+  { id: 'wecom', label: '企业微信', icon: <WecomIcon />, enabled: false },
+  { id: 'feishu', label: '飞书', icon: <FeishuIcon />, enabled: false },
+  { id: 'apple', label: 'Apple', icon: <AppleIcon />, enabled: false },
 ];
 
 export function ProviderButtons({
   grayscale = true,
+  providers,
   onProviderClick,
   className,
 }: ProviderButtonsProps) {
+  const displayedProviders = providers
+    ? providers
+        .filter((provider) => provider.type !== 'email_password')
+        .map((provider): ProviderDef => {
+          const fallback = PROVIDERS.find((item) => item.id === provider.id);
+          return {
+            id: provider.id,
+            label: provider.label,
+            icon: fallback?.icon ?? <Lock className="h-6 w-6" />,
+            enabled: provider.enabled,
+          };
+        })
+    : PROVIDERS;
+
+  if (displayedProviders.length === 0) return null;
+
   return (
     <div className={cn('grid grid-cols-3 gap-3', className)}>
-      {PROVIDERS.map((p) => {
-        const disabled = grayscale; // Phase 1: 全部 disabled
+      {displayedProviders.map((p) => {
+        const disabled = grayscale || !p.enabled;
         return (
           <button
             key={p.id}
@@ -144,10 +162,10 @@ export function ProviderButtons({
             onClick={() => onProviderClick?.(p.id, p.label)}
             title={
               disabled
-                ? '即将推出, 灰度开放中'
+                ? grayscale ? '账号绑定暂未开放' : '该登录方式未配置'
                 : `用 ${p.label} 登录`
             }
-            aria-label={disabled ? `${p.label} 即将推出, 灰度开放中` : `用 ${p.label} 登录`}
+            aria-label={disabled ? `${p.label} 暂不可用` : `用 ${p.label} 登录`}
             className={cn(
               'relative flex flex-col items-center gap-1.5 p-3 rounded-lg',
               'border border-neutral-200 bg-neutral-0',

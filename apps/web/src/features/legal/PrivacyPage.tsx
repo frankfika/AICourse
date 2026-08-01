@@ -142,11 +142,10 @@ const SECTIONS: LegalSection[] = [
           <li><strong>删除权</strong>:在特定情况下要求删除您的信息</li>
           <li><strong>撤回同意</strong>:撤回您之前作出的同意 (但不影响撤回前已进行的处理)</li>
           <li><strong>注销账户</strong>:申请账户注销,删除或匿名化您的信息</li>
-          <li><strong>投诉举报</strong>:通过 <code>privacy@ai-academy.local</code> 投诉</li>
+          <li><strong>投诉举报</strong>:通过站内联系表单提交投诉</li>
         </ul>
         <p>
-          行使权利的途径:登录后访问「设置 → 隐私」,或发送邮件至{' '}
-          <code>privacy@ai-academy.local</code>。我们会在 15 个工作日内回复。
+          行使权利的途径:登录后访问「设置 → 隐私」,或通过页面底部的联系表单提交申请。我们会在 15 个工作日内回复。
         </p>
       </>
     ),
@@ -203,7 +202,6 @@ export function PrivacyPage() {
       subtitle="AI Academy 如何收集、使用、存储和保护您的个人信息"
       lastUpdated="2026-07-24"
       sections={SECTIONS}
-      contactEmail="privacy@ai-academy.local"
     />
   );
 }

@@ -3,7 +3,7 @@
  *
  * 设计目标:
  *   - 前端业务代码不感知底层用 local / oidc / hosted
- *   - 通过 VITE_AUTH_ADAPTER env 切换 (Phase 1 固定 local,Phase 2+ 演进)
+ *   - 邮箱密码和 OAuth 都通过同一后端适配器完成
  *   - signIn 走 discriminated union 区分 local 表单 / oauth 跳转 / oauth 回调
  *
  * 与 zustand authStore 的关系:
@@ -38,7 +38,7 @@ export interface ProviderInfo {
   label: string;
   type: 'email_password' | 'oauth' | 'sso';
   iconUrl?: string;
-  /** Phase 1: 全部 false(灰度);Phase 2+: 跟据 AUTH_PROVIDERS env 切 */
+  /** 由后端 AUTH_PROVIDERS 与对应凭据共同决定 */
   enabled: boolean;
 }
 
@@ -86,8 +86,7 @@ export interface AuthAdapter {
    *   跟 AuthProvider boot 的 refresh 重复 → 全局 5/sec 限流被打爆,
    *   hard reload 全部 429。
    *
-   * Phase 1 状态: 后端未实现,LocalAuthAdapter 兜底返回 [local identity]
-   * 见 LocalAuthAdapter.listMyIdentities
+   * LocalAuthAdapter 直接调用真实后端端点。
    */
   listMyIdentities(user: AuthUser | null): Promise<Identity[]>;
 

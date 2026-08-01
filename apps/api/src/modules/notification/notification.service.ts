@@ -221,15 +221,18 @@ export class NotificationService {
   }) {
     const subject = `【企业咨询】${data.company} - ${data.topic}`;
     const body = this.buildEnterpriseInquiryEmail(data);
+    const recipient =
+      this.config.get<string>('ENTERPRISE_NOTIFY_EMAIL')?.trim() ||
+      'admin-console';
 
     await this.send({
-      to: this.config.get<string>('ENTERPRISE_NOTIFY_EMAIL') ?? 'contact@ai-academy.local',
+      to: recipient,
       subject,
       body,
     });
 
     this.logger.log(
-      `[Email Notification]\n  To: contact@ai-academy.local\n  Subject: ${subject}\n  Body:\n${body}`,
+      `[Enterprise Inquiry Notification]\n  To: ${recipient}\n  Subject: ${subject}\n  Body:\n${body}`,
     );
   }
 

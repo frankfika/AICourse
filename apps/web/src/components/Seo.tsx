@@ -43,7 +43,7 @@ const DEFAULT_IMAGE = '/og-default.png';
 const BASE_URL =
   typeof window !== 'undefined'
     ? `${window.location.protocol}//${window.location.host}`
-    : 'https://ai-academy.local';
+    : 'http://localhost';
 
 export function Seo({
   title,

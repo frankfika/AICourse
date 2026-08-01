@@ -3,5 +3,3 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 Disallow: /dashboard/
-
-Sitemap: https://ai-academy.local/sitemap.xml

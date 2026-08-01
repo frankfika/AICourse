@@ -45,23 +45,6 @@ interface ProvidersResponse {
   }>;
 }
 
-/**
- * Phase 1 灰度 provider 列表 — 用于前端按钮网格
- *
- * 6 个 provider 来自 mock-auth.html:Google / GitHub / 微信 / 企业微信 / 飞书 / Apple
- * Phase 1 全部 enabled=false(灰度),Phase 2+ 再通过后端 AUTH_PROVIDERS env 切
- *
- * 后端 /auth/providers 返回的列表若空(没接 env)就 fallback 到这组,保证 UI 始终有 6 宫格
- */
-const GRAYSCALE_PROVIDERS: ProviderInfo[] = [
-  { id: 'oauth.google', label: 'Google', type: 'oauth', enabled: false },
-  { id: 'oauth.github', label: 'GitHub', type: 'oauth', enabled: false },
-  { id: 'wechat', label: '微信', type: 'oauth', enabled: false },
-  { id: 'wecom', label: '企业微信', type: 'oauth', enabled: false },
-  { id: 'feishu', label: '飞书', type: 'oauth', enabled: false },
-  { id: 'apple', label: 'Apple', type: 'oauth', enabled: false },
-];
-
 export class LocalAuthAdapter implements AuthAdapter {
   async signIn(input: SignInInput): Promise<AuthSession> {
     if (input.kind === 'local') {
@@ -126,21 +109,15 @@ export class LocalAuthAdapter implements AuthAdapter {
         iconUrl: p.iconUrl,
         enabled: p.enabled,
       }));
-      // 后端没返回任何 provider 时 fallback 到灰度列表
-      // 业务方按 enabled 字段决定按钮是否可点
-      return backend.length > 0 ? backend : GRAYSCALE_PROVIDERS;
+      return backend;
     } catch {
-      // 后端连不上 / 报错 — UI 至少还能渲染灰度按钮
-      return GRAYSCALE_PROVIDERS;
+      // 能力探测失败时隐藏第三方入口，邮箱密码登录仍可独立使用。
+      return [];
     }
   }
 
   /**
    * 列当前用户的 Identity 列表
-   *
-   * Phase 1 状态(spec §9.3 表格里要求 GET /auth/identities,但后端 P0-1 没实现):
-   *   - 后端有 cookie → 兜底返回 [local identity] (Phase 1 本地账号永远存在)
-   *   - 后端没 cookie / 401 → 返回 []
    *
    * P1 fix: 不再内部调 this.refresh(),改由调用方(AuthProvider)传入 user
    *   - 旧逻辑: AuthProvider mount 时调 refresh + listMyIdentities 内部再调 refresh,

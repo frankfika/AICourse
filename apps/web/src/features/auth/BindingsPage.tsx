@@ -13,15 +13,9 @@
  *   - GET    /api/v1/auth/identities
  *   - DELETE /api/v1/auth/identities/:id
  *
- * Phase 1 状态: 后端 P0-1 未实现 identities 端点
- *   - LocalAuthAdapter.listMyIdentities() 兜底返回 [local]
- *   - unbindProvider() 抛 "后端 P2 实现待定"
- *   见 LocalAuthAdapter 的 TODO
- *
- * Demo 模式:支持 ?demo=with-google 强制渲染带 Google 绑定的视图(给截图用)
- * 不依赖真实 session,便于离线截图验证
+ * identities 查询和解绑均走真实后端；该页面必须经过 AuthGuard。
  */
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Mail,
@@ -117,30 +111,9 @@ export function BindingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordBusy, setPasswordBusy] = useState(false);
-  // Demo 模式:有 ?demo=with-google 时,即使没真实 session 也渲染带 Google 的视图
-  // 用于离线截图 / 视觉验证
-  const demoMode = params.get('demo');
-  const showWithGoogleDemo = demoMode === 'with-google';
   const passwordChangeRequired = params.get('change-password') === 'required';
 
-  // 演示模式:在 identities 末尾追加一个 Google identity
-  const displayedIdentities: Identity[] = useMemo(() => {
-    if (showWithGoogleDemo) {
-      return [
-        ...identities,
-        {
-          id: 'demo-google-1',
-          provider: 'google',
-          providerUserId: 'demo-google-uid',
-          email: user?.email ?? 'demo@gmail.com',
-          displayName: 'demo@gmail.com',
-          linkedAt: '2025-11-02T00:00:00Z',
-          lastUsedAt: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
-        },
-      ];
-    }
-    return identities;
-  }, [showWithGoogleDemo, identities, user?.email]);
+  const displayedIdentities: Identity[] = identities;
 
   // CMS-driven provider meta(从 auth-providers 列表拿 label/icon)
   // 必须在所有 early return 之前调用
@@ -161,9 +134,9 @@ export function BindingsPage() {
     );
   }
 
-  // 未登录且非 demo 模式:硬重定向到登录页(带 ?next= 登录后回弹)
+  // 未登录时硬重定向到登录页(带 ?next= 登录后回弹)
   // 原 EmptyState + 按钮改为 <Navigate>, 避免给未登录访客看到 "请先登录" 卡片
-  if (!user && !showWithGoogleDemo) {
+  if (!user) {
     return <Navigate to="/auth/login?from=/dashboard/settings/bindings" replace />;
   }
 
@@ -243,13 +216,7 @@ export function BindingsPage() {
     (i) => !i.isPrimary,
   ).length;
   const totalCount = displayedIdentities.length;
-  // demo 模式下:用 demo email 代替真实 user.email
-  const displayUser = user ?? {
-    id: 'demo-user',
-    email: 'k.chen@ai-academy.local',
-    name: 'K. Chen',
-    role: 'student' as const,
-  };
+  const displayUser = user;
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 py-8">
@@ -436,7 +403,7 @@ export function BindingsPage() {
             <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-600">
               {t('auth.identity.warning_desc', '解绑会立即吊销对应 provider 的 refresh token。')} 如发现异常登录，请
               <a
-                href="mailto:support@ai-academy.local"
+                href="/enterprise#inquiry"
                 className="text-[#171717] underline underline-offset-2 hover:bg-[#171717] hover:text-white"
               >
                 联系支持团队

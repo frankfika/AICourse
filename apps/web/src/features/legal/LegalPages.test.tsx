@@ -118,24 +118,30 @@ describe('LegalPage 通用底层', () => {
     replaceStateSpy.mockRestore();
   });
 
-  it('contact section 用默认 email legal@ai-academy.local', () => {
+  it('未配置联系邮箱时引导到站内联系表单', () => {
     renderWithProviders(
       <LegalPage eyebrow="x" title="x" lastUpdated="x" sections={sampleSections} />,
     );
-    expect(screen.getByText('legal@ai-academy.local')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '提交联系申请' })).toHaveAttribute(
+      'href',
+      '/enterprise#inquiry',
+    );
   });
 
-  it('contact section 用自定义 email (Privacy 用 privacy@ai-academy.local)', () => {
+  it('配置联系邮箱时使用 mailto 链接', () => {
     renderWithProviders(
       <LegalPage
         eyebrow="x"
         title="x"
         lastUpdated="x"
         sections={sampleSections}
-        contactEmail="privacy@ai-academy.local"
+        contactEmail="privacy@example.com"
       />,
     );
-    expect(screen.getByText('privacy@ai-academy.local')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'privacy@example.com' })).toHaveAttribute(
+      'href',
+      'mailto:privacy@example.com',
+    );
   });
 
   it('空 sections 不报错', () => {
@@ -195,11 +201,10 @@ describe('PrivacyPage 隐私政策', () => {
     expect(screen.getByRole('heading', { name: '未成年人保护', level: 2 })).toBeInTheDocument();
   });
 
-  it('contact email 走 privacy@ai-academy.local', () => {
+  it('隐私联系入口走站内联系表单', () => {
     renderWithProviders(<PrivacyPage />);
-    // contact section 用 mailto: link
-    const link = screen.getByRole('link', { name: 'privacy@ai-academy.local' });
-    expect(link).toHaveAttribute('href', 'mailto:privacy@ai-academy.local');
+    const link = screen.getByRole('link', { name: '提交联系申请' });
+    expect(link).toHaveAttribute('href', '/enterprise#inquiry');
   });
 
   it('提到公开证书 /verify 接口', () => {

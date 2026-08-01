@@ -15,6 +15,8 @@ docker compose --env-file .env.production -f docker-compose.production.yml ps
 
 必须替换模板中的所有 `replace-with-*` 值，并确保 `DATABASE_URL` 中的密码与 `MYSQL_PASSWORD` 完全一致。建议用 `openssl rand -hex 32` 分别生成数据库、Redis、JWT、MinIO 和加密密钥；不要复用密钥。
 
+默认只启用邮箱密码登录。启用 Google 或 GitHub 时，把对应 provider 加入 `AUTH_PROVIDERS`，并填写 client ID、secret 和与 `PUBLIC_URL` 同源的 `/auth/oauth/callback`；缺少任一配置时 API 会拒绝启动，避免展示不可用的登录按钮。
+
 空数据库首次启动时会自动执行已提交迁移并创建初始平台数据。生产 seed 遇到已有业务数据会拒绝覆盖；管理员和示例学员首次登录都必须修改密码。完成初始化后，把 `BOOTSTRAP_DATA` 改为 `false`。
 
 ## 宿主机 Nginx

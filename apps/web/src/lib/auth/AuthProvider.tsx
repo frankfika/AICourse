@@ -15,10 +15,7 @@
  *   - api.ts 的 axios response interceptor 已经处理 401 → refresh
  *   - 这里用 onUnauthorized 回调接 refresh 失败通知 → setUser(null) + 跳 /auth/login
  *
- * Adapter 切换:
- *   - 读 import.meta.env.VITE_AUTH_ADAPTER (默认 'local')
- *   - Phase 1: 只有 LocalAuthAdapter,其他 mode fallback 到 local
- *   - Phase 2+: 加 OidcAuthAdapter / HostedAuthAdapter 实现
+ * LocalAuthAdapter 同时负责邮箱密码和后端配置驱动的 OAuth 跳转。
  */
 import {
   createContext,
@@ -60,30 +57,8 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/**
- * 工厂:按 VITE_AUTH_ADAPTER 选 adapter
- * Phase 1 只支持 local,Phase 2+ 加 oidc / hosted
- */
 function createAdapter(): AuthAdapter {
-  const mode = (import.meta.env.VITE_AUTH_ADAPTER ?? 'local') as
-    | 'local'
-    | 'oidc'
-    | 'hosted';
-  switch (mode) {
-    case 'local':
-      return new LocalAuthAdapter();
-    case 'oidc':
-    case 'hosted':
-      // TODO(phase-2): 实现 OidcAuthAdapter / HostedAuthAdapter
-      // 现阶段 fallback 到 local,避免组件代码感知不到
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[AuthProvider] VITE_AUTH_ADAPTER=${mode} 未实现,fallback 到 local`,
-      );
-      return new LocalAuthAdapter();
-    default:
-      return new LocalAuthAdapter();
-  }
+  return new LocalAuthAdapter();
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -101,8 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * 启动:探活 + 拉 providers + 拉 identities
    *
-   * 注: spec §9.4 说用 GET /auth/me,但后端 P0-1 未实现
-   * 这里用 /auth/refresh(cookie 自动带)代替 — 200 说明有 session,401 说明没
+   * 用 /auth/refresh(cookie 自动带)恢复会话 — 200 说明有 session,401 说明没
    *
    * P1 fix: 顺序
    *   1) refresh() 一次 (Promise.all + listProviders 并发,不重复 refresh)
@@ -133,9 +107,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           activeUser = useAuthStore.getState().user;
         }
-        // 拉 identities — 传入 activeUser,避免 listMyIdentities 内部再 refresh
-        const idents = await adapter.listMyIdentities(activeUser);
-        if (!cancelled) setIdentities(idents);
+        // Identity 列表是增强信息，不能因该端点短暂失败而清除已建立的登录会话。
+        try {
+          const idents = await adapter.listMyIdentities(activeUser);
+          if (!cancelled) setIdentities(idents);
+        } catch (identityError) {
+          if (!cancelled) setIdentities([]);
+          // eslint-disable-next-line no-console
+          console.warn('[AuthProvider] identities load failed:', identityError);
+        }
         setProviders(providerList);
       } catch (err) {
         if (cancelled) return;
@@ -193,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const p = providers.find((x) => x.id === provider);
       if (!p?.enabled) {
         throw new Error(
-          `Provider "${provider}" 未启用 (Phase 1 灰度模式 — 即将推出)`,
+          `Provider "${provider}" 未启用`,
         );
       }
       const { data } = await api.get<{ authorizationUrl: string }>(

@@ -44,9 +44,10 @@ function extractErrorMessage(err: unknown): string | undefined {
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { signIn, user, isAuthenticating } = useAuth();
+  const { signIn, user, providers, isAuthenticating } = useAuth();
   const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const hasThirdPartyProviders = providers.some((provider) => provider.type !== 'email_password');
 
   const {
     register,
@@ -96,12 +97,11 @@ export function RegisterPage() {
     }
   });
 
-  const handleGrayscaleProviderClick = (providerId: string, label: string) => {
-    showToast(`${label} 注册即将推出, 灰度开放中`, 'info', 2500);
-    // eslint-disable-next-line no-console
-    console.info(
-      `[auth] Phase 1 gray: provider ${providerId} clicked but disabled`,
-    );
+  const handleProviderClick = (providerId: string, label: string) => {
+    void signIn({ kind: 'oauth-redirect', provider: providerId }).catch((err) => {
+      if (err instanceof Error && err.message === 'Redirecting to OAuth provider…') return;
+      showToast(`${label} 注册启动失败，请稍后重试`, 'error', 4000);
+    });
   };
 
   if (isAuthenticating) {
@@ -134,22 +134,25 @@ export function RegisterPage() {
         </p>
       </header>
 
-      {/* 第三方注册 6 宫格(灰度) */}
-      <section className="mt-6">
-        <ProviderButtons
-          grayscale
-          onProviderClick={handleGrayscaleProviderClick}
-        />
-        <p className="mt-2 text-[10px] text-center text-neutral-400">
-          已有本平台账号?系统会自动合并到你的账号
-        </p>
-      </section>
-
-      <div className="my-6 flex items-center gap-3 text-xs text-neutral-400">
-        <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-200" />
-        <span>或使用邮箱</span>
-        <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-200" />
-      </div>
+      {hasThirdPartyProviders && (
+        <>
+          <section className="mt-6">
+            <ProviderButtons
+              grayscale={false}
+              providers={providers}
+              onProviderClick={handleProviderClick}
+            />
+            <p className="mt-2 text-[10px] text-center text-neutral-400">
+              已有本平台账号?系统会自动合并到你的账号
+            </p>
+          </section>
+          <div className="my-6 flex items-center gap-3 text-xs text-neutral-400">
+            <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-200" />
+            <span>或使用邮箱</span>
+            <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-200" />
+          </div>
+        </>
+      )}
 
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
         <Input

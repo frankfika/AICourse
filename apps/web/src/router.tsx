@@ -18,6 +18,7 @@ const HomePage = lazy(() => import('./features/home/HomePage').then(m => ({ defa
 const LoginPage = lazy(() => import('./features/auth/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./features/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const OAuthCallbackPage = lazy(() => import('./features/auth/OAuthCallbackPage').then(m => ({ default: m.OAuthCallbackPage })));
 const CourseListPage = lazy(() => import('./features/courses/CourseListPage').then(m => ({ default: m.CourseListPage })));
 const CourseDetailPage = lazy(() => import('./features/courses/CourseDetailPage').then(m => ({ default: m.CourseDetailPage })));
 const DegreeListPage = lazy(() => import('./features/degrees/DegreeListPage').then(m => ({ default: m.DegreeListPage })));
@@ -125,14 +126,13 @@ export const router = createBrowserRouter([
   { path: '/auth/login', element: <PublicSuspense><LoginPage /></PublicSuspense> },
   { path: '/auth/register', element: <PublicSuspense><RegisterPage /></PublicSuspense> },
   { path: '/auth/forgot', element: <PublicSuspense><ForgotPasswordPage /></PublicSuspense> },
+  { path: '/auth/oauth/callback', element: <PublicSuspense><OAuthCallbackPage /></PublicSuspense> },
   // ===== P1-9 法律页 (公开, footer 链接需要 — 之前缺失直接 404) =====
   { path: '/terms', element: <PublicSuspense><TermsPage /></PublicSuspense> },
   { path: '/privacy', element: <PublicSuspense><PrivacyPage /></PublicSuspense> },
   { path: '/cookies', element: <PublicSuspense><CookiesPage /></PublicSuspense> },
   { path: '/refund', element: <PublicSuspense><RefundPage /></PublicSuspense> },
-  // 注:BindingsPage 内部自己处理"未登录" EmptyState,这样 demo 模式 ?demo=with-google
-  //     可以绕过登录态渲染示例视图(给截图用)
-  { path: '/dashboard/settings/bindings', element: <PublicSuspense><BindingsPage /></PublicSuspense> },
+  { path: '/dashboard/settings/bindings', element: <AuthGuard><PublicSuspense><BindingsPage /></PublicSuspense></AuthGuard> },
   { path: '/dashboard/notifications', element: <AuthGuard><PublicSuspense><NotificationsPage /></PublicSuspense></AuthGuard> },
   // P1-8: 订单 / 证书(用 dashboard 自身 layout, 不嵌到 /dashboard/children 树里,
   // 这样 OrdersPage / CertificatesPage 自己的 padding/max-w 跟 Layout 独立,

@@ -54,6 +54,32 @@ test.describe('Smoke', () => {
     await expect(page.getByLabel(/密码|password/i).first()).toBeVisible();
   });
 
+  test('登录页按后端能力启用 OAuth provider', async ({ page }) => {
+    await page.route('**/api/v1/auth/refresh', (route) =>
+      route.fulfill({ status: 401, json: { message: 'No refresh token' } }),
+    );
+    await page.route('**/api/v1/auth/providers', (route) =>
+      route.fulfill({
+        json: {
+          providers: [
+            { id: 'email_password', label: '邮箱', type: 'email_password', enabled: true },
+            { id: 'oauth.google', label: 'Google', type: 'oauth', enabled: true },
+          ],
+        },
+      }),
+    );
+
+    await page.goto('/auth/login');
+    await expect(page.getByRole('button', { name: '用 Google 登录' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: /GitHub/ })).toHaveCount(0);
+  });
+
+  test('无效 OAuth 回调明确显示失败而非空白页', async ({ page }) => {
+    await page.goto('/auth/oauth/callback?code=invalid&state=invalid');
+    await expect(page.getByRole('heading', { name: '第三方登录失败' })).toBeVisible();
+    await expect(page.getByText(/回调参数无效或已过期/)).toBeVisible();
+  });
+
   test('⌘K 搜索弹层: 顶部搜索按钮可点', async ({ page, isMobile }) => {
     await page.goto('/');
     // CSS 控制可见性:desktop 是 "打开搜索(⌘K)", mobile 是 "打开搜索"

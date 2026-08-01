@@ -20,6 +20,7 @@
  *   </ErrorBoundary>
  */
 import { useAuthStore } from '../../stores/authStore';
+import { Link } from 'react-router-dom';
 import { ErrorShell, ActionButton } from './ErrorShell';
 import { I18nText } from '../../components/I18nText';
 import { LogIn, UserCog, Mail, ShieldOff } from 'lucide-react';
@@ -99,12 +100,12 @@ export function ForbiddenPage() {
               default="如果这是误判 (你的账号应该有权限),请联系客服:"
             />
           </p>
-          <a
-            href="mailto:support@ai-academy.local"
+          <Link
+            to="/enterprise#inquiry"
             className="text-[#171717] underline underline-offset-4 hover:text-[#262626] font-bold"
           >
-            support@ai-academy.local
-          </a>
+            提交联系申请
+          </Link>
         </div>
       }
     />

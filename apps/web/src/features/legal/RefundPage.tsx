@@ -139,7 +139,7 @@ const SECTIONS: LegalSection[] = [
     content: (
       <>
         <p>
-          如对退款决定有异议,可通过 <code>support@ai-academy.local</code> 提交申诉,会由客服主管复核。
+          如对退款决定有异议,可通过页面底部的联系表单提交申诉,会由客服主管复核。
         </p>
         <p>
           复核结果仍无法达成一致的,按 <a href="/terms">《服务条款》</a> 第 9 条 (争议解决) 处理。

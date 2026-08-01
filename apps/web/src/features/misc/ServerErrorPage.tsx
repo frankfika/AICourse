@@ -22,6 +22,7 @@
  *   }
  */
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { ErrorShell, ActionButton } from './ErrorShell';
 import { I18nText } from '../../components/I18nText';
 import { RefreshCw, Home, ServerCrash, Mail, Copy } from 'lucide-react';
@@ -139,14 +140,12 @@ export function ServerErrorPage({ error, onRetry }: ServerErrorPageProps) {
                 default="把错误码 + 截图发给客服,工程师会优先排查:"
               />
             </p>
-            <a
-              href={`mailto:support@ai-academy.local?subject=${encodeURIComponent(
-                `[${errorId}] Server Error Report`,
-              )}`}
+            <Link
+              to="/enterprise#inquiry"
               className="text-[#171717] underline underline-offset-4 hover:text-[#262626] font-bold"
             >
-              support@ai-academy.local
-            </a>
+              提交联系申请并附上错误码
+            </Link>
           </div>
 
           {/* dev 模式显示原 message */}

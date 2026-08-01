@@ -40,7 +40,7 @@ export interface LegalPageProps {
   lastUpdated: string;
   /** 内容 sections */
   sections: LegalSection[];
-  /** 联系邮箱 (页脚"如有疑问请联系") */
+  /** 可选联系邮箱；未配置时引导到站内咨询表单 */
   contactEmail?: string;
 }
 
@@ -50,7 +50,7 @@ export function LegalPage({
   subtitle,
   lastUpdated,
   sections,
-  contactEmail = 'legal@ai-academy.local',
+  contactEmail,
 }: LegalPageProps) {
   // 当前活跃 section (用于 sidebar 高亮 + scroll-spy)
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? '');
@@ -230,12 +230,21 @@ export function LegalPage({
                   <p className="text-[#666666] mb-3">
                     对本政策有任何疑问,或需要书面副本,请联系:
                   </p>
-                  <a
-                    href={`mailto:${contactEmail}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-sm font-black uppercase tracking-wider hover:bg-[#262626] transition-colors"
-                  >
-                    {contactEmail}
-                  </a>
+                  {contactEmail ? (
+                    <a
+                      href={`mailto:${contactEmail}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-sm font-black uppercase tracking-wider hover:bg-[#262626] transition-colors"
+                    >
+                      {contactEmail}
+                    </a>
+                  ) : (
+                    <Link
+                      to="/enterprise#inquiry"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white text-sm font-black uppercase tracking-wider hover:bg-[#262626] transition-colors"
+                    >
+                      提交联系申请
+                    </Link>
+                  )}
                 </section>
               </div>
             </article>

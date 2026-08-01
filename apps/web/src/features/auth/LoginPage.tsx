@@ -3,7 +3,7 @@
  *
  * 设计参考 review/mocks/mock-auth.html
  *   - 双 tab(登录 / 注册),URL 路由:/auth/login 和 /auth/register 各自独立
- *   - 6 宫格第三方按钮(Phase 1 全部 disabled,灰度)
+ *   - 第三方按钮由后端 provider 能力动态启用
  *   - 邮箱 + 密码
  *   - "继续即同意服务条款" footer
  *   - 错误:行内 error + 顶部 toast
@@ -48,9 +48,10 @@ export function LoginPage() {
     requestedFrom?.startsWith('/') && !requestedFrom.startsWith('//')
       ? requestedFrom
       : '/';
-  const { signIn, user, isAuthenticating } = useAuth();
+  const { signIn, user, providers, isAuthenticating } = useAuth();
   const { showToast } = useToast();
   const { t } = useI18n();
+  const hasThirdPartyProviders = providers.some((provider) => provider.type !== 'email_password');
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -95,12 +96,11 @@ export function LoginPage() {
     }
   });
 
-  const handleGrayscaleProviderClick = (providerId: string, label: string) => {
-    showToast(`${label} 登录即将推出, 灰度开放中`, 'info', 2500);
-    // eslint-disable-next-line no-console
-    console.info(
-      `[auth] Phase 1 gray: provider ${providerId} clicked but disabled`,
-    );
+  const handleProviderClick = (providerId: string, label: string) => {
+    void signIn({ kind: 'oauth-redirect', provider: providerId }).catch((err) => {
+      if (err instanceof Error && err.message === 'Redirecting to OAuth provider…') return;
+      showToast(`${label} 登录启动失败，请稍后重试`, 'error', 4000);
+    });
   };
 
   // 启动期骨架(避免白屏)
@@ -128,23 +128,25 @@ export function LoginPage() {
       {/* CMS-driven copy (page_settings.auth.{h1_login, sub_login}) */}
       <AuthHeader page="login" />
 
-      {/* 第三方登录 6 宫格(灰度) */}
-      <section className="mt-6">
-        <ProviderButtons
-          grayscale
-          onProviderClick={handleGrayscaleProviderClick}
-        />
-        <p className="mt-2 text-[10px] text-center text-neutral-400">
-          {t('auth.merged_hint', '已登录过此平台?系统会自动合并到你的账号')}
-        </p>
-      </section>
-
-      {/* 分隔 */}
-      <div className="my-6 flex items-center gap-3 text-xs text-neutral-400">
-        <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-200" />
-        <span>或使用邮箱</span>
-        <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-200" />
-      </div>
+      {hasThirdPartyProviders && (
+        <>
+          <section className="mt-6">
+            <ProviderButtons
+              grayscale={false}
+              providers={providers}
+              onProviderClick={handleProviderClick}
+            />
+            <p className="mt-2 text-[10px] text-center text-neutral-400">
+              {t('auth.merged_hint', '已登录过此平台?系统会自动合并到你的账号')}
+            </p>
+          </section>
+          <div className="my-6 flex items-center gap-3 text-xs text-neutral-400">
+            <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-200" />
+            <span>或使用邮箱</span>
+            <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-200" />
+          </div>
+        </>
+      )}
 
       {/* 邮箱密码表单 */}
       <form className="space-y-4" onSubmit={onSubmit} noValidate>

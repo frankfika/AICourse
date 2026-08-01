@@ -241,7 +241,7 @@ export function CourseDetailPage() {
           provider: {
             '@type': 'Organization',
             name: 'AI Academy',
-            sameAs: 'https://ai-academy.local',
+            sameAs: window.location.origin,
           },
           educationalLevel: course.level,
           timeRequired: course.duration,
