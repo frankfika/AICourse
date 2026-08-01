@@ -8,6 +8,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, QuickPromptScope, HotKeywordScope } from '@prisma/client';
+import type { CreateQuickPromptDto, UpdateQuickPromptDto } from './cms-admin.dto';
 
 @Injectable()
 export class CmsContentService {
@@ -104,11 +105,11 @@ export class CmsContentService {
     return this.prisma.quickPrompt.findUnique({ where: { id } });
   }
 
-  createQuickPrompt(data: Prisma.QuickPromptCreateInput) {
+  createQuickPrompt(data: CreateQuickPromptDto) {
     return this.prisma.quickPrompt.create({ data });
   }
 
-  updateQuickPrompt(id: string, data: Prisma.QuickPromptUpdateInput) {
+  updateQuickPrompt(id: string, data: UpdateQuickPromptDto) {
     return this.prisma.quickPrompt.update({ where: { id }, data });
   }
 

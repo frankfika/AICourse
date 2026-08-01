@@ -22,7 +22,7 @@
  * 不依赖真实 session,便于离线截图验证
  */
 import { useMemo, useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Mail,
   Lock,
@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -40,6 +41,7 @@ import { ProviderButtons } from '../../components/auth/ProviderButtons';
 import { useToast } from '../../components/auth/Toast';
 import { useAuth } from '../../lib/auth/AuthProvider';
 import { ApiError } from '../../lib/apiError';
+import { api } from '../../lib/api';
 import type { Identity } from '../../lib/auth/types';
 import { useAuthStore } from '../../stores/authStore';
 import { useList, usePageSettings, useI18n, pickPage } from '../../lib/cms';
@@ -101,7 +103,7 @@ function formatDate(iso: string | undefined): string {
 }
 
 export function BindingsPage() {
-  const { identities, isAuthenticating, unbindProvider } = useAuth();
+  const { identities, isAuthenticating, unbindProvider, signOut } = useAuth();
   // user 直接从 store 读, 不走 context, 跟其他页面(Layout, PurchaseModal)一致
   const user = useAuthStore((s) => s.user);
   const { showToast } = useToast();
@@ -110,10 +112,16 @@ export function BindingsPage() {
   // 风格一致 (弃用 window.confirm — 不能 i18n, 不能定制 variant)
   const [confirmUnbind, setConfirmUnbind] = useState<Identity | null>(null);
   const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordBusy, setPasswordBusy] = useState(false);
   // Demo 模式:有 ?demo=with-google 时,即使没真实 session 也渲染带 Google 的视图
   // 用于离线截图 / 视觉验证
   const demoMode = params.get('demo');
   const showWithGoogleDemo = demoMode === 'with-google';
+  const passwordChangeRequired = params.get('change-password') === 'required';
 
   // 演示模式:在 identities 末尾追加一个 Google identity
   const displayedIdentities: Identity[] = useMemo(() => {
@@ -195,6 +203,42 @@ export function BindingsPage() {
     showToast(`${label} 绑定即将推出, 灰度开放中`, 'info', 2500);
   };
 
+  const handleChangePassword = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast('两次输入的新密码不一致', 'error');
+      return;
+    }
+    if (
+      newPassword.length < 12 ||
+      !/[a-z]/.test(newPassword) ||
+      !/[A-Z]/.test(newPassword) ||
+      !/\d/.test(newPassword) ||
+      !/[^A-Za-z0-9]/.test(newPassword)
+    ) {
+      showToast('新密码至少 12 位，并包含大小写字母、数字和符号', 'error');
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      await api.post('/api/v1/users/me/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      showToast('密码已修改，请重新登录', 'success');
+      await signOut();
+      navigate('/auth/login', { replace: true });
+    } catch (err) {
+      const message =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { message?: string | string[] } } }).response?.data?.message
+          : undefined;
+      showToast(Array.isArray(message) ? message[0] : message ?? '密码修改失败', 'error');
+    } finally {
+      setPasswordBusy(false);
+    }
+  };
+
   const nonPrimaryCount = displayedIdentities.filter(
     (i) => !i.isPrimary,
   ).length;
@@ -225,6 +269,55 @@ export function BindingsPage() {
             </code>
           </p>
         </header>
+
+        {user && (
+          <Card variant="outlined" padding="md" className="mb-8">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="w-10 h-10 rounded-lg bg-[#171717] text-white flex items-center justify-center">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-neutral-900 dark:text-neutral-900">修改登录密码</h2>
+                <p className="text-xs text-neutral-600 dark:text-neutral-600 mt-1">
+                  {passwordChangeRequired
+                    ? '当前使用的是临时密码，完成修改后才能继续使用账号。'
+                    : '修改后会吊销所有设备的刷新会话，需要重新登录。'}
+                </p>
+              </div>
+            </div>
+            <form onSubmit={handleChangePassword} className="grid gap-4 md:grid-cols-3">
+              <Input
+                label="当前密码"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                required
+              />
+              <Input
+                label="新密码"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                required
+              />
+              <Input
+                label="确认新密码"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+              />
+              <div className="md:col-span-3 flex justify-end">
+                <Button type="submit" variant="primary" isLoading={passwordBusy}>
+                  保存新密码
+                </Button>
+              </div>
+            </form>
+          </Card>
+        )}
 
         {/* 已绑定列表 */}
         <Card variant="outlined" padding="none" className="overflow-hidden">

@@ -6,7 +6,9 @@ import {
   Param,
   UseGuards,
   Request,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -17,7 +19,10 @@ import { CreateOrderDto, MockPayDto, RefundOrderDto } from './orders.dto';
 @Controller({ path: 'orders', version: '1' })
 @UseGuards(JwtAuthGuard)
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Get('me')
   @ApiOperation({ summary: '我的订单' })
@@ -44,12 +49,13 @@ export class OrdersController {
   }
 
   @Post(':id/pay')
-  @ApiOperation({ summary: 'Mock 支付（标记为已支付并完成注册）' })
+  @ApiOperation({ summary: '开发环境模拟支付（生产环境关闭）' })
   async pay(
     @Request() req: { user: { userId: string } },
     @Param('id') id: string,
     @Body() dto: MockPayDto,
   ) {
+    this.assertDevelopmentPaymentOperation();
     return this.ordersService.mockPay(req.user.userId, id, dto.paymentMethod);
   }
 
@@ -63,12 +69,19 @@ export class OrdersController {
   }
 
   @Post(':id/refund')
-  @ApiOperation({ summary: '申请退款（mock: 1-3 工作日, 仅 paid 可退）' })
+  @ApiOperation({ summary: '开发环境模拟退款（生产环境关闭）' })
   async refund(
     @Request() req: { user: { userId: string } },
     @Param('id') id: string,
     @Body() _dto: RefundOrderDto,
   ) {
+    this.assertDevelopmentPaymentOperation();
     return this.ordersService.refundOrder(req.user.userId, id);
+  }
+
+  private assertDevelopmentPaymentOperation() {
+    if (this.config.get<string>('NODE_ENV') === 'production') {
+      throw new ServiceUnavailableException('支付通道尚未开放，请联系平台管理员');
+    }
   }
 }

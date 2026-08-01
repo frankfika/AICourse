@@ -6,8 +6,8 @@
  *   - signIn({kind:'oauth-redirect'})  → window.location = /api/v1/auth/<p>/authorize
  *   - refresh                  → POST /api/v1/auth/refresh (cookie 自动带)
  *   - listProviders            → GET /api/v1/auth/providers
- *   - listMyIdentities         → GET /api/v1/auth/identities (后端未实现,兜底 [])
- *   - unbindProvider           → DELETE /api/v1/auth/identities/:id (后端未实现,stub)
+ *   - listMyIdentities         → GET /api/v1/auth/identities
+ *   - unbindProvider           → DELETE /api/v1/auth/identities/:id
  *
  * 与 api.ts 的关系:
  *   - 所有请求走同一个 axios instance (withCredentials: true,401 自动 refresh)
@@ -30,6 +30,7 @@ interface LoginResponse {
     email: string;
     name: string;
     role: 'admin' | 'student' | 'instructor';
+    passwordResetRequired?: boolean;
   };
 }
 
@@ -148,7 +149,7 @@ export class LocalAuthAdapter implements AuthAdapter {
    *   - 新逻辑: refresh 只调一次(listProviders 之前 Promise.all),listMyIdentities
    *     复用已拿到的 user。
    *
-   * TODO(backend): 等后端 P2 实现 GET /auth/identities 时切到真接口
+   * 后端端点已实装，直接返回真实 identity。
    */
   async listMyIdentities(user: { id: string; email: string; name: string } | null): Promise<Identity[]> {
     if (!user) return [];
@@ -159,8 +160,7 @@ export class LocalAuthAdapter implements AuthAdapter {
   /**
    * 解绑 Identity
    *
-   * TODO(backend): 后端 P2 实现 DELETE /auth/identities/:id
-   * Phase 1: 不支持解绑 local(主登录),其他 provider 也不存在,所以总是抛错
+   * 本地主登录由后端拒绝解绑；第三方 identity 可正常解绑。
    */
   async unbindProvider(identityId: string): Promise<void> {
     await api.delete(`/api/v1/auth/identities/${encodeURIComponent(identityId)}`);

@@ -68,7 +68,9 @@ export function LoginPage() {
   // — 之前 from 默认 '/', admin 登录后/已登录访问 login 页都停在首页看不出身份差异
   useEffect(() => {
     if (!isAuthenticating && user) {
-      const target = user.role === 'admin' ? '/admin' : from;
+      const target = user.passwordResetRequired
+        ? '/dashboard/settings/bindings?change-password=required'
+        : user.role === 'admin' ? '/admin' : from;
       navigate(target, { replace: true });
     }
   }, [isAuthenticating, user, from, navigate]);
@@ -83,7 +85,9 @@ export function LoginPage() {
       showToast('登录成功', 'success');
       // P0 2026-07-24 修复: admin 登录后默认跳 /admin (而非 /)
       // — 之前 from 默认 '/', admin 登录后停在首页看不出身份差异
-      const target = session.user.role === 'admin' ? '/admin' : from;
+      const target = session.user.passwordResetRequired
+        ? '/dashboard/settings/bindings?change-password=required'
+        : session.user.role === 'admin' ? '/admin' : from;
       navigate(target, { replace: true });
     } catch (err: unknown) {
       const msg = extractErrorMessage(err) ?? '登录失败,请检查邮箱或密码';

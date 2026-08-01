@@ -481,10 +481,11 @@ export class UpdateTestimonialDto {
 // ========== quick_prompts ==========
 
 export class CreateQuickPromptDto {
-  @ApiProperty()
+  @ApiPropertyOptional({ default: '💡' })
+  @IsOptional()
   @IsString()
-  @MaxLength(50)
-  key: string;
+  @MaxLength(16)
+  emoji?: string;
 
   @ApiProperty()
   @IsString()
@@ -496,20 +497,30 @@ export class CreateQuickPromptDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
-  prompt: string;
+  promptText: string;
 
   @ApiPropertyOptional({ enum: QuickPromptScope })
   @IsOptional()
   @IsEnum(QuickPromptScope)
   scope?: QuickPromptScope;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  @IsInt()
+  orderIndex?: number;
 }
 
 export class UpdateQuickPromptDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  @MaxLength(50)
-  key?: string;
+  @MaxLength(16)
+  emoji?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -523,12 +534,22 @@ export class UpdateQuickPromptDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
-  prompt?: string;
+  promptText?: string;
 
   @ApiPropertyOptional({ enum: QuickPromptScope })
   @IsOptional()
   @IsEnum(QuickPromptScope)
   scope?: QuickPromptScope;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  orderIndex?: number;
 }
 
 // ========== course_categories ==========

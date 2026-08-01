@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { ordersApi } from '../../lib/ordersApi';
 import { useAuthStore } from '../../stores/authStore';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import { PAYMENT_OPERATIONS_AVAILABLE } from '../../lib/runtimeFeatures';
 
 interface PurchaseModalProps {
   open: boolean;
@@ -40,6 +41,7 @@ export function PurchaseModal({
     'go_learn', 'pay_now', 'enroll_now',
   ]);
   const isFree = costType === 'free' || costType === 'charity';
+  const checkoutAvailable = isFree || PAYMENT_OPERATIONS_AVAILABLE;
   // 简化版 title: 用两个独立 key(避免 i18n template 复杂度)
   const confirmTitle = isFree
     ? pickPage(pageData, 'confirm_title_free', 'zh-CN', t('purchase.confirm_title_free', '确认报名'))
@@ -142,6 +144,12 @@ export function PurchaseModal({
               </div>
             )}
 
+            {!isFree && !PAYMENT_OPERATIONS_AVAILABLE && (
+              <div className="text-sm font-medium border-2 border-[#171717] px-3 py-2 mb-4 bg-warning-100">
+                在线支付尚未开放。请联系平台管理员办理购买，免费内容仍可正常报名。
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 onClick={close}
@@ -151,7 +159,7 @@ export function PurchaseModal({
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={!user || createMutation.isPending}
+                disabled={!user || !checkoutAvailable || createMutation.isPending}
                 className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
               >
                 {createMutation.isPending ? (
@@ -159,7 +167,7 @@ export function PurchaseModal({
                 ) : isFree ? (
                   t('purchase.enroll_now', '立即报名')
                 ) : (
-                  t('purchase.pay_now', '立即支付')
+                  checkoutAvailable ? t('purchase.pay_now', '立即支付') : '支付未开放'
                 )}
               </button>
             </div>

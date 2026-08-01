@@ -16,6 +16,7 @@
 // 单测只断言 hash 调用模式与数据 shape；真实 bcryptjs 行为由认证集成路径覆盖。
 jest.mock('bcryptjs', () => ({
   hash: jest.fn(async (pw: string, rounds: number) => `$2b$${rounds}$mock.${pw.length}`),
+  compare: jest.fn(),
 }));
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -27,6 +28,7 @@ import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import { UserRole } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 // =================== 桩 ===================
 
@@ -322,6 +324,24 @@ describe('UsersService', () => {
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
     });
 
+    it('管理员可修改角色，审计记录操作人而不是目标用户', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1', role: 'student' });
+      mockPrisma.user.update.mockResolvedValueOnce({ id: 'u1', role: 'instructor' });
+
+      await service.update(
+        'u1',
+        { role: UserRole.instructor },
+        { actorUserId: 'admin-1', isAdmin: true },
+      );
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { role: UserRole.instructor } }),
+      );
+      expect(mockAuditLog.log).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'admin-1', entityId: 'u1' }),
+      );
+    });
+
     it('dto 只传 name → data 只含 name (avatarUrl 不被覆盖)', async () => {
       mockPrisma.user.findFirst.mockResolvedValueOnce({
         id: 'u1',
@@ -346,6 +366,62 @@ describe('UsersService', () => {
 
       const updateCall = mockPrisma.user.update.mock.calls[0][0];
       expect(updateCall.data).toEqual({ name: 'new' });
+    });
+  });
+
+  describe('password lifecycle', () => {
+    it('修改密码会校验当前密码、清除重置标记并吊销会话', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1', passwordHash: 'old-hash' });
+      (bcrypt.compare as jest.Mock)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
+      mockPrisma.user.update.mockResolvedValueOnce({ id: 'u1' });
+      mockPrisma.refreshToken.deleteMany.mockResolvedValueOnce({ count: 2 });
+
+      await expect(service.changePassword('u1', {
+        currentPassword: 'Current!Pass123',
+        newPassword: 'New!Password123',
+      })).resolves.toEqual({ changed: true });
+
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'u1' },
+        data: {
+          passwordHash: expect.stringMatching(/^\$2[aby]\$12\$/),
+          passwordResetRequired: false,
+        },
+      });
+      expect(mockPrisma.refreshToken.deleteMany).toHaveBeenCalledWith({ where: { userId: 'u1' } });
+    });
+
+    it('当前密码错误时拒绝修改', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1', passwordHash: 'old-hash' });
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
+
+      await expect(service.changePassword('u1', {
+        currentPassword: 'wrong',
+        newPassword: 'New!Password123',
+      })).rejects.toThrow('当前密码不正确');
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('管理员重置密码只返回一次明文并吊销目标用户会话', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1' });
+      mockPrisma.user.update.mockResolvedValueOnce({ id: 'u1' });
+      mockPrisma.refreshToken.deleteMany.mockResolvedValueOnce({ count: 1 });
+
+      const result = await service.resetPassword('u1', 'admin-1');
+
+      expect(result.temporaryPassword).toMatch(/^A!a1[A-Za-z0-9_-]{16}$/);
+      expect(mockPrisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'u1' },
+        data: {
+          passwordHash: expect.stringMatching(/^\$2[aby]\$12\$/),
+          passwordResetRequired: true,
+        },
+      });
+      expect(mockAuditLog.log).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'admin-1', action: 'USER_PASSWORD_RESET', entityId: 'u1' }),
+      );
     });
   });
 

@@ -2,8 +2,11 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import {
@@ -11,6 +14,7 @@ import {
   UpdateUserDto,
   GrantCourseAccessDto,
   GrantDegreeAccessDto,
+  ChangePasswordDto,
 } from './users.dto';
 import { UserRole } from '@prisma/client';
 
@@ -27,6 +31,10 @@ export class UsersService {
     name: true,
     role: true,
     avatarUrl: true,
+    passwordResetRequired: true,
+    points: true,
+    level: true,
+    lastLoginAt: true,
     createdAt: true,
     updatedAt: true,
   };
@@ -175,12 +183,17 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto) {
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+    options: { actorUserId?: string; isAdmin?: boolean } = {},
+  ) {
     // 不允许通过 PATCH /users/:id 改 role / points / level / passwordHash, 这些字段是 admin 专用
     // 业务上, 普通用户改自己只能改 name / avatarUrl
     const safe: Partial<UpdateUserDto> = {};
     if (dto.name !== undefined) safe.name = dto.name;
     if (dto.avatarUrl !== undefined) safe.avatarUrl = dto.avatarUrl;
+    if (options.isAdmin && dto.role !== undefined) safe.role = dto.role;
 
     // 软删用户不能改: 先 findFirst 查 (UserWhereUniqueInput 不支持 deletedAt)
     const before = await this.prisma.user.findFirst({
@@ -196,7 +209,7 @@ export class UsersService {
     });
 
     await this.auditLog.log({
-      userId: id,
+      userId: options.actorUserId ?? id,
       action: 'USER_UPDATE',
       entity: 'user',
       entityId: id,
@@ -204,6 +217,62 @@ export class UsersService {
     });
 
     return updated;
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true, passwordHash: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.passwordHash || !(await bcrypt.compare(dto.currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException('当前密码不正确');
+    }
+    if (await bcrypt.compare(dto.newPassword, user.passwordHash)) {
+      throw new BadRequestException('新密码不能与当前密码相同');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash, passwordResetRequired: false },
+      }),
+      this.prisma.refreshToken.deleteMany({ where: { userId } }),
+    ]);
+    await this.auditLog.log({
+      userId,
+      action: 'USER_PASSWORD_CHANGE',
+      entity: 'user',
+      entityId: userId,
+    });
+    return { changed: true };
+  }
+
+  async resetPassword(userId: string, actorUserId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Returned exactly once to the administrator; only the bcrypt hash is stored.
+    const temporaryPassword = `A!a1${randomBytes(12).toString('base64url')}`;
+    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash, passwordResetRequired: true },
+      }),
+      this.prisma.refreshToken.deleteMany({ where: { userId } }),
+    ]);
+    await this.auditLog.log({
+      userId: actorUserId,
+      action: 'USER_PASSWORD_RESET',
+      entity: 'user',
+      entityId: userId,
+    });
+    return { temporaryPassword, passwordResetRequired: true };
   }
 
   async delete(id: string) {

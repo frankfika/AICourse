@@ -30,6 +30,7 @@ import { QueryErrorState } from '../../../components/QueryErrorState';
 import type { OrderStatus, OrderType } from '@ai-academy/shared-types';
 import { cn } from '../../../lib/cn';
 import { useEnum } from '../../../lib/cms';
+import { PAYMENT_OPERATIONS_AVAILABLE } from '../../../lib/runtimeFeatures';
 
 const FALLBACK_STATUS_LABEL: Record<OrderStatus, string> = {
   pending: '待支付',
@@ -222,10 +223,11 @@ export function OrderDetailPage() {
                   <>
                     <button
                       onClick={() => payMutation.mutate(order.id)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-sm font-medium transition-colors"
+                      disabled={!PAYMENT_OPERATIONS_AVAILABLE}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-[#171717] text-white rounded-md hover:bg-[#262626] text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <CreditCard className="w-4 h-4" />
-                      立即支付
+                      {PAYMENT_OPERATIONS_AVAILABLE ? '立即支付' : '支付未开放'}
                     </button>
                     <button
                       onClick={() => cancelMutation.mutate(order.id)}
@@ -239,10 +241,11 @@ export function OrderDetailPage() {
                 {order.status === 'paid' && (
                   <button
                     onClick={() => refundMutation.mutate(order.id)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-info-100 text-info-500 rounded-md hover:bg-info-500/20 text-sm font-medium transition-colors"
+                    disabled={!PAYMENT_OPERATIONS_AVAILABLE}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-info-100 text-info-500 rounded-md hover:bg-info-500/20 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Undo2 className="w-4 h-4" />
-                    申请退款
+                    {PAYMENT_OPERATIONS_AVAILABLE ? '申请退款' : '在线退款未开放'}
                   </button>
                 )}
                 {order.status === 'refunded' && (
@@ -258,10 +261,11 @@ export function OrderDetailPage() {
                 {order.status === 'failed' && (
                   <button
                     onClick={() => payMutation.mutate(order.id)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-danger-100 text-danger-500 rounded-md hover:bg-danger-500/20 text-sm font-medium transition-colors"
+                    disabled={!PAYMENT_OPERATIONS_AVAILABLE}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-danger-100 text-danger-500 rounded-md hover:bg-danger-500/20 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <CreditCard className="w-4 h-4" />
-                    重试支付
+                    {PAYMENT_OPERATIONS_AVAILABLE ? '重试支付' : '支付未开放'}
                   </button>
                 )}
               </div>

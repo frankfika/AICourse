@@ -139,10 +139,10 @@ export class AuthService {
         email: identity.profile.email,
         name: identity.profile.name,
         avatarUrl: identity.profile.avatarUrl,
-        // OAuth/SSO 用户没密码,空字符串占位;passwordResetRequired 提示后续补密码
-        // email_password provider 自己会覆盖 passwordHash
+        // OAuth/SSO 用户没有本地密码，不应被临时密码修改流程锁住。
+        // 后续如需本地密码，可通过显式绑定 email_password provider 添加。
         passwordHash: '',
-        passwordResetRequired: providerId !== 'email_password',
+        passwordResetRequired: false,
       },
     });
     await this.prisma.userProviderAccount.create({
@@ -292,6 +292,7 @@ export class AuthService {
     email: string;
     name?: string | null;
     role: string;
+    passwordResetRequired?: boolean;
   }) {
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwtService.sign(payload);
@@ -318,6 +319,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        passwordResetRequired: Boolean(user.passwordResetRequired),
       },
     };
   }

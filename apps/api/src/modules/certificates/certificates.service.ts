@@ -151,7 +151,6 @@ export class CertificatesService {
         serialNumber,
         completedAt,
         verifyUrl: `/verify/${serialNumber}`,
-        imageUrl: this.buildMockImageUrl(serialNumber),
         metadata: input.metadata as object | undefined,
       },
     });
@@ -214,10 +213,5 @@ export class CertificatesService {
       if (!isNaN(lastSeq)) next = lastSeq + 1;
     }
     return `${prefix}${String(next).padStart(4, '0')}`;
-  }
-
-  private buildMockImageUrl(serial: string): string {
-    // mock: 给前端一个稳定的占位,前端用渐变 + serial 渲染
-    return `/_mock/certificates/${serial}.png`;
   }
 }

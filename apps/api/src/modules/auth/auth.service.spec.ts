@@ -218,6 +218,7 @@ describe('AuthService', () => {
         email: 'u@example.com',
         name: 'User',
         role: 'student',
+        passwordResetRequired: false,
       });
       // 验证调用了 user.update (lastLoginAt)
       expect(mockPrisma.user.update).toHaveBeenCalledWith(
@@ -247,19 +248,19 @@ describe('AuthService', () => {
       });
 
       expect(result.user.email).toBe('g@example.com');
-      // OAuth 用户 passwordHash 应为空, passwordResetRequired=true
+      // OAuth 用户没有本地密码，不应被临时密码修改流程锁住。
       expect(mockPrisma.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             passwordHash: '',
-            passwordResetRequired: true,
+            passwordResetRequired: false,
             avatarUrl: 'https://x/a.png',
           }),
         }),
       );
     });
 
-    it('sso.saml provider → verify 返回 saml identity → upsert 新 user (passwordResetRequired=true)', async () => {
+    it('sso.saml provider → verify 返回 saml identity → upsert 新 user (无需本地密码重置)', async () => {
       mockPrisma.userProviderAccount.findUnique.mockResolvedValueOnce(null);
       mockPrisma.user.findUnique.mockResolvedValueOnce(null);
       mockPrisma.user.create.mockResolvedValueOnce({
@@ -277,7 +278,7 @@ describe('AuthService', () => {
       expect(result.user.email).toBe('sso@example.com');
       expect(mockPrisma.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ passwordResetRequired: true }),
+          data: expect.objectContaining({ passwordResetRequired: false }),
         }),
       );
     });

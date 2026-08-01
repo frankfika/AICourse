@@ -10,6 +10,7 @@ export interface AuthUser {
   // 2026-07-23 安全加固时统一删除。如以后真要加 super_admin 角色, 同步
   // 改 prisma schema + backend + 这里。
   role: 'admin' | 'student' | 'instructor';
+  passwordResetRequired?: boolean;
 }
 
 interface AuthState {

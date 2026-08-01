@@ -288,6 +288,13 @@ export function AuthGuard({
     return <Navigate to={`/auth/login?from=${from}`} replace />;
   }
 
+  if (
+    user.passwordResetRequired &&
+    location.pathname !== '/dashboard/settings/bindings'
+  ) {
+    return <Navigate to="/dashboard/settings/bindings?change-password=required" replace />;
+  }
+
   if (requireAdmin && user.role !== 'admin') {
     return <Navigate to="/" replace />;
   }

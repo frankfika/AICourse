@@ -6,6 +6,7 @@ import {
   MinLength,
   IsArray,
   IsUUID,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SafeUrl } from '../../common/validators/safe-url.decorator';
@@ -41,6 +42,25 @@ export class UpdateUserDto {
   // 2026-07-24 P0: 限制 scheme 防 javascript: / data: / file:
   @SafeUrl({ optional: true, maxLength: 500 })
   avatarUrl?: string;
+
+  @ApiPropertyOptional({ enum: UserRole, description: '用户角色（仅管理员可修改）' })
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+}
+
+export class ChangePasswordDto {
+  @ApiProperty({ description: '当前密码' })
+  @IsString()
+  currentPassword: string;
+
+  @ApiProperty({ description: '新密码，至少 12 位且包含大小写字母、数字和符号' })
+  @IsString()
+  @MinLength(12)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/, {
+    message: '新密码必须包含大小写字母、数字和符号',
+  })
+  newPassword: string;
 }
 
 export class GrantCourseAccessDto {

@@ -372,13 +372,13 @@ export class CmsAdminController {
   @Post('quick-prompts')
   @ApiOperation({ summary: 'Admin: 创建 quick_prompt' })
   createQuickPrompt(@Body() dto: CreateQuickPromptDto) {
-    return this.cmsContentService.createQuickPrompt(dto as never);
+    return this.cmsContentService.createQuickPrompt(dto);
   }
 
   @Patch('quick-prompts/:id')
   @ApiOperation({ summary: 'Admin: 更新 quick_prompt' })
   updateQuickPrompt(@Param('id') id: string, @Body() dto: UpdateQuickPromptDto) {
-    return this.cmsContentService.updateQuickPrompt(id, dto as never);
+    return this.cmsContentService.updateQuickPrompt(id, dto);
   }
 
   @Delete('quick-prompts/:id')

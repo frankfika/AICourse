@@ -85,9 +85,32 @@ export function CertificatesPage() {
   }, [certs]);
 
   const handleDownload = (cert: Certificate) => {
-    showToast('证书已发送到你的邮箱 (mock)', 'info');
-    // 静默 noop: mock
-    void cert;
+    const holderName = cert.holderName || 'AI Academy 学员';
+    const issuedDate = new Date(cert.issuedAt).toLocaleDateString('zh-CN');
+    const escapeXml = (value: string) => value.replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
+    })[char] ?? char);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1130" viewBox="0 0 1600 1130">
+      <rect width="1600" height="1130" fill="#f5f4f0"/><rect x="45" y="45" width="1510" height="1040" fill="none" stroke="#171717" stroke-width="10"/>
+      <text x="800" y="205" text-anchor="middle" font-family="Arial,sans-serif" font-size="42" font-weight="700" fill="#171717">AI ACADEMY</text>
+      <text x="800" y="315" text-anchor="middle" font-family="Arial,sans-serif" font-size="70" font-weight="800" fill="#171717">${escapeXml(TYPE_LABEL[cert.type] ?? '结业证书')}</text>
+      <text x="800" y="455" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" fill="#525252">兹证明</text>
+      <text x="800" y="545" text-anchor="middle" font-family="Arial,sans-serif" font-size="54" font-weight="700" fill="#171717">${escapeXml(holderName)}</text>
+      <text x="800" y="640" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" fill="#525252">已完成</text>
+      <text x="800" y="725" text-anchor="middle" font-family="Arial,sans-serif" font-size="44" font-weight="700" fill="#171717">${escapeXml(cert.title)}</text>
+      <text x="800" y="865" text-anchor="middle" font-family="monospace" font-size="26" fill="#525252">${escapeXml(cert.serialNumber)}</text>
+      <text x="800" y="930" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" fill="#737373">颁发日期 ${escapeXml(issuedDate)}</text>
+      <text x="800" y="1005" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" fill="#737373">验证地址 ${escapeXml(`${window.location.origin}/verify/${cert.serialNumber}`)}</text>
+    </svg>`;
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${cert.serialNumber}.svg`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    showToast('证书已下载', 'success');
   };
 
   return (
@@ -277,7 +300,7 @@ function CertificateCard({
           <button
             onClick={onDownload}
             className="inline-flex items-center justify-center gap-1 h-8 px-2 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-100 text-neutral-900 dark:text-neutral-900 hover:bg-neutral-200 transition-colors"
-            title="下载证书 (mock)"
+            title="下载 SVG 证书"
           >
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">下载</span>

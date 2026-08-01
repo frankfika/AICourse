@@ -22,6 +22,7 @@ import {
   GrantCourseAccessDto,
   GrantDegreeAccessDto,
   CreateUserDto,
+  ChangePasswordDto,
 } from './users.dto';
 
 @ApiTags('users')
@@ -73,6 +74,15 @@ export class UsersController {
     return this.usersService.create(dto);
   }
 
+  @Post('me/change-password')
+  @ApiOperation({ summary: '修改当前用户密码并吊销其他会话' })
+  async changePassword(
+    @Request() req: { user: { userId: string } },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword(req.user.userId, dto);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: '更新用户（自己可改自己；管理员可改任意）' })
   @ApiParam({ name: 'id', description: '用户ID' })
@@ -86,7 +96,23 @@ export class UsersController {
     if (req.user.role !== UserRole.admin && req.user.userId !== id) {
       throw new ForbiddenException('只能修改自己的账号');
     }
-    return this.usersService.update(id, dto);
+    if (dto.role !== undefined && req.user.role !== UserRole.admin) {
+      throw new ForbiddenException('只有管理员可以修改角色');
+    }
+    return this.usersService.update(id, dto, {
+      actorUserId: req.user.userId,
+      isAdmin: req.user.role === UserRole.admin,
+    });
+  }
+
+  @Post(':id/reset-password')
+  @Roles(UserRole.admin)
+  @ApiOperation({ summary: '生成一次性临时密码并吊销该用户全部会话（管理员）' })
+  async resetPassword(
+    @Request() req: { user: { userId: string } },
+    @Param('id') id: string,
+  ) {
+    return this.usersService.resetPassword(id, req.user.userId);
   }
 
   @Delete(':id')

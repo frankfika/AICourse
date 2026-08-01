@@ -14,9 +14,9 @@
  *   - 5 操作(在 Drawer 内):
  *     1) 改角色:下拉 student/instructor/admin
  *     2) 授权课程:输入课程 ID 逗号分隔
- *     3) 重置密码:生成 16 位临时密码 + 设 passwordResetRequired=true
+ *     3) 重置密码:由服务端生成一次性临时密码并吊销旧会话
  *     4) 封号:Phase 2+(schema 暂不支持)
- *     5) 删账号:硬删,二次确认
+ *     5) 删账号:软删并吊销会话,二次确认
  *
  * 设计:brutalist — 跟 AdminBadgesPage / AdminCoursesPage / AdminReviewsPage 一致
  *   - 黑白硬边、无圆角、无阴影、tracking-widest
@@ -148,14 +148,6 @@ function formatDateTime(iso?: string | null): string {
   return new Date(iso).toLocaleString('zh-CN');
 }
 
-function generateTempPassword(): string {
-  // 16 位 base36 随机
-  return Array.from(crypto.getRandomValues(new Uint8Array(12)))
-    .map((b) => b.toString(36).padStart(2, '0'))
-    .join('')
-    .slice(0, 16);
-}
-
 export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -215,20 +207,15 @@ export function AdminUsersPage() {
 
   // 重置密码
   const resetPwdMutation = useMutation({
-    mutationFn: (tempPassword: string) =>
-      api.patch(`/api/v1/users/${selectedUserId}`, {
-        // 后端目前没接受 passwordHash 字段,先标记 passwordResetRequired
-        // 临时密码由 admin 自行告知用户;下次登录时强制改密码
-        passwordResetRequired: true,
-        // 后端 P2 接受 password 字段
-        password: tempPassword as any,
-      }),
-    onSuccess: (_, tempPassword) => {
+    mutationFn: () =>
+      api.post<{ temporaryPassword: string }>(`/api/v1/users/${selectedUserId}/reset-password`),
+    onSuccess: ({ data }) => {
       showToast(
-        t('admin.users.toast.temp_password', '临时密码:{password}(请复制告知用户,刷新页面后消失)').replace('{password}', tempPassword),
+        t('admin.users.toast.temp_password', '临时密码:{password}(请复制告知用户,刷新页面后消失)').replace('{password}', data.temporaryPassword),
         'success',
         15000,
       );
+      queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedUserId] });
     },
     onError: (err: any) => showToast(err?.response?.data?.message ?? t('admin.users.toast.reset_failed', '重置失败'), 'error'),
   });
@@ -369,7 +356,7 @@ export function AdminUsersPage() {
             showToast={showToast}
             onChangeRole={(r) => roleMutation.mutate(r)}
             onGrantCourses={(ids) => grantMutation.mutate(ids)}
-            onResetPassword={() => resetPwdMutation.mutate(generateTempPassword())}
+            onResetPassword={() => resetPwdMutation.mutate()}
             onDelete={() => setConfirmDelete(true)}
             isUpdating={
               roleMutation.isPending ||
@@ -387,7 +374,7 @@ export function AdminUsersPage() {
           await deleteMutation.mutateAsync();
         }}
         title={t('admin.users.delete_confirm.title', '确认删除该用户?')}
-        description={t('admin.users.delete_confirm.desc', '此操作将从数据库彻底删除该用户及其所有报名、订单、证书、积分。不可恢复。')}
+        description={t('admin.users.delete_confirm.desc', '账号将被停用并立即吊销登录会话；历史报名、订单、证书和审计记录会保留。')}
         variant="danger"
         confirmText={t('admin.users.delete_confirm.confirm', '确认删除')}
       />

@@ -37,6 +37,7 @@ import { QueryErrorState } from '../../../components/QueryErrorState';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
 import { cn } from '../../../lib/cn';
 import { useEnum } from '../../../lib/cms';
+import { PAYMENT_OPERATIONS_AVAILABLE } from '../../../lib/runtimeFeatures';
 
 type TabKey = 'all' | 'pending' | 'paid' | 'cancelled' | 'refunded';
 
@@ -218,6 +219,7 @@ export function OrdersPage() {
                   onCancel={(id) => setConfirmCancelId(id)}
                   onRefund={(id) => setConfirmRefundId(id)}
                   isAnyPending={payMutation.isPending || cancelMutation.isPending || refundMutation.isPending}
+                  paymentOperationsAvailable={PAYMENT_OPERATIONS_AVAILABLE}
                 />
               ))}
             </div>
@@ -228,6 +230,7 @@ export function OrdersPage() {
               onCancel={(id) => setConfirmCancelId(id)}
               onRefund={(id) => setConfirmRefundId(id)}
               isAnyPending={payMutation.isPending || cancelMutation.isPending || refundMutation.isPending}
+              paymentOperationsAvailable={PAYMENT_OPERATIONS_AVAILABLE}
             />
           </>
         )}
@@ -269,12 +272,14 @@ function OrderCard({
   onCancel,
   onRefund,
   isAnyPending,
+  paymentOperationsAvailable,
 }: {
   order: OrderWithItems;
   onPay: (id: string) => void;
   onCancel: (id: string) => void;
   onRefund: (id: string) => void;
   isAnyPending?: boolean;
+  paymentOperationsAvailable: boolean;
 }) {
   const { getLabel, getColor } = useEnum('order_status');
   const statusLabel = (s: OrderStatus) => getLabel(s) || FALLBACK_STATUS_LABEL[s];
@@ -322,7 +327,7 @@ function OrderCard({
             <div className="text-lg font-bold text-[#171717]">
               ¥{Number(order.amount).toFixed(2)}
             </div>
-            <OrderActions order={order} onPay={onPay} onCancel={onCancel} onRefund={onRefund} compact isAnyPending={isAnyPending} />
+            <OrderActions order={order} onPay={onPay} onCancel={onCancel} onRefund={onRefund} compact isAnyPending={isAnyPending} paymentOperationsAvailable={paymentOperationsAvailable} />
           </div>
           <p className="mt-1 text-xs text-neutral-400">{orderDate}</p>
         </div>
@@ -340,12 +345,14 @@ function OrderTable({
   onCancel,
   onRefund,
   isAnyPending,
+  paymentOperationsAvailable,
 }: {
   orders: OrderWithItems[];
   onPay: (id: string) => void;
   onCancel: (id: string) => void;
   onRefund: (id: string) => void;
   isAnyPending?: boolean;
+  paymentOperationsAvailable: boolean;
 }) {
   const { getLabel, getColor } = useEnum('order_status');
   const statusLabel = (s: OrderStatus) => getLabel(s) || FALLBACK_STATUS_LABEL[s];
@@ -402,7 +409,7 @@ function OrderTable({
                 </td>
                 <td className="px-4 py-3 text-xs text-neutral-600">{orderDate}</td>
                 <td className="px-4 py-3">
-                  <OrderActions order={o} onPay={onPay} onCancel={onCancel} onRefund={onRefund} isAnyPending={isAnyPending} />
+                  <OrderActions order={o} onPay={onPay} onCancel={onCancel} onRefund={onRefund} isAnyPending={isAnyPending} paymentOperationsAvailable={paymentOperationsAvailable} />
                 </td>
               </tr>
             );
@@ -423,6 +430,7 @@ function OrderActions({
   onRefund,
   compact = false,
   isAnyPending = false,
+  paymentOperationsAvailable,
 }: {
   order: OrderWithItems;
   onPay: (id: string) => void;
@@ -431,6 +439,7 @@ function OrderActions({
   compact?: boolean;
   /** 任一操作进行中时锁住所有按钮,避免双击/连点 */
   isAnyPending?: boolean;
+  paymentOperationsAvailable: boolean;
 }) {
   const baseBtn = cn(
     'inline-flex items-center justify-center gap-1 rounded-md font-medium transition-colors',
@@ -453,16 +462,16 @@ function OrderActions({
         <>
           <button
             onClick={() => onPay(order.id)}
-            disabled={isAnyPending}
+            disabled={isAnyPending || !paymentOperationsAvailable}
             className={cn(
               baseBtn,
               'bg-[#171717] text-white hover:bg-[#262626]',
               'disabled:opacity-50 disabled:cursor-not-allowed',
             )}
-            title="去支付"
+            title={paymentOperationsAvailable ? '去支付' : '在线支付尚未开放'}
           >
             <CreditCard className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">支付</span>
+            <span className="hidden sm:inline">{paymentOperationsAvailable ? '支付' : '未开放'}</span>
           </button>
           <button
             onClick={() => onCancel(order.id)}
@@ -482,16 +491,16 @@ function OrderActions({
       {order.status === 'paid' && (
         <button
           onClick={() => onRefund(order.id)}
-          disabled={isAnyPending}
+          disabled={isAnyPending || !paymentOperationsAvailable}
           className={cn(
             baseBtn,
             'bg-info-100 text-info-500 hover:bg-info-500/20',
             'disabled:opacity-50 disabled:cursor-not-allowed',
           )}
-          title="申请退款"
+          title={paymentOperationsAvailable ? '申请退款' : '在线退款尚未开放'}
         >
           <Undo2 className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">退款</span>
+          <span className="hidden sm:inline">{paymentOperationsAvailable ? '退款' : '未开放'}</span>
         </button>
       )}
     </div>
