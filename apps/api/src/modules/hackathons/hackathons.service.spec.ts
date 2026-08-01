@@ -95,6 +95,48 @@ describe('HackathonsService', () => {
     return module.get<HackathonsService>(HackathonsService);
   }
 
+  describe('findAll', () => {
+    it('应根据日期修正未及时推进的 upcoming/active 状态并正确筛选', async () => {
+      service = await buildService();
+      const now = Date.now();
+      const base = {
+        title: 'Hackathon',
+        registrations: [],
+      };
+      mockPrisma.hackathon.findMany.mockResolvedValue([
+        {
+          ...base,
+          id: 'future',
+          status: HackathonStatus.active,
+          startDate: new Date(now + 86_400_000),
+          endDate: new Date(now + 172_800_000),
+        },
+        {
+          ...base,
+          id: 'running',
+          status: HackathonStatus.upcoming,
+          startDate: new Date(now - 86_400_000),
+          endDate: new Date(now + 86_400_000),
+        },
+        {
+          ...base,
+          id: 'ended',
+          status: HackathonStatus.active,
+          startDate: new Date(now - 172_800_000),
+          endDate: new Date(now - 86_400_000),
+        },
+      ]);
+
+      const result = await service.findAll({ status: HackathonStatus.active });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({ id: 'running', status: HackathonStatus.active });
+      expect(mockPrisma.hackathon.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
+    });
+  });
+
   // ============================================================
   // create
   // ============================================================

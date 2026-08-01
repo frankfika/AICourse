@@ -234,6 +234,7 @@ const siteSettings: Array<{
   { key: 'brand.hero.headline', value: { 'zh-CN': '与 AI 一起, 构建未来' }, description: '首页 hero 主标题' },
   { key: 'brand.hero.subheadline', value: { 'zh-CN': 'AI Academy — 与世界级 AI 工程师一起实战' }, description: '首页 hero 副标题' },
   { key: 'brand.footer.tagline', value: { 'zh-CN': 'AI Academy · 实战驱动的 AI 工程师培养平台' }, description: 'footer 一句话定位' },
+  { key: 'brand.footer.version_tag', value: { 'zh-CN': 'v1.5.4 · built for AI era' }, description: 'footer 发布版本' },
   { key: 'brand.footer.signature', value: { 'zh-CN': '© 2026 AI Academy · 保留所有权利' }, description: 'footer 版权信息' },
   { key: 'brand.auth.shell_headline', value: { 'zh-CN': '加入 AI Academy 学员社区' }, description: 'AuthShell (登录/注册页) 品牌侧标题' },
   { key: 'brand.auth.shell_subline', value: { 'zh-CN': '在 30 天内构建可上线的 AI 应用' }, description: 'AuthShell 品牌侧副标题' },
@@ -244,8 +245,8 @@ const siteSettings: Array<{
     value: {
       columns: [
         { title: '学习', links: [{ label: '全部课程', path: '/courses' }, { label: '纳米学位', path: '/degrees' }, { label: '黑客松', path: '/hackathons' }] },
-        { title: '公司', links: [{ label: '关于我们', path: '/about' }, { label: '企业培训', path: '/enterprise' }, { label: '招聘', path: '/careers' }] },
-        { title: '法律', links: [{ label: '服务条款', path: '/terms' }, { label: '隐私政策', path: '/privacy' }, { label: '联系', path: '/contact' }] },
+        { title: '公司', links: [{ label: '关于我们', path: '/about' }, { label: '企业培训', path: '/enterprise' }, { label: '价格', path: '/courses' }] },
+        { title: '法律', links: [{ label: '服务条款', path: '/terms' }, { label: '隐私政策', path: '/privacy' }, { label: 'Cookie 政策', path: '/cookies' }, { label: '退款政策', path: '/refund' }] },
       ],
     },
     description: 'footer 3 列结构',
@@ -544,12 +545,13 @@ const footerColumns: Array<{
   { title: '公司', links: [
     { label: '关于我们', path: '/about' },
     { label: '企业培训', path: '/enterprise' },
-    { label: '招聘', path: '/careers' },
+    { label: '价格', path: '/courses' },
   ] },
   { title: '法律', links: [
     { label: '服务条款', path: '/terms' },
     { label: '隐私政策', path: '/privacy' },
-    { label: '联系', path: '/contact' },
+    { label: 'Cookie 政策', path: '/cookies' },
+    { label: '退款政策', path: '/refund' },
   ] },
 ];
 

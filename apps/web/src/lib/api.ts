@@ -46,6 +46,12 @@ function writeToken(token: string | null): void {
 // 内存缓存 — 同步读取用(axios request interceptor 不能 await)
 let accessToken: string | null = readToken();
 
+// Development must stay on the Vite origin so refresh cookies work through the
+// `/api` proxy even when the page is opened as 127.0.0.1 instead of localhost.
+// Production may opt into a separate API origin explicitly.
+const configuredApiBase = import.meta.env.VITE_API_BASE_URL?.trim();
+const apiBaseUrl = import.meta.env.DEV ? '' : configuredApiBase ?? '';
+
 export function setAccessToken(token: string | null) {
   accessToken = token;
   writeToken(token);
@@ -57,8 +63,7 @@ export function getAccessToken(): string | null {
 
 export const api = axios.create({
   // 默认同源 — Vite dev server(5500)把 /api/* proxy 到后端 8080。
-  // 如果显式设 VITE_API_BASE_URL(例如 preview 跨域测试),仍可覆盖。
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? '',
+  baseURL: apiBaseUrl,
   timeout: 10000,
   withCredentials: true,
 });
@@ -81,8 +86,7 @@ let refreshingPromise: Promise<string | null> | null = null;
 
 async function doRefresh(): Promise<string | null> {
   try {
-    const baseURL =
-      import.meta.env.VITE_API_BASE_URL ?? window.location.origin;
+    const baseURL = apiBaseUrl || window.location.origin;
     const { data } = await axios.post(
       `${baseURL}/api/v1/auth/refresh`,
       {},

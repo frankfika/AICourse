@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { useAuthStore } from './stores/authStore';
+import { AuthGuard } from './lib/auth/AuthProvider';
 
 // ──────────────────────────────────────────────────────────────────────
 // Code-split: 懒加载非首屏路由,首屏 LCP 路由保留同步 import
@@ -60,20 +60,6 @@ const PrivacyPage = lazy(() => import('./features/legal/PrivacyPage').then(m => 
 const CookiesPage = lazy(() => import('./features/legal/CookiesPage').then(m => ({ default: m.CookiesPage })));
 const RefundPage = lazy(() => import('./features/legal/RefundPage').then(m => ({ default: m.RefundPage })));
 
-function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode; requireAdmin?: boolean }) {
-  // user 真正存在的地方是 zustand store (AuthProvider 也读这里)
-  // 直接订阅 zustand 避免 React Context 异步 hydration 时机问题
-  const user = useAuthStore((s) => s.user);
-  const location = useLocation();
-  // DEBUG removed 2026-07-24: admin role 跳回学生问题已修
-  if (!user) {
-    const from = `${location.pathname}${location.search}${location.hash}`;
-    return <Navigate to={`/auth/login?from=${encodeURIComponent(from)}`} replace />;
-  }
-  if (requireAdmin && user.role !== 'admin') return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
-
 // 公开 lazy 路由的 fallback — 不能用 Layout 内的 Suspense(因为这些
 // 路由在 Layout 外,如 /verify/:serial),所以路由级 <Suspense> 包一层
 function PublicSuspense({ children }: { children: React.ReactNode }) {
@@ -110,13 +96,13 @@ export const router = createBrowserRouter([
       { path: 'instructors/:slug', element: <PublicSuspense><InstructorDetailPage /></PublicSuspense> },
       // P1-2: 全站搜索结果页(公开,带 ?q=)
       { path: 'search', element: <PublicSuspense><SearchPage /></PublicSuspense> },
-      { path: 'profile', element: <ProtectedRoute><PublicSuspense><ProfilePage /></PublicSuspense></ProtectedRoute> },
+      { path: 'profile', element: <AuthGuard><PublicSuspense><ProfilePage /></PublicSuspense></AuthGuard> },
       {
         path: 'admin',
         element: (
-          <ProtectedRoute requireAdmin>
+          <AuthGuard requireAdmin>
             <PublicSuspense><AdminLayout><Outlet /></AdminLayout></PublicSuspense>
-          </ProtectedRoute>
+          </AuthGuard>
         ),
         children: [
           { index: true, element: <Navigate to="dashboard" replace /> },
@@ -147,23 +133,23 @@ export const router = createBrowserRouter([
   // 注:BindingsPage 内部自己处理"未登录" EmptyState,这样 demo 模式 ?demo=with-google
   //     可以绕过登录态渲染示例视图(给截图用)
   { path: '/dashboard/settings/bindings', element: <PublicSuspense><BindingsPage /></PublicSuspense> },
-  { path: '/dashboard/notifications', element: <ProtectedRoute><PublicSuspense><NotificationsPage /></PublicSuspense></ProtectedRoute> },
+  { path: '/dashboard/notifications', element: <AuthGuard><PublicSuspense><NotificationsPage /></PublicSuspense></AuthGuard> },
   // P1-8: 订单 / 证书(用 dashboard 自身 layout, 不嵌到 /dashboard/children 树里,
   // 这样 OrdersPage / CertificatesPage 自己的 padding/max-w 跟 Layout 独立,
   // 跟 notifications 保持一致风格)
-  { path: '/dashboard/orders', element: <ProtectedRoute><PublicSuspense><OrdersPage /></PublicSuspense></ProtectedRoute> },
-  { path: '/dashboard/orders/:id', element: <ProtectedRoute><PublicSuspense><OrderDetailPage /></PublicSuspense></ProtectedRoute> },
-  { path: '/dashboard/certificates', element: <ProtectedRoute><PublicSuspense><CertificatesPage /></PublicSuspense></ProtectedRoute> },
-  { path: '/dashboard/certificates/:id', element: <ProtectedRoute><PublicSuspense><CertificateDetailPage /></PublicSuspense></ProtectedRoute> },
+  { path: '/dashboard/orders', element: <AuthGuard><PublicSuspense><OrdersPage /></PublicSuspense></AuthGuard> },
+  { path: '/dashboard/orders/:id', element: <AuthGuard><PublicSuspense><OrderDetailPage /></PublicSuspense></AuthGuard> },
+  { path: '/dashboard/certificates', element: <AuthGuard><PublicSuspense><CertificatesPage /></PublicSuspense></AuthGuard> },
+  { path: '/dashboard/certificates/:id', element: <AuthGuard><PublicSuspense><CertificateDetailPage /></PublicSuspense></AuthGuard> },
   // P1-8: 公开证书验证(匿名可访问, 不走 ProtectedRoute)
   { path: '/verify/:serial', element: <PublicSuspense><VerifyCertificatePage /></PublicSuspense> },
   // P0-6: dashboard 顶层路由 (不嵌在 / Layout 下, full-screen 体验, 自带 DashboardLayout)
   {
     path: '/dashboard',
     element: (
-      <ProtectedRoute>
+      <AuthGuard>
         <PublicSuspense><DashboardLayout /></PublicSuspense>
-      </ProtectedRoute>
+      </AuthGuard>
     ),
     children: [
       { index: true, element: <PublicSuspense><DashboardPage /></PublicSuspense> },

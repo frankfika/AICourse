@@ -2,19 +2,19 @@
  * 讲师回填 Seed 脚本 (2026-07-24)
  *
  * 用途: 把现有 Course.instructor 字符串字段的数据, 按 name trim 精确匹配
- *       回填到新表 Instructor (草稿态) + 挂 CourseInstructorLink.
+ *       回填到新表 Instructor (发布态) + 挂 CourseInstructorLink.
  *
  * 运行: ts-node prisma/seed-instructors.ts
  *
  * 行为:
  *   1. SELECT DISTINCT instructor FROM courses WHERE TRIM(instructor) <> ''
- *   2. 每条 dedupe 出来的名字 → INSERT Instructor (slug=name→ascii+hash, publishedAt=null)
+ *   2. 每条 dedupe 出来的名字 → INSERT Instructor (slug=name→ascii+hash, publishedAt=now)
  *   3. 遍历所有 Course, 按 instructor 字符串 trim 匹配回填 link (isPrimary=true, orderIndex=0)
  *   4. 跳过已有 link (idempotent)
  *
  * 设计:
  *   - 不删除 Course.instructor 字符串 (保留 1-2 版本做 fallback 降级显示)
- *   - 不发布任何 Instructor (publishedAt=null), admin 后台手动补完
+ *   - 直接发布回填讲师，确保公开搜索与详情页有真实数据
  *   - 写 AuditLog 留痕
  *
  * 注意:
@@ -79,7 +79,7 @@ async function main() {
 
   console.log(`共 ${names.length} 个去重讲师名`);
 
-  // 2. 按 name 建 Instructor (草稿态, 跳过已存在)
+  // 2. 按 name 建 Instructor (发布态, 跳过已存在)
   const instructorByName = new Map<string, string>(); // name -> id
 
   for (const name of names) {
@@ -101,8 +101,8 @@ async function main() {
       data: {
         slug,
         name,
-        // 草稿态: publishedAt=null, 前台不显示
-        publishedAt: null,
+        // 历史课程已经公开，回填出的关联讲师也应立即可见。
+        publishedAt: new Date(),
         title: null,
         orderIndex: 0,
       },
@@ -161,7 +161,7 @@ async function main() {
   console.log(`  讲师数: ${instructorByName.size}`);
   console.log(`  新建 link: ${linkedCount}`);
   console.log(`  跳过 (已存在/无匹配): ${skippedCount}`);
-  console.log(`  注意: 全部 Instructor 是草稿态 (publishedAt=null), admin 后台去补完`);
+  console.log(`  讲师已发布，admin 后台可继续补充头像、简介和社交链接`);
 
   // 4. 写 AuditLog (留痕, 即使失败也不抛)
   try {

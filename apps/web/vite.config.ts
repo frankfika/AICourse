@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -8,6 +9,9 @@ export default defineConfig(({ mode }) => {
     // 读根目录 .env(与 apps/api 共享),不注入到 client
     const env = loadEnv(mode, path.resolve(__dirname, '../..'), '');
     const API_TARGET = env.API_INTERNAL_URL ?? 'http://localhost:8080';
+    const webPackage = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'),
+    ) as { version: string };
 
     // P0 安全加固 2026-07-23: dev mode 给 index.html 注入 HMR 需要的
     //   connect-src ws://localhost:* + http://localhost:*, prod build 不注入.
@@ -46,6 +50,9 @@ export default defineConfig(({ mode }) => {
         },
       },
       plugins: [react(), devCspPlugin],
+      define: {
+        __APP_VERSION__: JSON.stringify(webPackage.version),
+      },
       build: {
         rollupOptions: {
           output: {

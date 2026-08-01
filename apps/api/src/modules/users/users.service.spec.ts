@@ -13,11 +13,8 @@
  *
  * 风格: jest mock prisma + audit log (参考 instructors.service.spec.ts)
  */
-// bcrypt 5.1.1 在 macOS arm64 + node 25 没 prebuild, node-gyp fallback 也失败.
-// 走 jest.mock 拦截 import, 避免 require 时崩; spec 只需断言 hash 调用模式 + 数据 shape,
-// 真实 hash 行为由 e2e 覆盖.
-// (注: 本约束 "不引新依赖 / 不修源码", 改 node_modules 不合规. 纯 spec 端绕过.)
-jest.mock('bcrypt', () => ({
+// 单测只断言 hash 调用模式与数据 shape；真实 bcryptjs 行为由认证集成路径覆盖。
+jest.mock('bcryptjs', () => ({
   hash: jest.fn(async (pw: string, rounds: number) => `$2b$${rounds}$mock.${pw.length}`),
 }));
 

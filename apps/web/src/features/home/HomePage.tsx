@@ -46,6 +46,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { useSiteSettings, usePageSettings, useI18n, pickSite, pickPage, pickI18n } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
+import { firstCourseTag } from '../../lib/courseTags';
 
 // =============================================================
 // 公共类型(贴近后端 schema,但不引 shared-types 避免循环依赖)
@@ -279,7 +280,7 @@ function CoursesSection() {
                     className={`aspect-video ${getCourseCoverBg(course.tags)} relative flex items-end p-4`}
                   >
                     <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
-                      {course.tags || t('home.course.tag_fallback', 'LLM 应用')}
+                      {firstCourseTag(course.tags, t('home.course.tag_fallback', 'LLM 应用'))}
                     </span>
                     <span className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-cert-500 text-white font-medium">
                       {course.level}

@@ -59,9 +59,26 @@ async function bootstrap() {
   // CORS — support comma-separated origin list (e.g. "http://localhost:3000,http://localhost:5500")
   const corsOrigin = configService.get<string>('CORS_ORIGIN') ?? 'http://localhost:3000';
   const allowedOrigins = corsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
+  const isDevelopmentLoopbackAlias = (origin: string) => {
+    if (configService.get<string>('NODE_ENV') === 'production') return false;
+    try {
+      const candidate = new URL(origin);
+      if (!['localhost', '127.0.0.1'].includes(candidate.hostname)) return false;
+      return allowedOrigins.some((allowed) => {
+        const configured = new URL(allowed);
+        return (
+          ['localhost', '127.0.0.1'].includes(configured.hostname) &&
+          configured.protocol === candidate.protocol &&
+          configured.port === candidate.port
+        );
+      });
+    } catch {
+      return false;
+    }
+  };
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || isDevelopmentLoopbackAlias(origin)) {
         callback(null, true);
       } else {
         callback(new Error(`CORS: origin ${origin} not allowed`), false);

@@ -1,8 +1,8 @@
--- DropIndex
-DROP INDEX `courses_instructor_id_idx` ON `courses`;
-
--- AlterTable
-ALTER TABLE `courses` DROP COLUMN `instructor_id`;
+-- The legacy schema stores the display instructor in `courses.instructor` and
+-- never created an `instructor_id` column or index. Keep that field for
+-- backwards compatibility while introducing the normalized link tables below.
+-- Dropping the non-existent index/column made both fresh installs and upgrades
+-- fail with MySQL error 1091 before any instructor tables could be created.
 
 -- CreateTable
 CREATE TABLE `instructors` (
@@ -89,4 +89,3 @@ ALTER TABLE `instructor_expertise_links` ADD CONSTRAINT `instructor_expertise_li
 
 -- AddForeignKey
 ALTER TABLE `instructor_expertise_links` ADD CONSTRAINT `instructor_expertise_links_expertise_id_fkey` FOREIGN KEY (`expertise_id`) REFERENCES `instructor_expertises`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-

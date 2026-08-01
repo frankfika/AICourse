@@ -53,6 +53,7 @@ import { cn } from '../../lib/cn';
 import { useEnum, useList, usePageSettings, useI18n, pickPage, LIST_FALLBACK } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { usePagination } from '../../hooks/usePagination';
+import { firstCourseTag, parseCourseTags } from '../../lib/courseTags';
 
 // =============================================================
 // 类型(与 API 实际返回对齐)
@@ -706,6 +707,7 @@ function CourseCardLink({ course }: { course: Course }) {
   const isCharity = course.costType === 'charity';
   const { getLabel: getLevelLabel } = useEnum('course_level');
   const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || lv;
+  const tags = parseCourseTags(course.tags);
   return (
     <Link
       to={course.externalUrl && course.courseType === 'third_party' ? course.externalUrl : `/courses/${course.id}`}
@@ -717,7 +719,7 @@ function CourseCardLink({ course }: { course: Course }) {
         className={`aspect-video bg-gradient-to-br ${getCourseCoverGradient(course.tags)} relative`}
       >
         <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
-          {course.tags || 'LLM 应用'}
+          {firstCourseTag(course.tags)}
         </span>
         <span className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-cert-500 text-white font-medium">
           {levelLabel(course.level)}
@@ -742,13 +744,9 @@ function CourseCardLink({ course }: { course: Course }) {
         <p className="mt-1.5 text-sm text-[#666666] line-clamp-2">
           {course.description}
         </p>
-        {(course.tags ?? '').split(/[,，]/).filter(Boolean).length > 0 && (
+        {tags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {(course.tags ?? '')
-              .split(/[,，]/)
-              .map((t) => t.trim())
-              .filter(Boolean)
-              .slice(0, 3)
+            {tags.slice(0, 3)
               .map((t) => (
                 <span
                   key={t}

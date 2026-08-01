@@ -28,6 +28,7 @@ import { PurchaseModal } from '../degrees/PurchaseModal';
 import { Seo } from '../../components/Seo';
 import { Tabs, TabPanel } from '../../components/ui/Tabs';
 import { LazyImage } from '../../components/ui/LazyImage';
+import { parseCourseTags, parseStringList } from '../../lib/courseTags';
 
 interface Course {
   id: string;
@@ -207,8 +208,8 @@ export function CourseDetailPage() {
   }
   if (!course) return <div className="text-center py-32">课程不存在</div>;
 
-  const learningPoints = JSON.parse(course.learningPoints || '[]') as string[];
-  const tags = JSON.parse(course.tags || '[]') as string[];
+  const learningPoints = parseStringList(course.learningPoints);
+  const tags = parseCourseTags(course.tags);
   const isFree = course.costType === 'free' || course.costType === 'charity';
 
   const resourcesByChapter = course.chapters

@@ -57,13 +57,35 @@ export class HackathonsService {
     avatarUrl: true,
   };
 
+  /**
+   * Keep public status consistent with the event dates even when an organizer
+   * has not manually advanced an event. Judging/finished/cancelled remain
+   * editorial states and are never inferred backwards from dates.
+   */
+  private effectiveStatus(hackathon: {
+    status: HackathonStatus;
+    startDate: Date;
+    endDate: Date;
+  }, now = new Date()): HackathonStatus {
+    if (
+      hackathon.status === HackathonStatus.cancelled ||
+      hackathon.status === HackathonStatus.finished ||
+      hackathon.status === HackathonStatus.judging
+    ) {
+      return hackathon.status;
+    }
+
+    if (now < hackathon.startDate) return HackathonStatus.upcoming;
+    if (now <= hackathon.endDate) return HackathonStatus.active;
+    return HackathonStatus.judging;
+  }
+
   async findAll(params: {
     status?: HackathonStatus;
     search?: string;
     userId?: string;
   }) {
     const where: any = {};
-    if (params.status) where.status = params.status;
     if (params.search) {
       where.OR = [
         { title: { contains: params.search } },
@@ -95,11 +117,15 @@ export class HackathonsService {
       take: 100,
     });
 
-    return hackathons.map((h) => ({
-      ...h,
-      myRegistration: h.registrations?.[0] ?? null,
-      registrations: undefined,
-    }));
+    const now = new Date();
+    return hackathons
+      .map((h) => ({
+        ...h,
+        status: this.effectiveStatus(h, now),
+        myRegistration: h.registrations?.[0] ?? null,
+        registrations: undefined,
+      }))
+      .filter((h) => !params.status || h.status === params.status);
   }
 
   async findOne(id: string, userId?: string) {
@@ -128,7 +154,11 @@ export class HackathonsService {
       });
     }
 
-    return { ...hackathon, myRegistration };
+    return {
+      ...hackathon,
+      status: this.effectiveStatus(hackathon),
+      myRegistration,
+    };
   }
 
   async create(dto: CreateHackathonDto, organizerId: string) {

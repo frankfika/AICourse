@@ -16,7 +16,7 @@
  *   cd apps/api && DATABASE_URL=... pnpm exec ts-node prisma/seed-extra.ts
  */
 import { PrismaClient, UserRole, OrderStatus, OrderType, CompletionStatus, ProjectType } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 

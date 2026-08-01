@@ -22,7 +22,7 @@ class CreateResourceDto extends NestedCreateResourceDto {}
 // P0 修复(2026-07-24): 直接 extends lessons.dto.ts 的 CreateLessonDto, 共享 @SafeUrl videoUrl 校验
 // 之前 courses.dto.ts 重复定义 CreateLessonDto, videoUrl 字段只有 @IsString 没 @SafeUrl
 // POST /api/v1/courses 的 chapters[].lessons[].videoUrl 入库路径绕过 scheme 校验
-class CreateLessonDto extends NestedCreateLessonDto {
+class NestedCourseLessonDto extends NestedCreateLessonDto {
   @ApiProperty({ description: '排序索引' })
   @IsNumber()
   orderIndex: number;
@@ -48,11 +48,11 @@ class CreateChapterDto {
   @IsNumber()
   orderIndex: number;
 
-  @ApiPropertyOptional({ type: () => [CreateLessonDto], description: '章节下的课时' })
+  @ApiPropertyOptional({ type: () => [NestedCourseLessonDto], description: '章节下的课时' })
   @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => CreateLessonDto)
-  lessons?: CreateLessonDto[];
+  @Type(() => NestedCourseLessonDto)
+  lessons?: NestedCourseLessonDto[];
 }
 
 export class CreateCourseDto {

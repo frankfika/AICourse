@@ -310,8 +310,8 @@ export const SITE_FALLBACK: Record<string, any> = {
     'en-US': 'Still can\'t apply what you learn? Make your AI-era capabilities visible.',
   },
   'brand.footer.version_tag': {
-    'zh-CN': 'v0.5.0 · built for AI era',
-    'en-US': 'v0.5.0 · built for AI era',
+    'zh-CN': 'v1.5.4 · built for AI era',
+    'en-US': 'v1.5.4 · built for AI era',
   },
   'brand.footer.addresses': {
     'zh-CN': ['Beijing', 'Shanghai', 'Shenzhen'],

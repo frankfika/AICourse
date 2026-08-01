@@ -37,6 +37,7 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { searchAll, groupResults, type SearchResult, type SearchResultType } from '../lib/searchApi';
 import { cn } from '../lib/cn';
+import { firstCourseTag } from '../lib/courseTags';
 
 const TYPE_TABS: { key: SearchResultType | 'all'; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -317,7 +318,7 @@ function ResultCard({ item }: { item: SearchResult }) {
 }
 
 function CourseResultCard({ item }: { item: SearchResult }) {
-  const tags = item.meta ?? 'LLM 应用';
+  const tags = firstCourseTag(item.meta);
   return (
     <Link
       to={item.href}

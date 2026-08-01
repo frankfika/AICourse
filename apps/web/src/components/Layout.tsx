@@ -515,7 +515,7 @@ function SiteFooter() {
     siteData,
     'brand.footer.version_tag',
     'zh-CN',
-    'v0.5.0 · built for AI era',
+    `v${__APP_VERSION__} · built for AI era`,
   );
   return (
     <footer className="pt-12 pb-28 md:py-12 border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-100">
