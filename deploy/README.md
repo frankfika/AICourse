@@ -22,7 +22,12 @@ docker compose --env-file .env.production -f docker-compose.production.yml ps
 
 ## 宿主机 Nginx
 
-在现有 HTTPS `server` 块中加入：
+使用 [`host-nginx.conf.example`](./host-nginx.conf.example) 创建独立站点。先把其中的
+`academy.example.com` 全部替换为真实域名并签发证书，再安装到独立的 Nginx
+`server` 块。模板保留 5GB 上传、流式响应、原始 Host 和 HTTPS 协议头；不要使用
+只有 `proxy_pass` 的简化配置，否则大文件上传、预签名地址或流式接口可能失效。
+
+反向代理的核心配置如下：
 
 ```nginx
 location / {
@@ -31,7 +36,11 @@ location / {
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_request_buffering off;
+    proxy_buffering off;
+    proxy_read_timeout 3600s;
+    proxy_send_timeout 3600s;
 }
 ```
 
