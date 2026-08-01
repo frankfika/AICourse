@@ -1,7 +1,7 @@
 /**
  * auditLogsApi — 审计日志读
  *
- * GET /api/v1/audit-logs?userId=&entity=&action=&page=&limit=
+ * GET /api/v1/audit-logs?userId=&relatedUserId=&entity=&action=&page=&limit=
  *   仅 admin 可读(后端 guard)
  */
 import { api } from './api';
@@ -28,6 +28,7 @@ export interface AuditLogListResponse {
 export const auditLogsApi = {
   list: async (params: {
     userId?: string;
+    relatedUserId?: string;
     entity?: string;
     action?: string;
     page?: number;

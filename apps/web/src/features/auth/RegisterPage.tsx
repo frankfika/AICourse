@@ -24,8 +24,15 @@ const registerSchema = z
   .object({
     name: z.string().min(1, '请输入姓名').max(50, '姓名过长'),
     email: z.string().email('请输入有效邮箱'),
-    password: z.string().min(6, '密码至少 6 位'),
-    confirmPassword: z.string().min(6, '确认密码至少 6 位'),
+    password: z
+      .string()
+      .min(12, '密码至少 12 位')
+      .max(128, '密码最多 128 位')
+      .regex(/[a-z]/, '密码必须包含小写字母')
+      .regex(/[A-Z]/, '密码必须包含大写字母')
+      .regex(/\d/, '密码必须包含数字')
+      .regex(/[^A-Za-z0-9]/, '密码必须包含符号'),
+    confirmPassword: z.string().min(12, '确认密码至少 12 位'),
   })
   .refine((v) => v.password === v.confirmPassword, {
     path: ['confirmPassword'],
@@ -182,7 +189,7 @@ export function RegisterPage() {
         <Input
           label="密码"
           type={showPassword ? 'text' : 'password'}
-          placeholder="至少 6 位"
+          placeholder="至少 12 位"
           autoComplete="new-password"
           required
           fullWidth
@@ -202,7 +209,7 @@ export function RegisterPage() {
               )}
             </button>
           }
-          hint="建议包含字母和数字"
+          hint="需包含大小写字母、数字和符号"
           error={errors.password?.message}
           {...register('password')}
         />

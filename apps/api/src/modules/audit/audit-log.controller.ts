@@ -28,6 +28,7 @@ export class AuditLogController {
     @Query('userId') userId?: string,
     @Query('entity') entity?: string,
     @Query('action') action?: string,
+    @Query('relatedUserId') relatedUserId?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
   ) {
@@ -35,6 +36,7 @@ export class AuditLogController {
       userId,
       entity,
       action,
+      relatedUserId,
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
     });

@@ -10,13 +10,12 @@
  *     3) 订单:最近 20 笔(从 findOne 内联返回)
  *     4) 证书:最近 20 张
  *     5) 积分:当前积分 + 最近 20 笔流水
- *     6) 活动日志:Phase 2+ 接 audit 读 API
+ *     6) 活动日志:读取与该用户相关的审计记录
  *   - 5 操作(在 Drawer 内):
  *     1) 改角色:下拉 student/instructor/admin
  *     2) 授权课程:输入课程 ID 逗号分隔
  *     3) 重置密码:由服务端生成一次性临时密码并吊销旧会话
- *     4) 封号:Phase 2+(schema 暂不支持)
- *     5) 删账号:软删并吊销会话,二次确认
+ *     4) 停用/恢复账号:立即阻断访问并吊销会话，保留历史数据
  *
  * 设计:brutalist — 跟 AdminBadgesPage / AdminCoursesPage / AdminReviewsPage 一致
  *   - 黑白硬边、无圆角、无阴影、tracking-widest
@@ -48,6 +47,7 @@ import { I18nText } from '../../components/I18nText';
 import { useLocaleDate } from '../../hooks/useLocaleDate';
 import { cn } from '../../lib/cn';
 import { useEnum, useI18n } from '../../lib/cms';
+import { auditLogsApi } from '../../lib/auditLogsApi';
 
 interface UserSummary {
   id: string;
@@ -58,6 +58,7 @@ interface UserSummary {
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string | null;
+  deletedAt?: string | null;
 }
 
 interface UserDetail extends UserSummary {
@@ -153,15 +154,17 @@ export function AdminUsersPage() {
   const { showToast } = useToast();
   const { t } = useI18n();
   const [search, setSearch] = useState('');
+  const [accountStatus, setAccountStatus] = useState<'active' | 'disabled' | 'all'>('active');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // 列表
   const { data: users, isLoading, isError, refetch } = useQuery({
-    queryKey: ['admin-users', search],
+    queryKey: ['admin-users', search, accountStatus],
     queryFn: async () => {
       const { data } = await api.get<{ data: UserSummary[] }>(
-        `/api/v1/users?search=${encodeURIComponent(search)}&limit=100`,
+        '/api/v1/users',
+        { params: { search, status: accountStatus, limit: 100 } },
       );
       return data.data;
     },
@@ -220,16 +223,26 @@ export function AdminUsersPage() {
     onError: (err: any) => showToast(err?.response?.data?.message ?? t('admin.users.toast.reset_failed', '重置失败'), 'error'),
   });
 
-  // 删除
-  const deleteMutation = useMutation({
+  // 停用
+  const disableMutation = useMutation({
     mutationFn: () => api.delete(`/api/v1/users/${selectedUserId}`),
     onSuccess: () => {
-      showToast(t('admin.users.toast.deleted', '用户已删除'), 'success');
+      showToast(t('admin.users.toast.disabled', '用户已停用，现有会话已失效'), 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setConfirmDelete(false);
-      setSelectedUserId(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedUserId] });
     },
-    onError: (err: any) => showToast(err?.response?.data?.message ?? t('admin.users.toast.delete_failed', '删除失败'), 'error'),
+    onError: (err: any) => showToast(err?.response?.data?.message ?? t('admin.users.toast.disable_failed', '停用失败'), 'error'),
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: () => api.post(`/api/v1/users/${selectedUserId}/restore`),
+    onSuccess: () => {
+      showToast(t('admin.users.toast.restored', '用户已恢复，可重新登录'), 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-user-detail', selectedUserId] });
+    },
+    onError: (err: any) => showToast(err?.response?.data?.message ?? t('admin.users.toast.restore_failed', '恢复失败'), 'error'),
   });
 
   return (
@@ -244,17 +257,31 @@ export function AdminUsersPage() {
             <I18nText k="admin.users.title" default="用户管理" />
           </h2>
         </div>
-        <div className="relative max-w-xs w-full">
-          <label htmlFor="admin-user-search" className="sr-only">搜索用户</label>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999999]" />
-          <input
-            id="admin-user-search"
-            type="text"
-            placeholder={t('admin.users.search_placeholder', '搜索邮箱 / 昵称...')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-100 border-2 border-[#171717] dark:border-neutral-50 text-sm text-[#171717] dark:text-neutral-50 focus:outline-none focus:bg-[#EEEDE9] focus:ring-2 focus:ring-[#171717] dark:focus:bg-neutral-800 transition-colors"
-          />
+        <div className="flex w-full max-w-xl items-end gap-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-[#666666]">
+            账号状态
+            <select
+              value={accountStatus}
+              onChange={(event) => setAccountStatus(event.target.value as typeof accountStatus)}
+              className="mt-1 block min-h-10 border-2 border-[#171717] bg-white px-3 text-xs font-black uppercase"
+            >
+              <option value="active">正常</option>
+              <option value="disabled">已停用</option>
+              <option value="all">全部</option>
+            </select>
+          </label>
+          <div className="relative flex-1">
+            <label htmlFor="admin-user-search" className="sr-only">搜索用户</label>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999999]" />
+            <input
+              id="admin-user-search"
+              type="text"
+              placeholder={t('admin.users.search_placeholder', '搜索邮箱 / 昵称...')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-100 border-2 border-[#171717] dark:border-neutral-50 text-sm text-[#171717] dark:text-neutral-50 focus:outline-none focus:bg-[#EEEDE9] focus:ring-2 focus:ring-[#171717] dark:focus:bg-neutral-800 transition-colors"
+            />
+          </div>
         </div>
       </div>
 
@@ -294,6 +321,7 @@ export function AdminUsersPage() {
                   'grid grid-cols-1 md:grid-cols-12 gap-4 p-4 items-center text-sm',
                   i < users.length - 1 && 'border-b border-[#EEEDE9]',
                   'hover:bg-[#F5F4F0] transition-colors',
+                  user.deletedAt && 'opacity-60',
                 )}
               >
                 <div className="col-span-12 md:col-span-1 text-[10px] font-black text-[#A3A3A3]">
@@ -304,6 +332,11 @@ export function AdminUsersPage() {
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <span className="font-black tracking-tight truncate">{user.name}</span>
+                  {user.deletedAt && (
+                    <span className="border border-[#171717] px-1.5 py-0.5 text-[9px] font-black uppercase">
+                      已停用
+                    </span>
+                  )}
                 </div>
                 <div className="col-span-12 md:col-span-4 text-xs text-[#666666] truncate flex items-center gap-1.5">
                   <Mail className="w-3 h-3" /> {user.email}
@@ -357,11 +390,14 @@ export function AdminUsersPage() {
             onChangeRole={(r) => roleMutation.mutate(r)}
             onGrantCourses={(ids) => grantMutation.mutate(ids)}
             onResetPassword={() => resetPwdMutation.mutate()}
-            onDelete={() => setConfirmDelete(true)}
+            onDisable={() => setConfirmDelete(true)}
+            onRestore={() => restoreMutation.mutate()}
             isUpdating={
               roleMutation.isPending ||
               grantMutation.isPending ||
-              resetPwdMutation.isPending
+              resetPwdMutation.isPending ||
+              disableMutation.isPending ||
+              restoreMutation.isPending
             }
           />
         ) : null}
@@ -371,12 +407,12 @@ export function AdminUsersPage() {
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={async () => {
-          await deleteMutation.mutateAsync();
+          await disableMutation.mutateAsync();
         }}
-        title={t('admin.users.delete_confirm.title', '确认删除该用户?')}
+        title={t('admin.users.disable_confirm.title', '确认停用该用户?')}
         description={t('admin.users.delete_confirm.desc', '账号将被停用并立即吊销登录会话；历史报名、订单、证书和审计记录会保留。')}
         variant="danger"
-        confirmText={t('admin.users.delete_confirm.confirm', '确认删除')}
+        confirmText={t('admin.users.disable_confirm.confirm', '确认停用')}
       />
     </div>
   );
@@ -391,7 +427,8 @@ function UserDetailContent({
   onChangeRole,
   onGrantCourses,
   onResetPassword,
-  onDelete,
+  onDisable,
+  onRestore,
   isUpdating,
 }: {
   detail: UserDetail;
@@ -399,7 +436,8 @@ function UserDetailContent({
   onChangeRole: (r: string) => void;
   onGrantCourses: (ids: string[]) => void;
   onResetPassword: () => void;
-  onDelete: () => void;
+  onDisable: () => void;
+  onRestore: () => void;
   isUpdating: boolean;
 }) {
   const [courseInput, setCourseInput] = useState('');
@@ -407,9 +445,14 @@ function UserDetailContent({
   const { getColor: getOrderStatusColor } = useEnum('order_status');
   const { t } = useI18n();
   const { formatDate, formatDateTime, formatNumber } = useLocaleDate();
+  const activityQuery = useQuery({
+    queryKey: ['admin-user-activity', detail.id],
+    queryFn: () => auditLogsApi.list({ relatedUserId: detail.id, limit: 10 }),
+  });
 
   const roleMeta = ROLE_META[detail.role] ?? ROLE_META.student;
   const RoleIcon = roleMeta.icon;
+  const isDisabled = Boolean(detail.deletedAt);
   // 优先 API colorClass, fallback 走原硬编码
   const orderStatusClass = (s: string) =>
     getOrderStatusColor(s) || FALLBACK_STATUS_COLOR[s] || FALLBACK_STATUS_COLOR.pending;
@@ -448,12 +491,16 @@ function UserDetailContent({
               </span>
             )}
           </Field>
+          <Field
+            label="账号状态"
+            value={isDisabled ? `已停用 · ${formatDateTime(detail.deletedAt)}` : '正常'}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2 mt-4">
           <select
             value={detail.role}
             onChange={(e) => onChangeRole(e.target.value)}
-            disabled={isUpdating}
+            disabled={isUpdating || isDisabled}
             aria-label={t('admin.users.field.change_role', '修改角色')}
             className="px-3 py-2 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800 disabled:opacity-50"
           >
@@ -464,21 +511,23 @@ function UserDetailContent({
           <BrutalButton
             size="sm"
             variant="secondary"
-            disabled={isUpdating}
+            disabled={isUpdating || isDisabled}
             onClick={onResetPassword}
           >
             <I18nText k="admin.users.action.reset_password" default="重置密码" />
           </BrutalButton>
-          <BrutalButton
-            size="sm"
-            variant="danger"
-            onClick={onDelete}
-          >
-            <I18nText k="admin.users.action.delete_account" default="删除账号" />
-          </BrutalButton>
+          {isDisabled ? (
+            <BrutalButton size="sm" variant="primary" disabled={isUpdating} onClick={onRestore}>
+              恢复账号
+            </BrutalButton>
+          ) : (
+            <BrutalButton size="sm" variant="danger" disabled={isUpdating} onClick={onDisable}>
+              停用账号
+            </BrutalButton>
+          )}
         </div>
         <p className="text-[10px] text-[#666666] mt-2">
-          <I18nText k="admin.users.ban_hint" default="提示:封号功能 Phase 2+(schema 暂不支持 banned 字段)" />
+          停用后所有访问令牌与刷新会话立即失效；恢复不会删除或重建历史业务数据。
         </p>
       </section>
 
@@ -653,6 +702,7 @@ function UserDetailContent({
             <BrutalButton
               size="sm"
               variant="secondary"
+              disabled={isUpdating || isDisabled}
               onClick={() => setShowGrant(true)}
             >
               <I18nText k="admin.users.action.grant_new" default="授权新课程" />
@@ -670,7 +720,7 @@ function UserDetailContent({
               <BrutalButton
                 size="sm"
                 variant="primary"
-                disabled={isUpdating}
+                disabled={isUpdating || isDisabled}
                 onClick={() => {
                   const ids = courseInput
                     .split(',')
@@ -702,12 +752,38 @@ function UserDetailContent({
         )}
       </section>
 
-      {/* 7) 活动日志(Phase 2+) */}
+      {/* 7) 活动日志 */}
       <section className="p-5">
         <SectionTitle icon={Calendar} title={t('admin.users.section.activity', '活动日志')} />
-        <p className="text-xs text-[#666666] mt-2">
-          <I18nText k="admin.users.activity_hint" default="Phase 2+ 接 audit-log 读 API" />
-        </p>
+        {activityQuery.isLoading ? (
+          <p className="mt-2 text-xs text-[#666666]">加载中…</p>
+        ) : activityQuery.isError ? (
+          <button
+            type="button"
+            onClick={() => activityQuery.refetch()}
+            className="mt-2 text-xs font-black underline"
+          >
+            活动日志加载失败，点击重试
+          </button>
+        ) : activityQuery.data?.data.length ? (
+          <ul className="mt-3 space-y-1.5">
+            {activityQuery.data.data.map((log) => (
+              <li key={log.id} className="bg-[#F5F4F0] px-2 py-1.5 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-black uppercase tracking-wider">{log.action}</span>
+                  <span className="whitespace-nowrap text-[10px] text-[#666666]">
+                    {formatDateTime(log.createdAt)}
+                  </span>
+                </div>
+                <div className="mt-0.5 truncate font-mono text-[10px] text-[#666666]">
+                  {log.entity}{log.entityId ? ` · ${log.entityId}` : ''}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 text-xs text-[#666666]">暂无活动记录</p>
+        )}
       </section>
     </div>
   );

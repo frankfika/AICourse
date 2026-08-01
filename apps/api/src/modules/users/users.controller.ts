@@ -45,17 +45,20 @@ export class UsersController {
   @ApiQuery({ name: 'search', required: false, description: '邮箱/姓名模糊搜索' })
   @ApiQuery({ name: 'page', required: false, description: '页码（默认 1）' })
   @ApiQuery({ name: 'limit', required: false, description: '每页大小（默认 20）' })
+  @ApiQuery({ name: 'status', required: false, enum: ['active', 'disabled', 'all'] })
   async findAll(
     @Query('role') role?: UserRole,
     @Query('search') search?: string,
     @Query('page') page = '1',
     @Query('limit') limit = '20',
+    @Query('status') status: 'active' | 'disabled' | 'all' = 'active',
   ) {
     return this.usersService.findAll({
       role,
       search,
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
+      status: ['active', 'disabled', 'all'].includes(status) ? status : 'active',
     });
   }
 
@@ -119,8 +122,21 @@ export class UsersController {
   @Roles(UserRole.admin)
   @ApiOperation({ summary: '删除用户（管理员）' })
   @ApiParam({ name: 'id', description: '用户ID' })
-  async delete(@Param('id') id: string) {
-    return this.usersService.delete(id);
+  async delete(
+    @Request() req: { user: { userId: string } },
+    @Param('id') id: string,
+  ) {
+    return this.usersService.disable(id, req.user.userId);
+  }
+
+  @Post(':id/restore')
+  @Roles(UserRole.admin)
+  @ApiOperation({ summary: '恢复已停用用户（管理员）' })
+  async restore(
+    @Request() req: { user: { userId: string } },
+    @Param('id') id: string,
+  ) {
+    return this.usersService.restore(id, req.user.userId);
   }
 
   @Post(':id/grant-course')
@@ -128,10 +144,11 @@ export class UsersController {
   @ApiOperation({ summary: '给用户授权课程访问（管理员）' })
   @ApiParam({ name: 'id', description: '用户ID' })
   async grantCourseAccess(
+    @Request() req: { user: { userId: string } },
     @Param('id') userId: string,
     @Body() dto: GrantCourseAccessDto,
   ) {
-    return this.usersService.grantCourseAccess(userId, dto);
+    return this.usersService.grantCourseAccess(userId, dto, req.user.userId);
   }
 
   @Post(':id/grant-degree')
@@ -139,9 +156,10 @@ export class UsersController {
   @ApiOperation({ summary: '给用户授权学位访问（管理员）' })
   @ApiParam({ name: 'id', description: '用户ID' })
   async grantDegreeAccess(
+    @Request() req: { user: { userId: string } },
     @Param('id') userId: string,
     @Body() dto: GrantDegreeAccessDto,
   ) {
-    return this.usersService.grantDegreeAccess(userId, dto);
+    return this.usersService.grantDegreeAccess(userId, dto, req.user.userId);
   }
 }

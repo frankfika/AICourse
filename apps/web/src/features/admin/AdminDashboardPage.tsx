@@ -252,9 +252,9 @@ export function AdminDashboardPage() {
                 href="/admin/audit"
                 title="审计日志"
                 sub="操作记录追踪(admin 权限)"
-                chip="Phase 2+"
-                chipTone="neutral"
-                dot="neutral"
+                chip="查看"
+                chipTone="info"
+                dot="info"
                 icon={<ScrollText className="w-3.5 h-3.5" />}
               />
             </div>

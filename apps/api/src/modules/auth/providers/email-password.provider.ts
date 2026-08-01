@@ -1,4 +1,10 @@
-import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthProvider, AuthIdentity, AuthCredentials } from './auth-provider.types';
@@ -51,6 +57,24 @@ export class EmailPasswordProvider extends AuthProvider {
     password: string,
     extras: { name: string },
   ): Promise<AuthIdentity> {
+    if (
+      typeof email !== 'string' ||
+      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ||
+      typeof extras.name !== 'string' ||
+      !extras.name.trim()
+    ) {
+      throw new BadRequestException('Valid email and name are required');
+    }
+    if (
+      typeof password !== 'string' ||
+      password.length < 12 ||
+      password.length > 128 ||
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/.test(password)
+    ) {
+      throw new BadRequestException(
+        'Password must be 12-128 characters and include uppercase, lowercase, number and symbol',
+      );
+    }
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictException('Email already registered');
@@ -79,6 +103,9 @@ export class EmailPasswordProvider extends AuthProvider {
   }
 
   private async handleLogin(email: string, password: string): Promise<AuthIdentity> {
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      throw new UnauthorizedException('Invalid credentials');
+    }
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user || user.deletedAt) {
       throw new UnauthorizedException('Invalid credentials');
@@ -107,8 +134,15 @@ export class EmailPasswordProvider extends AuthProvider {
    */
   async link(userId: string, credentials: AuthCredentials): Promise<void> {
     const { password } = credentials as { password: string };
-    if (!password || password.length < 6) {
-      throw new ConflictException('Password must be at least 6 characters');
+    if (
+      !password ||
+      password.length < 12 ||
+      password.length > 128 ||
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/.test(password)
+    ) {
+      throw new ConflictException(
+        'Password must be 12-128 characters and include uppercase, lowercase, number and symbol',
+      );
     }
     const passwordHash = await bcrypt.hash(password, this.bcryptRounds);
     await this.prisma.user.update({

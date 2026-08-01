@@ -80,6 +80,28 @@ test.describe('Smoke', () => {
     await expect(page.getByText(/回调参数无效或已过期/)).toBeVisible();
   });
 
+  test('自助密码重置完成申请与一次性链接确认', async ({ page }) => {
+    await page.route('**/api/v1/auth/password-reset/capability', (route) =>
+      route.fulfill({ json: { enabled: true } }),
+    );
+    await page.route('**/api/v1/auth/password-reset/request', (route) =>
+      route.fulfill({ status: 202, json: { accepted: true } }),
+    );
+    await page.goto('/auth/forgot');
+    await page.getByLabel('邮箱').fill('learner@example.com');
+    await page.getByRole('button', { name: '发送重置邮件' }).click();
+    await expect(page.getByRole('heading', { name: '请检查你的邮箱' })).toBeVisible();
+
+    await page.route('**/api/v1/auth/password-reset/confirm', (route) =>
+      route.fulfill({ status: 200, json: { changed: true } }),
+    );
+    await page.goto(`/auth/reset?token=${'x'.repeat(43)}`);
+    await page.getByLabel(/^新密码/).fill('Strong!Password123');
+    await page.getByLabel(/^确认新密码/).fill('Strong!Password123');
+    await page.getByRole('button', { name: '确认重置密码' }).click();
+    await expect(page.getByRole('heading', { name: '密码已更新' })).toBeVisible();
+  });
+
   test('⌘K 搜索弹层: 顶部搜索按钮可点', async ({ page, isMobile }) => {
     await page.goto('/');
     // CSS 控制可见性:desktop 是 "打开搜索(⌘K)", mobile 是 "打开搜索"

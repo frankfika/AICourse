@@ -11,6 +11,7 @@ import { OAuthProvider } from './providers/oauth.provider';
 import { SsoProvider } from './providers/sso.provider';
 import { loadAuthConfig } from './config/auth.config';
 import { PrismaService } from '../prisma/prisma.service';
+import { PasswordResetService } from './password-reset.service';
 
 // Security: refuse to boot with a weak or placeholder JWT secret.
 function assertStrongJwtSecret(secret: string | undefined): string {
@@ -66,6 +67,7 @@ function assertStrongJwtSecret(secret: string | undefined): string {
   providers: [
     AuthService,
     JwtStrategy,
+    PasswordResetService,
     PrismaService,
     {
       // 动态 provider 工厂：按 AUTH_PROVIDERS env 列表构造具体实例

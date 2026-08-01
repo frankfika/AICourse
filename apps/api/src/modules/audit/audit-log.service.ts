@@ -72,6 +72,7 @@ export class AuditLogService {
     userId?: string;
     entity?: string;
     action?: string;
+    relatedUserId?: string;
     page?: number;
     limit?: number;
   }) {
@@ -82,6 +83,12 @@ export class AuditLogService {
     if (params.userId) where.userId = params.userId;
     if (params.entity) where.entity = params.entity;
     if (params.action) where.action = params.action;
+    if (params.relatedUserId) {
+      where.OR = [
+        { userId: params.relatedUserId },
+        { entity: 'user', entityId: params.relatedUserId },
+      ];
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.auditLog.findMany({

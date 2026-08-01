@@ -17,9 +17,12 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: '密码（最少 6 位）', minLength: 6 })
+  @ApiProperty({ description: '密码（至少 12 位，包含大小写、数字和符号）', minLength: 12 })
   @IsString()
-  @MinLength(6)
+  @MinLength(12)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/, {
+    message: '密码必须包含大小写字母、数字和符号',
+  })
   password: string;
 
   @ApiProperty({ description: '显示名' })

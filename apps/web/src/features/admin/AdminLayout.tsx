@@ -24,8 +24,6 @@ interface NavItem {
   path: string;
   label: string;
   icon: typeof BarChart3;
-  /** true 表示功能尚未实装,点击不跳转 */
-  comingSoon?: boolean;
 }
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -60,8 +58,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col md:flex-row gap-6">
         <aside className="hidden md:block w-full md:w-56 shrink-0">
           <nav className="border-2 border-neutral-900 bg-neutral-0 dark:bg-neutral-100">
-            {navItems.map(({ path, label, icon: Icon, comingSoon }, i) => {
-              const active = !comingSoon && location.pathname.startsWith(path);
+            {navItems.map(({ path, label, icon: Icon }, i) => {
+              const active = location.pathname.startsWith(path);
               return (
                 <Link
                   key={path}
@@ -69,23 +67,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   className={`flex items-center gap-3 px-4 py-3 text-xs font-black uppercase tracking-widest transition-colors ${
                     active
                       ? 'bg-neutral-900 text-neutral-0'
-                      : comingSoon
-                        ? 'text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-50 cursor-not-allowed'
-                        : 'text-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-50 hover:text-neutral-900'
+                      : 'text-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-50 hover:text-neutral-900'
                   } ${i < navItems.length - 1 ? 'border-b border-neutral-200' : ''}`}
-                  onClick={(e) => {
-                    if (comingSoon) {
-                      e.preventDefault();
-                    }
-                  }}
-                  aria-disabled={comingSoon}
                 >
                   <Icon className="w-4 h-4" /> {label}
-                  {comingSoon && (
-                    <span className="ml-auto text-[9px] font-black uppercase tracking-widest bg-[#171717] text-white px-1.5 py-0.5 normal-case">
-                      即将推出
-                    </span>
-                  )}
                 </Link>
               );
             })}

@@ -27,6 +27,7 @@ model User {
 
   refreshTokens       RefreshToken[]
   providerAccounts    UserProviderAccount[]
+  passwordResetTokens PasswordResetToken[]
   enrollments         Enrollment[]
   orders              Order[]
   progressRecords     ProgressRecord[]
@@ -114,6 +115,21 @@ model RefreshToken {
 
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @db.Char(64) @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt, usedAt])
+  @@map("password_reset_tokens")
 }
 
 // ==================== Auth 抽象层 - 多 Provider 绑定 ====================

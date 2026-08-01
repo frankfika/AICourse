@@ -18,6 +18,8 @@ docker compose --env-file .env.production -f docker-compose.production.yml ps
 
 默认只启用邮箱密码登录。启用 Google 或 GitHub 时，把对应 provider 加入 `AUTH_PROVIDERS`，并填写 client ID、secret 和与 `PUBLIC_URL` 同源的 `/auth/oauth/callback`；缺少任一配置时 API 会拒绝启动，避免展示不可用的登录按钮。
 
+自助密码重置使用 Resend 邮件 API。配置 `RESEND_API_KEY` 与 `MAIL_FROM` 后，忘记密码页会自动开放；发件域名必须先在 Resend 验证。未配置时页面明确引导联系管理员，后台仍可签发一次性临时密码。
+
 空数据库首次启动时会自动执行已提交迁移并创建初始平台数据。生产 seed 遇到已有业务数据会拒绝覆盖；管理员和示例学员首次登录都必须修改密码。完成初始化后，把 `BOOTSTRAP_DATA` 改为 `false`。
 
 ## 宿主机 Nginx

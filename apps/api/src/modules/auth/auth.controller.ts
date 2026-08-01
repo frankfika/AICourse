@@ -2,8 +2,15 @@ import { Controller, Post, Body, Req, Res, Get, Delete, HttpCode, HttpStatus, Un
 import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { LoginDto, OAuthCallbackDto, RegisterDto } from './auth.dto';
+import {
+  LoginDto,
+  OAuthCallbackDto,
+  PasswordResetConfirmDto,
+  PasswordResetRequestDto,
+  RegisterDto,
+} from './auth.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { PasswordResetService } from './password-reset.service';
 
 /**
  * AuthController - 重构后
@@ -17,7 +24,10 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
  */
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly passwordResetService: PasswordResetService,
+  ) {}
 
   // ============ 新端点：列出可用 provider ============
 
@@ -25,6 +35,25 @@ export class AuthController {
   @Get('providers')
   listProviders() {
     return { providers: this.authService.listProviders() };
+  }
+
+  @Get('password-reset/capability')
+  passwordResetCapability() {
+    return this.passwordResetService.capability();
+  }
+
+  @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 5, ttl: 60000 } })
+  @Post('password-reset/request')
+  @HttpCode(HttpStatus.ACCEPTED)
+  requestPasswordReset(@Body() dto: PasswordResetRequestDto) {
+    return this.passwordResetService.request(dto.email);
+  }
+
+  @Throttle({ short: { limit: 3, ttl: 1000 }, medium: { limit: 10, ttl: 60000 } })
+  @Post('password-reset/confirm')
+  @HttpCode(HttpStatus.OK)
+  confirmPasswordReset(@Body() dto: PasswordResetConfirmDto) {
+    return this.passwordResetService.confirm(dto.token, dto.newPassword);
   }
 
   @Get('identities')

@@ -4,6 +4,7 @@ import {
   ConflictException,
   BadRequestException,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
@@ -37,6 +38,7 @@ export class UsersService {
     lastLoginAt: true,
     createdAt: true,
     updatedAt: true,
+    deletedAt: true,
   };
 
   async findAll(params: {
@@ -44,8 +46,12 @@ export class UsersService {
     search?: string;
     page: number;
     limit: number;
+    status?: 'active' | 'disabled' | 'all';
   }) {
     const where: any = {};
+    if (params.status !== 'all') {
+      where.deletedAt = params.status === 'disabled' ? { not: null } : null;
+    }
     if (params.role) where.role = params.role;
     if (params.search) {
       where.OR = [
@@ -275,10 +281,21 @@ export class UsersService {
     return { temporaryPassword, passwordResetRequired: true };
   }
 
-  async delete(id: string) {
-    // 软删: 改 deletedAt, 物理删除会触发 17 个外键 cascade 断数据
+  async disable(id: string, actorUserId: string) {
+    if (id === actorUserId) {
+      throw new ForbiddenException('不能停用当前登录账号');
+    }
+    // 软停用: 改 deletedAt, 物理删除会触发 17 个外键 cascade 断数据
     const user = await this.prisma.user.findFirst({ where: { id, deletedAt: null } });
-    if (!user) throw new NotFoundException('User not found or already deleted');
+    if (!user) throw new NotFoundException('User not found or already disabled');
+    if (user.role === UserRole.admin) {
+      const activeAdmins = await this.prisma.user.count({
+        where: { role: UserRole.admin, deletedAt: null },
+      });
+      if (activeAdmins <= 1) {
+        throw new BadRequestException('不能停用最后一个管理员账号');
+      }
+    }
 
     const deleted = await this.prisma.user.update({
       where: { id },
@@ -290,8 +307,8 @@ export class UsersService {
     await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
 
     await this.auditLog.log({
-      userId: id,
-      action: 'USER_SOFT_DELETE',
+      userId: actorUserId,
+      action: 'USER_DISABLE',
       entity: 'user',
       entityId: id,
     });
@@ -299,7 +316,34 @@ export class UsersService {
     return deleted;
   }
 
-  async grantCourseAccess(userId: string, dto: GrantCourseAccessDto) {
+  async restore(id: string, actorUserId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: { not: null } },
+      select: { id: true, email: true },
+    });
+    if (!user) throw new NotFoundException('User not found or already active');
+
+    const restored = await this.prisma.user.update({
+      where: { id },
+      data: { deletedAt: null },
+      select: this.userSelect,
+    });
+    await this.auditLog.log({
+      userId: actorUserId,
+      action: 'USER_RESTORE',
+      entity: 'user',
+      entityId: id,
+    });
+    return restored;
+  }
+
+  async grantCourseAccess(userId: string, dto: GrantCourseAccessDto, actorUserId = userId) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
     const enrollments = await this.prisma.$transaction(
       dto.courseIds.map((courseId) =>
         this.prisma.enrollment.upsert({
@@ -316,7 +360,7 @@ export class UsersService {
     );
 
     await this.auditLog.log({
-      userId,
+      userId: actorUserId,
       action: 'USER_GRANT_COURSE',
       entity: 'user',
       entityId: userId,
@@ -326,7 +370,13 @@ export class UsersService {
     return { granted: enrollments.length };
   }
 
-  async grantDegreeAccess(userId: string, dto: GrantDegreeAccessDto) {
+  async grantDegreeAccess(userId: string, dto: GrantDegreeAccessDto, actorUserId = userId) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
     const enrollments = await this.prisma.$transaction(
       dto.degreeIds.map((degreeId) =>
         this.prisma.enrollment.upsert({
@@ -343,7 +393,7 @@ export class UsersService {
     );
 
     await this.auditLog.log({
-      userId,
+      userId: actorUserId,
       action: 'USER_GRANT_DEGREE',
       entity: 'user',
       entityId: userId,

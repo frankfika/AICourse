@@ -76,6 +76,15 @@ export function validateProductionEnv(env) {
     if (env[key] && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(env[key])) errors.push(`${key} must be a valid email address`);
   }
   if (env.ADMIN_EMAIL && env.ADMIN_EMAIL === env.SEED_STUDENT_EMAIL) errors.push('ADMIN_EMAIL and SEED_STUDENT_EMAIL must be different');
+  if (Boolean(env.RESEND_API_KEY) !== Boolean(env.MAIL_FROM)) {
+    errors.push('RESEND_API_KEY and MAIL_FROM must be configured together');
+  }
+  if (env.RESEND_API_KEY && !env.RESEND_API_KEY.startsWith('re_')) {
+    errors.push('RESEND_API_KEY must start with re_');
+  }
+  if (env.MAIL_FROM && !/@[^\s>]+/.test(env.MAIL_FROM)) {
+    errors.push('MAIL_FROM must contain a valid sender email address');
+  }
   if (env.WEB_BIND_ADDRESS && env.WEB_BIND_ADDRESS !== '127.0.0.1') {
     errors.push('WEB_BIND_ADDRESS must remain 127.0.0.1 behind the host reverse proxy');
   }

@@ -18,6 +18,7 @@ const HomePage = lazy(() => import('./features/home/HomePage').then(m => ({ defa
 const LoginPage = lazy(() => import('./features/auth/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./features/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import('./features/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const OAuthCallbackPage = lazy(() => import('./features/auth/OAuthCallbackPage').then(m => ({ default: m.OAuthCallbackPage })));
 const CourseListPage = lazy(() => import('./features/courses/CourseListPage').then(m => ({ default: m.CourseListPage })));
 const CourseDetailPage = lazy(() => import('./features/courses/CourseDetailPage').then(m => ({ default: m.CourseDetailPage })));
@@ -126,6 +127,7 @@ export const router = createBrowserRouter([
   { path: '/auth/login', element: <PublicSuspense><LoginPage /></PublicSuspense> },
   { path: '/auth/register', element: <PublicSuspense><RegisterPage /></PublicSuspense> },
   { path: '/auth/forgot', element: <PublicSuspense><ForgotPasswordPage /></PublicSuspense> },
+  { path: '/auth/reset', element: <PublicSuspense><ResetPasswordPage /></PublicSuspense> },
   { path: '/auth/oauth/callback', element: <PublicSuspense><OAuthCallbackPage /></PublicSuspense> },
   // ===== P1-9 法律页 (公开, footer 链接需要 — 之前缺失直接 404) =====
   { path: '/terms', element: <PublicSuspense><TermsPage /></PublicSuspense> },

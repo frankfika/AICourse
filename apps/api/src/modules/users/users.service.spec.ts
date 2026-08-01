@@ -7,8 +7,7 @@
  *   - findAll: 分页 + role 过滤 + search (email/name contains)
  *   - update: 只允许 name/avatarUrl 字段 (role/points/level/passwordHash 拒绝)
  *   - update: 软删用户不能改
- *   - delete: 软删 (deletedAt), 不调 prisma.user.delete
- *   - delete: 已删用户再次删 → NotFoundException
+ *   - disable/restore: 可恢复软停用、会话吊销和管理员保护
  *   - grantCourseAccess / grantDegreeAccess: 事务内 upsert
  *
  * 风格: jest mock prisma + audit log (参考 instructors.service.spec.ts)
@@ -21,7 +20,9 @@ jest.mock('bcryptjs', () => ({
 
 import { Test, TestingModule } from '@nestjs/testing';
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -242,6 +243,7 @@ describe('UsersService', () => {
       expect(mockPrisma.user.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
+            deletedAt: null,
             role: 'student',
             OR: expect.arrayContaining([
               { email: { contains: 'a' } },
@@ -426,19 +428,19 @@ describe('UsersService', () => {
   });
 
   // =============================================================
-  // delete (软删)
+  // disable / restore (可恢复软停用)
   // =============================================================
 
-  describe('delete(id)', () => {
-    it('软删: 设置 deletedAt, 不调 prisma.user.delete', async () => {
-      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1' });
+  describe('disable(id)', () => {
+    it('停用账号、吊销会话并记录操作管理员', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1', role: UserRole.student });
       mockPrisma.user.update.mockResolvedValueOnce({
         id: 'u1',
         email: 'a@x.com',
         deletedAt: new Date(),
       });
 
-      const result = await service.delete('u1');
+      const result = await service.disable('u1', 'admin-1');
 
       expect(result.id).toBe('u1');
       // 验证 prisma.user.delete 没被调
@@ -452,16 +454,50 @@ describe('UsersService', () => {
       });
       // audit log
       expect(mockAuditLog.log).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'USER_SOFT_DELETE' }),
+        expect.objectContaining({ userId: 'admin-1', action: 'USER_DISABLE' }),
       );
+    });
+
+    it('拒绝停用自己', async () => {
+      await expect(service.disable('admin-1', 'admin-1')).rejects.toThrow(ForbiddenException);
+      expect(mockPrisma.user.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('拒绝停用最后一个有效管理员', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'admin-2', role: UserRole.admin });
+      mockPrisma.user.count.mockResolvedValueOnce(1);
+
+      await expect(service.disable('admin-2', 'admin-1')).rejects.toThrow(BadRequestException);
+      expect(mockPrisma.user.update).not.toHaveBeenCalled();
     });
 
     it('user 不存在 / 已软删 → NotFoundException', async () => {
       // findFirst 走 deletedAt: null, 找不到
       mockPrisma.user.findFirst.mockResolvedValueOnce(null);
 
-      await expect(service.delete('missing')).rejects.toThrow(NotFoundException);
+      await expect(service.disable('missing', 'admin-1')).rejects.toThrow(NotFoundException);
       expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('restore(id)', () => {
+    it('恢复已停用用户并保留历史数据', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1', email: 'a@x.com' });
+      mockPrisma.user.update.mockResolvedValueOnce({
+        id: 'u1',
+        email: 'a@x.com',
+        deletedAt: null,
+      });
+
+      await expect(service.restore('u1', 'admin-1')).resolves.toEqual(
+        expect.objectContaining({ id: 'u1', deletedAt: null }),
+      );
+      expect(mockPrisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'u1' }, data: { deletedAt: null } }),
+      );
+      expect(mockAuditLog.log).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'admin-1', action: 'USER_RESTORE' }),
+      );
     });
   });
 
@@ -471,11 +507,16 @@ describe('UsersService', () => {
 
   describe('grantCourseAccess(userId, dto)', () => {
     it('事务内 upsert 每个 courseId', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1' });
       mockPrisma.enrollment.upsert
         .mockResolvedValueOnce({ id: 'e1' })
         .mockResolvedValueOnce({ id: 'e2' });
 
-      const result = await service.grantCourseAccess('u1', { courseIds: ['c1', 'c2'] });
+      const result = await service.grantCourseAccess(
+        'u1',
+        { courseIds: ['c1', 'c2'] },
+        'admin-1',
+      );
 
       expect(result.granted).toBe(2);
       expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1);
@@ -494,9 +535,19 @@ describe('UsersService', () => {
       expect(mockAuditLog.log).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'USER_GRANT_COURSE',
+          userId: 'admin-1',
           details: { courseIds: ['c1', 'c2'] },
         }),
       );
+    });
+
+    it('拒绝给停用或不存在的用户授权', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce(null);
+
+      await expect(
+        service.grantCourseAccess('disabled', { courseIds: ['c1'] }, 'admin-1'),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockPrisma.enrollment.upsert).not.toHaveBeenCalled();
     });
   });
 
@@ -506,12 +557,17 @@ describe('UsersService', () => {
 
   describe('grantDegreeAccess(userId, dto)', () => {
     it('事务内 upsert 每个 degreeId', async () => {
+      mockPrisma.user.findFirst.mockResolvedValueOnce({ id: 'u1' });
       mockPrisma.enrollment.upsert
         .mockResolvedValueOnce({ id: 'e1' })
         .mockResolvedValueOnce({ id: 'e2' })
         .mockResolvedValueOnce({ id: 'e3' });
 
-      const result = await service.grantDegreeAccess('u1', { degreeIds: ['d1', 'd2', 'd3'] });
+      const result = await service.grantDegreeAccess(
+        'u1',
+        { degreeIds: ['d1', 'd2', 'd3'] },
+        'admin-1',
+      );
 
       expect(result.granted).toBe(3);
       expect(mockPrisma.enrollment.upsert).toHaveBeenNthCalledWith(1, {
@@ -524,6 +580,9 @@ describe('UsersService', () => {
         },
         create: { userId: 'u1', degreeId: 'd1', source: 'direct' },
       });
+      expect(mockAuditLog.log).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'admin-1', action: 'USER_GRANT_DEGREE' }),
+      );
     });
   });
 });
