@@ -43,6 +43,7 @@ import type {
   ProviderInfo,
   SignInInput,
 } from './types';
+import { clearOAuthLink, markOAuthLink } from './oauthCallback';
 
 export interface AuthContextValue {
   user: ReturnType<typeof useAuthStore.getState>['user'];
@@ -177,9 +178,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
       }
       const { data } = await api.get<{ authorizationUrl: string }>(
-        `/api/v1/auth/${encodeURIComponent(provider)}/start`,
+        `/api/v1/auth/${encodeURIComponent(provider)}/link/start`,
       );
-      window.location.assign(data.authorizationUrl);
+      markOAuthLink(provider);
+      try {
+        window.location.assign(data.authorizationUrl);
+      } catch (error) {
+        clearOAuthLink();
+        throw error;
+      }
     },
     [providers],
   );

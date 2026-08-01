@@ -41,7 +41,6 @@ import {
   __FALLBACK_ENUMS__ as FALLBACK_ENUMS,
   type EnumItem,
 } from '../../lib/cms';
-import { getAppSettings, getEnumTranslations } from '../../lib/cmsApi';
 import api from '../../lib/api';
 
 // =============================================================
@@ -421,43 +420,6 @@ function PageHeader({ activeTab, onChange }: { activeTab: TabKey; onChange: (k: 
 }
 
 // =============================================================
-// 公共:brutalist 空态 / 错误 / 加载
-// =============================================================
-function PlaceholderPanel({
-  title,
-  description,
-  fields,
-}: {
-  title: string;
-  description: string;
-  fields: string[];
-}) {
-  return (
-    <div className="border-2 border-dashed border-[#171717] dark:border-neutral-50 p-8 bg-white dark:bg-neutral-100">
-      <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] dark:text-neutral-400 mb-2">
-        / Placeholder
-      </div>
-      <h3 className="text-2xl font-black tracking-tighter uppercase mb-2">{title}</h3>
-      <p className="text-sm text-[#666666] dark:text-neutral-400 mb-4 max-w-2xl">{description}</p>
-      <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 mb-2">
-        字段(将接 cms-design.md §2.2 admin endpoint):
-      </div>
-      <ul className="space-y-1 text-sm font-mono text-[#171717] dark:text-neutral-50">
-        {fields.map((f) => (
-          <li key={f} className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-[#171717] dark:bg-neutral-50" />
-            {f}
-          </li>
-        ))}
-      </ul>
-      <p className="mt-6 text-xs text-[#999999]">
-        完整 CRUD 留给后续 PR,本期只接 hook + 骨架。
-      </p>
-    </div>
-  );
-}
-
-// =============================================================
 // Tab 1: 全局设置(site_settings + app_settings)
 //
 // P2-3a 接真后端:site / app settings 用 admin endpoint 拉 list,
@@ -524,7 +486,7 @@ function GlobalSettingsTab() {
   // 单条 site_setting 更新 mutation
   const updateSiteKey = useApiMutation({
     mutationFn: ({ key, value }: { key: string; value: any }) =>
-      api.patch(`/api/v1/admin/cms/site-settings/${encodeURIComponent(key)}`, { value }),
+      api.patch(`/api/v1/admin/cms/site-settings/${encodeURIComponent(key)}`, { valueJson: value }),
     invalidateKeys: [['cms-admin', 'site-settings-list'], ['cms', 'site-settings']],
     successMessage: '已更新 site_setting',
   });
@@ -534,19 +496,6 @@ function GlobalSettingsTab() {
       api.patch(`/api/v1/admin/cms/app-settings/${encodeURIComponent(key)}`, { valueJson: value }),
     invalidateKeys: [['cms-admin', 'app-settings-list'], ['cms', 'app-settings']],
     successMessage: '已更新 app_setting',
-  });
-  // 新建 site / app key
-  const createSiteKey = useApiMutation({
-    mutationFn: ({ key, value }: { key: string; value: any }) =>
-      api.post('/api/v1/admin/cms/site-settings', { key, value }),
-    successMessage: '已新增 site_setting',
-    invalidateKeys: [['cms-admin', 'site-settings-list'], ['cms', 'site-settings']],
-  });
-  const createAppKey = useApiMutation({
-    mutationFn: ({ key, value }: { key: string; value: any }) =>
-      api.post('/api/v1/admin/cms/app-settings', { key, valueJson: value }),
-    successMessage: '已新增 app_setting',
-    invalidateKeys: [['cms-admin', 'app-settings-list'], ['cms', 'app-settings']],
   });
   // 删除 site / app key
   const deleteSiteKey = useApiMutation({
@@ -573,9 +522,9 @@ function GlobalSettingsTab() {
       const tasks: Promise<unknown>[] = [];
       for (const [k, v] of Object.entries(siteDraft)) {
         if (knownSite.has(k)) {
-          tasks.push(api.patch(`/api/v1/admin/cms/site-settings/${encodeURIComponent(k)}`, { value: v }));
+          tasks.push(api.patch(`/api/v1/admin/cms/site-settings/${encodeURIComponent(k)}`, { valueJson: v }));
         } else {
-          tasks.push(api.post('/api/v1/admin/cms/site-settings', { key: k, value: v }));
+          tasks.push(api.post('/api/v1/admin/cms/site-settings', { key: k, valueJson: v }));
         }
       }
       for (const [k, v] of Object.entries(appDraft)) {
@@ -846,15 +795,78 @@ function stringifyValue(v: any): string {
 // Tab 2: 页面文案(page_settings)
 // =============================================================
 function PageSettingsTab() {
+  const { showToast } = useToast();
   const PAGES = ['home', 'courses', 'degrees', 'hackathons', 'enterprise', 'auth', 'dashboard'];
   const [page, setPage] = useState<string>('home');
-  const { data, isLoading } = useQuery({
-    queryKey: ['cms-admin', 'page-settings', page],
-    queryFn: () => getAppSettings('global').then(() => ({})).catch(() => ({})),
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [newKey, setNewKey] = useState('');
+  const [newValue, setNewValue] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['cms-admin', 'page-settings-list'],
+    queryFn: async () => {
+      const { data } = await api.get<any[]>('/api/v1/admin/cms/page-settings');
+      return Array.isArray(data) ? data : (data as any)?.data ?? [];
+    },
     retry: 0,
   });
-  // 实际后端会返 page_settings 的 keys,本期先用空 stub
-  const keys = data ? Object.keys(data).filter((k) => k.startsWith(`${page}.`)) : [];
+
+  const rows = (data ?? []).filter((row: any) => row.page === page);
+  const availablePages = Array.from(new Set([...PAGES, ...(data ?? []).map((row: any) => row.page)]));
+
+  useEffect(() => {
+    const next: Record<string, string> = {};
+    for (const row of rows) next[row.key] = stringifyValue(row.value);
+    setDrafts(next);
+  }, [data, page]);
+
+  const updateSetting = useApiMutation({
+    mutationFn: ({ key, value }: { key: string; value: unknown }) =>
+      api.patch(
+        `/api/v1/admin/cms/page-settings/${encodeURIComponent(`${page}:${key}`)}`,
+        { valueJson: value },
+      ),
+    successMessage: '页面文案已更新',
+    invalidateKeys: [['cms-admin', 'page-settings-list'], ['cms', 'page-settings']],
+  });
+  const createSetting = useApiMutation({
+    mutationFn: ({ key, value }: { key: string; value: unknown }) =>
+      api.post('/api/v1/admin/cms/page-settings', { page, key, valueJson: value }),
+    successMessage: '页面文案已新增',
+    invalidateKeys: [['cms-admin', 'page-settings-list'], ['cms', 'page-settings']],
+    onSuccess: () => {
+      setNewKey('');
+      setNewValue('');
+    },
+  });
+  const deleteSetting = useApiMutation({
+    mutationFn: (key: string) =>
+      api.delete(`/api/v1/admin/cms/page-settings/${encodeURIComponent(`${page}:${key}`)}`),
+    successMessage: '页面文案已删除',
+    invalidateKeys: [['cms-admin', 'page-settings-list'], ['cms', 'page-settings']],
+  });
+
+  const handleCreate = () => {
+    const key = newKey.trim();
+    if (!key) return;
+    if (key.includes(':')) {
+      showToast('key 不能包含冒号', 'error');
+      return;
+    }
+    if (rows.some((row: any) => row.key === key)) {
+      showToast(`key "${key}" 已存在`, 'warning');
+      return;
+    }
+    createSetting.mutate({ key, value: tryParseJson(newValue) });
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const key = pendingDelete;
+    setPendingDelete(null);
+    await deleteSetting.mutateAsync(key);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between flex-wrap gap-3">
@@ -867,19 +879,89 @@ function PageSettingsTab() {
           onChange={(e) => setPage(e.target.value)}
           className="px-3 py-2 border-2 border-[#171717] dark:border-neutral-50 text-xs font-black uppercase tracking-widest bg-white dark:bg-neutral-100"
         >
-          {PAGES.map((p) => (
+          {availablePages.map((p) => (
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
       </div>
-      <PlaceholderPanel
-        title={`Page · ${page}`}
-        description="每个 page 路由一组 key-value,key 命名约定:`{page}.{section}.{field}`(如 `home.hero.headline`)。"
-        fields={['GET /api/v1/page-settings?page=' + page, 'POST /api/v1/admin/cms/page-settings', 'PATCH /api/v1/admin/cms/page-settings/:id', 'DELETE /api/v1/admin/cms/page-settings/:id']}
-      />
-      {isLoading && (
+      <section className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 p-5 space-y-4">
+        <div className="grid gap-2 md:grid-cols-[220px_1fr_auto]">
+          <input
+            value={newKey}
+            onChange={(event) => setNewKey(event.target.value)}
+            placeholder="section.field"
+            maxLength={100}
+            className="px-3 py-2 border-2 border-[#171717] text-xs font-mono"
+          />
+          <textarea
+            value={newValue}
+            onChange={(event) => setNewValue(event.target.value)}
+            placeholder="文案或合法 JSON 值"
+            rows={2}
+            className="px-3 py-2 border-2 border-[#171717] text-xs font-mono resize-none"
+          />
+          <button
+            onClick={handleCreate}
+            disabled={!newKey.trim() || createSetting.isPending}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#171717] text-white text-xs font-black uppercase tracking-widest disabled:opacity-50"
+          >
+            <Plus className="w-3.5 h-3.5" /> 新增
+          </button>
+        </div>
+      </section>
+
+      {isLoading ? (
         <Skeleton variant="rectangle" className="h-32 w-full" />
+      ) : isError ? (
+        <div className="border-2 border-danger-500 p-6 text-sm text-danger-500">页面文案加载失败，请刷新重试。</div>
+      ) : rows.length === 0 ? (
+        <div className="border-2 border-dashed border-[#171717] p-8 text-sm text-[#666666] text-center">
+          当前页面暂无自定义文案，可使用上方表单新增。
+        </div>
+      ) : (
+        <section className="border-2 border-[#171717] dark:border-neutral-50 bg-white dark:bg-neutral-100 p-5 space-y-3">
+          {rows.map((row: any) => (
+            <div key={row.key} className="grid gap-2 md:grid-cols-[220px_1fr_auto_auto] items-start">
+              <div className="pt-2 min-w-0">
+                <code className="text-xs font-bold break-all">{row.key}</code>
+                {row.description && <p className="text-[10px] text-[#666666] mt-1">{row.description}</p>}
+              </div>
+              <textarea
+                value={drafts[row.key] ?? ''}
+                onChange={(event) => setDrafts((current) => ({ ...current, [row.key]: event.target.value }))}
+                rows={2}
+                className="px-3 py-2 border-2 border-[#171717] text-xs font-mono resize-y"
+              />
+              <button
+                onClick={() => updateSetting.mutate({ key: row.key, value: tryParseJson(drafts[row.key] ?? '') })}
+                disabled={updateSetting.isPending}
+                className="p-2 hover:bg-[#171717] hover:text-white disabled:opacity-50"
+                title="保存此行"
+              >
+                <Save className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setPendingDelete(row.key)}
+                disabled={deleteSetting.isPending}
+                className="p-2 hover:bg-danger-100 hover:text-danger-500 disabled:opacity-50"
+                title="删除"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </section>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+        title="确认删除页面文案？"
+        description={pendingDelete ? `${page}.${pendingDelete} 删除后将恢复代码中的默认文案。` : ''}
+        variant="danger"
+        confirmText="确认删除"
+      />
     </div>
   );
 }

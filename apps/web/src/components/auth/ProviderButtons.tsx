@@ -2,7 +2,7 @@
  * ProviderButtons — 6 宫格第三方登录按钮网格
  *
  * 登录/注册页传入后端 GET /auth/providers 的结果：已配置的 OAuth
- * provider 可点击，未配置项保持灰度。账号绑定页可继续强制 grayscale。
+ * provider 可点击，未配置项保持灰度。调用方也可强制全部禁用。
  *
  * 设计:
  *   - 灰度灰底 + 锁定图标,hover 不变
@@ -13,7 +13,7 @@ import { cn } from '../../lib/cn';
 import type { ProviderInfo } from '../../lib/auth/types';
 
 export interface ProviderButtonsProps {
-  /** 强制全部禁用（用于尚未实现专用绑定回调的账号绑定页） */
+  /** 强制全部禁用 */
   grayscale?: boolean;
   /** 后端能力列表；只渲染第三方 provider，不渲染 email_password */
   providers?: ProviderInfo[];

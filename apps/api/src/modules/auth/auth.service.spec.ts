@@ -625,5 +625,56 @@ describe('AuthService', () => {
         }),
       ).rejects.toThrow(/Invalid or expired OAuth state/);
     });
+
+    it('creates a user-bound OAuth link authorization URL', () => {
+      mockJwtService.sign.mockReturnValueOnce('signed-link-state');
+
+      expect(service.createLinkAuthorization('user-1', 'oauth.google')).toEqual({
+        providerId: 'oauth.google',
+        authorizationUrl: 'https://accounts.example/authorize?state=signed-link-state',
+        expiresIn: 600,
+      });
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purpose: 'oauth-link-state',
+          providerId: 'oauth.google',
+          userId: 'user-1',
+          nonce: expect.any(String),
+        }),
+        { audience: 'oauth', expiresIn: '10m' },
+      );
+    });
+
+    it('links OAuth only when signed state belongs to the authenticated user', async () => {
+      mockJwtService.verify.mockReturnValueOnce({
+        purpose: 'oauth-link-state',
+        providerId: 'oauth.google',
+        userId: 'user-1',
+      });
+      const google = providers.find((provider) => provider.id === 'oauth.google')!;
+      const link = jest.spyOn(google, 'link');
+
+      await expect(service.linkIdentity('user-1', 'oauth.google', {
+        code: 'oauth-code',
+        state: 'signed-link-state',
+      })).resolves.toEqual({ linked: true, providerId: 'oauth.google' });
+      expect(link).toHaveBeenCalledWith('user-1', {
+        code: 'oauth-code',
+        state: 'signed-link-state',
+      });
+    });
+
+    it('rejects OAuth linking state issued for another user', async () => {
+      mockJwtService.verify.mockReturnValueOnce({
+        purpose: 'oauth-link-state',
+        providerId: 'oauth.google',
+        userId: 'other-user',
+      });
+
+      await expect(service.linkIdentity('user-1', 'oauth.google', {
+        code: 'oauth-code',
+        state: 'wrong-user-state',
+      })).rejects.toThrow(/Invalid or expired OAuth link state/);
+    });
   });
 });

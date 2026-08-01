@@ -48,6 +48,25 @@ export class AuthController {
     return this.authService.createAuthorization(providerId);
   }
 
+  @Get(':providerId/link/start')
+  @UseGuards(JwtAuthGuard)
+  startLink(
+    @Param('providerId') providerId: string,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    return this.authService.createLinkAuthorization(req.user.userId, providerId);
+  }
+
+  @Post(':providerId/link/callback')
+  @UseGuards(JwtAuthGuard)
+  async linkCallback(
+    @Param('providerId') providerId: string,
+    @Body() dto: OAuthCallbackDto,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    return this.authService.linkIdentity(req.user.userId, providerId, { ...dto });
+  }
+
   // ============ 旧端点：email/password 兼容 ============
 
   // P1-7: 显式 'short' + 'medium' 覆盖全局 5/sec 60/min, 对注册收紧到 5/min 挡批量账号

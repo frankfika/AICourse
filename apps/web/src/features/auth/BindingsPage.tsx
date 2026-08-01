@@ -5,12 +5,13 @@
  *
  * 来自 mock-auth.html 底部 "账号绑定 / 解绑管理" 段:
  *   - 顶部:已绑定的 Identity 列表(provider 图标 + 邮箱 + 绑于 + 解除按钮)
- *   - 中部:未绑定的 provider 6 宫格
- *     **Phase 1 灰度:全部 disabled,tooltip "即将推出, 灰度开放中"**
+ *   - 中部:已配置且未绑定的 OAuth provider，可直接发起绑定
  *   - 底部:"至少保留一种登录方式" 提示
  *
  * API 端点(spec §9.3):
  *   - GET    /api/v1/auth/identities
+ *   - GET    /api/v1/auth/:providerId/link/start
+ *   - POST   /api/v1/auth/:providerId/link/callback
  *   - DELETE /api/v1/auth/identities/:id
  *
  * identities 查询和解绑均走真实后端；该页面必须经过 AuthGuard。
@@ -97,7 +98,7 @@ function formatDate(iso: string | undefined): string {
 }
 
 export function BindingsPage() {
-  const { identities, isAuthenticating, unbindProvider, signOut } = useAuth();
+  const { identities, providers, isAuthenticating, bindProvider, unbindProvider, signOut } = useAuth();
   // user 直接从 store 读, 不走 context, 跟其他页面(Layout, PurchaseModal)一致
   const user = useAuthStore((s) => s.user);
   const { showToast } = useToast();
@@ -172,8 +173,12 @@ export function BindingsPage() {
     setConfirmUnbind(id);
   };
 
-  const handleBindClick = (_providerId: string, label: string) => {
-    showToast(`${label} 绑定即将推出, 灰度开放中`, 'info', 2500);
+  const handleBindClick = async (providerId: string, label: string) => {
+    try {
+      await bindProvider(providerId);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : `${label} 绑定启动失败`, 'error');
+    }
   };
 
   const handleChangePassword = async (event: React.FormEvent) => {
@@ -217,6 +222,10 @@ export function BindingsPage() {
   ).length;
   const totalCount = displayedIdentities.length;
   const displayUser = user;
+  const linkedProviders = new Set(displayedIdentities.map((identity) => identity.provider));
+  const bindableProviders = providers.filter(
+    (provider) => provider.type === 'oauth' && provider.enabled && !linkedProviders.has(provider.id),
+  );
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 py-8">
@@ -372,15 +381,22 @@ export function BindingsPage() {
           )}
         </Card>
 
-        {/* 添加新 provider 6 宫格(灰度) */}
+        {/* 添加已配置且尚未绑定的 OAuth provider */}
         <section className="mt-8">
           <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-900 mb-3">
             添加新的登录方式
           </h2>
-          <ProviderButtons
-            grayscale
-            onProviderClick={handleBindClick}
-          />
+          {bindableProviders.length > 0 ? (
+            <ProviderButtons
+              grayscale={false}
+              providers={bindableProviders}
+              onProviderClick={handleBindClick}
+            />
+          ) : (
+            <p className="rounded-lg border border-neutral-200 bg-white p-4 text-sm text-neutral-600">
+              当前没有尚未绑定的 OAuth 登录方式。管理员配置 Google 或 GitHub 后会自动显示在这里。
+            </p>
+          )}
           <p className="mt-3 text-[10px] text-neutral-400">
             启用 / 停用某个 provider,改{' '}
             <code className="px-1 font-mono">AUTH_PROVIDERS</code> 环境变量即可,无需改代码 ·

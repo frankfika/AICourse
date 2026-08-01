@@ -194,13 +194,28 @@ export class OAuthProvider extends AuthProvider {
     if (existing && existing.userId !== userId) {
       throw new UnauthorizedException('This OAuth account is already linked to another user');
     }
-    if (!existing) {
+    const accountData = {
+      email: identity.profile.email,
+      displayName: identity.profile.name,
+      profile: identity.profile.raw as any,
+      deletedAt: null,
+      lastUsedAt: new Date(),
+    };
+    if (existing) {
+      await this.prisma.userProviderAccount.update({
+        where: { id: existing.id },
+        data: {
+          ...accountData,
+          linkedAt: existing.deletedAt ? new Date() : existing.linkedAt,
+        },
+      });
+    } else {
       await this.prisma.userProviderAccount.create({
         data: {
           userId,
           provider: this.id,
           providerUserId: identity.providerUserId,
-          profile: identity.profile.raw as any,
+          ...accountData,
         },
       });
     }

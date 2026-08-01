@@ -3,7 +3,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { api } from '../../lib/api';
-import { providerFromOAuthState } from '../../lib/auth/oauthCallback';
+import {
+  consumeOAuthLink,
+  isOAuthLinkState,
+  providerFromOAuthState,
+} from '../../lib/auth/oauthCallback';
 import { useAuthStore, type AuthUser } from '../../stores/authStore';
 
 interface OAuthCallbackResponse {
@@ -16,6 +20,7 @@ export function OAuthCallbackPage() {
   const navigate = useNavigate();
   const started = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const currentUser = useAuthStore((state) => state.user);
 
   useEffect(() => {
     if (started.current) return;
@@ -25,6 +30,10 @@ export function OAuthCallbackPage() {
     const code = params.get('code');
     const state = params.get('state');
     const provider = state ? providerFromOAuthState(state) : null;
+    const markedAsLink = provider ? consumeOAuthLink(provider) : false;
+    const isLinkCallback = Boolean(
+      provider && state && (markedAsLink || isOAuthLinkState(state, provider)),
+    );
 
     if (providerError) {
       setError(`第三方授权未完成：${providerError}`);
@@ -35,22 +44,28 @@ export function OAuthCallbackPage() {
       return;
     }
 
+    const endpoint = isLinkCallback
+      ? `/api/v1/auth/${encodeURIComponent(provider)}/link/callback`
+      : `/api/v1/auth/${encodeURIComponent(provider)}/callback`;
+
     void api
-      .post<OAuthCallbackResponse>(
-        `/api/v1/auth/${encodeURIComponent(provider)}/callback`,
-        { code, state },
-      )
+      .post<OAuthCallbackResponse | { linked: true; providerId: string }>(endpoint, { code, state })
       .then(({ data }) => {
-        useAuthStore.getState().setAuth(data.user, data.accessToken);
-        const target = data.user.passwordResetRequired
+        if (isLinkCallback) {
+          navigate('/dashboard/settings/bindings?linked=success', { replace: true });
+          return;
+        }
+        const loginData = data as OAuthCallbackResponse;
+        useAuthStore.getState().setAuth(loginData.user, loginData.accessToken);
+        const target = loginData.user.passwordResetRequired
           ? '/dashboard/settings/bindings?change-password=required'
-          : data.user.role === 'admin' ? '/admin' : '/';
+          : loginData.user.role === 'admin' ? '/admin' : '/';
         navigate(target, { replace: true });
       })
       .catch((err: unknown) => {
         const message = (err as { response?: { data?: { message?: string } } })
           ?.response?.data?.message;
-        setError(message || '第三方登录失败，请返回登录页重试');
+        setError(message || (isLinkCallback ? '第三方账号绑定失败，请返回设置页重试' : '第三方登录失败，请返回登录页重试'));
       });
   }, [navigate, params]);
 
@@ -63,16 +78,16 @@ export function OAuthCallbackPage() {
             <h1 className="mt-4 text-xl font-bold">第三方登录失败</h1>
             <p className="mt-2 text-sm text-neutral-600">{error}</p>
             <Link
-              to="/auth/login"
+              to={currentUser ? '/dashboard/settings/bindings' : '/auth/login'}
               className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-[#171717] px-5 py-2.5 text-sm font-semibold text-white"
             >
-              返回登录
+              返回
             </Link>
           </>
         ) : (
           <>
             <Loader2 className="mx-auto h-10 w-10 animate-spin" />
-            <h1 className="mt-4 text-xl font-bold">正在完成第三方登录</h1>
+            <h1 className="mt-4 text-xl font-bold">正在完成第三方授权</h1>
             <p className="mt-2 text-sm text-neutral-600">请稍候，不要关闭此页面</p>
           </>
         )}

@@ -267,6 +267,37 @@ export class AuthService {
     };
   }
 
+  createLinkAuthorization(userId: string, providerId: string) {
+    const provider = this.providers.get(providerId);
+    if (!provider?.enabled || provider.type !== 'oauth' || !provider.createAuthorizationUrl) {
+      throw new BadRequestException('OAuth provider is not available');
+    }
+    const state = this.jwtService.sign(
+      {
+        purpose: 'oauth-link-state',
+        providerId,
+        userId,
+        nonce: randomBytes(16).toString('hex'),
+      },
+      { audience: 'oauth', expiresIn: '10m' },
+    );
+    return {
+      providerId,
+      authorizationUrl: provider.createAuthorizationUrl(state),
+      expiresIn: 600,
+    };
+  }
+
+  async linkIdentity(userId: string, providerId: string, credentials: AuthCredentials) {
+    const provider = this.providers.get(providerId);
+    if (!provider?.enabled || provider.type !== 'oauth') {
+      throw new BadRequestException('OAuth provider is not available');
+    }
+    this.verifyOAuthLinkState(userId, providerId, credentials.state);
+    await provider.link(userId, credentials);
+    return { linked: true, providerId };
+  }
+
   private verifyOAuthState(providerId: string, state: unknown) {
     if (typeof state !== 'string' || !state) {
       throw new UnauthorizedException('Missing OAuth state');
@@ -284,6 +315,28 @@ export class AuthService {
       }
     } catch {
       throw new UnauthorizedException('Invalid or expired OAuth state');
+    }
+  }
+
+  private verifyOAuthLinkState(userId: string, providerId: string, state: unknown) {
+    if (typeof state !== 'string' || !state) {
+      throw new UnauthorizedException('Missing OAuth state');
+    }
+    try {
+      const payload = this.jwtService.verify<{
+        purpose?: string;
+        providerId?: string;
+        userId?: string;
+      }>(state, { audience: 'oauth' });
+      if (
+        payload.purpose !== 'oauth-link-state' ||
+        payload.providerId !== providerId ||
+        payload.userId !== userId
+      ) {
+        throw new Error('state mismatch');
+      }
+    } catch {
+      throw new UnauthorizedException('Invalid or expired OAuth link state');
     }
   }
 
