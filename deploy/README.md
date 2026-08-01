@@ -14,7 +14,7 @@ docker compose --env-file .env.production -f docker-compose.production.yml up -d
 docker compose --env-file .env.production -f docker-compose.production.yml ps
 ```
 
-必须使用独立的 HTTPS 域名，替换模板中的所有占位值，并确保 `DATABASE_URL` 中的密码与 `MYSQL_PASSWORD` 完全一致。`pnpm deploy:validate` 会在构建前检查域名、密钥强度、数据库密码、对象存储地址和 OAuth 回调的一致性。建议用 `openssl rand -hex 32` 分别生成数据库、Redis、JWT、MinIO 和加密密钥；不要复用密钥。
+必须使用独立的 HTTPS 域名，替换模板中的所有占位值，并确保 `DATABASE_URL` 中的协议、用户、密码和库名与 MySQL 配置完全一致。`pnpm deploy:validate` 会在构建前检查域名、密钥格式与复用、数据库身份、对象存储地址、初始密码和 OAuth 回调的一致性。建议用 `openssl rand -hex 32` 分别生成数据库、Redis、JWT、MinIO 和加密密钥；不要复用密钥。初始账号密码还必须包含大小写字母、数字和符号。
 
 默认只启用邮箱密码登录。启用 Google 或 GitHub 时，把对应 provider 加入 `AUTH_PROVIDERS`，并填写 client ID、secret 和与 `PUBLIC_URL` 同源的 `/auth/oauth/callback`；缺少任一配置时 API 会拒绝启动，避免展示不可用的登录按钮。
 
@@ -51,7 +51,13 @@ location / {
 
 ## 发布与回滚
 
-发布前先备份 MySQL 和 MinIO 数据卷。更新代码后执行：
+发布前先备份 MySQL 和 MinIO 持久数据。仓库提供的脚本只读取运行中的服务，并在 `backups/<UTC 时间>/` 生成 SQL、对象文件和提交清单：
+
+```bash
+./deploy/backup-production.sh
+```
+
+备份目录出现 `.incomplete` 表示导出未完成，不能用于恢复。备份完成后再更新代码并执行：
 
 ```bash
 pnpm deploy:validate
@@ -61,7 +67,7 @@ curl --fail http://127.0.0.1:8088/healthz
 curl --fail http://127.0.0.1:8088/api/v1/health/ready
 ```
 
-镜像和迁移都验证通过后再切公网流量。应用迁移只允许前向执行；如果发布失败，回滚应用镜像前必须确认新迁移与旧代码兼容，不要删除生产数据卷。
+镜像和迁移都验证通过后再切公网流量。应用迁移只允许前向执行；如果发布失败，回滚应用镜像前必须确认新迁移与旧代码兼容，不要删除生产数据卷。恢复数据库或覆盖对象存储属于破坏性操作，必须人工核对 `manifest.txt`、目标环境和恢复窗口后执行，本脚本不会自动恢复。
 
 ## 上线验收
 

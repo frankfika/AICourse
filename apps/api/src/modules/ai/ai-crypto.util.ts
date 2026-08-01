@@ -28,11 +28,17 @@ export class AiKeyCrypto {
     if (!raw) {
       this.keyBuf = null;
       this.keyError = 'AI_KEY_ENCRYPTION_KEY env 未配置';
+      if (config.get<string>('NODE_ENV') === 'production') {
+        throw new Error(this.keyError);
+      }
       return;
     }
     if (!/^[0-9a-fA-F]{64}$/.test(raw)) {
       this.keyBuf = null;
       this.keyError = 'AI_KEY_ENCRYPTION_KEY 必须是 64 字符 hex 字符串 (32 字节)';
+      if (config.get<string>('NODE_ENV') === 'production') {
+        throw new Error(this.keyError);
+      }
       return;
     }
     this.keyBuf = Buffer.from(raw, 'hex');

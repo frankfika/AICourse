@@ -11,7 +11,7 @@ AI Academy 是一个可二次品牌化的在线教育平台，面向 AI/LLM 课�
 - 存储：开发环境 MinIO，生产可接 S3/OSS
 - OAuth：Google/GitHub 支持配置驱动的授权、state 校验和回调；SAML 需要完整 IdP 配置后启用
 - 已实现：课程真实评分/热度排序、学习笔记 CRUD、实践项目与进度、评价 helpful 去重、课程完成证书、订单/证书通知、讲师详情页、真实 AI 助手
-- 验证结果：API 36 suites / 338 tests；Web 22 files / 132 tests；浏览器 E2E 29 passed / 1 skipped；生产构建和 TypeScript 检查通过
+- 验证结果：部署配置 5 tests；API 37 suites / 342 tests；Web 22 files / 132 tests；浏览器 E2E 29 passed / 1 skipped；生产构建和 TypeScript 检查通过
 
 ## 目录
 

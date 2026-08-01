@@ -14,7 +14,7 @@
     "start": "pnpm --filter @ai-academy/api start",
     "lint": "pnpm -r lint",
     "check": "pnpm lint && pnpm test && pnpm build",
-    "test": "pnpm -r test",
+    "test": "node --test deploy/*.test.mjs && pnpm -r test",
     "e2e": "pnpm --filter @ai-academy/web e2e",
     "deploy:validate": "node deploy/validate-production-env.mjs",
     "db:generate": "pnpm --filter @ai-academy/api db:generate",

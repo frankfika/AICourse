@@ -23,7 +23,7 @@ export function validateProductionEnv(env) {
   const errors = [];
   const required = [
     'PUBLIC_URL', 'MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'DATABASE_URL',
-    'REDIS_PASSWORD', 'MINIO_ROOT_PASSWORD', 'STORAGE_PUBLIC_HOST',
+    'REDIS_PASSWORD', 'MINIO_ROOT_USER', 'MINIO_ROOT_PASSWORD', 'STORAGE_PUBLIC_HOST',
     'STORAGE_PUBLIC_PORT', 'STORAGE_PUBLIC_SSL', 'JWT_SECRET',
     'AI_KEY_ENCRYPTION_KEY', 'ADMIN_EMAIL', 'ADMIN_INITIAL_PASSWORD',
     'SEED_STUDENT_EMAIL', 'SEED_STUDENT_PASSWORD', 'AUTH_PROVIDERS',
@@ -57,8 +57,17 @@ export function validateProductionEnv(env) {
 
   try {
     const databaseUrl = new URL(env.DATABASE_URL);
+    if (databaseUrl.protocol !== 'mysql:') errors.push('DATABASE_URL must use the mysql protocol');
+    const expectedUser = env.MYSQL_USER || 'ai_academy';
+    const expectedDatabase = env.MYSQL_DATABASE || 'ai_academy';
+    if (decodeURIComponent(databaseUrl.username) !== expectedUser) {
+      errors.push('DATABASE_URL username must match MYSQL_USER');
+    }
     if (decodeURIComponent(databaseUrl.password) !== env.MYSQL_PASSWORD) errors.push('DATABASE_URL password must match MYSQL_PASSWORD');
     if (databaseUrl.hostname !== 'mysql') errors.push('DATABASE_URL hostname must be mysql for the production Compose stack');
+    if (decodeURIComponent(databaseUrl.pathname.slice(1)) !== expectedDatabase) {
+      errors.push('DATABASE_URL database name must match MYSQL_DATABASE');
+    }
   } catch {
     errors.push('DATABASE_URL must be a valid MySQL URL');
   }
@@ -66,8 +75,15 @@ export function validateProductionEnv(env) {
   for (const key of ['MYSQL_ROOT_PASSWORD', 'REDIS_PASSWORD', 'MINIO_ROOT_PASSWORD', 'JWT_SECRET', 'AI_KEY_ENCRYPTION_KEY']) {
     if (env[key] && env[key].length < 32) errors.push(`${key} must contain at least 32 characters`);
   }
+  if (env.AI_KEY_ENCRYPTION_KEY && !/^[a-f0-9]{64}$/i.test(env.AI_KEY_ENCRYPTION_KEY)) {
+    errors.push('AI_KEY_ENCRYPTION_KEY must be exactly 64 hexadecimal characters');
+  }
+  const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
   for (const key of ['ADMIN_INITIAL_PASSWORD', 'SEED_STUDENT_PASSWORD']) {
     if (env[key] && env[key].length < 16) errors.push(`${key} must contain at least 16 characters`);
+    if (env[key] && !strongPasswordPattern.test(env[key])) {
+      errors.push(`${key} must contain uppercase, lowercase, number, and symbol characters`);
+    }
   }
   if (env.ADMIN_INITIAL_PASSWORD && env.ADMIN_INITIAL_PASSWORD === env.SEED_STUDENT_PASSWORD) {
     errors.push('ADMIN_INITIAL_PASSWORD and SEED_STUDENT_PASSWORD must be different');
@@ -75,7 +91,12 @@ export function validateProductionEnv(env) {
   for (const key of ['ADMIN_EMAIL', 'SEED_STUDENT_EMAIL']) {
     if (env[key] && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(env[key])) errors.push(`${key} must be a valid email address`);
   }
-  if (env.ADMIN_EMAIL && env.ADMIN_EMAIL === env.SEED_STUDENT_EMAIL) errors.push('ADMIN_EMAIL and SEED_STUDENT_EMAIL must be different');
+  if (env.ADMIN_EMAIL && env.SEED_STUDENT_EMAIL && env.ADMIN_EMAIL.toLowerCase() === env.SEED_STUDENT_EMAIL.toLowerCase()) {
+    errors.push('ADMIN_EMAIL and SEED_STUDENT_EMAIL must be different');
+  }
+  if (env.ENTERPRISE_NOTIFY_EMAIL && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(env.ENTERPRISE_NOTIFY_EMAIL)) {
+    errors.push('ENTERPRISE_NOTIFY_EMAIL must be a valid email address');
+  }
   if (Boolean(env.RESEND_API_KEY) !== Boolean(env.MAIL_FROM)) {
     errors.push('RESEND_API_KEY and MAIL_FROM must be configured together');
   }
@@ -87,6 +108,21 @@ export function validateProductionEnv(env) {
   }
   if (env.WEB_BIND_ADDRESS && env.WEB_BIND_ADDRESS !== '127.0.0.1') {
     errors.push('WEB_BIND_ADDRESS must remain 127.0.0.1 behind the host reverse proxy');
+  }
+  if (env.WEB_PORT && (!/^\d+$/.test(env.WEB_PORT) || Number(env.WEB_PORT) < 1 || Number(env.WEB_PORT) > 65535)) {
+    errors.push('WEB_PORT must be an integer between 1 and 65535');
+  }
+
+  const secrets = [
+    'MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'REDIS_PASSWORD',
+    'MINIO_ROOT_PASSWORD', 'JWT_SECRET', 'AI_KEY_ENCRYPTION_KEY',
+  ].filter((key) => env[key]);
+  for (let index = 0; index < secrets.length; index += 1) {
+    for (let otherIndex = index + 1; otherIndex < secrets.length; otherIndex += 1) {
+      const first = secrets[index];
+      const second = secrets[otherIndex];
+      if (env[first] === env[second]) errors.push(`${first} and ${second} must not reuse the same secret`);
+    }
   }
 
   const providers = (env.AUTH_PROVIDERS || '').split(',').map((item) => item.trim()).filter(Boolean);
