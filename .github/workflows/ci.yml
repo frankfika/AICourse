@@ -126,6 +126,27 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Mirror pinned runtime images to GHCR
+        shell: bash
+        run: |
+          set -euo pipefail
+          images=(
+            'mysql:8.0@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b|ghcr.io/frankfika/aicourse-runtime:mysql-8.0-7dcddc01'
+            'redis:7-alpine@sha256:6ab0b6e7381779332f97b8ca76193e45b0756f38d4c0dcda72dbb3c32061ab99|ghcr.io/frankfika/aicourse-runtime:redis-7-alpine-6ab0b6e7'
+            'minio/minio:RELEASE.2025-09-07T16-13-09Z@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e|ghcr.io/frankfika/aicourse-runtime:minio-2025-09-07-14cea493'
+            'minio/mc:RELEASE.2025-08-13T08-35-41Z@sha256:a7fe349ef4bd8521fb8497f55c6042871b2ae640607cf99d9bede5e9bdf11727|ghcr.io/frankfika/aicourse-runtime:mc-2025-08-13-a7fe349e'
+          )
+          for mapping in "${images[@]}"; do
+            source_image=${mapping%%|*}
+            target_image=${mapping#*|}
+            if docker manifest inspect "$target_image" >/dev/null 2>&1; then
+              echo "Runtime mirror already exists: $target_image"
+              continue
+            fi
+            docker pull --platform linux/amd64 "$source_image"
+            docker tag "$source_image" "$target_image"
+            docker push "$target_image"
+          done
       - name: Build and publish API image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:

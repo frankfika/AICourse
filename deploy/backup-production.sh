@@ -47,7 +47,7 @@ docker compose --env-file "$env_file" -f "$compose_file" run --rm -T \
 
 cat > "$target/manifest.txt" <<EOF
 created_at=$timestamp
-git_commit=$(git -C "$repo_root" rev-parse HEAD 2>/dev/null || printf unknown)
+git_commit=${RELEASE_SHA:-$(git -C "$repo_root" rev-parse HEAD 2>/dev/null || printf unknown)}
 mysql_dump=mysql.sql
 minio_backup=minio/
 EOF

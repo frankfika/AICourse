@@ -22,7 +22,7 @@ export function parseEnv(source) {
 export function validateProductionEnv(env) {
   const errors = [];
   const required = [
-    'PUBLIC_URL', 'MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'DATABASE_URL',
+    'PUBLIC_URL', 'API_IMAGE', 'WEB_IMAGE', 'MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'DATABASE_URL',
     'REDIS_PASSWORD', 'MINIO_ROOT_USER', 'MINIO_ROOT_PASSWORD', 'STORAGE_PUBLIC_HOST',
     'STORAGE_PUBLIC_PORT', 'STORAGE_PUBLIC_SSL', 'JWT_SECRET',
     'AI_KEY_ENCRYPTION_KEY', 'ADMIN_EMAIL', 'ADMIN_INITIAL_PASSWORD',
@@ -111,6 +111,20 @@ export function validateProductionEnv(env) {
   }
   if (env.WEB_PORT && (!/^\d+$/.test(env.WEB_PORT) || Number(env.WEB_PORT) < 1 || Number(env.WEB_PORT) > 65535)) {
     errors.push('WEB_PORT must be an integer between 1 and 65535');
+  }
+  const imagePatterns = {
+    API_IMAGE: /^ghcr\.io\/frankfika\/aicourse-api:([a-f0-9]{40})$/i,
+    WEB_IMAGE: /^ghcr\.io\/frankfika\/aicourse-web:([a-f0-9]{40})$/i,
+  };
+  for (const [key, pattern] of Object.entries(imagePatterns)) {
+    if (env[key] && !pattern.test(env[key])) {
+      errors.push(`${key} must reference the project image in GHCR with a full 40-character Git SHA tag`);
+    }
+  }
+  const apiRevision = env.API_IMAGE?.match(imagePatterns.API_IMAGE)?.[1];
+  const webRevision = env.WEB_IMAGE?.match(imagePatterns.WEB_IMAGE)?.[1];
+  if (apiRevision && webRevision && apiRevision.toLowerCase() !== webRevision.toLowerCase()) {
+    errors.push('API_IMAGE and WEB_IMAGE must use the same Git revision');
   }
 
   const secrets = [

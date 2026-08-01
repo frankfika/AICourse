@@ -28,6 +28,7 @@ jobs:
       API_IMAGE: ghcr.io/frankfika/aicourse-api:${{ github.sha }}
       WEB_IMAGE: ghcr.io/frankfika/aicourse-web:${{ github.sha }}
     steps:
+      - uses: actions/checkout@v7
       - name: Require deployment secrets
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -53,6 +54,17 @@ jobs:
             -o BatchMode=yes -o ConnectTimeout=10 \
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "docker login ghcr.io -u '$GITHUB_ACTOR' --password-stdin"
+      - name: Upload immutable release bundle
+        run: |
+          git archive --format=tar.gz --output "$RUNNER_TEMP/aicourse-release.tar.gz" "$GITHUB_SHA"
+          ssh -i "$HOME/.ssh/deploy_key" \
+            -o BatchMode=yes -o ConnectTimeout=10 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "test -d '$DEPLOY_PATH/incoming' && test -d '$DEPLOY_PATH/releases' && test -d '$DEPLOY_PATH/shared'"
+          scp -i "$HOME/.ssh/deploy_key" \
+            -o BatchMode=yes -o ConnectTimeout=10 \
+            "$RUNNER_TEMP/aicourse-release.tar.gz" \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/incoming/$GITHUB_SHA.tar.gz"
       - name: Pull and deploy the verified commit
         run: |
           ssh -i "$HOME/.ssh/deploy_key" \
@@ -64,27 +76,51 @@ jobs:
           api_image=$2
           web_image=$3
           deploy_path=$4
+          archive="$deploy_path/incoming/$release_sha.tar.gz"
+          release="$deploy_path/releases/$release_sha"
+          env_file="$deploy_path/shared/.env.production"
+          backup_root="$deploy_path/shared/backups"
 
-          test -d "$deploy_path/.git"
-          test -f "$deploy_path/.env.production"
-          cd "$deploy_path"
-          test -z "$(git status --porcelain)"
+          test -f "$archive"
+          test -f "$env_file"
+          if [ ! -d "$release" ]; then
+            mkdir "$release"
+            tar -xzf "$archive" -C "$release"
+          fi
+          test -f "$release/docker-compose.production.yml"
 
-          if docker compose --env-file .env.production -f docker-compose.production.yml \
-            ps --services --status running | grep -qx mysql; then
-            ./deploy/backup-production.sh
+          current=$(readlink -f "$deploy_path/current" 2>/dev/null || true)
+          if [ -n "$current" ] && [ -x "$current/deploy/backup-production.sh" ] && \
+            docker compose --env-file "$env_file" -f "$current/docker-compose.production.yml" \
+              ps --services --status running | grep -qx mysql; then
+            RELEASE_SHA=$(basename "$current") \
+              "$current/deploy/backup-production.sh" "$env_file" "$backup_root"
           fi
 
-          git fetch origin main
-          git merge --ff-only "$release_sha"
-          node deploy/validate-production-env.mjs .env.production
+          node "$release/deploy/validate-production-env.mjs" "$env_file"
 
           export API_IMAGE="$api_image" WEB_IMAGE="$web_image"
-          docker compose --env-file .env.production -f docker-compose.production.yml pull api web
-          docker compose --env-file .env.production -f docker-compose.production.yml \
-            up -d --no-build --wait --wait-timeout 240
-          curl --fail --silent --show-error http://127.0.0.1:8088/healthz
-          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/health/ready
+          docker compose --env-file "$env_file" -f "$release/docker-compose.production.yml" pull
+          if ! {
+            docker compose --env-file "$env_file" -f "$release/docker-compose.production.yml" \
+              up -d --no-build --wait --wait-timeout 240 &&
+            curl --fail --silent --show-error http://127.0.0.1:8088/healthz &&
+            curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/health/ready
+          }; then
+            if [ -n "$current" ] && [ -f "$current/.release-images" ]; then
+              old_api=$(sed -n 's/^API_IMAGE=//p' "$current/.release-images")
+              old_web=$(sed -n 's/^WEB_IMAGE=//p' "$current/.release-images")
+              if [ -n "$old_api" ] && [ -n "$old_web" ]; then
+                API_IMAGE=$old_api WEB_IMAGE=$old_web \
+                  docker compose --env-file "$env_file" -f "$current/docker-compose.production.yml" \
+                    up -d --no-build --wait --wait-timeout 240 || true
+              fi
+            fi
+            exit 1
+          fi
+
+          printf 'API_IMAGE=%s\nWEB_IMAGE=%s\n' "$api_image" "$web_image" > "$release/.release-images"
+          ln -sfn "$release" "$deploy_path/current"
           REMOTE
       - name: Remove temporary registry credentials
         if: always()

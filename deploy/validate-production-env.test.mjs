@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseEnv, validateProductionEnv } from './validate-production-env.mjs';
+import { generateProductionEnv } from './generate-production-env.mjs';
 
 function validEnv() {
   return {
     PUBLIC_URL: 'https://academy.example.test',
     WEB_BIND_ADDRESS: '127.0.0.1',
     WEB_PORT: '8088',
+    API_IMAGE: 'ghcr.io/frankfika/aicourse-api:e81b58ea75038b4ca42fcaf2a4c62424bea5644a',
+    WEB_IMAGE: 'ghcr.io/frankfika/aicourse-web:e81b58ea75038b4ca42fcaf2a4c62424bea5644a',
     MYSQL_ROOT_PASSWORD: 'root-7A4b9C2d5E8f1G6h3J0k4L7m2N9p6Q',
     MYSQL_DATABASE: 'ai_academy',
     MYSQL_USER: 'ai_academy',
@@ -67,4 +70,36 @@ test('rejects weak bootstrap passwords and reused infrastructure secrets', () =>
     'ADMIN_INITIAL_PASSWORD must contain uppercase, lowercase, number, and symbol characters',
   ));
   assert.ok(errors.includes('MYSQL_ROOT_PASSWORD and REDIS_PASSWORD must not reuse the same secret'));
+});
+
+test('rejects mutable or mismatched application image tags', () => {
+  const mutable = validEnv();
+  mutable.API_IMAGE = 'ghcr.io/frankfika/aicourse-api:main';
+  assert.ok(validateProductionEnv(mutable).some((error) => error.startsWith('API_IMAGE must reference')));
+
+  const mismatched = validEnv();
+  mismatched.WEB_IMAGE = 'ghcr.io/frankfika/aicourse-web:174f269000000000000000000000000000000000';
+  assert.ok(validateProductionEnv(mismatched).includes('API_IMAGE and WEB_IMAGE must use the same Git revision'));
+});
+
+test('generates a complete, unique, deployable production environment', () => {
+  const source = generateProductionEnv({
+    domain: 'aicourse.49.234.25.35.sslip.io',
+    adminEmail: 'admin@example.test',
+    studentEmail: 'student@example.test',
+    imageSha: 'e81b58ea75038b4ca42fcaf2a4c62424bea5644a',
+  });
+  const env = parseEnv(source);
+
+  assert.deepEqual(validateProductionEnv(env), []);
+  assert.equal(env.API_IMAGE.endsWith(':e81b58ea75038b4ca42fcaf2a4c62424bea5644a'), true);
+  assert.notEqual(env.ADMIN_INITIAL_PASSWORD, env.SEED_STUDENT_PASSWORD);
+  assert.equal(new Set([
+    env.MYSQL_ROOT_PASSWORD,
+    env.MYSQL_PASSWORD,
+    env.REDIS_PASSWORD,
+    env.MINIO_ROOT_PASSWORD,
+    env.JWT_SECRET,
+    env.AI_KEY_ENCRYPTION_KEY,
+  ]).size, 6);
 });
