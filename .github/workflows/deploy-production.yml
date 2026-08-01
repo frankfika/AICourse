@@ -20,7 +20,6 @@ jobs:
     environment: production
     permissions:
       contents: read
-      packages: read
     env:
       DEPLOY_HOST: 49.234.25.35
       DEPLOY_USER: ubuntu
@@ -46,14 +45,6 @@ jobs:
           chmod 0600 "$HOME/.ssh/deploy_key"
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 0644 "$HOME/.ssh/known_hosts"
-      - name: Authenticate the host to GHCR for this deployment
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          printf '%s' "$GHCR_TOKEN" | ssh -i "$HOME/.ssh/deploy_key" \
-            -o BatchMode=yes -o ConnectTimeout=10 \
-            "$DEPLOY_USER@$DEPLOY_HOST" \
-            "docker login ghcr.io -u '$GITHUB_ACTOR' --password-stdin"
       - name: Upload immutable release bundle
         run: |
           git archive --format=tar.gz --output "$RUNNER_TEMP/aicourse-release.tar.gz" "$GITHUB_SHA"
@@ -122,9 +113,3 @@ jobs:
           printf 'API_IMAGE=%s\nWEB_IMAGE=%s\n' "$api_image" "$web_image" > "$release/.release-images"
           ln -sfn "$release" "$deploy_path/current"
           REMOTE
-      - name: Remove temporary registry credentials
-        if: always()
-        run: |
-          ssh -i "$HOME/.ssh/deploy_key" \
-            -o BatchMode=yes -o ConnectTimeout=10 \
-            "$DEPLOY_USER@$DEPLOY_HOST" 'docker logout ghcr.io' || true

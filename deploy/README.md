@@ -84,7 +84,7 @@ curl --fail http://127.0.0.1:8088/healthz
 curl --fail http://127.0.0.1:8088/api/v1/health/ready
 ```
 
-仓库的 `Deploy production` 工作流只允许手动触发，并要求输入 `deploy-production`、通过 GitHub `production` environment，以及配置 `DEPLOY_SSH_KEY` 与 `DEPLOY_KNOWN_HOSTS`。它会把当前提交打成不可变 release 包上传到 `/opt/aicourse/releases/<sha>`，不要求生产机访问 GitHub；随后备份现有数据、按提交 SHA 拉取镜像、等待健康、切换 `current` 软链接并移除临时 GHCR 登录凭据。若健康检查失败，会尽力恢复上一个 release 记录的镜像。
+仓库的 `Deploy production` 工作流只允许手动触发，并要求输入 `deploy-production`、通过 GitHub `production` environment，以及配置 `DEPLOY_SSH_KEY` 与 `DEPLOY_KNOWN_HOSTS`。它会把当前提交打成不可变 release 包上传到 `/opt/aicourse/releases/<sha>`，不要求生产机访问 GitHub；随后备份现有数据、从公开只读的 GHCR 按提交 SHA 拉取镜像、等待健康并切换 `current` 软链接。若健康检查失败，会尽力恢复上一个 release 记录的镜像。
 
 服务器目录只保留运行状态与不可变 release：共享环境位于 `/opt/aicourse/shared/.env.production`，备份位于 `/opt/aicourse/shared/backups/`，当前版本由 `/opt/aicourse/current` 指向 `/opt/aicourse/releases/<sha>`。不要把密钥写入 release 包或仓库。
 
