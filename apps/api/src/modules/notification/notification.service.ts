@@ -10,8 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
  *  2. 4 类:type = 'announcement' | 'comment' | 'hackathon' | 'order'
  *  3. 触发点钩子:create() 接收 userId,业务侧在 comment/enroll/hackathon-deadline
  *     事件中调用(本任务**不**接入触发点,只暴露 API,P2 接入)
- *  4. 多通道:写库即"站内通知" + 调原有 email provider(P1-7 保留 email 接口,
- *     默认 console 模式不真发,P1-8+ 接 sendgrid)
+ *  4. 多通道:写库即"站内通知"；企业咨询在 Resend 配置完整时发送邮件。
  *
  * 4 类 (spec §7.2 P1-7):
  *   - announcement: 系统公告 / 课程更新
@@ -203,12 +202,8 @@ export class NotificationService {
   }
 
   // ============================================================
-  // 向后兼容:旧 enterprise-inquiry 邮件通道(P0 已用,保留)
+  // 企业咨询邮件通道
   // ============================================================
-
-  private get provider(): string {
-    return this.config.get<string>('EMAIL_PROVIDER') ?? 'console';
-  }
 
   async sendEnterpriseInquiryNotification(data: {
     name: string;
@@ -225,11 +220,14 @@ export class NotificationService {
       this.config.get<string>('ENTERPRISE_NOTIFY_EMAIL')?.trim() ||
       'admin-console';
 
-    await this.send({
-      to: recipient,
-      subject,
-      body,
-    });
+    try {
+      await this.send({ to: recipient, subject, body });
+    } catch (error) {
+      // 咨询已经持久化，邮件投递失败不能让客户端重试并制造重复记录。
+      this.logger.error(
+        `Enterprise inquiry email delivery failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
 
     this.logger.log(
       `[Enterprise Inquiry Notification]\n  To: ${recipient}\n  Subject: ${subject}\n  Body:\n${body}`,
@@ -264,13 +262,32 @@ export class NotificationService {
   }
 
   private async send(opts: { to: string; subject: string; body: string }) {
-    // P0 (audit 2026-07-24): 删 sendgrid / ses stub, 统一走 console logger.
-    // 真实接 email provider 等 P2 重做通知模块时, 在这里加 case.
-    if (this.provider === 'sendgrid' || this.provider === 'ses') {
+    const apiKey = this.config.get<string>('RESEND_API_KEY')?.trim();
+    const from = this.config.get<string>('MAIL_FROM')?.trim();
+    if (!apiKey || !from || opts.to === 'admin-console') {
       this.logger.warn(
-        `[notification] EMAIL_PROVIDER='${this.provider}' not yet implemented, falling back to console`,
+        '[notification] Enterprise email is not configured; inquiry remains available in admin',
       );
+      return;
     }
-    this.logger.log(`[email:${this.provider}] to=${opts.to} subject=${opts.subject}`);
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'AI-Academy/1.0',
+      },
+      body: JSON.stringify({
+        from,
+        to: [opts.to],
+        subject: opts.subject,
+        text: opts.body,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error(`Resend returned HTTP ${response.status}`);
+    }
+    this.logger.log(`[email:resend] to=${opts.to} subject=${opts.subject}`);
   }
 }

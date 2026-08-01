@@ -24,7 +24,7 @@ export class EnterpriseService {
       details: { company: dto.company, topic: dto.topic },
     });
 
-    // 发送通知（console / SendGrid / SES）
+    // 配置 Resend 时发送邮件；失败时咨询仍保留在管理后台。
     await this.notification.sendEnterpriseInquiryNotification(dto);
 
     return inquiry;

@@ -35,7 +35,12 @@ describe('NotificationService', () => {
     mockPrisma.notification.create.mockReset();
     mockPrisma.notification.update.mockReset();
     mockPrisma.notification.updateMany.mockReset();
-    mockConfig.get.mockClear();
+    mockConfig.get.mockReset();
+    mockConfig.get.mockImplementation((key: string) => {
+      if (key === 'EMAIL_PROVIDER') return 'console';
+      if (key === 'ENTERPRISE_NOTIFY_EMAIL') return 'contact@ai-academy.local';
+      return undefined;
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -46,6 +51,10 @@ describe('NotificationService', () => {
     }).compile();
 
     service = module.get<NotificationService>(NotificationService);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   // ============================================================
@@ -315,6 +324,64 @@ describe('NotificationService', () => {
       expect([...NOTIFICATION_TYPES].sort()).toEqual(
         ['announcement', 'comment', 'hackathon', 'order'].sort(),
       );
+    });
+  });
+
+  describe('sendEnterpriseInquiryNotification', () => {
+    const inquiry = {
+      name: 'Alice',
+      email: 'alice@example.com',
+      company: 'Example Inc',
+      teamSize: '20',
+      topic: 'RAG 培训',
+    };
+
+    it('Resend 配置完整时发送真实邮件', async () => {
+      mockConfig.get.mockImplementation((key: string) => ({
+        RESEND_API_KEY: 're_test_key',
+        MAIL_FROM: 'AI Academy <noreply@example.com>',
+        ENTERPRISE_NOTIFY_EMAIL: 'sales@example.com',
+      })[key]);
+      const fetchMock = jest
+        .spyOn(global, 'fetch')
+        .mockResolvedValue({ ok: true, status: 200 } as Response);
+
+      await service.sendEnterpriseInquiryNotification(inquiry);
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.resend.com/emails',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({ Authorization: 'Bearer re_test_key' }),
+        }),
+      );
+      const request = fetchMock.mock.calls[0][1] as RequestInit;
+      expect(JSON.parse(String(request.body))).toEqual(
+        expect.objectContaining({
+          from: 'AI Academy <noreply@example.com>',
+          to: ['sales@example.com'],
+          subject: '【企业咨询】Example Inc - RAG 培训',
+        }),
+      );
+    });
+
+    it('邮件投递失败时不抛错，避免客户端重试产生重复咨询', async () => {
+      mockConfig.get.mockImplementation((key: string) => ({
+        RESEND_API_KEY: 're_test_key',
+        MAIL_FROM: 'noreply@example.com',
+        ENTERPRISE_NOTIFY_EMAIL: 'sales@example.com',
+      })[key]);
+      jest.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 503 } as Response);
+
+      await expect(service.sendEnterpriseInquiryNotification(inquiry)).resolves.toBeUndefined();
+    });
+
+    it('邮件未配置时安全降级，不调用外部接口', async () => {
+      const fetchMock = jest.spyOn(global, 'fetch');
+
+      await service.sendEnterpriseInquiryNotification(inquiry);
+
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 });
