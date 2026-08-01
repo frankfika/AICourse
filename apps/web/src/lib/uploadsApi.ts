@@ -74,7 +74,7 @@ export const uploadsApi = {
   /**
    * 确认上传完成, 后端把 publicUrl 写到目标 entity
    */
-  async complete(scope: UploadScope, key: string, refId: string): Promise<UploadResult> {
+  async complete(scope: UploadScope, key: string, refId?: string): Promise<UploadResult> {
     const { data } = await api.post<UploadResult>('/api/v1/uploads/complete', {
       scope,
       key,

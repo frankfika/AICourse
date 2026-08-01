@@ -50,11 +50,12 @@ public/uploads/
 apps/web/.screenshots/
 screenshots/
 
-# 一次性 screenshot 脚本 (sub-agent dev artifact, 不进版本控制)
+# one-off local verification artifacts
 scripts/p1-*-screenshots.py
 scripts/p0-*-screenshots.py
+responsive-audit-report.md
 
-# build artifacts (nest + vite + shared-types) — 历来 tracked 但 dev 时污染, 改为 untracked
+# build artifacts
 apps/api/dist/
 apps/web/dist/
 packages/shared-types/dist/
@@ -63,10 +64,6 @@ packages/shared-types/dist/
 .worktrees/
 .mavis/
 .trae-scratch/
-
-# root 文件 (本地 dev artifact, 跟代码无关)
-openhackathon-external-ai-plan.md
-responsive-audit-report.md
 
 # Playwright
 apps/web/test-results/

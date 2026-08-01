@@ -27,6 +27,8 @@ export interface AuthIdentity {
   /** 标准化的 profile，map 到我们 User 表的字段 */
   profile: {
     email: string;
+    /** Whether the identity provider has verified ownership of this email. */
+    emailVerified?: boolean;
     name: string;
     avatarUrl?: string;
     /** 原始 claims,留作 audit / 后续扩展 */
@@ -72,4 +74,7 @@ export abstract class AuthProvider {
    * 不实现的 provider 不暴露给前端
    */
   describe?(): { id: AuthProviderId; label: string; iconUrl?: string; type: AuthProviderType };
+
+  /** OAuth providers can expose a browser authorization URL. */
+  createAuthorizationUrl?(state: string): string;
 }

@@ -52,6 +52,32 @@ describe('notificationsApi', () => {
         params: { unreadOnly: true },
       });
     });
+
+    it('适配后端 items/isRead 响应为页面使用的 data/read', async () => {
+      (api.get as any).mockResolvedValue({
+        data: {
+          items: [{
+            id: 'n1',
+            type: 'order',
+            title: '支付成功',
+            body: '课程已开通',
+            isRead: true,
+            createdAt: '2026-07-28T10:00:00Z',
+          }],
+          total: 1,
+          unreadCount: 0,
+          page: 1,
+          limit: 20,
+        },
+      });
+
+      const result = await notificationsApi.list();
+
+      expect(result.data).toEqual([
+        expect.objectContaining({ id: 'n1', read: true }),
+      ]);
+      expect(result.data[0]).not.toHaveProperty('isRead');
+    });
   });
 
   describe('unreadCount', () => {

@@ -4,7 +4,7 @@
  * 设计参考 review/mocks/mock-auth.html
  *   - 双 tab(登录 / 注册),URL 路由:/auth/login 和 /auth/register 各自独立
  *   - 6 宫格第三方按钮(Phase 1 全部 disabled,灰度)
- *   - 邮箱 + 密码 + (登录 7 天免登 checkbox)
+ *   - 邮箱 + 密码
  *   - "继续即同意服务条款" footer
  *   - 错误:行内 error + 顶部 toast
  *   - react-hook-form + zod 校验
@@ -28,7 +28,6 @@ import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 const loginSchema = z.object({
   email: z.string().email('请输入有效邮箱'),
   password: z.string().min(6, '密码至少 6 位'),
-  remember: z.boolean().optional(),
 });
 type LoginFormValues = z.infer<typeof loginSchema>;
 
@@ -44,7 +43,11 @@ function extractErrorMessage(err: unknown): string | undefined {
 export function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const from = params.get('from') ?? '/';
+  const requestedFrom = params.get('from');
+  const from =
+    requestedFrom?.startsWith('/') && !requestedFrom.startsWith('//')
+      ? requestedFrom
+      : '/';
   const { signIn, user, isAuthenticating } = useAuth();
   const { showToast } = useToast();
   const { t } = useI18n();
@@ -57,7 +60,7 @@ export function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', remember: false },
+    defaultValues: { email: '', password: '' },
   });
 
   // 已登录用户访问 /auth/login 自动重定向
@@ -77,13 +80,6 @@ export function LoginPage() {
         email: values.email,
         password: values.password,
       });
-      // eslint-disable-next-line no-console
-      console.log(
-        '[LoginPage.onSubmit] signIn ok user=',
-        session.user,
-        'role=',
-        session.user.role,
-      );
       showToast('登录成功', 'success');
       // P0 2026-07-24 修复: admin 登录后默认跳 /admin (而非 /)
       // — 之前 from 默认 '/', admin 登录后停在首页看不出身份差异
@@ -202,15 +198,6 @@ export function LoginPage() {
             {...register('password')}
           />
         </div>
-
-        <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-600 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            className="rounded border-neutral-200 text-[#171717] focus:ring-[#171717]"
-            {...register('remember')}
-          />
-          7 天内自动登录(仅本设备)
-        </label>
 
         <Button
           type="submit"

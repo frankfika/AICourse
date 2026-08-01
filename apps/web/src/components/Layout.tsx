@@ -28,16 +28,21 @@ import {
   BookOpen,
   Search,
 } from 'lucide-react';
-import { Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useAuth } from '../lib/auth/AuthProvider';
 import { useTheme, useThemeStore } from '../stores/themeStore';
 import { useWebAssistantStore } from '../stores/webAssistantStore';
-import { CommandPalette } from './CommandPalette';
-import { WebAssistantDrawer } from './WebAssistant/WebAssistantDrawer';
 import { cn } from '../lib/cn';
 import { Skeleton } from './ui/Skeleton';
 import { useList, useSiteSettings, useI18n, pickSite, safeNavPath } from '../lib/cms';
+
+const CommandPalette = lazy(() =>
+  import('./CommandPalette').then((module) => ({ default: module.CommandPalette })),
+);
+const WebAssistantDrawer = lazy(() =>
+  import('./WebAssistant/WebAssistantDrawer').then((module) => ({ default: module.WebAssistantDrawer })),
+);
 
 // initThemeFromStorage 重新导出,保持 index.tsx 的导入路径不变
 export { initThemeFromStorage } from '../stores/themeStore';
@@ -149,11 +154,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     // signOut 内部: await adapter.signOut() (POST /auth/logout 清 cookie) → setAccessToken(null) → clearAuth
     // await 让 logout 请求飞完再 navigate,否则 navigate 触发 unmount 会 cancel
-    await signOut();
-    // P0 (verifier audit 2026-07-24): logout 必须清 webAssistantStore, 否则
-    // 共享设备 / 同浏览器换账号时上一个用户的 sessionId + 消息缓存仍可见.
-    useWebAssistantStore.getState().reset();
-    navigate('/');
+    try {
+      await signOut();
+    } finally {
+      // 即使服务端暂时不可用，也要清掉本地 AI 会话并离开私有页面。
+      useAuthStore.getState().clearAuth();
+      useWebAssistantStore.getState().reset();
+      navigate('/');
+    }
   };
 
   // mobile bottom tab 高亮判定
@@ -183,6 +191,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
+                aria-current={isActive(item.path) ? 'page' : undefined}
                 className="px-3 py-2 text-neutral-600 hover:text-[#171717] hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors uppercase tracking-wider text-[12px]"
               >
                 {item.label}
@@ -233,6 +242,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     to="/admin"
                     className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
                     title="管理后台"
+                    aria-label="管理后台"
                   >
                     <Settings className="w-5 h-5" />
                   </Link>
@@ -241,6 +251,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   onClick={handleLogout}
                   className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
                   title="退出登录"
+                  aria-label="退出登录"
                 >
                   <LogOut className="w-5 h-5" />
                 </button>
@@ -285,6 +296,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors text-neutral-900 dark:text-neutral-900"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="菜单"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-primary-menu"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -292,11 +305,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-950">
+          <div id="mobile-primary-menu" className="md:hidden border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-950">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
+                aria-current={isActive(item.path) ? 'page' : undefined}
                 className="block px-6 py-3 text-sm font-bold uppercase tracking-wider text-neutral-600 hover:text-[#171717] hover:bg-neutral-100 dark:hover:bg-neutral-100 border-b border-neutral-200"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -322,7 +336,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* P1-2: 全局 ⌘K 搜索弹层 */}
-      <CommandPalette open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      {isSearchOpen && (
+        <Suspense fallback={null}>
+          <CommandPalette open onClose={() => setIsSearchOpen(false)} />
+        </Suspense>
+      )}
 
       {/* ============================================================
        * 公共 footer (P1 统一: 从 HomePage SiteFooter 提升, 所有页共享)
@@ -398,7 +416,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
        * 关闭:backdrop / X / Esc / 选中 source 后 navigate
        * 跟 dashboard/learning 的课程内小助手互不干扰
        * ============================================================ */}
-      <WebAssistantDrawer />
+      {isAssistantOpen && (
+        <Suspense fallback={null}>
+          <WebAssistantDrawer />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -496,7 +518,7 @@ function SiteFooter() {
     'v0.5.0 · built for AI era',
   );
   return (
-    <footer className="py-12 border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-100">
+    <footer className="pt-12 pb-28 md:py-12 border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           <div className="col-span-2">

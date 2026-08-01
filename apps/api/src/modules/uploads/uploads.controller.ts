@@ -34,7 +34,7 @@ export class UploadsController {
   @Throttle({ short: { limit: 3, ttl: 10000 }, medium: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: '申请一个 presigned PUT URL (前端直传 MinIO/S3)' })
   async sign(@Body() dto: SignUploadDto, @Req() req: Request) {
-    const user = req.user as { id: string; role: string };
+    const user = req.user as { userId: string; role: string };
     return this.uploads.sign(dto, user);
   }
 
@@ -42,7 +42,7 @@ export class UploadsController {
   @Throttle({ short: { limit: 10, ttl: 1000 }, medium: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: '确认上传完成, 把 publicUrl 写到目标 entity 字段' })
   async complete(@Body() dto: CompleteUploadDto, @Req() req: Request) {
-    const user = req.user as { id: string; role: string };
+    const user = req.user as { userId: string; role: string };
     return this.uploads.complete(dto, user);
   }
 }

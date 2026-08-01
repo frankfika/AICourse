@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { Prisma } from '@prisma/client';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -26,6 +27,29 @@ export class AllExceptionsFilter implements ExceptionFilter {
         typeof body === 'string'
           ? body
           : (body as { message?: string | string[] }).message ?? exception.message;
+    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      // Translate common persistence errors into stable HTTP semantics without
+      // exposing table names, constraints, queries, or database internals.
+      switch (exception.code) {
+        case 'P2002':
+          status = HttpStatus.CONFLICT;
+          message = 'Resource already exists';
+          break;
+        case 'P2025':
+          status = HttpStatus.NOT_FOUND;
+          message = 'Resource not found';
+          break;
+        case 'P2003':
+          status = HttpStatus.CONFLICT;
+          message = 'Resource is still referenced';
+          break;
+        case 'P2023':
+          status = HttpStatus.BAD_REQUEST;
+          message = 'Invalid identifier';
+          break;
+        default:
+          this.logger.error(exception);
+      }
     } else {
       // Security: log the real error server-side but never echo it back.
       // Otherwise stack traces can leak framework versions / file paths.

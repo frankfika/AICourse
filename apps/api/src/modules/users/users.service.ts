@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -217,6 +216,9 @@ export class UsersService {
       data: { deletedAt: new Date() },
       select: { id: true, email: true, deletedAt: true },
     });
+
+    // A soft-deleted account must not keep a valid long-lived session.
+    await this.prisma.refreshToken.deleteMany({ where: { userId: id } });
 
     await this.auditLog.log({
       userId: id,

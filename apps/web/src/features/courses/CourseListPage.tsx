@@ -17,10 +17,8 @@
  *   5. mobile:筛选侧栏折叠成顶部一行(可点开 filter sheet),排序条保留
  *   6. 暗色:全部走 token
  *
- * 排序:客户端做,后端 /api/v1/courses 不支持 sort 参数
- *   - 最新:按 id 倒序(createdAt 不可用,id 顺序近似)
- *   - 最热门:按 enrollmentCount(从 mock 拿,真实 API 暂没该字段 → 退化为原顺序)
- *   - 评分:按 rating 倒序(同上)
+ * 排序由后端 /api/v1/courses?sort=popular|recent|rating 完成。
+ * 评分筛选基于接口返回的真实 review 平均分。
  *
  * 设计约束:
  *   - 不引新依赖,复用 P0-4 Button/Card/EmptyState/Skeleton/Input + 现有 lucide
@@ -35,7 +33,6 @@ import { Seo } from '../../components/Seo';
 import {
   Search as SearchIcon,
   Star,
-  Sparkles,
   ArrowUpRight,
   X as XIcon,
   SlidersHorizontal as FilterIcon,
@@ -73,6 +70,10 @@ interface Course {
   externalUrl?: string;
   price: number;
   tags: string;
+  rating: number;
+  reviewCount: number;
+  enrollmentCount: number;
+  createdAt: string;
 }
 
 type SortKey = 'popular' | 'recent' | 'rating';
@@ -186,12 +187,13 @@ export function CourseListPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input]);
 
-  // 拉数据(后端只支持 search 关键字,其他筛选客户端做)
+  // 搜索与排序交给后端；其余多选筛选基于当前结果客户端完成。
   const { data: courses, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['courses', debouncedQ],
+    queryKey: ['courses', debouncedQ, sort],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (debouncedQ.trim()) params.set('search', debouncedQ.trim());
+      params.set('sort', sort);
       const { data } = await api.get<Course[]>(`/api/v1/courses?${params.toString()}`);
       return data;
     },
@@ -210,28 +212,12 @@ export function CourseListPage() {
         if (!courseTags.some((t) => selectedTags.has(t))) return false;
       }
       if (selectedInstructors.size > 0 && !selectedInstructors.has(c.instructor)) return false;
-      if (minRating > 0) {
-        // 后端没 rating 字段,客户端用 description 关键词做兜底(几乎都通过)
-        const hasRatingHint = /star|★|rating/i.test(c.description ?? '');
-        if (minRating >= 4 && !hasRatingHint) {
-          // 不强过滤,只在"评分"明确被点击时显示一个 friendly 提示
-          return true;
-        }
-      }
+      if (minRating > 0 && (c.rating ?? 0) < minRating) return false;
       return true;
     });
   }, [courses, costFilter, selectedLevels, selectedDurations, selectedTags, selectedInstructors, minRating]);
 
-  // 客户端排序
-  const sorted = useMemo(() => {
-    const arr = [...filtered];
-    if (sort === 'recent') {
-      // 倒序排列(无 createdAt → 按 id 倒序近似)
-      arr.sort((a, b) => (b.id > a.id ? 1 : -1));
-    }
-    // popular / rating:后端无对应字段,保持原顺序
-    return arr;
-  }, [filtered, sort]);
+  const sorted = filtered;
 
   // P1-4: 客户端分页(每页 24 条),先排序后分页
   const pagination = usePagination(sorted, { pageSize: 24 });
@@ -340,7 +326,7 @@ export function CourseListPage() {
       {/* 主体:左侧筛选 + 右侧列表 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* mobile 筛选按钮(默认折叠) */}
-        <div className="lg:hidden mb-4 flex items-center justify-between">
+        <div className="lg:hidden mb-4 flex flex-wrap items-center justify-between gap-3">
           <Button
             variant="secondary"
             size="sm"
@@ -349,6 +335,19 @@ export function CourseListPage() {
           >
             {t('courses.filter.title', '筛选')} {activeFilterCount > 0 && `(${activeFilterCount})`}
           </Button>
+          <label className="flex items-center gap-2 text-xs text-[#666666]">
+            排序
+            <select
+              aria-label="课程排序"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as SortKey)}
+              className="min-h-10 border border-[#171717] bg-[#F5F4F0] px-2 text-sm text-[#171717]"
+            >
+              <option value="popular">最热门</option>
+              <option value="recent">最新</option>
+              <option value="rating">评分</option>
+            </select>
+          </label>
           <div className="text-sm text-[#666666]">
             {isLoading ? t('common.loading.dots', '加载中…') : `${t('common.found.label', '共找到')} ${sorted.length} ${t('common.units.courses', '门课程')}`}
           </div>
@@ -766,6 +765,12 @@ function CourseCardLink({ course }: { course: Course }) {
             <span className="truncate">{course.instructor}</span>
           </div>
           <div className="flex items-center gap-3 shrink-0">
+            {course.reviewCount > 0 && (
+              <span className="inline-flex items-center gap-1 font-mono" title={`${course.reviewCount} 条评价`}>
+                <Star className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                {course.rating.toFixed(1)}
+              </span>
+            )}
             <span className="font-mono">{course.duration}</span>
             <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </div>
@@ -774,10 +779,6 @@ function CourseCardLink({ course }: { course: Course }) {
     </Link>
   );
 }
-
-// 避免未使用引用警告
-void Star;
-void Sparkles;
 
 /**
  * PaginationControl — 公共分页控件(P1-4 配套 usePagination)
@@ -843,4 +844,3 @@ function PaginationControl({
     </nav>
   );
 }
-void Sparkles;

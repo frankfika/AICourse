@@ -3,11 +3,10 @@ import {
   NotFoundException,
   ConflictException,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
-import { CertificateType, IssueCertificateDto } from './certificates.dto';
+import { IssueCertificateDto } from './certificates.dto';
 
 /**
  * CertificatesService — P1-8 我的证书 + 证书页

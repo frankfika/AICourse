@@ -4,7 +4,7 @@
  * 严格按 review/mocks/mock-learn.html 落地:
  *   - 左 280-320px 章节大纲(折叠 Chapter → Lesson,每 Lesson 显示 title + 时长 + 状态)
  *   - 中 1fr 视频 + tabs(笔记/字幕/资源) + sticky 完成按钮
- *   - 右 360-400px AI 助教(4 问 1 答 mock chat 流 + 输入区 + disclaimer)
+ *   - 右 360-400px AI 助教入口，打开真实 WebAssistant 会话
  *
  * 响应式:
  *   - lg+ (≥1024px): 三栏并排
@@ -16,10 +16,10 @@
  *   - 2) 失败 / 401 / 网络错 → 渲染 QueryErrorState(v1.4.1 修复,无 mock fallback)
  *   - 3) LearningEvent 视频上报走真实后端(v1.4.1 上线)
  *
- *   - AI 助教 chat 走前端 mock,等 chat module 上线后改调 /api/v1/chat/sessions
+ *   - AI 助教复用全站 WebAssistantDrawer，走真实 /api/v1/chat/sessions
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronDown,
@@ -29,10 +29,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
-  Send,
   Paperclip,
-  RefreshCw,
-  Settings as SettingsIcon,
   FileText,
   MessageSquare,
   Paperclip as AttachIcon,
@@ -40,6 +37,8 @@ import {
   Plus,
   BookOpen,
   Clock,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { progressApi } from '../../lib/progressApi';
@@ -48,8 +47,15 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { useToast } from '../../components/auth/Toast';
-import { useList } from '../../lib/cms';
 import { cn } from '../../lib/cn';
+import { useWebAssistantStore } from '../../stores/webAssistantStore';
+import { notesApi, type LessonNote } from '../../lib/notesApi';
+
+const WebAssistantDrawer = lazy(() =>
+  import('../../components/WebAssistant/WebAssistantDrawer').then((module) => ({
+    default: module.WebAssistantDrawer,
+  })),
+);
 
 // =============================================================
 // 类型(与 CourseDetailPage / shared-types 兼容)
@@ -99,25 +105,6 @@ interface ProgressRecord {
   status: 'not_started' | 'in_progress' | 'completed';
   lastPosition?: number | null;
 }
-// =============================================================
-// AI 助教 — v1.2.0 起无 mock
-// 后端 /api/v1/chat/sessions 暂未建,UI 走 P2 placeholder 模式
-// (空 messages[],handleSend 回复"P2 占位"文案)
-// =============================================================
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'ai';
-  content: string;
-  /** 引用源(line:line 链接,纯 mock) */
-  citation?: { lessonId: string; start: string; end: string; label: string };
-  /** 挑战卡片(可选) */
-  challenge?: { title: string; description: string };
-}
-
-// AI 助教快捷提示 chips — 走 useList('quick-prompts') 拉 CMS 数据, 跟 admin 后台
-// (AdminSettingsPage ListCrudTab) 同步. hook 返空时退化为空数组, 不再硬编码占位.
-// P0 (audit 2026-07-24): 4 chip 之前 inline 硬编码, 投资人海外站改不了.
-
 // =============================================================
 // 工具函数
 // =============================================================
@@ -315,6 +302,189 @@ function ChapterOutline({
 // =============================================================
 type CenterTab = 'notes' | 'cc' | 'resources' | 'qa';
 
+export function NotesPanel({ lessonId, positionSec }: { lessonId: string; positionSec: number }) {
+  const queryClient = useQueryClient();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [draft, setDraft] = useState('');
+  const notesQuery = useQuery({
+    queryKey: ['lesson-notes', lessonId],
+    queryFn: () => notesApi.list(lessonId),
+  });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['lesson-notes', lessonId] });
+  const createNote = useMutation({
+    mutationFn: () =>
+      notesApi.create(lessonId, {
+        content: draft.trim(),
+        positionSec: Math.max(0, Math.round(positionSec)),
+      }),
+    onSuccess: () => {
+      setDraft('');
+      refresh();
+    },
+  });
+  const updateNote = useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) =>
+      notesApi.update(id, { content }),
+    onSuccess: refresh,
+  });
+  const deleteNote = useMutation({
+    mutationFn: (id: string) => notesApi.remove(id),
+    onSuccess: refresh,
+  });
+
+  useEffect(() => {
+    const focusNoteInput = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        event.key.toLowerCase() === 'n' &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !target?.matches('input, textarea, [contenteditable="true"]')
+      ) {
+        event.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', focusNoteInput);
+    return () => window.removeEventListener('keydown', focusNoteInput);
+  }, []);
+
+  return (
+    <div className="max-w-3xl space-y-4">
+      <form
+        className="rounded-lg border border-neutral-200 bg-neutral-0 p-4 dark:bg-neutral-100"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (draft.trim()) createNote.mutate();
+        }}
+      >
+        <label htmlFor="lesson-note" className="text-sm font-semibold">
+          在 {formatDuration(Math.round(positionSec))} 添加笔记
+        </label>
+        <textarea
+          ref={inputRef}
+          id="lesson-note"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          rows={3}
+          maxLength={4000}
+          placeholder="记录本节重点、疑问或实践想法…"
+          className="mt-2 w-full resize-y rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm outline-none focus:border-[#171717]"
+        />
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <span className="text-xs text-neutral-500">按 N 可快速聚焦输入框</span>
+          <button
+            type="submit"
+            disabled={!draft.trim() || createNote.isPending}
+            className="min-h-10 rounded-md bg-[#171717] px-4 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {createNote.isPending ? '保存中…' : '保存笔记'}
+          </button>
+        </div>
+        {createNote.isError && <p className="mt-2 text-xs text-red-600">保存失败，请稍后重试。</p>}
+      </form>
+
+      {notesQuery.isLoading ? (
+        <Skeleton variant="text" count={4} />
+      ) : notesQuery.isError ? (
+        <QueryErrorState error={notesQuery.error} onRetry={() => notesQuery.refetch()} />
+      ) : notesQuery.data?.length ? (
+        <div className="space-y-3">
+          {notesQuery.data.map((note) => (
+            <NoteItem
+              key={note.id}
+              note={note}
+              onUpdate={(content) => updateNote.mutate({ id: note.id, content })}
+              onDelete={() => deleteNote.mutate(note.id)}
+              busy={updateNote.isPending || deleteNote.isPending}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState
+          icon={<FileText className="h-5 w-5" />}
+          title="还没有笔记"
+          description="在上方记录第一条笔记，它会与当前视频时间点一起保存。"
+        />
+      )}
+    </div>
+  );
+}
+
+function NoteItem({
+  note,
+  onUpdate,
+  onDelete,
+  busy,
+}: {
+  note: LessonNote;
+  onUpdate: (content: string) => void;
+  onDelete: () => void;
+  busy: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [content, setContent] = useState(note.content);
+
+  return (
+    <article className="rounded-lg border border-neutral-200 bg-neutral-0 p-4 dark:bg-neutral-100">
+      <div className="flex items-start justify-between gap-3">
+        <span className="font-mono text-xs text-neutral-500">
+          {note.positionSec == null ? '无时间戳' : formatDuration(note.positionSec)}
+        </span>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => setEditing((value) => !value)}
+            className="min-h-10 min-w-10 rounded-md p-2 hover:bg-neutral-100"
+            aria-label="编辑笔记"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={busy}
+            className="min-h-10 min-w-10 rounded-md p-2 text-red-600 hover:bg-red-50 disabled:opacity-50"
+            aria-label="删除笔记"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      {editing ? (
+        <form
+          className="mt-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const next = content.trim();
+            if (!next) return;
+            onUpdate(next);
+            setEditing(false);
+          }}
+        >
+          <textarea
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+            rows={3}
+            className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+          />
+          <div className="mt-2 flex justify-end gap-2">
+            <button type="button" onClick={() => setEditing(false)} className="px-3 py-2 text-xs">
+              取消
+            </button>
+            <button type="submit" disabled={busy} className="rounded-md bg-[#171717] px-3 py-2 text-xs text-white">
+              保存修改
+            </button>
+          </div>
+        </form>
+      ) : (
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{note.content}</p>
+      )}
+    </article>
+  );
+}
+
 function VideoCenter({
   course,
   currentLesson,
@@ -374,10 +544,10 @@ function VideoCenter({
   const hasPrev = currentIdx > 0;
 
   const tabs: Array<{ id: CenterTab; label: string; count?: number; icon: React.ReactNode }> = [
-    { id: 'notes', label: '笔记', count: 3, icon: <FileText className="w-3.5 h-3.5" /> },
+    { id: 'notes', label: '笔记', icon: <FileText className="w-3.5 h-3.5" /> },
     { id: 'cc', label: '字幕', icon: <MessageSquare className="w-3.5 h-3.5" /> },
-    { id: 'resources', label: '资源', count: 5, icon: <AttachIcon className="w-3.5 h-3.5" /> },
-    { id: 'qa', label: 'Q&A', count: 2, icon: <HelpCircle className="w-3.5 h-3.5" /> },
+    { id: 'resources', label: '资源', count: currentLesson.resources?.length, icon: <AttachIcon className="w-3.5 h-3.5" /> },
+    { id: 'qa', label: 'Q&A', icon: <HelpCircle className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -463,23 +633,7 @@ function VideoCenter({
       {/* Tab 内容 */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-neutral-50 dark:bg-neutral-50">
         {centerTab === 'notes' && (
-          <div className="space-y-3 max-w-3xl">
-            <div className="mb-4 p-3 sm:p-4 rounded-lg bg-[#EEEDE9] border border-[#171717]">
-              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-600">
-                💡 提示:在视频任意时间点按 <kbd className="px-1.5 py-0.5 rounded bg-neutral-0 dark:bg-neutral-100 border text-xs font-mono">N</kbd> 添加时间戳笔记
-              </p>
-            </div>
-            <div className="border-2 border-dashed border-neutral-200 dark:border-neutral-200 rounded-lg p-12 text-center bg-neutral-0 dark:bg-neutral-100">
-              <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
-              <p className="text-sm text-neutral-900 dark:text-neutral-900 font-medium">还没有笔记</p>
-              <p className="text-xs text-neutral-600 dark:text-neutral-600 mt-1">
-                在视频任意时间点按 <kbd className="px-1 py-0.5 rounded bg-neutral-50 border text-[10px] font-mono">N</kbd> 添加第一条笔记
-              </p>
-              <p className="text-[10px] text-neutral-400 mt-3">
-                笔记后端 API（POST/GET /api/v1/notes）正在设计中
-              </p>
-            </div>
-          </div>
+          <NotesPanel lessonId={currentLesson.id} positionSec={videoTime} />
         )}
 
         {centerTab === 'cc' && (
@@ -567,185 +721,60 @@ function VideoCenter({
 // =============================================================
 // 3) AI 助教(右栏 + mobile AI tab + tablet 抽屉)
 // =============================================================
-function AiAssistant({
+export function AiAssistant({
   currentLessonTitle,
   onClose,
 }: {
   currentLessonTitle: string;
   onClose?: () => void;
 }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
-  // 快捷提示 — 走 useList('quick-prompts') 拉 CMS 数据, 跟 DashboardPage 同源
-  const { data: quickPromptsData } = useList<{ emoji: string; label: string; promptText: string }>('quick-prompts');
-  const quickPrompts: string[] = (quickPromptsData ?? []).map((p) => `${p.emoji} ${p.label}`);
+  const openDrawer = useWebAssistantStore((state) => state.openDrawer);
+  const setDraftInput = useWebAssistantStore((state) => state.setDraftInput);
 
-  // P2:chat module 后端未建,目前是 placeholder UI。等后端 /api/v1/chat/sessions 上线后:
-  //  - onSend POST /api/v1/chat/sessions
-  //  - 流式响应 (SSE) 增量更新
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text) return;
-    setMessages((prev) => [
-      ...prev,
-      { id: `u-${Date.now()}`, role: 'user', content: text },
-    ]);
-    setInput('');
-    // 后端未上线,回一个 P2 placeholder
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: 'ai',
-          content: 'AI 助教暂未上线。chat module 接入后,这里会基于课程内容回答你的问题。',
-        },
-      ]);
-    }, 400);
-  };
-
-  const handleQuick = (label: string) => {
-    setInput(label.replace(/^[^ ]+ /, ''));
+  const startLessonChat = (question?: string) => {
+    const lessonContext = `我正在学习课时「${currentLessonTitle}」`;
+    setDraftInput(question ? `${lessonContext}。${question}` : `${lessonContext}，请帮我梳理本节重点。`);
+    onClose?.();
+    openDrawer();
   };
 
   return (
-    <div className="flex flex-col h-full bg-neutral-0 dark:bg-neutral-100">
-      {/* 顶部:AI 助教 + 操作 */}
-      <div className="p-4 border-b border-neutral-200 dark:border-neutral-200 flex items-center gap-2 shrink-0">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#171717] to-[#262626] flex items-center justify-center text-white text-xs font-bold shrink-0">
-          AI
+    <div className="flex h-full flex-col bg-neutral-0 p-5 dark:bg-neutral-100">
+      <div className="flex items-center gap-3 border-b border-neutral-200 pb-4">
+        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#171717] text-white">
+          <Sparkles className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-semibold">AI 助教</h2>
+          <p className="truncate text-xs text-neutral-600">当前：{currentLessonTitle}</p>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-900">AI 助教</div>
-          <div className="text-xs text-neutral-500 flex items-center gap-1">
-            <span className="truncate">{currentLessonTitle ? `当前: ${currentLessonTitle}` : '尚未接入 · 等待 chat module'}</span>
-          </div>
-        </div>
-        <button
-          className="p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 text-neutral-600 dark:text-neutral-600"
-          title="重新开始"
-          onClick={() => setMessages([])}
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
-        <button
-          className="p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-50 text-neutral-600 dark:text-neutral-600"
-          title="设置"
-        >
-          <SettingsIcon className="w-4 h-4" />
-        </button>
-        {onClose && (
-          <button
-            className="md:hidden p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-50 text-neutral-600"
-            title="关闭"
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        )}
       </div>
-
-      {/* 快捷提示 — 走 useList('quick-prompts') 拉 CMS 数据, 投资人海外站改 chip 可改后台 */}
-      <div className="px-4 py-2 border-b border-neutral-200 dark:border-neutral-200 flex gap-2 overflow-x-auto shrink-0">
-        {quickPrompts.map((p) => (
-          <button
-            key={p}
-            onClick={() => handleQuick(p)}
-            className="px-2.5 py-1 rounded-full bg-neutral-50 dark:bg-neutral-50 text-xs text-neutral-900 dark:text-neutral-900 hover:bg-[#EEEDE9] transition-colors whitespace-nowrap border border-neutral-200 dark:border-neutral-200"
-          >
-            {p}
-          </button>
-        ))}
-      </div>
-
-      {/* 对话流 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={cn(
-              'flex gap-2 items-start',
-              m.role === 'user' && 'justify-end',
-            )}
-          >
-            {m.role === 'ai' && (
-              <div
-                className={cn(
-                  'w-7 h-7 rounded-full text-neutral-0 flex items-center justify-center text-xs font-bold shrink-0',
-                  m.challenge ? 'bg-xp-500' : 'bg-cert-500',
-                )}
-              >
-                AI
-              </div>
-            )}
-            <div
-              className={cn(
-                'text-sm rounded-lg p-3 max-w-[85%] sm:max-w-[80%]',
-                m.role === 'user'
-                  ? 'bg-[#EEEDE9] text-neutral-900 dark:text-neutral-900'
-                  : m.challenge
-                    ? 'bg-xp-100 border border-xp-500/20'
-                    : 'bg-neutral-50 dark:bg-neutral-50 text-neutral-900 dark:text-neutral-900',
-              )}
-            >
-              <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
-              {m.citation && (
-                <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-600">
-                  📎 {m.citation.label}
-                </p>
-              )}
-              {m.challenge && (
-                <>
-                  <p className="mt-2 text-xs font-semibold text-xp-500">{m.challenge.title}</p>
-                  <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-600">
-                    {m.challenge.description}
-                  </p>
-                </>
-              )}
-            </div>
-            {m.role === 'user' && (
-              <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-200 text-neutral-900 dark:text-neutral-900 flex items-center justify-center text-xs font-bold shrink-0">
-                我
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* 输入区 */}
-      <div className="p-3 border-t border-neutral-200 dark:border-neutral-200 shrink-0">
-        <div className="flex items-end gap-2">
-          <button
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-600 dark:text-neutral-600 hover:text-[#171717]"
-            title="附加资源"
-          >
-            <Paperclip className="w-4 h-4" />
-          </button>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            placeholder="问 AI 助教... (Shift+Enter 换行)"
-            rows={2}
-            className="flex-1 px-3 py-2 rounded-md bg-neutral-50 dark:bg-neutral-50 border border-neutral-200 dark:border-neutral-200 text-base resize-none focus:outline-none focus:border-[#171717] text-neutral-900 dark:text-neutral-900 placeholder:text-neutral-400"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim()}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md bg-[#171717] text-white hover:bg-[#262626] disabled:opacity-50 disabled:cursor-not-allowed transition"
-            aria-label="发送"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
-        <p className="mt-1.5 text-[10px] text-neutral-400 text-center">
-          AI 助教答复可能不准确,请参考官方文档
+      <div className="flex flex-1 flex-col justify-center py-8">
+        <h3 className="text-xl font-bold">带着当前课时去提问</h3>
+        <p className="mt-2 text-sm leading-6 text-neutral-600">
+          使用真实 AI 会话，历史记录、消息发送和引用来源都会保存在同一个助教中。
         </p>
+        <div className="mt-5 space-y-2">
+          {['帮我梳理本节重点。', '给我一个检验理解程度的问题。', '用一个实际案例解释本节内容。'].map(
+            (question) => (
+              <button
+                key={question}
+                type="button"
+                onClick={() => startLessonChat(question)}
+                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-left text-sm hover:border-[#171717]"
+              >
+                {question}
+              </button>
+            ),
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => startLessonChat()}
+          className="mt-5 min-h-11 rounded-md bg-[#171717] px-4 py-2 text-sm font-semibold text-white hover:bg-[#262626]"
+        >
+          打开 AI 助教
+        </button>
       </div>
     </div>
   );
@@ -757,6 +786,7 @@ function AiAssistant({
 export function DashboardPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const assistantOpen = useWebAssistantStore((state) => state.open);
 
   // 移动端顶部 tab 切换(大纲 / 视频 / AI)
   const [mobileTab, setMobileTab] = useState<'outline' | 'video' | 'ai'>('video');
@@ -774,10 +804,6 @@ export function DashboardPage() {
     },
     retry: 0,
   });
-
-  // 0) AI 助教快捷提示 — CMS 驱动, fallback 走 LIST_FALLBACK['quick-prompts']
-  const { data: quickPromptsData } = useList<{ emoji: string; label: string; promptText: string }>('quick-prompts');
-  const quickPrompts: string[] = (quickPromptsData ?? []).map((p) => `${p.emoji} ${p.label}`);
 
   // 2) 拉当前 in-progress 课程详情
   const courseQuery = useQuery({
@@ -1049,6 +1075,12 @@ export function DashboardPage() {
         <div className="md:hidden fixed inset-x-0 top-[7rem] bottom-0 z-30 bg-neutral-0 dark:bg-neutral-100">
           <AiAssistant currentLessonTitle={currentLesson.title} />
         </div>
+      )}
+
+      {assistantOpen && (
+        <Suspense fallback={null}>
+          <WebAssistantDrawer />
+        </Suspense>
       )}
     </div>
   );

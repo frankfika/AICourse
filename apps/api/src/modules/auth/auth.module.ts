@@ -112,7 +112,7 @@ function assertStrongJwtSecret(secret: string | undefined): string {
                 issuer: cfg.issuer as string,
                 callbackUrl: cfg.callbackUrl as string,
                 cert: cfg.cert as string,
-              }),
+              }, prisma),
             );
             continue;
           }

@@ -34,6 +34,7 @@ import { CmsModule } from './modules/cms/cms.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { InstructorsModule } from './modules/instructors/instructors.module';
 import { HealthModule } from './modules/health/health.module';
+import { NotesModule } from './modules/notes/notes.module';
 import { RedisModule } from './common/redis/redis.module';
 import { RedisService } from './common/redis/redis.service';
 import { GeminiModule } from './common/gemini/gemini.module';
@@ -97,6 +98,7 @@ import { GeminiModule } from './common/gemini/gemini.module';
     GeminiModule,
     ChatModule,
     HealthModule,
+    NotesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

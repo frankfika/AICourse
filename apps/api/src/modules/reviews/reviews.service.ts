@@ -59,8 +59,8 @@ export class ReviewsService {
 
   /**
    * P1-3 admin 软删评价
-   * 方案:content 置 "[已删除]" + 改 userId 为 null(脱敏作者)
-   * 优点:保留 audit trace + 不影响评分分布统计(groupBy 仍算)
+   * 方案:设置 deletedAt 并把正文替换为占位文本。
+   * 作者和评分继续保留用于审计，但公开列表与评分分布不再计入。
    */
   async adminRemove(reviewId: string) {
     const existing = await this.prisma.review.findUnique({ where: { id: reviewId } });
@@ -69,7 +69,7 @@ export class ReviewsService {
       where: { id: reviewId },
       data: {
         content: '[已删除]',
-        userId: existing.userId, // 保留 userId 用于审计追溯
+        deletedAt: new Date(),
       },
     });
     await this.auditLog.log({
@@ -99,7 +99,7 @@ export class ReviewsService {
     const skip = (page - 1) * limit;
     const [items, total] = await this.prisma.$transaction([
       this.prisma.review.findMany({
-        where: { courseId },
+        where: { courseId, deletedAt: null },
         orderBy: [{ helpful: 'desc' }, { createdAt: 'desc' }],
         skip,
         take: limit,
@@ -109,7 +109,7 @@ export class ReviewsService {
           },
         },
       }),
-      this.prisma.review.count({ where: { courseId } }),
+      this.prisma.review.count({ where: { courseId, deletedAt: null } }),
     ]);
 
     return {
@@ -182,17 +182,26 @@ export class ReviewsService {
   async markHelpful(userId: string, reviewId: string) {
     const review = await this.prisma.review.findUnique({
       where: { id: reviewId },
-      select: { id: true, userId: true, courseId: true },
+      select: { id: true, userId: true, courseId: true, deletedAt: true },
     });
-    if (!review) throw new NotFoundException('Review not found');
+    if (!review || review.deletedAt) throw new NotFoundException('Review not found');
     if (review.userId === userId) {
       throw new BadRequestException('不能给自己的评价点赞');
     }
 
-    const updated = await this.prisma.review.update({
-      where: { id: reviewId },
-      data: { helpful: { increment: 1 } },
-      select: { id: true, helpful: true },
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const inserted = await tx.reviewHelpful.createMany({
+        data: [{ userId, reviewId }],
+        skipDuplicates: true,
+      });
+      if (inserted.count === 0) {
+        throw new ConflictException('你已标记过这条评价');
+      }
+      return tx.review.update({
+        where: { id: reviewId },
+        data: { helpful: { increment: 1 } },
+        select: { id: true, helpful: true },
+      });
     });
 
     await this.auditLog.log({
@@ -225,11 +234,17 @@ export class ReviewsService {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(100, Math.max(1, params.limit ?? 20));
     const skip = (page - 1) * limit;
-    const where: any = {};
+    const where: {
+      courseId?: string;
+      rating?: number;
+      deletedAt?: Date | null | { not: null };
+    } = {};
     if (params.courseId) where.courseId = params.courseId;
     if (params.rating) where.rating = params.rating;
     if (params.onlyDeleted) {
-      where.content = '[已删除]';
+      where.deletedAt = { not: null };
+    } else {
+      where.deletedAt = null;
     }
 
     const [items, total] = await this.prisma.$transaction([
@@ -262,7 +277,7 @@ export class ReviewsService {
   async getDistribution(courseId: string): Promise<RatingDistribution> {
     const grouped = await this.prisma.review.groupBy({
       by: ['rating'],
-      where: { courseId },
+      where: { courseId, deletedAt: null },
       _count: { _all: true },
     });
 

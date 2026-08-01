@@ -1,4 +1,10 @@
-import { Injectable, Inject, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Inject,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -49,12 +55,15 @@ export class AuthService {
     if (!provider.enabled) {
       throw new UnauthorizedException(`Provider ${providerId} is not enabled`);
     }
+    if (provider.type === 'oauth') {
+      this.verifyOAuthState(providerId, credentials.state);
+    }
 
     // 1. 让 provider 验证凭据 → 标准化 identity
     const identity = await provider.verify(credentials);
 
     // 2. upsert user + provider account
-    const { user, isNewUser } = await this.upsertUser(provider.id, identity);
+    const { user } = await this.upsertUser(provider.id, identity);
 
     // 3. 记录 last login
     await this.prisma.user.update({
@@ -86,6 +95,12 @@ export class AuthService {
       include: { user: true },
     });
 
+    if (existingAccount?.deletedAt || existingAccount?.user.deletedAt) {
+      // The compound unique key remains reserved after unlinking. Do not
+      // silently revive an identity that the user explicitly removed.
+      throw new UnauthorizedException('Identity is not available');
+    }
+
     if (existingAccount) {
       return { user: existingAccount.user, isNewUser: false };
     }
@@ -96,6 +111,14 @@ export class AuthService {
     });
 
     if (existingUser) {
+      if (existingUser.deletedAt) {
+        throw new UnauthorizedException('Account is disabled');
+      }
+      // Linking a third-party identity to an existing account solely by email
+      // is safe only when that provider attests that the email is verified.
+      if (providerId !== 'email_password' && !identity.profile.emailVerified) {
+        throw new UnauthorizedException('OAuth email is not verified');
+      }
       await this.prisma.userProviderAccount.create({
         data: {
           userId: existingUser.id,
@@ -145,14 +168,21 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!stored || stored.expiresAt < new Date()) {
+    if (!stored || stored.expiresAt < new Date() || stored.user.deletedAt) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    // Rotation: 删旧发新
-    await this.prisma.refreshToken.delete({
-      where: { token: this.hashToken(token) },
+    // Rotation 必须原子消费旧 token。并发 refresh 中只能有一个请求成功，
+    // 避免两个请求都先 findUnique 后各自签出新 token。
+    const consumed = await this.prisma.refreshToken.deleteMany({
+      where: {
+        token: this.hashToken(token),
+        expiresAt: { gte: new Date() },
+      },
     });
+    if (consumed.count !== 1) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
     return this.generateTokens(stored.user);
   }
 
@@ -164,18 +194,105 @@ export class AuthService {
   /** 旧 register 端点兼容 */
   async register(dto: { email: string; password: string; name: string }) {
     const result = await this.authenticate('email_password', { ...dto, mode: 'register' });
-    // 注册端点只返回 user,不返回 token（用户需要再走 login 拿 token）
+    // 注册端点契约不返回 token（前端随后自动登录），因此撤销 authenticate
+    // 内部创建的 refresh token，避免数据库积累客户端永远拿不到的有效 token。
+    await this.prisma.refreshToken.deleteMany({
+      where: { token: this.hashToken(result.refreshToken) },
+    });
     return { user: result.user };
+  }
+
+  async logout(token?: string): Promise<void> {
+    if (!token) return;
+    await this.prisma.refreshToken.deleteMany({
+      where: { token: this.hashToken(token) },
+    });
   }
 
   /** 列出可用的登录 provider（前端 LoginPage 渲染按钮用） */
   listProviders() {
     return Array.from(this.providers.values())
       .filter((p) => p.enabled && p.describe)
-      .map((p) => p.describe!());
+      .map((p) => ({ ...p.describe!(), enabled: p.enabled }));
   }
 
-  private generateTokens(user: { id: string; email: string; role: string }) {
+  async listIdentities(userId: string) {
+    const accounts = await this.prisma.userProviderAccount.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: { linkedAt: 'asc' },
+    });
+    return accounts.map((account) => ({
+      id: account.id,
+      provider: account.provider,
+      providerUserId: account.providerUserId,
+      email: account.email ?? undefined,
+      displayName: account.displayName ?? undefined,
+      linkedAt: account.linkedAt.toISOString(),
+      lastUsedAt: account.lastUsedAt.toISOString(),
+      isPrimary: account.isPrimary || account.provider === 'email_password',
+    }));
+  }
+
+  async unlinkIdentity(userId: string, identityId: string) {
+    const account = await this.prisma.userProviderAccount.findFirst({
+      where: { id: identityId, userId, deletedAt: null },
+    });
+    if (!account) throw new UnauthorizedException('Identity not found');
+    if (account.provider === 'email_password' || account.isPrimary) {
+      throw new BadRequestException('Primary login identity cannot be removed');
+    }
+    await this.prisma.userProviderAccount.update({
+      where: { id: identityId },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  createAuthorization(providerId: string) {
+    const provider = this.providers.get(providerId);
+    if (!provider?.enabled || !provider.createAuthorizationUrl) {
+      throw new BadRequestException('OAuth provider is not available');
+    }
+    const state = this.jwtService.sign(
+      {
+        purpose: 'oauth-state',
+        providerId,
+        nonce: randomBytes(16).toString('hex'),
+      },
+      { audience: 'oauth', expiresIn: '10m' },
+    );
+    return {
+      providerId,
+      authorizationUrl: provider.createAuthorizationUrl(state),
+      expiresIn: 600,
+    };
+  }
+
+  private verifyOAuthState(providerId: string, state: unknown) {
+    if (typeof state !== 'string' || !state) {
+      throw new UnauthorizedException('Missing OAuth state');
+    }
+    try {
+      const payload = this.jwtService.verify<{
+        purpose?: string;
+        providerId?: string;
+      }>(state, { audience: 'oauth' });
+      if (
+        payload.purpose !== 'oauth-state' ||
+        payload.providerId !== providerId
+      ) {
+        throw new Error('state mismatch');
+      }
+    } catch {
+      throw new UnauthorizedException('Invalid or expired OAuth state');
+    }
+  }
+
+  private async generateTokens(user: {
+    id: string;
+    email: string;
+    name?: string | null;
+    role: string;
+  }) {
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = randomBytes(32).toString('hex');
@@ -186,27 +303,23 @@ export class AuthService {
     // Security: 只存 hash
     // Bug fix: 之前没 await, 导致 refresh token 可能还没入库就被 verify,
     // 表现为 "Invalid refresh token" 401. 这里 await 保证 db 写入完成.
-    return this.prisma.refreshToken.create({
+    await this.prisma.refreshToken.create({
       data: {
         token: this.hashToken(refreshToken),
         userId: user.id,
         expiresAt: refreshExpires,
       },
-    }).then(() => ({
+    });
+    return {
       accessToken,
       refreshToken,
       user: {
         id: user.id,
         email: user.email,
-        name: (user as any).name,
+        name: user.name,
         role: user.role,
       },
-    }));
-  }
-
-  // Security: CSPRNG,never Math.random()
-  private randomToken(): string {
-    return randomBytes(32).toString('hex');
+    };
   }
 
   // Security: 只存 hash

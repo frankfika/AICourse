@@ -7,8 +7,8 @@
  *   pnpm e2e:debug   (debug 单测)
  *
  * 前置:
- *   - dev server 必须先跑(默认 :5500)
- *   - 数据库可选,e2e 大部分不依赖后端,有 mock fallback
+ *   - 自动启动 web dev server(默认 :5500)
+ *   - 这是浏览器 UI smoke；涉及真实 API 的流程应由 API 集成测试覆盖
  */
 import { defineConfig, devices } from '@playwright/test';
 
@@ -29,14 +29,12 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
 
-  // 不在这里启动 webServer — 假设 dev server 已经在跑(避免双实例)
-  // 想自动启动就解开注释:
-  // webServer: {
-  //   command: 'pnpm dev',
-  //   port: 5500,
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 60_000,
-  // },
+  webServer: {
+    command: 'pnpm dev --host 127.0.0.1',
+    port: 5500,
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
+  },
 
   projects: [
     {

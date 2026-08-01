@@ -4,13 +4,12 @@ import {
   IsEnum,
   IsNumber,
   IsUUID,
-  IsBoolean,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CourseLevel, CostType, CourseStatus, CourseType, ResourceType } from '@prisma/client';
+import { CourseLevel, CostType, CourseStatus, CourseType } from '@prisma/client';
 import { CreateLessonDto as NestedCreateLessonDto } from './lessons.dto';
 import { CreateResourceDto as NestedCreateResourceDto } from './resources.dto';
 import { SafeUrl } from '../../common/validators/safe-url.decorator';
@@ -113,15 +112,11 @@ export class CreateCourseDto {
   courseType?: CourseType;
 
   @ApiPropertyOptional({ description: '外链课程 URL（外部跳转类型课程用）', maxLength: 500 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
+  @SafeUrl({ optional: true, maxLength: 500 })
   externalUrl?: string;
 
   @ApiPropertyOptional({ description: '原始视频源 URL（导入用）', maxLength: 500 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
+  @SafeUrl({ optional: true, maxLength: 500 })
   sourceVideoUrl?: string;
 
   @ApiPropertyOptional({ description: '来源平台标识', maxLength: 20 })
@@ -159,4 +154,30 @@ export class LinkDegreesDto {
   @ApiProperty({ type: [String], description: '要追加到的学位 UUID 列表' })
   @IsUUID('all', { each: true })
   degreeIds: string[];
+}
+
+export enum CourseSort {
+  newest = 'newest',
+  recent = 'recent',
+  rating = 'rating',
+  popular = 'popular',
+}
+
+export class ListCoursesQueryDto {
+  @IsOptional()
+  @IsEnum(CourseStatus)
+  status?: CourseStatus;
+
+  @IsOptional()
+  @IsEnum(CourseType)
+  courseType?: CourseType;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
+
+  @IsOptional()
+  @IsEnum(CourseSort)
+  sort?: CourseSort = CourseSort.recent;
 }

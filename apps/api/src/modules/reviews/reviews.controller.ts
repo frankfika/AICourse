@@ -24,14 +24,18 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ReviewsService } from './reviews.service';
-import { CreateReviewDto, ListReviewsQueryDto } from './reviews.dto';
+import {
+  AdminListReviewsQueryDto,
+  CreateReviewDto,
+  ListReviewsQueryDto,
+} from './reviews.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 
 interface AuthedRequest {
-  user: { id: string; role?: string };
+  user: { userId: string; role?: string };
 }
 
 @ApiTags('reviews')
@@ -67,7 +71,7 @@ export class CoursesReviewsController {
     @Req() req: AuthedRequest,
     @Body() dto: CreateReviewDto,
   ) {
-    return this.reviewsService.create(req.user.id, courseId, dto);
+    return this.reviewsService.create(req.user.userId, courseId, dto);
   }
 }
 
@@ -87,7 +91,7 @@ export class ReviewsController {
     @Param('id') reviewId: string,
     @Req() req: AuthedRequest,
   ) {
-    return this.reviewsService.markHelpful(req.user.id, reviewId);
+    return this.reviewsService.markHelpful(req.user.userId, reviewId);
   }
 
   /**
@@ -105,19 +109,13 @@ export class ReviewsController {
   @ApiQuery({ name: 'courseId', required: false, description: '按课程过滤' })
   @ApiQuery({ name: 'rating', required: false, description: '按评分过滤（1-5）' })
   @ApiQuery({ name: 'onlyDeleted', required: false, description: '只显示已软删评价' })
-  async findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('courseId') courseId?: string,
-    @Query('rating') rating?: string,
-    @Query('onlyDeleted') onlyDeleted?: string,
-  ) {
+  async findAll(@Query() query: AdminListReviewsQueryDto) {
     return this.reviewsService.findAll({
-      page: page ? parseInt(page, 10) : 1,
-      limit: limit ? parseInt(limit, 10) : 20,
-      courseId,
-      rating: rating ? parseInt(rating, 10) : undefined,
-      onlyDeleted: onlyDeleted === 'true',
+      page: query.page,
+      limit: query.limit,
+      courseId: query.courseId,
+      rating: query.rating,
+      onlyDeleted: query.onlyDeleted,
     });
   }
 

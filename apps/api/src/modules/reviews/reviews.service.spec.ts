@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -11,6 +11,9 @@ const mockPrisma: any = {
     create: jest.fn(),
     update: jest.fn(),
     groupBy: jest.fn(),
+  },
+  reviewHelpful: {
+    createMany: jest.fn(),
   },
   course: {
     findUnique: jest.fn(),
@@ -43,6 +46,7 @@ describe('ReviewsService', () => {
     mockPrisma.review.create.mockReset();
     mockPrisma.review.update.mockReset();
     mockPrisma.review.groupBy.mockReset();
+    mockPrisma.reviewHelpful.createMany.mockReset();
     mockPrisma.course.findUnique.mockReset();
     mockPrisma.enrollment.findFirst.mockReset();
     mockAuditLog.log.mockClear();
@@ -70,7 +74,7 @@ describe('ReviewsService', () => {
         where: { id: 'r1' },
         data: {
           content: '[已删除]',
-          userId: 'u1', // 保留 userId 用于审计
+          deletedAt: expect.any(Date),
         },
       });
       expect(mockAuditLog.log).toHaveBeenCalledWith({
@@ -100,7 +104,7 @@ describe('ReviewsService', () => {
       expect(result).toEqual({ items: [], total: 0, page: 1, limit: 20 });
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: {},
+          where: { deletedAt: null },
           orderBy: { createdAt: 'desc' },
           skip: 0,
           take: 20,
@@ -116,7 +120,7 @@ describe('ReviewsService', () => {
 
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { courseId: 'c1' },
+          where: { courseId: 'c1', deletedAt: null },
           skip: 10,
           take: 10,
         }),
@@ -131,7 +135,7 @@ describe('ReviewsService', () => {
 
       expect(mockPrisma.review.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { rating: 5, content: '[已删除]' },
+          where: { rating: 5, deletedAt: { not: null } },
         }),
       );
     });
@@ -174,6 +178,43 @@ describe('ReviewsService', () => {
       expect(r.avg).toBe(4); // (5*2 + 3*2) / 4 = 4
       expect(r.counts).toEqual({ 1: 0, 2: 0, 3: 2, 4: 0, 5: 2 });
       expect(r.percentages).toEqual({ 1: 0, 2: 0, 3: 50, 4: 0, 5: 50 });
+    });
+  });
+
+  describe('markHelpful', () => {
+    it('records one user vote and increments the cached counter atomically', async () => {
+      mockPrisma.review.findUnique.mockResolvedValue({
+        id: 'r1',
+        userId: 'author',
+        courseId: 'c1',
+        deletedAt: null,
+      });
+      mockPrisma.reviewHelpful.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.review.update.mockResolvedValue({ id: 'r1', helpful: 3 });
+
+      await expect(service.markHelpful('voter', 'r1')).resolves.toEqual({
+        id: 'r1',
+        helpful: 3,
+      });
+      expect(mockPrisma.reviewHelpful.createMany).toHaveBeenCalledWith({
+        data: [{ userId: 'voter', reviewId: 'r1' }],
+        skipDuplicates: true,
+      });
+    });
+
+    it('rejects a duplicate users vote without incrementing', async () => {
+      mockPrisma.review.findUnique.mockResolvedValue({
+        id: 'r1',
+        userId: 'author',
+        courseId: 'c1',
+        deletedAt: null,
+      });
+      mockPrisma.reviewHelpful.createMany.mockResolvedValue({ count: 0 });
+
+      await expect(service.markHelpful('voter', 'r1')).rejects.toThrow(
+        ConflictException,
+      );
+      expect(mockPrisma.review.update).not.toHaveBeenCalled();
     });
   });
 });

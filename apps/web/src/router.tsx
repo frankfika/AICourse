@@ -1,26 +1,12 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { HomePage } from './features/home/HomePage';
-import { CourseListPage } from './features/courses/CourseListPage';
-import { CourseDetailPage } from './features/courses/CourseDetailPage';
-import { DegreeListPage } from './features/degrees/DegreeListPage';
-import { DegreeDetailPage } from './features/degrees/DegreeDetailPage';
-import { HackathonListPage } from './features/hackathons/HackathonListPage';
-import { HackathonDetailPage } from './features/hackathons/HackathonDetailPage';
-import { ProfilePage } from './features/profile/ProfilePage';
-import { LoginPage } from './features/auth/LoginPage';
-import { RegisterPage } from './features/auth/RegisterPage';
-import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
 import { useAuthStore } from './stores/authStore';
 
 // ──────────────────────────────────────────────────────────────────────
 // Code-split: 懒加载非首屏路由,首屏 LCP 路由保留同步 import
 //
-// 同步保留(首屏 LCP / 高频导航):
-//   - HomePage, CourseList/Detail, DegreeList/Detail,
-//   - HackathonList/Detail, ProfilePage,
-//   - Login/Register/Forgot(未登录时直接进 auth 流, 不能 lazy)
+// 页面全部按路由拆包，避免不访问的课程、学位、认证和管理功能进入首包。
 //
 // lazy(点开才拉):
 //   - admin 全部页面(只管理员进, 占 chunk 比重最大 ~300KB)
@@ -28,6 +14,19 @@ import { useAuthStore } from './stores/authStore';
 //   - search, design-system, not-found, bindings, verify-certificate, enterprise
 // ──────────────────────────────────────────────────────────────────────
 const BindingsPage = lazy(() => import('./features/auth/BindingsPage').then(m => ({ default: m.BindingsPage })));
+const HomePage = lazy(() => import('./features/home/HomePage').then(m => ({ default: m.HomePage })));
+const LoginPage = lazy(() => import('./features/auth/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('./features/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const CourseListPage = lazy(() => import('./features/courses/CourseListPage').then(m => ({ default: m.CourseListPage })));
+const CourseDetailPage = lazy(() => import('./features/courses/CourseDetailPage').then(m => ({ default: m.CourseDetailPage })));
+const DegreeListPage = lazy(() => import('./features/degrees/DegreeListPage').then(m => ({ default: m.DegreeListPage })));
+const DegreeDetailPage = lazy(() => import('./features/degrees/DegreeDetailPage').then(m => ({ default: m.DegreeDetailPage })));
+const HackathonListPage = lazy(() => import('./features/hackathons/HackathonListPage').then(m => ({ default: m.HackathonListPage })));
+const HackathonDetailPage = lazy(() => import('./features/hackathons/HackathonDetailPage').then(m => ({ default: m.HackathonDetailPage })));
+const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AboutPage = lazy(() => import('./features/about/AboutPage').then(m => ({ default: m.AboutPage })));
+const InstructorDetailPage = lazy(() => import('./features/instructors/InstructorDetailPage').then(m => ({ default: m.InstructorDetailPage })));
 const NotificationsPage = lazy(() => import('./features/dashboard/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const OrdersPage = lazy(() => import('./features/dashboard/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const OrderDetailPage = lazy(() => import('./features/dashboard/orders/OrderDetailPage').then(m => ({ default: m.OrderDetailPage })));
@@ -65,8 +64,12 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: React.Re
   // user 真正存在的地方是 zustand store (AuthProvider 也读这里)
   // 直接订阅 zustand 避免 React Context 异步 hydration 时机问题
   const user = useAuthStore((s) => s.user);
+  const location = useLocation();
   // DEBUG removed 2026-07-24: admin role 跳回学生问题已修
-  if (!user) return <Navigate to="/auth/login" replace />;
+  if (!user) {
+    const from = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={`/auth/login?from=${encodeURIComponent(from)}`} replace />;
+  }
   if (requireAdmin && user.role !== 'admin') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
@@ -95,17 +98,19 @@ export const router = createBrowserRouter([
     path: '/',
     element: <Layout><Outlet /></Layout>,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'courses', element: <CourseListPage /> },
-      { path: 'courses/:id', element: <CourseDetailPage /> },
-      { path: 'degrees', element: <DegreeListPage /> },
-      { path: 'degrees/:id', element: <DegreeDetailPage /> },
-      { path: 'hackathons', element: <HackathonListPage /> },
-      { path: 'hackathons/:id', element: <HackathonDetailPage /> },
+      { index: true, element: <PublicSuspense><HomePage /></PublicSuspense> },
+      { path: 'courses', element: <PublicSuspense><CourseListPage /></PublicSuspense> },
+      { path: 'courses/:id', element: <PublicSuspense><CourseDetailPage /></PublicSuspense> },
+      { path: 'degrees', element: <PublicSuspense><DegreeListPage /></PublicSuspense> },
+      { path: 'degrees/:id', element: <PublicSuspense><DegreeDetailPage /></PublicSuspense> },
+      { path: 'hackathons', element: <PublicSuspense><HackathonListPage /></PublicSuspense> },
+      { path: 'hackathons/:id', element: <PublicSuspense><HackathonDetailPage /></PublicSuspense> },
       { path: 'enterprise', element: <PublicSuspense><EnterprisePage /></PublicSuspense> },
+      { path: 'about', element: <PublicSuspense><AboutPage /></PublicSuspense> },
+      { path: 'instructors/:slug', element: <PublicSuspense><InstructorDetailPage /></PublicSuspense> },
       // P1-2: 全站搜索结果页(公开,带 ?q=)
       { path: 'search', element: <PublicSuspense><SearchPage /></PublicSuspense> },
-      { path: 'profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
+      { path: 'profile', element: <ProtectedRoute><PublicSuspense><ProfilePage /></PublicSuspense></ProtectedRoute> },
       {
         path: 'admin',
         element: (
@@ -129,11 +134,11 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login', element: <PublicSuspense><LoginPage /></PublicSuspense> },
   // ===== P0-2 / P0-3 新增路由 — 公开 + 登录态 sub-page =====
-  { path: '/auth/login', element: <LoginPage /> },
-  { path: '/auth/register', element: <RegisterPage /> },
-  { path: '/auth/forgot', element: <ForgotPasswordPage /> },
+  { path: '/auth/login', element: <PublicSuspense><LoginPage /></PublicSuspense> },
+  { path: '/auth/register', element: <PublicSuspense><RegisterPage /></PublicSuspense> },
+  { path: '/auth/forgot', element: <PublicSuspense><ForgotPasswordPage /></PublicSuspense> },
   // ===== P1-9 法律页 (公开, footer 链接需要 — 之前缺失直接 404) =====
   { path: '/terms', element: <PublicSuspense><TermsPage /></PublicSuspense> },
   { path: '/privacy', element: <PublicSuspense><PrivacyPage /></PublicSuspense> },

@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Req, Res, Get, HttpCode, HttpStatus, UnauthorizedException, Param, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, Get, Delete, HttpCode, HttpStatus, UnauthorizedException, Param, BadRequestException, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './auth.dto';
+import { LoginDto, OAuthCallbackDto, RegisterDto } from './auth.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 /**
  * AuthController - 重构后
@@ -24,6 +25,27 @@ export class AuthController {
   @Get('providers')
   listProviders() {
     return { providers: this.authService.listProviders() };
+  }
+
+  @Get('identities')
+  @UseGuards(JwtAuthGuard)
+  async listIdentities(@Req() req: Request & { user: { userId: string } }) {
+    return this.authService.listIdentities(req.user.userId);
+  }
+
+  @Delete('identities/:id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async unlinkIdentity(
+    @Param('id') identityId: string,
+    @Req() req: Request & { user: { userId: string } },
+  ) {
+    await this.authService.unlinkIdentity(req.user.userId, identityId);
+  }
+
+  @Get(':providerId/start')
+  start(@Param('providerId') providerId: string) {
+    return this.authService.createAuthorization(providerId);
   }
 
   // ============ 旧端点：email/password 兼容 ============
@@ -74,7 +96,11 @@ export class AuthController {
   @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 30, ttl: 60000 } })
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logout(req.cookies?.['refresh_token']);
     res.clearCookie('refresh_token', { path: '/api/v1/auth' });
     return { message: 'Logged out' };
   }
@@ -102,6 +128,18 @@ export class AuthController {
       throw new BadRequestException('Missing credentials');
     }
     const result = await this.authService.authenticate(providerId, body);
+    this.setRefreshCookie(res, result.refreshToken);
+    return { accessToken: result.accessToken, user: result.user };
+  }
+
+  @Post(':providerId/callback')
+  @HttpCode(HttpStatus.OK)
+  async callback(
+    @Param('providerId') providerId: string,
+    @Body() dto: OAuthCallbackDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.authenticate(providerId, { ...dto });
     this.setRefreshCookie(res, result.refreshToken);
     return { accessToken: result.accessToken, user: result.user };
   }

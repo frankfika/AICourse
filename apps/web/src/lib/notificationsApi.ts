@@ -31,6 +31,16 @@ export interface NotificationListResponse {
   limit: number;
 }
 
+interface NotificationListWireResponse {
+  items?: Array<Omit<Notification, 'read'> & { isRead?: boolean; read?: boolean }>;
+  /** Backward compatibility with the early frontend-shaped response. */
+  data?: Notification[];
+  total: number;
+  unreadCount: number;
+  page: number;
+  limit: number;
+}
+
 export const notificationsApi = {
   /** 列表 + 未读数(分页) */
   list: async (params?: {
@@ -39,8 +49,23 @@ export const notificationsApi = {
     unreadOnly?: boolean;
     type?: string;
   }): Promise<NotificationListResponse> => {
-    const { data } = await api.get('/api/v1/notifications', { params });
-    return data;
+    const { data } = await api.get<NotificationListWireResponse>(
+      '/api/v1/notifications',
+      { params },
+    );
+    const notifications = data.items
+      ? data.items.map(({ isRead, read, ...item }) => ({
+          ...item,
+          read: isRead ?? read ?? false,
+        }))
+      : (data.data ?? []);
+    return {
+      data: notifications,
+      total: data.total,
+      unreadCount: data.unreadCount,
+      page: data.page,
+      limit: data.limit,
+    };
   },
 
   /** 仅未读数(顶部 bell 角标轮询用) */

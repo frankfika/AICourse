@@ -23,7 +23,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { StorageProvider, PresignResult } from './storage/storage.interface';
+import { PresignResult } from './storage/storage.interface';
 import { S3StorageService } from './storage/s3-storage.service';
 import { UPLOAD_SCOPES, UploadScope } from './uploads.config';
 import { CompleteUploadDto, SignUploadDto } from './uploads.dto';
@@ -53,7 +53,7 @@ export class UploadsService {
 
   async sign(
     dto: SignUploadDto,
-    user: { id: string; role: string },
+    user: { userId: string; role: string },
   ): Promise<PresignResult & { scope: UploadScope }> {
     const cfg = UPLOAD_SCOPES[dto.scope];
     if (!cfg) {
@@ -79,7 +79,7 @@ export class UploadsService {
       );
     }
 
-    const key = this.generateKey(dto.scope, user.id, dto.filename);
+    const key = this.generateKey(dto.scope, user.userId, dto.filename);
 
     // 如果给了 refId, 校验 refId 存在 + 用户有权限 — 防 user 拿任意 entity id 签 key
     // 业务侧 confirm 还要再校验一次, 这里只是 fail-fast
@@ -93,7 +93,8 @@ export class UploadsService {
       action: 'UPLOAD_SIGN',
       entity: this.entityForScope(dto.scope),
       entityId: dto.refId ?? key,
-      details: { scope: dto.scope, size: dto.size, mimeType: dto.mimeType, userId: user.id, refId: dto.refId },
+      userId: user.userId,
+      details: { scope: dto.scope, size: dto.size, mimeType: dto.mimeType, refId: dto.refId },
     });
 
     return { ...presigned, scope: dto.scope };
@@ -106,7 +107,7 @@ export class UploadsService {
   private async validateRefIdForSign(
     scope: UploadScope,
     refId: string,
-    user: { id: string; role: string },
+    user: { userId: string; role: string },
   ): Promise<void> {
     const isAdmin = user.role === 'admin';
     switch (scope) {
@@ -154,13 +155,12 @@ export class UploadsService {
         return;
       }
       case 'submission-video': {
-        // 任意已登录 user — refId 是 submission id, 校验存在
-        const sub = await this.prisma.submission.findUnique({ where: { id: refId } });
+        const sub = await this.findOwnedSubmission(refId, user);
         if (!sub) throw new NotFoundException(`Submission ${refId} 不存在`);
         return;
       }
       case 'user-avatar': {
-        if (!isAdmin && refId !== user.id) {
+        if (!isAdmin && refId !== user.userId) {
           throw new ForbiddenException('只能改自己的头像');
         }
         const u = await this.prisma.user.findUnique({ where: { id: refId } });
@@ -174,16 +174,16 @@ export class UploadsService {
 
   async complete(
     dto: CompleteUploadDto,
-    user: { id: string; role: string },
+    user: { userId: string; role: string },
   ): Promise<{ url: string; publicUrl: string; key: string; writtenBack: boolean }> {
     const cfg = UPLOAD_SCOPES[dto.scope];
     if (!cfg) {
       throw new BadRequestException(`Unknown upload scope: ${dto.scope}`);
     }
     // key 必须以 "<keyPrefix>/<userId>/" 开头 — 防止 user A 完成 user B 的上传
-    if (!dto.key.startsWith(`${cfg.keyPrefix}/${user.id}/`)) {
+    if (!dto.key.startsWith(`${cfg.keyPrefix}/${user.userId}/`)) {
       throw new ForbiddenException(
-        `key ${dto.key} 不属于当前 user ${user.id} (scope ${dto.scope} 期望前缀 ${cfg.keyPrefix}/${user.id}/)`,
+        `该上传 key 不属于当前用户`,
       );
     }
     // role 权限 (与 sign 一致)
@@ -197,6 +197,7 @@ export class UploadsService {
     if (!meta) {
       throw new NotFoundException(`上传 object 不存在: ${dto.key} (前端可能未完成 PUT)`);
     }
+    await this.validateCompletedObject(dto.scope, dto.key, meta);
 
     const publicUrl = `${this.storage.getPublicUrlBase()}/${dto.key}`;
 
@@ -214,10 +215,48 @@ export class UploadsService {
       action: 'UPLOAD_COMPLETE',
       entity: this.entityForScope(dto.scope),
       entityId: dto.refId ?? dto.key,
-      details: { scope: dto.scope, key: dto.key, size: meta.size, publicUrl, writtenBack, userId: user.id },
+      userId: user.userId,
+      details: { scope: dto.scope, key: dto.key, size: meta.size, publicUrl, writtenBack },
     });
 
     return { url: publicUrl, publicUrl, key: dto.key, writtenBack };
+  }
+
+  /**
+   * 预签名 URL 只能约束请求头，不能可靠地限制实际上传的字节数。
+   * 因此以对象存储返回的元数据作为完成上传前的最终准入依据。
+   */
+  private async validateCompletedObject(
+    scope: UploadScope,
+    key: string,
+    meta: { size: number; contentType?: string },
+  ): Promise<void> {
+    const cfg = UPLOAD_SCOPES[scope];
+    const maxBytes = cfg.maxSizeMB * 1024 * 1024;
+    const actualContentType = meta.contentType?.split(';', 1)[0].trim().toLowerCase();
+
+    if (meta.size > 0 && meta.size <= maxBytes && actualContentType && cfg.allowedMime.includes(actualContentType)) {
+      return;
+    }
+
+    // Invalid objects must not remain available through a public bucket after a
+    // failed confirmation. Deletion is best-effort so the validation error is
+    // still returned even if storage cleanup itself is temporarily unavailable.
+    try {
+      await this.storage.deleteObject(key);
+    } catch (error) {
+      this.logger.error(`删除不合规上传对象失败: ${key}`, error instanceof Error ? error.stack : undefined);
+    }
+
+    if (meta.size <= 0) {
+      throw new BadRequestException('上传文件为空');
+    }
+    if (meta.size > maxBytes) {
+      throw new BadRequestException(`${scope} 实际文件 ${meta.size} 字节超过上限 ${cfg.maxSizeMB}MB`);
+    }
+    throw new BadRequestException(
+      `${scope} 实际文件类型 ${meta.contentType ?? 'unknown'} 不被允许`,
+    );
   }
 
   private entityForScope(scope: UploadScope): string {
@@ -243,7 +282,7 @@ export class UploadsService {
     scope: UploadScope,
     refId: string,
     publicUrl: string,
-    user: { id: string; role: string },
+    user: { userId: string; role: string },
   ): Promise<boolean> {
     const isAdmin = user.role === 'admin';
 
@@ -305,8 +344,8 @@ export class UploadsService {
         return !!r;
       }
       case 'submission-video': {
-        // P2: 校验 user 是该 submission 的 owner 或 team member
-        // 当前简化为: 任何 student/instructor 都能写, 由前端控制 refId 来源
+        const owned = await this.findOwnedSubmission(refId, user);
+        if (!owned) return false;
         const r = await this.prisma.submission.update({
           where: { id: refId },
           data: { videoUrl: publicUrl },
@@ -315,7 +354,7 @@ export class UploadsService {
       }
       case 'user-avatar': {
         // user 改自己 / admin 改任何人
-        if (!isAdmin && refId !== user.id) return false;
+        if (!isAdmin && refId !== user.userId) return false;
         const r = await this.prisma.user.update({
           where: { id: refId },
           data: { avatarUrl: publicUrl },
@@ -325,5 +364,26 @@ export class UploadsService {
       default:
         return false;
     }
+  }
+
+  private findOwnedSubmission(
+    submissionId: string,
+    user: { userId: string; role: string },
+  ) {
+    return this.prisma.submission.findFirst({
+      where: {
+        id: submissionId,
+        deletedAt: null,
+        ...(user.role === 'admin'
+          ? {}
+          : {
+              OR: [
+                { userId: user.userId },
+                { team: { members: { some: { userId: user.userId } } } },
+              ],
+            }),
+      },
+      select: { id: true },
+    });
   }
 }

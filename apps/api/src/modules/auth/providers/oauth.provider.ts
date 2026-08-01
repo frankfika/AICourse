@@ -36,6 +36,10 @@ export class OAuthProvider extends AuthProvider {
       userinfo: 'https://api.github.com/user',
     },
   };
+  private static readonly AUTHORIZE_ENDPOINTS: Record<string, string> = {
+    'oauth.google': 'https://accounts.google.com/o/oauth2/v2/auth',
+    'oauth.github': 'https://github.com/login/oauth/authorize',
+  };
 
   constructor(
     id: string,
@@ -77,8 +81,7 @@ export class OAuthProvider extends AuthProvider {
     });
 
     if (!tokenRes.ok) {
-      const body = await tokenRes.text();
-      this.logger.error(`Token exchange failed: ${tokenRes.status} ${body}`);
+      this.logger.error(`Token exchange failed with HTTP ${tokenRes.status}`);
       throw new UnauthorizedException('OAuth token exchange failed');
     }
 
@@ -100,7 +103,13 @@ export class OAuthProvider extends AuthProvider {
     }
 
     // 3. 标准化 identity（不同 provider 的 userinfo 字段不同）
-    return this.normalize(this.id, await userRes.json());
+    const raw = await userRes.json();
+    if (this.id === 'oauth.github') {
+      // /user.email may be absent or private; only /user/emails exposes
+      // GitHub's verification status. The configured user:email scope is required.
+      raw.email = await this.fetchGitHubVerifiedEmail(tokenData.access_token);
+    }
+    return this.normalize(this.id, raw);
   }
 
   /**
@@ -110,13 +119,14 @@ export class OAuthProvider extends AuthProvider {
    */
   private normalize(providerId: string, raw: any): AuthIdentity {
     if (providerId === 'oauth.google') {
-      if (!raw.email) {
-        throw new UnauthorizedException('Google account has no email (scope missing?)');
+      if (!raw.email || raw.email_verified !== true) {
+        throw new UnauthorizedException('Google account has no verified email');
       }
       return {
         providerUserId: String(raw.sub),
         profile: {
           email: raw.email,
+          emailVerified: true,
           name: raw.name ?? raw.email.split('@')[0],
           avatarUrl: raw.picture,
           raw,
@@ -125,12 +135,15 @@ export class OAuthProvider extends AuthProvider {
     }
 
     if (providerId === 'oauth.github') {
-      // GitHub 可能把 email 设为 null（如果用户设成 private），需要额外查 /user/emails
-      const email = raw.email ?? `github_${raw.id}@users.noreply.github.com`;
+      if (!raw.email) {
+        throw new UnauthorizedException('GitHub account has no verified email');
+      }
+      const email = raw.email;
       return {
         providerUserId: String(raw.id),
         profile: {
           email,
+          emailVerified: true,
           name: raw.name ?? raw.login,
           avatarUrl: raw.avatar_url,
           raw,
@@ -139,6 +152,29 @@ export class OAuthProvider extends AuthProvider {
     }
 
     throw new UnauthorizedException(`No normalizer for ${providerId}`);
+  }
+
+  private async fetchGitHubVerifiedEmail(accessToken: string): Promise<string> {
+    const response = await fetch('https://api.github.com/user/emails', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new UnauthorizedException('Failed to fetch GitHub email addresses');
+    }
+    const emails = (await response.json()) as Array<{
+      email?: string;
+      verified?: boolean;
+      primary?: boolean;
+    }>;
+    const email = emails.find((entry) => entry.primary && entry.verified)?.email
+      ?? emails.find((entry) => entry.verified)?.email;
+    if (!email) {
+      throw new UnauthorizedException('GitHub account has no verified email');
+    }
+    return email;
   }
 
   /**
@@ -173,5 +209,23 @@ export class OAuthProvider extends AuthProvider {
   describe() {
     const label = this.id === 'oauth.google' ? 'Google' : this.id === 'oauth.github' ? 'GitHub' : this.id;
     return { id: this.id, label, type: this.type };
+  }
+
+  createAuthorizationUrl(state: string): string {
+    const endpoint = OAuthProvider.AUTHORIZE_ENDPOINTS[this.id];
+    if (!endpoint) {
+      throw new UnauthorizedException(`Unsupported OAuth provider: ${this.id}`);
+    }
+    const url = new URL(endpoint);
+    url.searchParams.set('client_id', this.config.clientId);
+    url.searchParams.set('redirect_uri', this.config.redirectUri);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('scope', this.config.scopes.join(' '));
+    url.searchParams.set('state', state);
+    if (this.id === 'oauth.google') {
+      url.searchParams.set('access_type', 'offline');
+      url.searchParams.set('prompt', 'select_account');
+    }
+    return url.toString();
   }
 }

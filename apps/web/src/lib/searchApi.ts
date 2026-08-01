@@ -10,12 +10,12 @@
  *   - hackathons:  startDate ASC(进行中优先)
  *   - instructors: 课程数 DESC
  *
- * 注:后端目前没有 /api/v1/instructors 端点,Promise.allSettled 拿到 reject
- *   后该 type 永远空(等后端补端点后自动生效)。
+ * 讲师列表来自公开 instructors API，结果链接使用 slug 进入讲师详情页。
  */
 
 import api from './api';
 import { hackathonsApi } from './hackathonsApi';
+import { instructorsApi, type InstructorSummary } from './instructorsApi';
 
 // =============================================================
 // 统一 SearchResult 类型
@@ -56,13 +56,6 @@ interface DegreeSearchRaw {
   costType?: 'free' | 'paid' | 'charity';
   stats?: { totalLearners?: number; courseCount?: number; estimatedHours?: number };
   courses?: Array<{ id: string; title: string }>;
-}
-
-interface InstructorSearchRaw {
-  id: string;
-  name: string;
-  title?: string;
-  courseCount?: number;
 }
 
 // =============================================================
@@ -117,14 +110,14 @@ function mapHackathon(h: { id: string; title: string; description?: string; stat
   };
 }
 
-function mapInstructor(i: InstructorSearchRaw): SearchResult {
+function mapInstructor(i: InstructorSummary): SearchResult {
   return {
     type: 'instructor',
     id: i.id,
     title: i.name,
     subtitle: i.title,
-    href: `/instructors/${i.id}`,
-    meta: i.courseCount ? `${i.courseCount} 门课程` : undefined,
+    href: `/instructors/${encodeURIComponent(i.slug)}`,
+    meta: i._count.courseLinks ? `${i._count.courseLinks} 门课程` : undefined,
   };
 }
 
@@ -144,8 +137,8 @@ function sortHackathons<T extends { id: string; startDate?: string | Date }>(lis
     return ta - tb;  // 升序,进行中 / 最近的在前
   });
 }
-function sortInstructors(list: InstructorSearchRaw[]): InstructorSearchRaw[] {
-  return [...list].sort((a, b) => (b.courseCount ?? 0) - (a.courseCount ?? 0));
+function sortInstructors(list: InstructorSummary[]): InstructorSummary[] {
+  return [...list].sort((a, b) => b._count.courseLinks - a._count.courseLinks);
 }
 
 // =============================================================
@@ -173,10 +166,10 @@ export async function searchAll(q: string): Promise<SearchAllResult> {
       .get<DegreeSearchRaw[]>('/api/v1/degrees', { params: { search: query } })
       .then((r) => r.data),
     hackathonsApi.getAll(query ? { search: query } : undefined),
-    api
-      .get<InstructorSearchRaw[]>('/api/v1/instructors', { params: { search: query } })
-      .then((r) => r.data)
-      .catch(() => null),  // 端点不存在不抛,直接 null
+    instructorsApi
+      .list({ search: query, limit: 100 })
+      .then((r) => r.items)
+      .catch(() => null),
   ]);
 
   // 任一端点失败 → 该 type 返空(无 mock fallback)
@@ -184,7 +177,7 @@ export async function searchAll(q: string): Promise<SearchAllResult> {
   const degrees: DegreeSearchRaw[] = degreeRes.status === 'fulfilled' ? degreeRes.value : [];
   const hackathons =
     hackathonRes.status === 'fulfilled' && hackathonRes.value ? hackathonRes.value : [];
-  const instructors: InstructorSearchRaw[] =
+  const instructors: InstructorSummary[] =
     instructorRes.status === 'fulfilled' && instructorRes.value ? instructorRes.value : [];
 
   const hasFailures =

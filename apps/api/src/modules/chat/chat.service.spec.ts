@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ChatRole } from '@prisma/client';
 import { ChatService } from './chat.service';
 import { RagService } from './rag.service';
 import { GeminiService } from '../../common/gemini/gemini.service';

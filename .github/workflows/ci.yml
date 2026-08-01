@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ai-academy/api db:generate
+      - run: pnpm check
+      - run: pnpm --filter @ai-academy/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @ai-academy/web e2e
+      # The configured mirror does not implement npm audit. Query npmjs directly
+      # and fail only on critical advisories until the current high-severity
+      # transitive findings are remediated in a dedicated dependency update.
+      # GHSA-qwww-vcr4-c8h2 affects React Server Components mode. This Vite SPA
+      # does not use RSC; keep it explicitly ignored until the stable v8 DOM
+      # package is published and can be upgraded as a pair.
+      - run: pnpm audit --registry=https://registry.npmjs.org --audit-level=high --ignore GHSA-qwww-vcr4-c8h2
+
+  api-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ai_academy
+          MYSQL_USER: ai_academy
+          MYSQL_PASSWORD: ai_academy_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: mysql://ai_academy:ai_academy_pass@127.0.0.1:3306/ai_academy
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      JWT_SECRET: ci-integration-key-7fb86cb4b1264ea1a7d479ad65fd
+      API_HOST: 127.0.0.1
+      API_PORT: 8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm --filter @ai-academy/api exec prisma migrate deploy
+      - run: pnpm --filter @ai-academy/api build
+      - name: Start API
+        run: pnpm --filter @ai-academy/api start > "$RUNNER_TEMP/api.log" 2>&1 &
+      - name: Verify live API and dependencies
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8080/api/v1/health/ready | grep -q '"status":"ok"'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/api.log"
+          exit 1

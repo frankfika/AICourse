@@ -36,7 +36,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 //      AuthGuard 是单独组件,只在路由元素里用,所以可以在它里面用 useLocation。
 //      AuthProvider 自身只用 store / api,跟 router 无关。
 import { LocalAuthAdapter } from './LocalAuthAdapter';
-import { setAccessToken } from '../api';
+import api, { setAccessToken } from '../api';
 import { useAuthStore } from '../../stores/authStore';
 import type {
   AuthAdapter,
@@ -186,8 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [adapter, clearAuth]);
 
   /**
-   * bindProvider — Phase 1 灰度:所有 oauth 都 disabled
-   * 未来实现: window.location = /api/v1/auth/<p>/authorize?redirect=...
+   * bindProvider — starts the configured OAuth authorization flow.
    */
   const bindProvider = useCallback(
     async (provider: string) => {
@@ -197,8 +196,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           `Provider "${provider}" 未启用 (Phase 1 灰度模式 — 即将推出)`,
         );
       }
-      // 未来: window.location.href = `${api.defaults.baseURL}/api/v1/auth/${provider}/authorize?...`
-      throw new Error('bindProvider: Phase 2 实现待定');
+      const { data } = await api.get<{ authorizationUrl: string }>(
+        `/api/v1/auth/${encodeURIComponent(provider)}/start`,
+      );
+      window.location.assign(data.authorizationUrl);
     },
     [providers],
   );

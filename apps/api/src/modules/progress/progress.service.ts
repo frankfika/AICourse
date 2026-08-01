@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
 import { BadgesService } from '../badges/badges.service';
 import { ProgressStatus } from '@prisma/client';
+import { CertificatesService } from '../certificates/certificates.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class ProgressService {
@@ -10,6 +12,8 @@ export class ProgressService {
     private readonly prisma: PrismaService,
     private readonly pointsService: PointsService,
     private readonly badgesService: BadgesService,
+    private readonly certificatesService: CertificatesService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   // ==================== 查询 ====================
@@ -53,6 +57,7 @@ export class ProgressService {
 
     return {
       courseId,
+      courseTitle: course.title,
       totalLessons,
       completedLessons: completedCount,
       percent,
@@ -114,12 +119,34 @@ export class ProgressService {
     }
 
     const courseProgress = await this.getCourseProgress(userId, courseId);
+    let certificate: Awaited<ReturnType<CertificatesService['issueCertificate']>> | null = null;
+
+    if (courseProgress.isCompleted) {
+      certificate = await this.certificatesService.issueCertificate({
+        userId,
+        type: 'course',
+        refId: courseId,
+        title: `${courseProgress.courseTitle} 课程完成证书`,
+        description: `已完成课程「${courseProgress.courseTitle}」的全部课时`,
+        completedAt: new Date().toISOString(),
+      });
+      if (!wasAlreadyCompleted || wasAlreadyCompleted.status !== 'completed') {
+        await this.notificationService.create({
+          userId,
+          type: 'announcement',
+          title: '课程完成，证书已签发',
+          body: `你已完成「${courseProgress.courseTitle}」，证书现已可查看。`,
+          linkUrl: `/certificates/${certificate.id}`,
+        });
+      }
+    }
 
     return {
       record,
       courseProgress,
       pointsAwarded,
       newlyUnlockedBadges,
+      certificate,
     };
   }
 

@@ -26,7 +26,6 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
@@ -51,6 +50,9 @@ const mockPrisma: any = {
   },
   chapter: {
     findMany: jest.fn(),
+  },
+  refreshToken: {
+    deleteMany: jest.fn(),
   },
   $transaction: jest.fn((arg: any) => {
     // 数组模式: 顺序执行每个 promise
@@ -372,6 +374,9 @@ describe('UsersService', () => {
       const updateCall = mockPrisma.user.update.mock.calls[0][0];
       expect(updateCall.where).toEqual({ id: 'u1' });
       expect(updateCall.data.deletedAt).toBeInstanceOf(Date);
+      expect(mockPrisma.refreshToken.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'u1' },
+      });
       // audit log
       expect(mockAuditLog.log).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'USER_SOFT_DELETE' }),
