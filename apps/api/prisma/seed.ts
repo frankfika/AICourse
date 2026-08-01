@@ -3,35 +3,65 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  // Clean existing data (dev only)
-  await prisma.$transaction([
-    prisma.submission.deleteMany(),
-    prisma.teamMember.deleteMany(),
-    prisma.team.deleteMany(),
-    prisma.judge.deleteMany(),
-    prisma.announcement.deleteMany(),
-    prisma.hackathonRegistration.deleteMany(),
-    prisma.hackathon.deleteMany(),
-    prisma.resource.deleteMany(),
-    prisma.lesson.deleteMany(),
-    prisma.chapter.deleteMany(),
-    prisma.degreeCourse.deleteMany(),
-    prisma.enrollment.deleteMany(),
-    prisma.order.deleteMany(),
-    prisma.progressRecord.deleteMany(),
-    prisma.course.deleteMany(),
-    prisma.nanoDegree.deleteMany(),
-    prisma.refreshToken.deleteMany(),
-    prisma.auditLog.deleteMany(),
-    prisma.user.deleteMany(),
-  ]);
+export async function seed() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const requireStrongSeedPassword = (name: string): string => {
+    const value = process.env[name]?.trim();
+    if (!value || value.length < 16 || /password|change-me|placeholder/i.test(value)) {
+      throw new Error(`${name} must be a non-placeholder password of at least 16 characters`);
+    }
+    return value;
+  };
+
+  if (isProduction) {
+    // Production bootstrap is allowed exactly once, on an empty business DB.
+    // Never turn the development cleanup below into an accidental data reset.
+    const [users, courses, degrees, hackathons, enrollments, orders] = await Promise.all([
+      prisma.user.count(),
+      prisma.course.count(),
+      prisma.nanoDegree.count(),
+      prisma.hackathon.count(),
+      prisma.enrollment.count(),
+      prisma.order.count(),
+    ]);
+    if (users + courses + degrees + hackathons + enrollments + orders > 0) {
+      throw new Error('Production seed refused: business data already exists');
+    }
+  } else {
+    // Development-only reset keeps local demo data reproducible.
+    await prisma.$transaction([
+      prisma.submission.deleteMany(),
+      prisma.teamMember.deleteMany(),
+      prisma.team.deleteMany(),
+      prisma.judge.deleteMany(),
+      prisma.announcement.deleteMany(),
+      prisma.hackathonRegistration.deleteMany(),
+      prisma.hackathon.deleteMany(),
+      prisma.resource.deleteMany(),
+      prisma.lesson.deleteMany(),
+      prisma.chapter.deleteMany(),
+      prisma.degreeCourse.deleteMany(),
+      prisma.enrollment.deleteMany(),
+      prisma.order.deleteMany(),
+      prisma.progressRecord.deleteMany(),
+      prisma.course.deleteMany(),
+      prisma.nanoDegree.deleteMany(),
+      prisma.refreshToken.deleteMany(),
+      prisma.auditLog.deleteMany(),
+      prisma.user.deleteMany(),
+    ]);
+  }
 
   // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 12);
+  const adminPassword = await bcrypt.hash(
+    isProduction ? requireStrongSeedPassword('ADMIN_INITIAL_PASSWORD') : 'admin123',
+    12,
+  );
   const admin = await prisma.user.create({
     data: {
-      email: 'admin@ai-academy.local',
+      email: isProduction
+        ? process.env.ADMIN_EMAIL?.trim() || 'admin@ai-academy.local'
+        : 'admin@ai-academy.local',
       passwordHash: adminPassword,
       name: 'AI Academy Admin',
       role: UserRole.admin,
@@ -40,13 +70,19 @@ async function main() {
   });
 
   // Create test student
-  const studentPassword = await bcrypt.hash('123456', 12);
+  const studentPassword = await bcrypt.hash(
+    isProduction ? requireStrongSeedPassword('SEED_STUDENT_PASSWORD') : '123456',
+    12,
+  );
   const student = await prisma.user.create({
     data: {
-      email: 'student@test.com',
+      email: isProduction
+        ? process.env.SEED_STUDENT_EMAIL?.trim() || 'student@ai-academy.local'
+        : 'student@test.com',
       passwordHash: studentPassword,
       name: '测试学员',
       role: UserRole.student,
+      passwordResetRequired: isProduction,
     },
   });
 
@@ -630,11 +666,15 @@ async function main() {
   console.log(`Hackathons: ${hackathonsData.length}`);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+export async function closeSeedConnection() {
+  await prisma.$disconnect();
+}
+
+if (require.main === module) {
+  seed()
+    .catch((e) => {
+      console.error(e);
+      process.exitCode = 1;
+    })
+    .finally(closeSeedConnection);
+}

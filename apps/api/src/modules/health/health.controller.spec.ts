@@ -32,6 +32,9 @@ describe('HealthController', () => {
     redisPing = jest.fn().mockResolvedValue(true);
     prismaQueryRaw = jest.fn().mockResolvedValue([{ '1': 1 }]);
     configGet = jest.fn((key: string) => {
+      if (key === 'MINIO_HEALTH_ENDPOINT') return 'minio';
+      if (key === 'MINIO_HEALTH_PORT') return '9000';
+      if (key === 'MINIO_HEALTH_USE_SSL') return 'false';
       if (key === 'MINIO_ENDPOINT') return 'localhost';
       if (key === 'MINIO_PORT') return '9000';
       if (key === 'MINIO_USE_SSL') return 'false';
@@ -87,9 +90,9 @@ describe('HealthController', () => {
       expect(redisPing).toHaveBeenCalledTimes(1);
       expect(prismaQueryRaw).toHaveBeenCalledTimes(1);
       expect(fetchSpy).toHaveBeenCalledTimes(1);
-      // minio URL 走 http://localhost:9000/minio/health/live
+      // readiness 走内部服务地址，不依赖公开代理或公网回环。
       const [url] = fetchSpy.mock.calls[0];
-      expect(url).toBe('http://localhost:9000/minio/health/live');
+      expect(url).toBe('http://minio:9000/minio/health/live');
     });
 
     it('case 503: redis ping 失败 -> 抛 ServiceUnavailableException, body 标记 redis: "fail"', async () => {

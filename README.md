@@ -21,8 +21,10 @@ AI Academy 是一个可二次品牌化的在线教育平台，面向 AI/LLM 课�
 ├── apps/web/             # React SPA
 ├── packages/shared-types # 前后端共享类型
 ├── prisma/               # schema 与数据库迁移
+├── deploy/               # 生产容器入口、Nginx 配置与运行手册
 ├── docs/                 # 用户、管理员、术语和路线文档
 ├── docker-compose.yml    # MySQL / Redis / MinIO
+├── docker-compose.production.yml # 完整生产栈
 └── .env.example          # 本地环境变量模板
 ```
 
@@ -160,6 +162,8 @@ pnpm e2e
 4. 配置 HTTPS、CORS、Redis 密码、对象存储和日志采集。
 5. 明确关闭 mock 支付；真实支付完成网关和 webhook 验证后再单独发布。
 6. 删除或禁用 seed 创建的开发测试账号。
+
+完整的容器部署、反向代理、发布和回滚步骤见 [生产部署运行手册](./deploy/README.md)。生产 seed 不再清空已有数据，并要求首次登录强制修改随机初始密码。
 
 ## 文档
 

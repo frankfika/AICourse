@@ -107,10 +107,21 @@ export class HealthController {
   }
 
   private async checkMinio(): Promise<CheckResult> {
-    const endpoint = this.config.get<string>('MINIO_ENDPOINT');
+    // The SDK may use a public endpoint so presigned URLs work in browsers.
+    // Readiness must use the private service endpoint to avoid a proxy startup
+    // dependency and public-network hairpinning from inside the container.
+    const endpoint =
+      this.config.get<string>('MINIO_HEALTH_ENDPOINT') ??
+      this.config.get<string>('MINIO_ENDPOINT');
     if (!endpoint) return 'skip';
-    const useSsl = this.config.get<string>('MINIO_USE_SSL') === 'true';
-    const port = Number(this.config.get<string>('MINIO_PORT')) || 9000;
+    const useSsl =
+      (this.config.get<string>('MINIO_HEALTH_USE_SSL') ??
+        this.config.get<string>('MINIO_USE_SSL')) === 'true';
+    const port =
+      Number(
+        this.config.get<string>('MINIO_HEALTH_PORT') ??
+          this.config.get<string>('MINIO_PORT'),
+      ) || 9000;
     const proto = useSsl ? 'https' : 'http';
     // /minio/health/live 是 minio 自带 liveness, 跟 docker-compose healthcheck 同源
     const url = `${proto}://${endpoint}:${port}/minio/health/live`;

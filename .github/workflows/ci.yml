@@ -10,6 +10,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  production-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production Compose configuration
+        run: docker compose --env-file .env.production.example -f docker-compose.production.yml config >/dev/null
+      - name: Build API production image
+        run: docker build --target api -t ai-academy-api:ci .
+      - name: Build Web production image
+        run: docker build --target web -t ai-academy-web:ci .
+
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -74,6 +86,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm --filter @ai-academy/api exec prisma migrate deploy
+      - name: Verify production bootstrap on migrated empty database
+        env:
+          NODE_ENV: production
+          ADMIN_EMAIL: ci-admin@example.com
+          ADMIN_INITIAL_PASSWORD: ci-admin-5d7f9h1j3l5n7p9r
+          SEED_STUDENT_EMAIL: ci-student@example.com
+          SEED_STUDENT_PASSWORD: ci-student-6e8g1i3k5m7o9q2s
+        run: pnpm --filter @ai-academy/api exec ts-node prisma/bootstrap-production.ts
       - run: pnpm --filter @ai-academy/api build
       - name: Start API
         run: pnpm --filter @ai-academy/api start > "$RUNNER_TEMP/api.log" 2>&1 &
