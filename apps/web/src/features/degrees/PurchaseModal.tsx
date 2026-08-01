@@ -45,10 +45,14 @@ export function PurchaseModal({
   // 简化版 title: 用两个独立 key(避免 i18n template 复杂度)
   const confirmTitle = isFree
     ? pickPage(pageData, 'confirm_title_free', 'zh-CN', t('purchase.confirm_title_free', '确认报名'))
-    : pickPage(pageData, 'confirm_title_paid', 'zh-CN', t('purchase.confirm_title_paid', '确认下单'));
+    : PAYMENT_OPERATIONS_AVAILABLE
+      ? pickPage(pageData, 'confirm_title_paid', 'zh-CN', t('purchase.confirm_title_paid', '确认下单'))
+      : '提交购买咨询';
   const confirmDesc = isFree
     ? pickPage(pageData, 'confirm_desc_free', 'zh-CN', t('purchase.confirm_desc_free', '该内容免费,注册后即可开始学习'))
-    : pickPage(pageData, 'confirm_desc_paid', 'zh-CN', t('purchase.confirm_desc_paid', '请确认订单信息,支付后立即开通学习权限'));
+    : PAYMENT_OPERATIONS_AVAILABLE
+      ? pickPage(pageData, 'confirm_desc_paid', 'zh-CN', t('purchase.confirm_desc_paid', '请确认订单信息,支付后立即开通学习权限'))
+      : '在线支付接入前，可提交购买需求，由平台顾问协助确认付款与开通权限。';
   const successTitle = isFree
     ? pickPage(pageData, 'success_title_free', 'zh-CN', t('purchase.success_title_free', '报名成功'))
     : pickPage(pageData, 'success_title_paid', 'zh-CN', t('purchase.success_title_paid', '支付成功'));
@@ -101,6 +105,15 @@ export function PurchaseModal({
     navigate('/profile');
   };
 
+  const handleConsult = () => {
+    const params = new URLSearchParams({
+      topic: `购买咨询：${title}`,
+      description: `${type === 'course' ? '课程' : '学位'}：${title}\n项目 ID：${itemId}\n标价：¥${Number(price).toFixed(2)}`,
+    });
+    close();
+    navigate(`/enterprise?${params.toString()}#inquiry`);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
       <div className="bg-white border-2 border-[#171717] max-w-md w-full p-6 md:p-8 relative animate-in zoom-in-95">
@@ -146,7 +159,7 @@ export function PurchaseModal({
 
             {!isFree && !PAYMENT_OPERATIONS_AVAILABLE && (
               <div className="text-sm font-medium border-2 border-[#171717] px-3 py-2 mb-4 bg-warning-100">
-                在线支付尚未开放。请联系平台管理员办理购买，免费内容仍可正常报名。
+                在线支付尚未开放，但可以提交购买咨询，由平台顾问协助办理。
               </div>
             )}
 
@@ -157,19 +170,28 @@ export function PurchaseModal({
               >
                 {t('purchase.cancel', '取消')}
               </button>
-              <button
-                onClick={handleConfirm}
-                disabled={!user || !checkoutAvailable || createMutation.isPending}
-                className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
-              >
-                {createMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                ) : isFree ? (
-                  t('purchase.enroll_now', '立即报名')
-                ) : (
-                  checkoutAvailable ? t('purchase.pay_now', '立即支付') : '支付未开放'
-                )}
-              </button>
+              {!isFree && !PAYMENT_OPERATIONS_AVAILABLE ? (
+                <button
+                  onClick={handleConsult}
+                  className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
+                >
+                  联系顾问购买
+                </button>
+              ) : (
+                <button
+                  onClick={handleConfirm}
+                  disabled={!user || !checkoutAvailable || createMutation.isPending}
+                  className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
+                >
+                  {createMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                  ) : isFree ? (
+                    t('purchase.enroll_now', '立即报名')
+                  ) : (
+                    t('purchase.pay_now', '立即支付')
+                  )}
+                </button>
+              )}
             </div>
 
             {createMutation.error && (

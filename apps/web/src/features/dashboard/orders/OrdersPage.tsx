@@ -445,6 +445,13 @@ function OrderActions({
     'inline-flex items-center justify-center gap-1 rounded-md font-medium transition-colors',
     compact ? 'h-7 px-2 text-xs' : 'h-8 px-3 text-xs',
   );
+  const supportPath = (kind: 'payment' | 'refund') => {
+    const params = new URLSearchParams({
+      topic: kind === 'payment' ? '订单付款协助' : '订单退款申请',
+      description: `订单 ID：${order.id}\n当前状态：${order.status}`,
+    });
+    return `/enterprise?${params.toString()}#inquiry`;
+  };
   return (
     <div className={cn('flex items-center gap-1.5', compact ? 'flex-wrap' : 'justify-end')}>
       <Link
@@ -460,19 +467,30 @@ function OrderActions({
       </Link>
       {order.status === 'pending' && (
         <>
-          <button
-            onClick={() => onPay(order.id)}
-            disabled={isAnyPending || !paymentOperationsAvailable}
-            className={cn(
-              baseBtn,
-              'bg-[#171717] text-white hover:bg-[#262626]',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-            )}
-            title={paymentOperationsAvailable ? '去支付' : '在线支付尚未开放'}
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{paymentOperationsAvailable ? '支付' : '未开放'}</span>
-          </button>
+          {paymentOperationsAvailable ? (
+            <button
+              onClick={() => onPay(order.id)}
+              disabled={isAnyPending}
+              className={cn(
+                baseBtn,
+                'bg-[#171717] text-white hover:bg-[#262626]',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
+              )}
+              title="去支付"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">支付</span>
+            </button>
+          ) : (
+            <Link
+              to={supportPath('payment')}
+              className={cn(baseBtn, 'bg-[#171717] text-white hover:bg-[#262626]')}
+              title="联系平台协助付款"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">付款协助</span>
+            </Link>
+          )}
           <button
             onClick={() => onCancel(order.id)}
             disabled={isAnyPending}
@@ -489,19 +507,30 @@ function OrderActions({
         </>
       )}
       {order.status === 'paid' && (
-        <button
-          onClick={() => onRefund(order.id)}
-          disabled={isAnyPending || !paymentOperationsAvailable}
-          className={cn(
-            baseBtn,
-            'bg-info-100 text-info-500 hover:bg-info-500/20',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-          )}
-          title={paymentOperationsAvailable ? '申请退款' : '在线退款尚未开放'}
-        >
-          <Undo2 className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{paymentOperationsAvailable ? '退款' : '未开放'}</span>
-        </button>
+        paymentOperationsAvailable ? (
+          <button
+            onClick={() => onRefund(order.id)}
+            disabled={isAnyPending}
+            className={cn(
+              baseBtn,
+              'bg-info-100 text-info-500 hover:bg-info-500/20',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+            )}
+            title="申请退款"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">退款</span>
+          </button>
+        ) : (
+          <Link
+            to={supportPath('refund')}
+            className={cn(baseBtn, 'bg-info-100 text-info-500 hover:bg-info-500/20')}
+            title="联系平台申请退款"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">退款协助</span>
+          </Link>
+        )
       )}
     </div>
   );

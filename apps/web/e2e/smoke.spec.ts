@@ -102,6 +102,20 @@ test.describe('Smoke', () => {
     await expect(page.getByRole('heading', { name: '密码已更新' })).toBeVisible();
   });
 
+  test('购买与退款咨询可携带业务上下文进入真实表单', async ({ page }) => {
+    const params = new URLSearchParams({
+      topic: '购买咨询：RAG 实战',
+      description: '课程 ID：course-1',
+    });
+    await page.goto(`/enterprise?${params.toString()}#inquiry`);
+
+    await expect.poll(() => page.locator('input').evaluateAll((nodes) =>
+      nodes.map((node) => (node as HTMLInputElement).value),
+    )).toContain('购买咨询：RAG 实战');
+    await expect(page.locator('textarea')).toHaveValue('课程 ID：course-1');
+    await expect(page.locator('#inquiry')).toBeVisible();
+  });
+
   test('⌘K 搜索弹层: 顶部搜索按钮可点', async ({ page, isMobile }) => {
     await page.goto('/');
     // CSS 控制可见性:desktop 是 "打开搜索(⌘K)", mobile 是 "打开搜索"

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Seo } from '../../components/Seo';
 import { useToast } from '../../components/auth/Toast';
@@ -21,6 +22,7 @@ import api from '../../lib/api';
 import { useList, usePageSettings, useSiteSettings, useI18n, pickPage, pickSite, LIST_FALLBACK } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
+import { useAuthStore } from '../../stores/authStore';
 
 // CMS LIST_FALLBACK['enterprise-methods'] 用 icon 字符串名 (e.g. 'Target') 表示图标,
 // 这里建个 string→Component 映射表,这样 fallback 数组保持纯数据,不嵌 React component
@@ -72,8 +74,23 @@ const initialForm: InquiryForm = {
   description: '',
 };
 
+export function buildInquiryPrefill(
+  search: URLSearchParams,
+  user?: { name?: string; email?: string } | null,
+): InquiryForm {
+  return {
+    ...initialForm,
+    name: user?.name?.slice(0, 50) ?? '',
+    email: user?.email?.slice(0, 100) ?? '',
+    topic: (search.get('topic') ?? '').slice(0, 200),
+    description: (search.get('description') ?? '').slice(0, 2000),
+  };
+}
+
 export function EnterprisePage() {
-  const [form, setForm] = useState<InquiryForm>(initialForm);
+  const [searchParams] = useSearchParams();
+  const user = useAuthStore((state) => state.user);
+  const [form, setForm] = useState<InquiryForm>(() => buildInquiryPrefill(searchParams, user));
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { showToast } = useToast();

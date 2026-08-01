@@ -87,6 +87,7 @@ export class AuthController {
   }
 
   @Post(':providerId/link/callback')
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 30, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   async linkCallback(
     @Param('providerId') providerId: string,
@@ -181,6 +182,7 @@ export class AuthController {
   }
 
   @Post(':providerId/callback')
+  @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 30, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async callback(
     @Param('providerId') providerId: string,
