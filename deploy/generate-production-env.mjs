@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
-import { openSync, writeFileSync, closeSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { openSync, writeFileSync, closeSync, realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 function randomHex() {
   return randomBytes(32).toString('hex');
@@ -89,7 +89,7 @@ function main() {
   console.info(`Production environment created with mode 0600: ${output}`);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   try {
     main();
   } catch (error) {
