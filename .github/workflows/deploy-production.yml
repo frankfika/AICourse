@@ -1,0 +1,94 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type deploy-production to continue
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: inputs.confirmation == 'deploy-production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    env:
+      DEPLOY_HOST: 49.234.25.35
+      DEPLOY_USER: ubuntu
+      DEPLOY_PATH: /opt/aicourse
+      API_IMAGE: ghcr.io/frankfika/aicourse-api:${{ github.sha }}
+      WEB_IMAGE: ghcr.io/frankfika/aicourse-web:${{ github.sha }}
+    steps:
+      - name: Require deployment secrets
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          test -n "$DEPLOY_SSH_KEY"
+          test -n "$DEPLOY_KNOWN_HOSTS"
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 0700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/deploy_key"
+          chmod 0600 "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 0644 "$HOME/.ssh/known_hosts"
+      - name: Authenticate the host to GHCR for this deployment
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | ssh -i "$HOME/.ssh/deploy_key" \
+            -o BatchMode=yes -o ConnectTimeout=10 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "docker login ghcr.io -u '$GITHUB_ACTOR' --password-stdin"
+      - name: Pull and deploy the verified commit
+        run: |
+          ssh -i "$HOME/.ssh/deploy_key" \
+            -o BatchMode=yes -o ConnectTimeout=10 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -s -- '$GITHUB_SHA' '$API_IMAGE' '$WEB_IMAGE' '$DEPLOY_PATH'" <<'REMOTE'
+          set -euo pipefail
+          release_sha=$1
+          api_image=$2
+          web_image=$3
+          deploy_path=$4
+
+          test -d "$deploy_path/.git"
+          test -f "$deploy_path/.env.production"
+          cd "$deploy_path"
+          test -z "$(git status --porcelain)"
+
+          if docker compose --env-file .env.production -f docker-compose.production.yml \
+            ps --services --status running | grep -qx mysql; then
+            ./deploy/backup-production.sh
+          fi
+
+          git fetch origin main
+          git merge --ff-only "$release_sha"
+          node deploy/validate-production-env.mjs .env.production
+
+          export API_IMAGE="$api_image" WEB_IMAGE="$web_image"
+          docker compose --env-file .env.production -f docker-compose.production.yml pull api web
+          docker compose --env-file .env.production -f docker-compose.production.yml \
+            up -d --no-build --wait --wait-timeout 240
+          curl --fail --silent --show-error http://127.0.0.1:8088/healthz
+          curl --fail --silent --show-error http://127.0.0.1:8088/api/v1/health/ready
+          REMOTE
+      - name: Remove temporary registry credentials
+        if: always()
+        run: |
+          ssh -i "$HOME/.ssh/deploy_key" \
+            -o BatchMode=yes -o ConnectTimeout=10 \
+            "$DEPLOY_USER@$DEPLOY_HOST" 'docker logout ghcr.io' || true

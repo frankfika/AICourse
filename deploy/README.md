@@ -9,8 +9,8 @@ cp .env.production.example .env.production
 chmod 600 .env.production
 pnpm deploy:validate
 docker compose --env-file .env.production -f docker-compose.production.yml config
-docker compose --env-file .env.production -f docker-compose.production.yml build
-docker compose --env-file .env.production -f docker-compose.production.yml up -d
+docker compose --env-file .env.production -f docker-compose.production.yml pull
+docker compose --env-file .env.production -f docker-compose.production.yml up -d --no-build --wait
 docker compose --env-file .env.production -f docker-compose.production.yml ps
 ```
 
@@ -57,15 +57,17 @@ location / {
 ./deploy/backup-production.sh
 ```
 
-备份目录出现 `.incomplete` 表示导出未完成，不能用于恢复。备份完成后再更新代码并执行：
+备份目录出现 `.incomplete` 表示导出未完成，不能用于恢复。`main` 的 CI 全绿后会把两个镜像发布到 GHCR，并同时用提交 SHA 和 `main` 标记。生产发布应优先使用提交 SHA；服务器只拉取镜像，不在低内存主机上编译。备份完成后再更新代码并执行：
 
 ```bash
 pnpm deploy:validate
-docker compose --env-file .env.production -f docker-compose.production.yml build
-docker compose --env-file .env.production -f docker-compose.production.yml up -d
+docker compose --env-file .env.production -f docker-compose.production.yml pull
+docker compose --env-file .env.production -f docker-compose.production.yml up -d --no-build --wait
 curl --fail http://127.0.0.1:8088/healthz
 curl --fail http://127.0.0.1:8088/api/v1/health/ready
 ```
+
+仓库的 `Deploy production` 工作流只允许手动触发，并要求输入 `deploy-production`、通过 GitHub `production` environment，以及配置 `DEPLOY_SSH_KEY` 与 `DEPLOY_KNOWN_HOSTS`。它会先备份现有数据，再按提交 SHA 拉取镜像、等待健康并移除临时 GHCR 登录凭据。
 
 镜像和迁移都验证通过后再切公网流量。应用迁移只允许前向执行；如果发布失败，回滚应用镜像前必须确认新迁移与旧代码兼容，不要删除生产数据卷。恢复数据库或覆盖对象存储属于破坏性操作，必须人工核对 `manifest.txt`、目标环境和恢复窗口后执行，本脚本不会自动恢复。
 
