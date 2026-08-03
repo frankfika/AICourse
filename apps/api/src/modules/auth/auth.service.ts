@@ -55,6 +55,9 @@ export class AuthService {
     if (!provider.enabled) {
       throw new UnauthorizedException(`Provider ${providerId} is not enabled`);
     }
+    if (!(await this.isCmsProviderActive(providerId))) {
+      throw new UnauthorizedException(`Provider ${providerId} is not enabled`);
+    }
     if (provider.type === 'oauth') {
       this.verifyOAuthState(providerId, credentials.state);
     }
@@ -210,10 +213,49 @@ export class AuthService {
   }
 
   /** 列出可用的登录 provider（前端 LoginPage 渲染按钮用） */
-  listProviders() {
+  async listProviders() {
+    const providers = await this.getCmsProviderRows();
     return Array.from(this.providers.values())
-      .filter((p) => p.enabled && p.describe)
-      .map((p) => ({ ...p.describe!(), enabled: p.enabled }));
+      .filter((p) => p.enabled && p.describe && this.isCmsRowActive(p.id, providers))
+      .map((p) => {
+        const description = p.describe!();
+        const row = providers.get(this.cmsProviderId(p.id));
+        return {
+          ...description,
+          ...(row?.label ? { label: row.label } : {}),
+          ...(row?.icon ? { icon: row.icon } : {}),
+          enabled: p.enabled,
+        };
+      });
+  }
+
+  private cmsProviderId(providerId: string): string {
+    if (providerId === 'email_password') return 'email';
+    if (providerId.startsWith('oauth.')) return providerId.slice('oauth.'.length);
+    return providerId;
+  }
+
+  private async getCmsProviderRows(): Promise<Map<string, { label?: string; icon?: string; isActive: boolean }>> {
+    const model = (this.prisma as any).authProvider;
+    if (!model?.findMany) return new Map();
+    const rows = await model.findMany({
+      select: { id: true, label: true, icon: true, isActive: true },
+    });
+    return new Map(rows.map((row: any) => [row.id, row]));
+  }
+
+  private isCmsRowActive(
+    providerId: string,
+    rows: Map<string, { label?: string; icon?: string; isActive: boolean }>,
+  ): boolean {
+    const row = rows.get(this.cmsProviderId(providerId));
+    // Missing CMS metadata must not take down a configured login method.
+    return row?.isActive ?? true;
+  }
+
+  private async isCmsProviderActive(providerId: string): Promise<boolean> {
+    const rows = await this.getCmsProviderRows();
+    return this.isCmsRowActive(providerId, rows);
   }
 
   async listIdentities(userId: string) {

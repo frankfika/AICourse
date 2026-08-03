@@ -4,11 +4,13 @@ import {
   NotFoundException,
   BadRequestException,
   ServiceUnavailableException,
+  Optional,
 } from '@nestjs/common';
 import { ChatRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GeminiService } from '../../common/gemini/gemini.service';
 import { RagService, RagHit, RagSource } from './rag.service';
+import { AiConfigService, assertSafeAiBaseUrl } from '../ai/ai-config.service';
 
 const SRC_TAG = /\[\[src:([a-z]+):([^\]:]+):([^:\]]+):([^\]]+)\]\]/g;
 
@@ -49,6 +51,7 @@ export class ChatService {
     private readonly prisma: PrismaService,
     private readonly rag: RagService,
     private readonly gemini: GeminiService,
+    @Optional() private readonly aiConfig?: AiConfigService,
   ) {}
 
   // ==================== Session CRUD ====================
@@ -125,7 +128,7 @@ export class ChatService {
     // 4) 调 Gemini. 失败抛 ServiceUnavailableException, 不返假数据.
     let rawAnswer = '';
     try {
-      rawAnswer = await this.gemini.generateText(prompt, { maxOutputTokens: 800, temperature: 0.4 });
+      rawAnswer = await this.generateForUser(userId, prompt);
     } catch (err) {
       // 删掉刚存的 user message, 避免半成品 session
       // P1 (verifier audit 2026-07-24): delete 失败要 log, 不能静默吞, 不然
@@ -166,6 +169,65 @@ export class ChatService {
       assistantMsg: { id: assistantMsg.id, role: assistantMsg.role, content: assistantMsg.content, createdAt: assistantMsg.createdAt },
       sources,
     };
+  }
+
+  private async generateForUser(userId: string, prompt: string): Promise<string> {
+    const config = this.aiConfig ? await this.aiConfig.getUserActive(userId) : null;
+    if (!config) return this.gemini.generateText(prompt, { maxOutputTokens: 800, temperature: 0.4 });
+    const apiKey = config.apiKey ?? '';
+    if (config.provider !== 'ollama' && !apiKey) throw new ServiceUnavailableException('AI Key 无效，请重新配置');
+
+    const provider = config.provider;
+    const baseUrl = await assertSafeAiBaseUrl(provider, (config.baseUrl || {
+      openai: 'https://api.openai.com/v1',
+      'openai-compatible': 'https://api.openai.com/v1',
+      claude: 'https://api.anthropic.com',
+      ollama: 'http://localhost:11434',
+      gemini: 'https://generativelanguage.googleapis.com/v1beta',
+    }[provider] || ''));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+    try {
+      let url = `${baseUrl}/chat/completions`;
+      let headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      let body: unknown = {
+        model: config.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4,
+        max_tokens: 800,
+      };
+      if (provider === 'claude') {
+        url = `${baseUrl}/v1/messages`;
+        headers = { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' };
+        body = { model: config.model, max_tokens: 800, temperature: 0.4, messages: [{ role: 'user', content: prompt }] };
+      } else if (provider === 'ollama') {
+        url = `${baseUrl}/api/chat`;
+        headers = { 'Content-Type': 'application/json' };
+        body = { model: config.model, stream: false, messages: [{ role: 'user', content: prompt }], options: { temperature: 0.4 } };
+      } else if (provider === 'gemini') {
+        url = `${baseUrl}/models/${config.model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 800 } };
+      } else {
+        headers.Authorization = `Bearer ${apiKey}`;
+      }
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: controller.signal, redirect: 'error' });
+      if (!res.ok) throw new ServiceUnavailableException('AI 服务暂时不可用，请检查 Key、模型或 Base URL');
+      const data: any = await res.json();
+      const text = provider === 'claude'
+        ? data?.content?.[0]?.text
+        : provider === 'ollama'
+          ? data?.message?.content
+          : provider === 'gemini'
+            ? data?.candidates?.[0]?.content?.parts?.[0]?.text
+            : data?.choices?.[0]?.message?.content;
+      if (!text) throw new ServiceUnavailableException('AI 服务返回了空内容');
+      return text;
+    } catch (err) {
+      if (err instanceof ServiceUnavailableException) throw err;
+      throw new ServiceUnavailableException('AI 服务调用失败，请检查配置');
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   // ==================== helpers ====================

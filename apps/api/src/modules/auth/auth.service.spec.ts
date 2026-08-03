@@ -36,6 +36,9 @@ const mockPrisma: any = {
     create: jest.fn(),
     deleteMany: jest.fn(),
   },
+  authProvider: {
+    findMany: jest.fn(),
+  },
 };
 
 const mockJwtService: any = {
@@ -165,6 +168,7 @@ describe('AuthService', () => {
       providerId: 'oauth.google',
     });
     mockPrisma.refreshToken.deleteMany.mockResolvedValue({ count: 1 });
+    mockPrisma.authProvider.findMany.mockResolvedValue([]);
 
     providers = [
       new StubEmailPasswordProvider(),
@@ -567,8 +571,8 @@ describe('AuthService', () => {
   // =============================================================
 
   describe('listProviders()', () => {
-    it('只返回 enabled + 有 describe 的 provider', () => {
-      const result = service.listProviders();
+    it('只返回 enabled + 有 describe 的 provider', async () => {
+      const result = await service.listProviders();
 
       // enabled + describe: email_password / oauth.google / sso.saml
       // disabled.one: enabled=false → 排除
@@ -582,12 +586,27 @@ describe('AuthService', () => {
       expect(result).toHaveLength(3);
     });
 
-    it('返回的 describe 包含 label / type / id', () => {
-      const result = service.listProviders();
+    it('返回的 describe 包含 label / type / id', async () => {
+      const result = await service.listProviders();
       const email = result.find((r) => r.id === 'email_password');
       expect(email).toEqual(
         expect.objectContaining({ id: 'email_password', label: 'Email', type: 'email_password' }),
       );
+    });
+
+    it('使用 CMS 的启用状态和显示文案覆盖已配置 provider', async () => {
+      mockPrisma.authProvider.findMany.mockResolvedValue([
+        { id: 'email', label: '邮箱登录', icon: 'Mail', isActive: true },
+        { id: 'google', label: 'Google Workspace', icon: 'Chrome', isActive: false },
+      ]);
+
+      const result = await service.listProviders();
+
+      expect(result.find((item) => item.id === 'email_password')).toEqual(
+        expect.objectContaining({ label: '邮箱登录', icon: 'Mail' }),
+      );
+      expect(result.some((item) => item.id === 'oauth.google')).toBe(false);
+      expect(result.some((item) => item.id === 'sso.saml')).toBe(true);
     });
   });
 

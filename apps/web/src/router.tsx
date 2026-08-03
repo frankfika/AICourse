@@ -27,6 +27,7 @@ const DegreeDetailPage = lazy(() => import('./features/degrees/DegreeDetailPage'
 const HackathonListPage = lazy(() => import('./features/hackathons/HackathonListPage').then(m => ({ default: m.HackathonListPage })));
 const HackathonDetailPage = lazy(() => import('./features/hackathons/HackathonDetailPage').then(m => ({ default: m.HackathonDetailPage })));
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AiSettingsPage = lazy(() => import('./features/ai/AiSettingsPage').then(m => ({ default: m.AiSettingsPage })));
 const AboutPage = lazy(() => import('./features/about/AboutPage').then(m => ({ default: m.AboutPage })));
 const InstructorDetailPage = lazy(() => import('./features/instructors/InstructorDetailPage').then(m => ({ default: m.InstructorDetailPage })));
 const NotificationsPage = lazy(() => import('./features/dashboard/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
@@ -135,6 +136,7 @@ export const router = createBrowserRouter([
   { path: '/cookies', element: <PublicSuspense><CookiesPage /></PublicSuspense> },
   { path: '/refund', element: <PublicSuspense><RefundPage /></PublicSuspense> },
   { path: '/dashboard/settings/bindings', element: <AuthGuard><PublicSuspense><BindingsPage /></PublicSuspense></AuthGuard> },
+  { path: '/dashboard/settings/ai', element: <AuthGuard><PublicSuspense><AiSettingsPage /></PublicSuspense></AuthGuard> },
   { path: '/dashboard/notifications', element: <AuthGuard><PublicSuspense><NotificationsPage /></PublicSuspense></AuthGuard> },
   // P1-8: 订单 / 证书(用 dashboard 自身 layout, 不嵌到 /dashboard/children 树里,
   // 这样 OrdersPage / CertificatesPage 自己的 padding/max-w 跟 Layout 独立,

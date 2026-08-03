@@ -679,7 +679,7 @@ export class CreateAuthProviderDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  provider: string;
+  id: string;
 
   @ApiProperty()
   @IsString()
@@ -687,7 +687,14 @@ export class CreateAuthProviderDto {
   @MaxLength(100)
   label: string;
 
-  @ApiProperty({ description: 'JSON config (任意合法 JSON, ≤64KB, depth≤10). OAuth client_secret 等敏感字段由业务侧走 KMS, 这里只做结构 / 大小校验' })
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  icon?: string;
+
+  @ApiPropertyOptional({ description: 'JSON config (≤64KB, depth≤10). 不要存 OAuth client_secret。' })
+  @IsOptional()
   @TransformJsonField()
   config: unknown;
 
@@ -695,7 +702,12 @@ export class CreateAuthProviderDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  order?: number;
+  orderIndex?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class UpdateAuthProviderDto {
@@ -703,17 +715,16 @@ export class UpdateAuthProviderDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
-  @MaxLength(50)
-  provider?: string;
+  @MaxLength(100)
+  label?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(100)
-  label?: string;
+  icon?: string;
 
-  @ApiPropertyOptional({ description: 'JSON config (任意合法 JSON, ≤64KB, depth≤10)' })
+  @ApiPropertyOptional({ description: 'JSON config (≤64KB, depth≤10). 不要存 OAuth client_secret。' })
   @IsOptional()
   @TransformJsonField()
   config?: unknown;
@@ -722,7 +733,12 @@ export class UpdateAuthProviderDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  order?: number;
+  orderIndex?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 // ========== top_nav ==========

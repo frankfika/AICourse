@@ -2,6 +2,8 @@ import { Injectable, Logger, OnModuleInit, BadRequestException } from '@nestjs/c
 import { PrismaService } from '../prisma/prisma.service';
 import { AiKeyCrypto } from './ai-crypto.util';
 import { AuditLogService } from '../audit/audit-log.service';
+import { isIP } from 'node:net';
+import { promises as dns } from 'node:dns';
 
 export interface AiConfigPublic {
   id: string;
@@ -21,6 +23,67 @@ export interface UpdateAiConfigDto {
   model: string;
   baseUrl?: string | null;
   isActive?: boolean;
+}
+
+export interface UserAiConfigPublic {
+  id: string;
+  provider: string;
+  model: string;
+  baseUrl: string | null;
+  isActive: boolean;
+  apiKeyMasked: string;
+}
+
+export const USER_AI_PROVIDERS = ['gemini', 'openai', 'claude', 'openai-compatible', 'ollama'] as const;
+
+function isPrivateIp(hostname: string): boolean {
+  const value = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  if (value === 'localhost' || value.endsWith('.localhost') || value.endsWith('.internal')) return true;
+  const version = isIP(value);
+  if (version === 4) {
+    const [a, b] = value.split('.').map(Number);
+    return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) || (a === 198 && (b === 18 || b === 19)) || a >= 224;
+  }
+  if (version === 6) {
+    return value === '::1' || value === '::' || value.startsWith('fc') || value.startsWith('fd') ||
+      value.startsWith('fe8') || value.startsWith('fe9') || value.startsWith('fea') || value.startsWith('feb') ||
+      (value.startsWith('::ffff:') && isPrivateIp(value.slice('::ffff:'.length)));
+  }
+  return false;
+}
+
+/** Validate user-controlled upstream URLs before the API server connects to them. */
+export async function assertSafeAiBaseUrl(provider: string, rawUrl: string): Promise<string> {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    throw new BadRequestException('Base URL 格式无效');
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) {
+    throw new BadRequestException('Base URL 只支持不带账号密码的 HTTP(S) 地址');
+  }
+  const localOllama = provider === 'ollama' && ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
+  if (!localOllama && parsed.protocol !== 'https:') {
+    throw new BadRequestException('云端 AI 服务的 Base URL 必须使用 HTTPS');
+  }
+  if (isPrivateIp(parsed.hostname) && !localOllama) {
+    throw new BadRequestException('Base URL 不允许指向本机或内网地址');
+  }
+  if (!localOllama) {
+    try {
+      const addresses = await dns.lookup(parsed.hostname, { all: true });
+      if (addresses.some(({ address }) => isPrivateIp(address))) {
+        throw new BadRequestException('Base URL 不允许解析到本机或内网地址');
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException('Base URL 主机无法解析');
+    }
+  }
+  return parsed.toString().replace(/\/$/, '');
 }
 
 @Injectable()
@@ -137,5 +200,66 @@ export class AiConfigService implements OnModuleInit {
       details: { provider },
     });
     return { message: `Deleted ${provider}` };
+  }
+
+  async listForUser(userId: string): Promise<UserAiConfigPublic[]> {
+    const rows = await this.prisma.userAiProviderConfig.findMany({
+      where: { userId },
+      orderBy: { provider: 'asc' },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      provider: row.provider,
+      model: row.model,
+      baseUrl: row.baseUrl,
+      isActive: row.isActive,
+      apiKeyMasked: this.mask(this.crypto.decrypt(row.apiKeyEnc)),
+    }));
+  }
+
+  async upsertForUser(userId: string, dto: UpdateAiConfigDto): Promise<UserAiConfigPublic> {
+    if (!USER_AI_PROVIDERS.includes(dto.provider as (typeof USER_AI_PROVIDERS)[number])) {
+      throw new BadRequestException(`不支持的 AI 接入方式: ${dto.provider}`);
+    }
+    if (dto.provider !== 'ollama' && (!dto.apiKey || dto.apiKey.trim().length < 8)) {
+      throw new BadRequestException('API Key 至少需要 8 个字符');
+    }
+    if (!dto.model?.trim()) throw new BadRequestException('模型名称不能为空');
+    const baseUrl = dto.baseUrl?.trim() ? await assertSafeAiBaseUrl(dto.provider, dto.baseUrl.trim()) : null;
+    const row = await this.prisma.userAiProviderConfig.upsert({
+      where: { userId_provider: { userId, provider: dto.provider } },
+      create: {
+        userId,
+        provider: dto.provider,
+        apiKeyEnc: this.crypto.encrypt(dto.apiKey?.trim() ?? ''),
+        model: dto.model.trim(),
+        baseUrl,
+        isActive: dto.isActive ?? true,
+      },
+      update: {
+        ...(dto.apiKey?.trim() ? { apiKeyEnc: this.crypto.encrypt(dto.apiKey.trim()) } : {}),
+        model: dto.model.trim(),
+        baseUrl,
+        isActive: dto.isActive ?? true,
+      },
+    });
+    return {
+      id: row.id,
+      provider: row.provider,
+      model: row.model,
+      baseUrl: row.baseUrl,
+      isActive: row.isActive,
+      apiKeyMasked: this.mask(this.crypto.decrypt(row.apiKeyEnc)),
+    };
+  }
+
+  async removeForUser(userId: string, provider: string): Promise<void> {
+    await this.prisma.userAiProviderConfig.deleteMany({ where: { userId, provider } });
+  }
+
+  async getUserActive(userId: string) {
+    const row = await this.prisma.userAiProviderConfig.findFirst({ where: { userId, isActive: true } });
+    if (!row) return null;
+    return { provider: row.provider, apiKey: this.crypto.decrypt(row.apiKeyEnc), model: row.model, baseUrl: row.baseUrl };
   }
 }

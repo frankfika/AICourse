@@ -47,10 +47,12 @@ const EMPTY_FORM = {
   startDate: '',
   endDate: '',
   registerDeadline: '',
+  submissionDeadline: '',
   minTeamSize: 1,
   maxTeamSize: 5,
   location: '',
   rules: '',
+  submissionRequirements: '',
   prizes: '',
   registrationUrl: '',
   registrationLabel: '',
@@ -117,10 +119,12 @@ export function AdminHackathonsPage() {
       startDate: toDateTimeLocal(h.startDate),
       endDate: toDateTimeLocal(h.endDate),
       registerDeadline: toDateTimeLocal(h.registerDeadline),
+      submissionDeadline: toDateTimeLocal(h.submissionDeadline),
       minTeamSize: h.minTeamSize,
       maxTeamSize: h.maxTeamSize,
       location: h.location || '',
       rules: h.rules || '',
+      submissionRequirements: h.submissionRequirements || '',
       prizes: h.prizes || '',
       registrationUrl: h.registrationUrl || '',
       registrationLabel: h.registrationLabel || '',
@@ -140,6 +144,7 @@ export function AdminHackathonsPage() {
       startDate: toISOString(form.startDate)!,
       endDate: toISOString(form.endDate)!,
       registerDeadline: toISOString(form.registerDeadline) || null,
+      submissionDeadline: toISOString(form.submissionDeadline) || null,
       minTeamSize: Number(form.minTeamSize),
       maxTeamSize: Number(form.maxTeamSize),
     };
@@ -220,6 +225,12 @@ export function AdminHackathonsPage() {
               value={form.registerDeadline}
               onChange={(v) => setForm({ ...form, registerDeadline: v })}
             />
+            <Field
+              label="作品提交截止"
+              type="datetime-local"
+              value={form.submissionDeadline}
+              onChange={(v) => setForm({ ...form, submissionDeadline: v })}
+            />
             <div className="grid grid-cols-2 gap-2">
               <Field
                 label="最小团队人数"
@@ -250,6 +261,15 @@ export function AdminHackathonsPage() {
               value={form.rules}
               onChange={(v) => setForm({ ...form, rules: v })}
               multiline
+            />
+          </div>
+          <div className="mt-4">
+            <Field
+              label="提交要求（逐行填写）"
+              value={form.submissionRequirements}
+              onChange={(v) => setForm({ ...form, submissionRequirements: v })}
+              multiline
+              placeholder="作品 Demo 链接\n代码仓库链接\n3 分钟以内演示视频"
             />
           </div>
           <div className="mt-4">

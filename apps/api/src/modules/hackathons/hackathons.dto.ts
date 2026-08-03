@@ -42,6 +42,11 @@ export class CreateHackathonDto {
   @IsDateString()
   endDate: string;
 
+  @ApiPropertyOptional({ description: '作品提交截止时间 ISO 字符串' })
+  @IsOptional()
+  @IsDateString()
+  submissionDeadline?: string;
+
   @ApiPropertyOptional({ description: '报名截止时间 ISO 字符串' })
   @IsOptional()
   @IsDateString()
@@ -69,6 +74,11 @@ export class CreateHackathonDto {
   @IsOptional()
   @IsString()
   rules?: string;
+
+  @ApiPropertyOptional({ description: '作品提交要求，建议逐行填写清单' })
+  @IsOptional()
+  @IsString()
+  submissionRequirements?: string;
 
   @ApiPropertyOptional({ description: '奖项设置' })
   @IsOptional()

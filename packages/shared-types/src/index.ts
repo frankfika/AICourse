@@ -179,14 +179,20 @@ export interface DegreePathCourse {
   price: number;
   orderIndex: number;
   stepNumber: number;
-  chapterCount: number;
+  /** 课程内的模块数量（后端仍以 chapter 存储，展示层不再称为章节） */
+  moduleCount: number;
+  lessonCount: number;
+  /** @deprecated 展示层请使用 moduleCount */
+  chapterCount?: number;
   learnerCount: number;
 }
 
 /** 学位的学习路径统计 */
 export interface DegreeStats {
   courseCount: number;
-  totalChapters: number;
+  totalLessons: number;
+  /** @deprecated 展示层请使用 totalLessons */
+  totalChapters?: number;
   totalLearners: number;
   estimatedHours: number;
 }
@@ -290,10 +296,12 @@ export interface Hackathon {
   startDate: Date | string;
   endDate: Date | string;
   registerDeadline?: Date | string | null;
+  submissionDeadline?: Date | string | null;
   maxTeamSize: number;
   minTeamSize: number;
   location?: string | null;
   rules?: string | null;
+  submissionRequirements?: string | null;
   prizes?: string | null;
   organizerId?: string | null;
   registrationUrl?: string | null;
@@ -598,10 +606,12 @@ export interface CreateHackathonRequest {
   startDate: Date | string;
   endDate: Date | string;
   registerDeadline?: Date | string | null;
+  submissionDeadline?: Date | string | null;
   minTeamSize?: number;
   maxTeamSize?: number;
   location?: string;
   rules?: string;
+  submissionRequirements?: string;
   prizes?: string;
   registrationUrl?: string;
   registrationLabel?: string;

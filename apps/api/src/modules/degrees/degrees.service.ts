@@ -17,7 +17,7 @@ export class DegreesService {
         course: {
           include: {
             chapters: {
-              select: { id: true },
+              select: { id: true, lessons: { select: { id: true } } },
               orderBy: { orderIndex: 'asc' as const },
             },
             enrollments: {
@@ -64,8 +64,8 @@ export class DegreesService {
 
   /**
    * 把学位塑造成"学习路径"形状：
-   * - 顶层有 stats（课程数、总章节、估算时长、学员数）
-   * - 课程按 orderIndex 编号，带 chapterCount / duration
+   * - 顶层有 stats（课程数、总课时、估算时长、学员数）
+   * - 课程按 orderIndex 编号，带 moduleCount / lessonCount / duration
    */
   private shapeDegree(degree: any) {
     const courses = (degree.courses ?? []).map((link: any, idx: number) => {
@@ -83,13 +83,16 @@ export class DegreesService {
         price: c.price,
         orderIndex: link.orderIndex,
         stepNumber: idx + 1,
+        moduleCount: c.chapters?.length ?? 0,
+        lessonCount: c.chapters?.reduce((sum: number, ch: any) => sum + (ch.lessons?.length ?? 0), 0) ?? 0,
+        // Deprecated compatibility fields. New clients should use moduleCount/lessonCount.
         chapterCount: c.chapters?.length ?? 0,
         learnerCount: c.enrollments?.length ?? 0,
       };
     });
 
-    const totalChapters = courses.reduce(
-      (sum: number, c: any) => sum + c.chapterCount,
+    const totalLessons = courses.reduce(
+      (sum: number, c: any) => sum + c.lessonCount,
       0,
     );
     const totalLearners = courses.reduce(
@@ -102,7 +105,9 @@ export class DegreesService {
       courses,
       stats: {
         courseCount: courses.length,
-        totalChapters,
+        totalLessons,
+        // Deprecated compatibility field. New clients should use totalLessons.
+        totalChapters: courses.reduce((sum: number, c: any) => sum + c.chapterCount, 0),
         totalLearners,
         estimatedHours: Math.max(courses.length * 4, 1),
       },

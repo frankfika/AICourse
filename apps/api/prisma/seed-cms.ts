@@ -511,8 +511,8 @@ const authProviders: Array<{
   config?: Prisma.InputJsonValue;
 }> = [
   { id: 'email', label: '邮箱', icon: 'Mail', isActive: true },
-  { id: 'google', label: 'Google', icon: 'Chrome', isActive: false, config: { clientId: '', scopes: ['openid', 'email', 'profile'] } },
-  { id: 'github', label: 'GitHub', icon: 'Github', isActive: false, config: { clientId: '', scopes: ['read:user', 'user:email'] } },
+  { id: 'google', label: 'Google', icon: 'Chrome', isActive: true, config: { scopes: ['openid', 'email', 'profile'] } },
+  { id: 'github', label: 'GitHub', icon: 'Github', isActive: true, config: { scopes: ['read:user', 'user:email'] } },
   { id: 'wechat', label: '微信', icon: 'MessageCircle', isActive: false, config: { appId: '', scopes: ['snsapi_login'] } },
   { id: 'wecom', label: '企业微信', icon: 'Briefcase', isActive: false, config: { corpId: '' } },
   { id: 'feishu', label: '飞书', icon: 'MessageSquare', isActive: false, config: { appId: '' } },

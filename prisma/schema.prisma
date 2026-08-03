@@ -49,6 +49,7 @@ model User {
   chatSessions        ChatSession[]
   learningEvents      LearningEvent[]
   aiUsage             AiUsage[]
+  aiProviderConfigs   UserAiProviderConfig[]
 
   @@index([email, deletedAt])
   @@index([role, deletedAt])
@@ -553,25 +554,27 @@ enum PaymentMethod {
 
 // ==================== 黑客松 ====================
 model Hackathon {
-  id                String          @id @default(uuid())
-  title             String
-  description       String          @db.Text
-  bannerUrl         String?         @map("banner_url")
-  status            HackathonStatus @default(upcoming)
-  startDate         DateTime        @map("start_date")
-  endDate           DateTime        @map("end_date")
-  registerDeadline  DateTime?       @map("register_deadline")
-  maxTeamSize       Int             @default(5) @map("max_team_size")
-  minTeamSize       Int             @default(1) @map("min_team_size")
-  location          String?
-  rules             String?         @db.Text
-  prizes            String?         @db.Text
+  id                     String          @id @default(uuid())
+  title                  String
+  description            String          @db.Text
+  bannerUrl              String?         @map("banner_url")
+  status                 HackathonStatus @default(upcoming)
+  startDate              DateTime        @map("start_date")
+  endDate                DateTime        @map("end_date")
+  registerDeadline       DateTime?       @map("register_deadline")
+  submissionDeadline     DateTime?       @map("submission_deadline")
+  maxTeamSize            Int             @default(5) @map("max_team_size")
+  minTeamSize            Int             @default(1) @map("min_team_size")
+  location               String?
+  rules                  String?         @db.Text
+  submissionRequirements String?         @map("submission_requirements") @db.Text
+  prizes                 String?         @db.Text
   // 外部 CTA 链接(基础信息在 tab 里, 详情页只挂 1 个外链: 报名 / 了解更多)
-  registrationUrl   String?         @map("registration_url")
-  registrationLabel String?         @map("registration_label")
-  organizerId       String?         @map("organizer_id")
-  createdAt         DateTime        @default(now()) @map("created_at")
-  updatedAt         DateTime        @updatedAt @map("updated_at")
+  registrationUrl        String?         @map("registration_url")
+  registrationLabel      String?         @map("registration_label")
+  organizerId            String?         @map("organizer_id")
+  createdAt              DateTime        @default(now()) @map("created_at")
+  updatedAt              DateTime        @updatedAt @map("updated_at")
 
   registrations HackathonRegistration[]
   teams         Team[]
@@ -1237,6 +1240,25 @@ model AiConfig {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("ai_configs")
+}
+
+// 用户自己的 AI 接入配置。apiKey 只在服务端加密保存，接口只返回掩码。
+model UserAiProviderConfig {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  provider  String
+  apiKeyEnc String   @map("api_key_enc")
+  model     String
+  baseUrl   String?  @map("base_url")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId, isActive])
+  @@map("user_ai_provider_configs")
 }
 
 // 注: Review model 已在 P1-3 评价系统 (line 700 附近) 完整定义, 这里不重复.

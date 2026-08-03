@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { BookOpen, GraduationCap, Sparkles, ArrowUpRight } from 'lucide-react';
+import { BookOpen, GraduationCap, Sparkles, ArrowUpRight, PlayCircle } from 'lucide-react';
 import { Seo } from '../../components/Seo';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
@@ -154,7 +154,7 @@ export function DegreeListPage() {
                         <BookOpen className="w-3 h-3" /> {degree.stats.courseCount} {t('degree.stats.courses', 'Courses')}
                       </div>
                       <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#666666]">
-                        <GraduationCap className="w-3 h-3" /> {degree.stats.totalChapters} {t('degree.stats.chapters', 'Chapters')}
+                        <PlayCircle className="w-3 h-3" /> {degree.stats.totalLessons} {t('degree.stats.lessons', '课时')}
                       </div>
                       <div className="text-3xl font-black tracking-tighter">
                         {degree.stats.estimatedHours}

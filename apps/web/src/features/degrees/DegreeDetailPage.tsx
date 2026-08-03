@@ -7,7 +7,7 @@
  * 真实可用:
  *   - Hero (title / description / learningPoints)
  *   - 课程列表 (degree.courses[])
- *   - Stats (degree.stats.{courseCount, totalChapters, totalLearners, estimatedHours})
+ *   - Stats (degree.stats.{courseCount, totalLessons, totalLearners, estimatedHours})
  *   - 立即报名 (PurchaseModal)
  */
 import { useState } from 'react';
@@ -204,8 +204,8 @@ export function DegreeDetailPage() {
                 <div className="text-2xl font-black tracking-tighter">{degree.stats?.courseCount ?? degree.courses.length}</div>
               </div>
               <div className="py-5 border-r border-[#171717]">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">{t('degree.stats.chapters', 'Chapters')}</div>
-                <div className="text-2xl font-black tracking-tighter">{degree.stats?.totalChapters ?? 0}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">{t('degree.stats.lessons', 'Lessons')}</div>
+                <div className="text-2xl font-black tracking-tighter">{degree.stats?.totalLessons ?? 0}</div>
               </div>
               <div className="py-5 border-r border-[#171717]">
                 <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">{t('degree.stats.learners', 'Learners')}</div>
@@ -257,7 +257,7 @@ export function DegreeDetailPage() {
                 </Link>
               )}
               <div className="text-[10px] font-black uppercase tracking-widest text-white/40 pt-2">
-                {degree.courses.length} 门课程 · {degree.stats?.totalChapters ?? 0} 章节
+                {degree.courses.length} 门课程 · {degree.stats?.totalLessons ?? 0} 课时
               </div>
             </div>
           </div>
@@ -342,7 +342,7 @@ export function DegreeDetailPage() {
                         </div>
                         <div className="text-sm font-black tracking-tight leading-snug">{c.title}</div>
                         <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
-                          {c.chapterCount} 章 · {c.instructor}
+                          {c.lessonCount} 课时 · {c.instructor}
                         </div>
                       </div>
                     ))}
@@ -380,7 +380,7 @@ export function DegreeDetailPage() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-black tracking-tight leading-snug truncate">{c.title}</div>
                         <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1 flex items-center gap-2 flex-wrap">
-                          <span>{c.chapterCount} 章</span>
+                          <span>{c.lessonCount} 课时</span>
                           <span>·</span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3" /> {c.learnerCount}

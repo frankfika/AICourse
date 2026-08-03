@@ -1422,7 +1422,14 @@ function ListCrudTab({ resource, displayName, fields, primaryKey = 'id' }: ListC
 
   const saveEdit = () => {
     if (!editingId) return;
-    updateMutation.mutate({ id: editingId, payload: draft });
+    // DTOs reject immutable/read-only Prisma fields (id, timestamps). Keep the
+    // generic editor aligned with the auth-provider contract as well.
+    const payload = Object.fromEntries([
+      ...fields.filter((field) => field.name !== 'id').map((field) => [field.name, draft[field.name]]),
+      ['isActive', draft.isActive],
+      ['orderIndex', draft.orderIndex],
+    ].filter(([, value]) => value !== undefined));
+    updateMutation.mutate({ id: editingId, payload });
   };
   const createRow = () => {
     createMutation.mutate(newRow);
@@ -1749,17 +1756,21 @@ export function AdminSettingsPage() {
           </div>
         )}
         {activeTab === 'auth_providers' && (
-          <ListCrudTab
-            resource="auth-providers"
-            displayName="Auth Providers"
+          <div className="space-y-4">
+            <div className="border-2 border-amber-600 bg-amber-50 p-4 text-sm text-amber-900">
+              <strong>登录方式说明：</strong> 环境变量决定登录能力和 OAuth 密钥；这里仅管理已配置登录方式的显示名称、图标和启用状态。启用 Google/GitHub 前，仍需先在 API 环境中配置对应 provider。
+            </div>
+            <ListCrudTab
+              resource="auth-providers"
+              displayName="Auth Providers"
             primaryKey="id"
-            fields={[
-              { name: 'id', label: 'ID (e.g. google)', type: 'text', required: true },
-              { name: 'label', label: 'Label', type: 'text', required: true },
-              { name: 'icon', label: 'Icon (lucide)', type: 'text' },
-              { name: 'config', label: 'Config (JSON)', type: 'json' },
-            ]}
-          />
+              fields={[
+                { name: 'id', label: 'ID (e.g. google)', type: 'text', required: true },
+                { name: 'label', label: 'Label', type: 'text', required: true },
+                { name: 'icon', label: 'Icon (lucide)', type: 'text' },
+              ]}
+            />
+          </div>
         )}
         {activeTab === 'navigation' && (
           <div className="space-y-6">

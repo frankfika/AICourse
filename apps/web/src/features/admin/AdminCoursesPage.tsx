@@ -8,7 +8,7 @@
  * 5 tab 全部接真后端:
  *   - info      PATCH /api/v1/courses/:id          基本信息
  *   - chapters  GET/POST/PATCH/DELETE /chapters + /lessons + /resources
- *                                                 章节树 + 课时 CRUD + 每课时资源 CRUD
+ *                                                 模块树 + 课时 CRUD + 每课时资源 CRUD
  *   - practices GET/POST/PATCH/DELETE /api/v1/practices
  *   - pricing   PATCH /api/v1/courses/:id (costType + price)
  *   - publish   PATCH /api/v1/courses/:id (status)
@@ -983,7 +983,7 @@ function DegreeMembershipSection({ courseId }: { courseId: string }) {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// ChaptersTab — 章节树 + 课时管理(全部接真后端)
+// ModulesTab — 课程模块树 + 课时管理(后端 chapter 字段保持兼容)
 // ──────────────────────────────────────────────────────────────────────
 
 function ChaptersTab({ courseId }: { courseId: string }) {
@@ -1029,7 +1029,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
   });
 
   if (chaptersQuery.isLoading) {
-    return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载章节中…</div>;
+    return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">加载课程模块中…</div>;
   }
   if (chaptersQuery.isError) {
     return (
@@ -1043,15 +1043,15 @@ function ChaptersTab({ courseId }: { courseId: string }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 overflow-hidden min-h-[500px]">
-      {/* 章节树 — < lg 默认 hidden,点 mobile 按钮后显示在 lesson 编辑区上方 */}
+      {/* 课程模块树 — < lg 默认 hidden,点 mobile 按钮后显示在 lesson 编辑区上方 */}
       <aside className={`bg-white dark:bg-neutral-100 dark:bg-neutral-100 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 flex flex-col ${mobileChaptersOpen ? 'border-2' : 'hidden lg:flex border-r-0 lg:border-r-2'}`}>
         <div className="p-3 border-b border-[#171717] dark:border-neutral-50 dark:border-neutral-50">
-          <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-2">章节大纲</h3>
+          <h3 className="text-sm font-semibold text-[#171717] dark:text-neutral-50 dark:text-neutral-50 mb-2">课程模块</h3>
           <div className="flex items-center gap-1">
             <input
               value={newChapterTitle}
               onChange={(e) => setNewChapterTitle(e.target.value)}
-              placeholder="新章节标题"
+              placeholder="新模块标题"
               className="flex-1 h-8 px-2 text-xs border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 focus:outline-none focus:border-[#171717] dark:border-neutral-50"
             />
             <BrutalButton
@@ -1060,14 +1060,14 @@ function ChaptersTab({ courseId }: { courseId: string }) {
               disabled={!newChapterTitle.trim() || createChapter.isPending}
               onClick={() => createChapter.mutate(newChapterTitle.trim())}
             >
-              + 章节
+              + 模块
             </BrutalButton>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {chapters.length === 0 && (
             <div className="text-[10px] text-[#A3A3A3] italic p-3 text-center">
-              暂无章节 · 在上方添加
+              暂无模块 · 在上方添加
             </div>
           )}
           {chapters.map((c, idx) => {
@@ -1091,7 +1091,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
                   <span className="text-[10px] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 font-mono">{c.lessons.length}</span>
                   <button
                     onClick={() => {
-                      if (confirm(`删除章节「${c.title}」？将级联软删其下 ${c.lessons.length} 个课时`)) {
+                      if (confirm(`删除模块「${c.title}」？将级联软删其下 ${c.lessons.length} 个课时`)) {
                         deleteChapter.mutate(c.id);
                       }
                     }}
@@ -1133,12 +1133,12 @@ function ChaptersTab({ courseId }: { courseId: string }) {
           })}
         </div>
         <div className="p-3 border-t border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
-          共 {chapters.length} 章 · {totalLessons} 课时
+          共 {chapters.length} 个模块 · {totalLessons} 个课时
         </div>
       </aside>
 
       <div className="bg-[#EEEDE9] dark:bg-neutral-800 dark:bg-neutral-800 p-4">
-        {/* mobile 章节树 toggle — < lg 显示,≥ lg 隐藏 */}
+        {/* mobile 模块树 toggle — < lg 显示,≥ lg 隐藏 */}
         <div className="lg:hidden mb-3 flex items-center gap-2">
           <button
             type="button"
@@ -1146,7 +1146,7 @@ function ChaptersTab({ courseId }: { courseId: string }) {
             aria-expanded={mobileChaptersOpen}
             className="inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors"
           >
-            {mobileChaptersOpen ? '收起章节' : `章节(${chapters.length})`}
+            {mobileChaptersOpen ? '收起模块' : `模块(${chapters.length})`}
           </button>
           {activeLesson && (
             <span className="text-xs text-[#666666] dark:text-neutral-400 dark:text-neutral-400 truncate">
@@ -1508,9 +1508,9 @@ function ResourcesTab({ courseId: _courseId }: { courseId: string }) {
     <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
       <div className="border-2 border-dashed border-[#171717] dark:border-neutral-50 dark:border-neutral-50 p-12 text-center">
         <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
-        <p className="text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">资源已迁到「章节大纲」tab</p>
+        <p className="text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">资源已迁到「课程模块」tab</p>
         <p className="text-[10px] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mt-1">
-          在章节大纲里选中具体课时,在右侧课时详情面板的「附加资源」段管理
+            在课程模块里选中具体课时,在右侧课时详情面板的「附加资源」段管理
         </p>
       </div>
     </div>
@@ -1738,7 +1738,7 @@ function PricingTab({ courseId }: { courseId: string }) {
   };
 
   const plans = [
-    { id: 'free' as const, title: '免费', sub: '全部章节对所有人开放', priceHint: '¥ 0' },
+    { id: 'free' as const, title: '免费', sub: '全部课程模块对所有人开放', priceHint: '¥ 0' },
     { id: 'paid' as const, title: '付费买断', sub: '一次付费，永久学习', priceHint: `¥ ${price}` },
     { id: 'charity' as const, title: '公益', sub: '自由付费，部分收入捐赠', priceHint: '¥ 0+ 自定' },
   ];
@@ -1890,7 +1890,7 @@ function CourseEditInline({
 
   const TABS_DYNAMIC: { id: Tab; label: string; count?: string }[] = [
     { id: 'info', label: '基本信息' },
-    { id: 'chapters', label: '章节大纲', count: `${chapters.length} 章` },
+    { id: 'chapters', label: '课程模块', count: `${chapters.length} 个模块` },
     { id: 'practices', label: '实践项目' },
     { id: 'pricing', label: '价格 / 试看' },
     { id: 'publish', label: '发布设置' },

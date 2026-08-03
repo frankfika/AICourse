@@ -11,7 +11,18 @@ AI Academy 是一个可二次品牌化的在线教育平台，面向 AI/LLM 课�
 - 存储：开发环境 MinIO，生产可接 S3/OSS
 - OAuth：Google/GitHub 支持配置驱动的授权、state 校验和回调；SAML 需要完整 IdP 配置后启用
 - 已实现：课程真实评分/热度排序、学习笔记 CRUD、实践项目与进度、评价 helpful 去重、课程完成证书、订单/证书通知、讲师详情页、真实 AI 助手
-- 验证结果：部署配置 5 tests；API 37 suites / 342 tests；Web 22 files / 132 tests；浏览器 E2E 29 passed / 1 skipped；生产构建和 TypeScript 检查通过
+- 课程层级：课程由一个或多个「模块」组成，模块下包含「课时」；Nano Degree 只统计课程数和课时数，不再把课程模块称为“章节”
+- 验证结果：部署配置 7 tests；API 38 suites / 347 tests；Web 22 files / 132 tests；浏览器 E2E 29 passed / 1 skipped；生产构建和 TypeScript 检查通过
+
+## Changelog
+
+### 2026-08-03
+
+- 新增用户级 AI provider 配置，支持 Gemini、OpenAI、Claude、OpenAI 兼容接口和本地 Ollama。
+- 修复 AI 设置页首次打开时已保存模型与 Base URL 不回填的问题。
+- 限制 AI 上游地址必须使用安全的 HTTPS 公网地址；本地 Ollama 仅允许访问本机地址，并禁止跟随重定向，降低 SSRF 风险。
+- 修复后台登录方式编辑提交只读 `id` 导致 API 返回 400 的问题。
+- 课程层级展示统一使用“模块 / 课时”，黑客松详情补充时间节点与作品提交要求。
 
 ## 目录
 
@@ -141,7 +152,7 @@ pnpm deploy:validate
 ## 核心功能
 
 - 用户注册、登录、refresh token 轮换、OAuth/SAML 配置化登录
-- 课程、章节、课时、资源、学位和报名
+- 课程、模块、课时、资源、学位和报名
 - 实践项目：后台 CRUD、学员开始/完成状态与徽章联动
 - 学习进度、完成证书和证书验证
 - 课程评价、评分分布、helpful 投票防重复

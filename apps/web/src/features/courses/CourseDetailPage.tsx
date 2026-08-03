@@ -481,8 +481,8 @@ export function CourseDetailPage() {
               <div>
                 <div className="border border-[#171717] bg-white">
                   <div className="p-4 border-b border-[#171717]">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">课程章节</div>
-                    <div className="text-lg font-black mt-1">{course.chapters.length} Chapters</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">课程模块</div>
+                    <div className="text-lg font-black mt-1">{course.chapters.length} Modules</div>
                   </div>
                   <div>
                     {course.chapters.map((chapter, i) => (
@@ -491,11 +491,11 @@ export function CourseDetailPage() {
                         className={`p-4 ${i < course.chapters.length - 1 ? 'border-b border-[#EEEDE9]' : ''} hover:bg-[#F5F4F0] transition-colors`}
                       >
                         <div className="text-[10px] font-black uppercase tracking-widest text-[#A3A3A3] mb-1">
-                          Chapter {String(i + 1).padStart(2, '0')}
+                          模块 {String(i + 1).padStart(2, '0')}
                         </div>
                         <div className="text-sm font-black tracking-tight leading-snug">{chapter.title}</div>
                         <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-1">
-                          {chapter.lessons.length} Lessons
+                          {chapter.lessons.length} 课时
                         </div>
                       </div>
                     ))}
@@ -569,7 +569,7 @@ export function CourseDetailPage() {
               <div className="lg:col-span-1">
                 <div className="border border-[#171717] bg-white">
                   <div className="p-4 border-b border-[#171717]">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">课程章节</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[#666666]">课程模块 · 课时</div>
                   </div>
                   {course.chapters.map((chapter) => (
                     <div key={chapter.id} className="border-b border-[#EEEDE9] last:border-b-0">
@@ -636,7 +636,7 @@ export function CourseDetailPage() {
                     <div key={chapter.id} className={ci < resourcesByChapter.length - 1 ? 'border-b border-[#171717]' : ''}>
                       <div className="p-4 bg-[#171717] text-white">
                         <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">
-                          Chapter {String(ci + 1).padStart(2, '0')}
+                          模块 {String(ci + 1).padStart(2, '0')}
                         </div>
                         <div className="text-base font-black tracking-tight">{chapter.title}</div>
                       </div>

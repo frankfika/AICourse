@@ -33,8 +33,8 @@ export class AuthController {
 
   /** 前端 LoginPage 用：列出可用的 provider 渲染按钮（OAuth / SSO 入口） */
   @Get('providers')
-  listProviders() {
-    return { providers: this.authService.listProviders() };
+  async listProviders() {
+    return { providers: await this.authService.listProviders() };
   }
 
   @Get('password-reset/capability')

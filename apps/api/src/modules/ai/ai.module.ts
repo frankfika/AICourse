@@ -3,6 +3,7 @@ import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AiConfigController } from './ai-config.controller';
 import { AiConfigModule } from './ai-config.module';
+import { AiUserConfigController } from './ai-user-config.controller';
 
 /**
  * P0 修复(2026-07-24): 注册 AiConfigController, admin 后台可改 AI key.
@@ -10,7 +11,7 @@ import { AiConfigModule } from './ai-config.module';
  */
 @Module({
   imports: [AiConfigModule],
-  controllers: [AiController, AiConfigController],
+  controllers: [AiController, AiConfigController, AiUserConfigController],
   providers: [AiService],
   exports: [AiService],
 })

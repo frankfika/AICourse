@@ -2,7 +2,7 @@
  * DashboardPage — P0-6 学习中心三栏布局
  *
  * 严格按 review/mocks/mock-learn.html 落地:
- *   - 左 280-320px 章节大纲(折叠 Chapter → Lesson,每 Lesson 显示 title + 时长 + 状态)
+ *   - 左 280-320px 课程大纲(折叠模块 → 课时,每课时显示 title + 时长 + 状态)
  *   - 中 1fr 视频 + tabs(笔记/字幕/资源) + sticky 完成按钮
  *   - 右 360-400px AI 助教入口，打开真实 WebAssistant 会话
  *
@@ -173,7 +173,7 @@ function ChapterOutline({
       <div className="p-4 border-b border-neutral-200 dark:border-neutral-200">
         <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-900">课程大纲</h3>
         <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-600">
-          共 {chapters.length} 章 · {completedCount} / {total} 课时已完成
+          共 {chapters.length} 个模块 · {completedCount} / {total} 课时已完成
         </div>
         <div className="mt-2 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-200 overflow-hidden">
           <div
@@ -186,7 +186,7 @@ function ChapterOutline({
         </div>
       </div>
 
-      {/* 章节列表 */}
+      {/* 模块列表 */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {chapters.map((chapter, ci) => {
           const isOpen = openChapters.has(chapter.id);
@@ -544,6 +544,7 @@ function VideoCenter({
   const allLessons = course.chapters.flatMap((c) => c.lessons);
   const currentIdx = allLessons.findIndex((l) => l.id === currentLesson.id);
   const hasPrev = currentIdx > 0;
+  const hasNext = currentIdx >= 0 && currentIdx < allLessons.length - 1;
 
   const tabs: Array<{ id: CenterTab; label: string; count?: number; icon: React.ReactNode }> = [
     { id: 'notes', label: '笔记', icon: <FileText className="w-3.5 h-3.5" /> },
@@ -712,14 +713,24 @@ function VideoCenter({
         <span className="text-[10px] sm:text-xs text-neutral-600 dark:text-neutral-600 hidden md:inline">
           完成本节获得积分 + 进度推进
         </span>
-        <button
-          onClick={() => onMarkComplete(currentLesson.id)}
-          disabled={isCompleting || isCurrentCompleted}
-          className="px-3 sm:px-4 py-2 rounded-md bg-[#171717] text-white text-xs sm:text-sm font-medium hover:bg-[#262626] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1"
-        >
-          {isCurrentCompleted ? '已完成' : isCompleting ? '提交中…' : '标记完成'}
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onMarkComplete(currentLesson.id)}
+            disabled={isCompleting || isCurrentCompleted}
+            className="px-3 sm:px-4 py-2 rounded-md bg-[#171717] text-white text-xs sm:text-sm font-medium hover:bg-[#262626] disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1"
+          >
+            {isCurrentCompleted ? '已完成' : isCompleting ? '提交中…' : '标记完成'}
+          </button>
+          <button
+            onClick={() => onNavigate('next')}
+            disabled={!hasNext}
+            aria-label="下一节"
+            className="px-3 sm:px-4 py-2 rounded-md border border-neutral-200 dark:border-neutral-200 text-xs sm:text-sm hover:border-[#171717] disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-900 flex items-center gap-1"
+          >
+            <span className="hidden sm:inline">下一节</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -850,6 +861,27 @@ export function DashboardPage() {
         : [];
     return new Set(records.filter((r) => r.status === 'completed').map((r) => r.lessonId));
   }, [progressQuery.data]);
+
+  // 课程详情异步加载后初始化当前课时，避免导航索引停留在 -1。
+  useEffect(() => {
+    if (!course || progressQuery.isLoading) return;
+    const lessons = course.chapters.flatMap((chapter) => chapter.lessons);
+    if (!lessons.length) return;
+
+    const raw = progressQuery.data;
+    const records: ProgressRecord[] = Array.isArray(raw)
+      ? (raw as ProgressRecord[])
+      : Array.isArray((raw as any)?.data)
+        ? ((raw as any).data as ProgressRecord[])
+        : [];
+    const inProgress = records.find(
+      (record) => record.status === 'in_progress' && (!record.courseId || record.courseId === course.id),
+    );
+    const preferred = inProgress && findLessonById(course.chapters, inProgress.lessonId);
+    const firstAccessible = lessons.find((lesson) => lesson.isPreview) ?? lessons[0];
+    const currentStillInCourse = currentLessonId && lessons.some((lesson) => lesson.id === currentLessonId);
+    if (!currentStillInCourse) setCurrentLessonId(preferred?.id ?? firstAccessible.id);
+  }, [course, currentLessonId, progressQuery.data, progressQuery.isLoading]);
 
   // === 4) 标记完成 mutation ===
   const completeLessonMutation = useMutation({

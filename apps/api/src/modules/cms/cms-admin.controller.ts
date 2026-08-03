@@ -476,13 +476,24 @@ export class CmsAdminController {
   @Post('auth-providers')
   @ApiOperation({ summary: 'Admin: 创建 auth_provider' })
   createAuthProvider(@Body() dto: CreateAuthProviderDto) {
-    return this.cmsContentService.createAuthProvider(dto as never);
+    return this.cmsContentService.createAuthProvider({
+      id: dto.id,
+      label: dto.label,
+      icon: dto.icon ?? 'KeyRound',
+      config: dto.config as never,
+      isActive: dto.isActive ?? false,
+      orderIndex: dto.orderIndex ?? 0,
+    });
   }
 
   @Patch('auth-providers/:id')
   @ApiOperation({ summary: 'Admin: 更新 auth_provider' })
   updateAuthProvider(@Param('id') id: string, @Body() dto: UpdateAuthProviderDto) {
-    return this.cmsContentService.updateAuthProvider(id, dto as never);
+    const { orderIndex, ...rest } = dto;
+    return this.cmsContentService.updateAuthProvider(id, {
+      ...rest,
+      ...(orderIndex !== undefined ? { orderIndex } : {}),
+    } as never);
   }
 
   @Delete('auth-providers/:id')

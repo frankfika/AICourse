@@ -4,6 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Calendar,
+  Clock3,
+  ClipboardCheck,
+  FileCheck2,
   MapPin,
   Users,
   ScrollText,
@@ -60,6 +63,13 @@ export function HackathonDetailPage() {
   }
 
   const formatDate = (d: Date | string) => new Date(d).toLocaleDateString('zh-CN');
+  const formatDateTime = (d: Date | string) =>
+    new Date(d).toLocaleString('zh-CN', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
   // CMS-driven copy
   const { t } = useI18n();
@@ -141,10 +151,16 @@ export function HackathonDetailPage() {
                 src={hackathon.bannerUrl}
                 alt={hackathon.title}
                 fill
+                eager
                 className="object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-[#999999]">No Banner</div>
+              <div className="relative w-full h-full min-h-[280px] overflow-hidden bg-[#DAD8D0] p-8 flex flex-col justify-end">
+                <div className="absolute -right-8 -top-8 w-64 h-64 rounded-full border-[32px] border-[#171717]/10" />
+                <div className="absolute right-24 top-16 w-24 h-24 rounded-full bg-[#171717]" />
+                <div className="relative text-[10px] font-black uppercase tracking-[0.35em] text-[#666666]">AI Academy · Hackathon</div>
+                <div className="relative mt-2 max-w-md text-3xl md:text-5xl font-black tracking-tighter leading-none uppercase">Build what matters.</div>
+              </div>
             )}
           </div>
 
@@ -203,10 +219,15 @@ export function HackathonDetailPage() {
                   <ArrowUpRight className="w-4 h-4" />
                 </a>
               ) : (
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">
-                  {t('hackathon.cta.empty', '组织者暂未配置外链, 详情请见下方公告')}
+                <div className="border border-dashed border-white/30 px-4 py-3 text-xs leading-relaxed text-white/60">
+                  {t('hackathon.cta.empty', '组织者暂未配置报名外链，请关注下方公告。')}
                 </div>
               )}
+            </div>
+            <div className="mt-6 grid grid-cols-3 border-t border-white/20 pt-4">
+              <CountStat label="已报名" value={hackathon._count?.registrations ?? 0} />
+              <CountStat label="参赛队伍" value={hackathon._count?.teams ?? 0} />
+              <CountStat label="作品提交" value={hackathon._count?.submissions ?? 0} icon={<FileCheck2 className="w-3 h-3" />} />
             </div>
           </div>
         </div>
@@ -237,6 +258,41 @@ export function HackathonDetailPage() {
       <section className="border-b border-[#171717]">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <TabPanel value={activeTab} tabKey="overview" idPrefix="hackathon-detail">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <div className="lg:col-span-2 border-2 border-[#171717] bg-white p-6">
+                <div className="flex items-center justify-between gap-4 mb-5">
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-[#666666]">/ Schedule</div>
+                    <h2 className="text-xl font-black tracking-tight mt-1">关键时间</h2>
+                  </div>
+                  <Clock3 className="w-5 h-5" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <TimelineItem label="报名截止" value={hackathon.registerDeadline ? formatDateTime(hackathon.registerDeadline) : '以外部页面为准'} />
+                  <TimelineItem label="比赛开始" value={formatDateTime(hackathon.startDate)} />
+                  <TimelineItem label="作品提交截止" value={hackathon.submissionDeadline ? formatDateTime(hackathon.submissionDeadline) : formatDateTime(hackathon.endDate)} />
+                </div>
+                <div className="mt-3 pt-3 border-t border-[#EEEDE9] text-xs text-[#666666]">
+                  活动结束：{formatDateTime(hackathon.endDate)} · 具体评审与结果发布时间请以公告为准
+                </div>
+              </div>
+              <div className="border-2 border-[#171717] bg-[#F0EEE8] p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <ClipboardCheck className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.25em]">/ Submit</span>
+                </div>
+                <h2 className="text-xl font-black tracking-tight mb-3">你需要提交什么</h2>
+                {hackathon.submissionRequirements ? (
+                  <ul className="space-y-2 text-sm leading-relaxed">
+                    {hackathon.submissionRequirements.split(/\r?\n/).filter(Boolean).map((item, index) => (
+                      <li key={`${item}-${index}`} className="flex gap-2"><span className="font-black">{String(index + 1).padStart(2, '0')}</span><span>{item.replace(/^[-•*]\s*/, '')}</span></li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-[#666666] leading-relaxed">作品要求待组织者补充，请先查看比赛规则与公告。</p>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <BrutalPanel label={panelDesc} title={t('hackathon.panel.desc.title', '活动介绍')}>
@@ -246,6 +302,17 @@ export function HackathonDetailPage() {
                   <BrutalPanel label={panelRules} title={t('hackathon.panel.rules.title', '比赛规则')}>
                     <p className="text-[#171717] whitespace-pre-line leading-relaxed">{hackathon.rules}</p>
                   </BrutalPanel>
+                )}
+                {hackathon.registrationUrl && (
+                  <div className="border-2 border-[#171717] bg-[#171717] text-white p-6 flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50 mb-1">Ready to build?</div>
+                      <div className="font-black">报名后，按外部页面完成参赛登记</div>
+                    </div>
+                    <a href={hackathon.registrationUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 inline-flex items-center gap-2 bg-white text-[#171717] px-4 py-3 text-xs font-black uppercase tracking-wider hover:bg-[#EEEDE9]">
+                      {regLabel} <ArrowUpRight className="w-4 h-4" />
+                    </a>
+                  </div>
                 )}
               </div>
               <div className="space-y-6">
@@ -288,6 +355,24 @@ export function HackathonDetailPage() {
           </TabPanel>
         </div>
       </section>
+    </div>
+  );
+}
+
+function TimelineItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-[#171717] p-4 min-h-[88px]">
+      <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">{label}</div>
+      <div className="text-sm font-black leading-snug">{value}</div>
+    </div>
+  );
+}
+
+function CountStat({ label, value, icon }: { label: string; value: number; icon?: React.ReactNode }) {
+  return (
+    <div className="border-r last:border-r-0 border-white/20 px-3 first:pl-0">
+      <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-white/50">{icon}{label}</div>
+      <div className="mt-1 text-2xl font-black tracking-tighter leading-none">{value}</div>
     </div>
   );
 }

@@ -72,7 +72,7 @@ interface Degree {
   price: number;
   costType: 'free' | 'paid' | 'charity';
   courses?: Array<{ id: string; title: string; stepNumber: number }>;
-  stats?: { courseCount: number; totalChapters: number; estimatedHours: number; totalLearners: number };
+  stats?: { courseCount: number; totalLessons: number; estimatedHours: number; totalLearners: number };
 }
 
 interface Hackathon {
@@ -117,7 +117,7 @@ interface SiteStats {
     tags: string;
     thumbnail: string;
     enrollmentCount: number;
-    chapterCount: number;
+    lessonCount: number;
   } | null;
 }
 

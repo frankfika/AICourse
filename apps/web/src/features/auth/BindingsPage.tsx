@@ -50,7 +50,7 @@ const FALLBACK_PROVIDER_META: Record<
   string,
   { label: string; icon: React.ReactNode; isPrimary?: boolean }
 > = {
-  local: {
+  email_password: {
     label: '本地账号(邮箱 + 密码)',
     icon: <Mail className="h-5 w-5" />,
     isPrimary: true,
@@ -73,13 +73,18 @@ function useProviderMeta(): Record<string, { label: string; icon: React.ReactNod
     const map: Record<string, { label: string; icon: React.ReactNode; isPrimary?: boolean }> = {};
     for (const p of data) {
       if (p.isActive === false) continue;
+      // CMS keeps short ids (email/google/github), while auth identities use
+      // the provider ids (email_password/oauth.google/oauth.github).
+      const providerId = p.id === 'email'
+        ? 'email_password'
+        : ['google', 'github'].includes(p.id) ? `oauth.${p.id}` : p.id;
       // 缩写: 取 label 第 1 个字符
       const firstChar = (p.label || p.id).charAt(0);
-      map[p.id] = { label: p.label, icon: <span className="font-bold text-sm">{firstChar}</span> };
+      map[providerId] = { label: p.label, icon: <span className="font-bold text-sm">{firstChar}</span> };
     }
-    // local 是 primary,后端不一定返回;补回去
-    if (!map.local) {
-      map.local = FALLBACK_PROVIDER_META.local;
+    // email_password 是 primary,后端不一定返回;补回去
+    if (!map.email_password) {
+      map.email_password = FALLBACK_PROVIDER_META.email_password;
     }
     return map;
   }
@@ -143,7 +148,7 @@ export function BindingsPage() {
 
   const handleUnbind = async (id: Identity) => {
     const meta = providerMeta[id.provider];
-    if (id.provider === 'local') {
+    if (id.provider === 'email_password') {
       showToast(t('auth.toast.local_primary', '本地账号是主登录,无法解绑'), 'warning');
       return;
     }
@@ -166,7 +171,7 @@ export function BindingsPage() {
 
   // ConfirmDialog 触发: 点"解绑"按钮只 setConfirmUnbind, 用户在弹层确认后才真解绑
   const requestUnbind = (id: Identity) => {
-    if (id.provider === 'local') {
+    if (id.provider === 'email_password') {
       showToast(t('auth.toast.local_primary', '本地账号是主登录,无法解绑'), 'warning');
       return;
     }

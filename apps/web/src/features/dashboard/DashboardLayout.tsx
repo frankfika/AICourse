@@ -17,7 +17,7 @@
  *   - sm+: 加进度条 + 学员信息(积分/等级)
  */
 import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon, Bell, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Sparkles, Sun, Moon, Bell, ShoppingBag, Settings2 } from 'lucide-react';
 import { Suspense, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme, useThemeStore } from '../../stores/themeStore';
@@ -197,6 +197,9 @@ export function DashboardLayout() {
             title="我的订单"
           >
             <ShoppingBag className="w-5 h-5" />
+          </Link>
+          <Link to="/dashboard/settings/ai" className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 transition-colors" aria-label="AI 助教设置" title="AI 助教设置">
+            <Settings2 className="w-5 h-5" />
           </Link>
 
           {/* 主题切换 */}

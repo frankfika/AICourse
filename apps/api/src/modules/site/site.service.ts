@@ -79,6 +79,7 @@ export class SiteService {
             thumbnail: c.thumbnail,
             enrollmentCount: c._count.enrollments,
             chapterCount: c._count.chapters,
+            moduleCount: c._count.chapters,
           };
         }),
       // 7) 最新 active/upcoming hackathon(用于推导 term 标签)
