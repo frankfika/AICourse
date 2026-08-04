@@ -12,12 +12,14 @@ import {
 
 @Module({
   controllers: [
-    // 前台
-    InstructorsPublicController,
+    // 前台 — ExpertisesPublicController 必须先于 InstructorsPublicController 注册,
+    // 否则 GET /instructors/expertises 会被 :slug 截胡, 走到 findBySlug('expertises')
+    // 返 404 "Instructor not found" (前端 chip 筛选场景踩过)
     ExpertisesPublicController,
+    InstructorsPublicController,
     // Admin
-    InstructorsAdminController,
     ExpertisesAdminController,
+    InstructorsAdminController,
     CourseInstructorsAdminController,
   ],
   providers: [InstructorsService],
