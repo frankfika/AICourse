@@ -255,10 +255,22 @@ pnpm dev                        # api :8080 + web :5500
 ### 3 步进系统
 
 1. **打开** <http://localhost:5500>(让服务跑的人给你地址)
-2. **登录**(两个账号任选,都已写库):
-   - **管理员** — 看后台:`admin@ai-academy.local` / `admin123`
-   - **学员** — 看前台:`student@test.com` / `123456`
-3. **点这 5 条路径** — 5 分钟看完所有能力
+2. **登录**(任选一个账号,都已写库 — 见下方账号清单)
+3. **点对应的路径** — 5 分钟看完所有能力
+
+### 账号清单(7 个,任选登)
+
+| 角色 | 邮箱 | 密码 | 用途 |
+| --- | --- | --- | --- |
+| **管理员** | `admin@ai-academy.local` | `admin123` | 登 `/admin/*` 看后台所有功能 |
+| **学员(原始)** | `student@test.com` | `123456` | 看前台,演示主用 |
+| **学员(e2e 1)** | `biztest1785846398673@academy.test` | `BizTest!Pass2026` | 已下过 1 单(mockPay paid),演示订单管理 |
+| **学员(e2e 2)** | `biztest1785846469464@academy.test` | `BizTest!Pass2026` | 演示用,无订单 |
+| **学员(e2e 3)** | `biztest1785846579112@academy.test` | `BizTest!Pass2026` | 演示用,无订单 |
+| **学员(e2e 4)** | `biztest1785846611781@academy.test` | `BizTest!Pass2026` | 演示用,无订单 |
+| **学员(e2e 5)** | `viztest1785846634434@academy.test` | `BizTest!Pass2026` | 演示用,无订单 |
+
+> 所有账号的 `passwordResetRequired` 已设成 `false`,登进去不会被强制改密。生产 seed 行为不同(强制改密 + 强密码)。
 
 ### 5 条必看路径
 
@@ -266,9 +278,26 @@ pnpm dev                        # api :8080 + web :5500
 | --- | --- | --- | --- |
 | 1 | **访客**(不用登) | <http://localhost:5500/> | 首页 8 段位、热门课程、CTA 按钮 |
 | 2 | **访客** | <http://localhost:5500/courses> | 6 个 seed 课程,4 种排序(newest/recent/rating/popular) |
-| 3 | **学员**(`student@test.com`) | <http://localhost:5500/courses/55ca51ce-...> | 单课程详情:大纲/讲师/评价/报名(已下 mock 订单的会显示已支付) |
-| 4 | **学员** | <http://localhost:5500/dashboard/orders> | "我的订单" — 1 笔真实 mock 支付订单(¥79.99 · 白帽黑客:数字防御) |
+| 3 | **学员**(`student@test.com`) | <http://localhost:5500/dashboard/orders> | "我的订单" — 1 笔真实 mock 支付订单(¥79.99 · 白帽黑客:数字防御) |
+| 4 | **学员**(`biztest1785846398673@academy.test`) | <http://localhost:5500/dashboard/orders> | 同上,已付 paid,可演示证书验证 |
 | 5 | **管理员**(`admin@ai-academy.local`) | <http://localhost:5500/admin/dashboard> | 后台看板:KPI / 课程管理 5 tab / 用户管理 Drawer / 审计日志 / AI 配置 |
+
+### 管理员后台完整路径(10 个子页面)
+
+> 全部在 `/admin/*` 命名空间下,登管理员账号后直接点侧边栏访问。
+
+| # | 路径 | 作用 | 看点 |
+| --- | --- | --- | --- |
+| 1 | <http://localhost:5500/admin/dashboard> | 看板首页 | KPI / 图表 / 待办 / 系统状态 |
+| 2 | <http://localhost:5500/admin/courses> | 课程管理 | 5 tab 编辑(info / chapters / practices / pricing / publish) |
+| 3 | <http://localhost:5500/admin/degrees> | 学位管理 | 学位 CRUD + 关联课程 |
+| 4 | <http://localhost:5500/admin/users> | 用户管理 | 列表 + 行内 Drawer(6 section:基本/学习/订单/证书/积分/活动日志) |
+| 5 | <http://localhost:5500/admin/badges> | 徽章管理 | 徽章 CRUD |
+| 6 | <http://localhost:5500/admin/hackathons> | 黑客松管理 | 赛程/报名/团队/作品提交/评审 |
+| 7 | <http://localhost:5500/admin/enterprise> | 企业询价 | 咨询工单列表 + 状态流转 |
+| 8 | <http://localhost:5500/admin/reviews> | 评价审核 | 学员评价列表 + helpful 统计 |
+| 9 | <http://localhost:5500/admin/audit> | 审计日志 | 谁在什么时间操作了什么(下完单会写 `order.create` / `order.pay`) |
+| 10 | <http://localhost:5500/admin/settings> | AI 设置 | 用户级 API key 配置(Gemini / OpenAI / Claude / Ollama 任意配) |
 
 ### 演示一条完整业务流(2 分钟)
 
@@ -282,6 +311,8 @@ pnpm dev                        # api :8080 + web :5500
 6. 点"支付"按钮 → mockPay 立即把订单标 paid
 7. 自动跳转 → 显示已获得课程报名、证书已颁发
 8. **切换管理员** → `/admin/audit` 看到刚才那条 `order.create` + `order.pay` 审计记录
+9. 切到 `/admin/users` → 在 Drawer 看刚才那学员的订单/证书/积分记录
+10. 切到 `/admin/courses` → 编辑课程定价 / 模块 / 资源,改完保存
 
 ### 7 个更多可点的(可选)
 
@@ -298,6 +329,7 @@ pnpm dev                        # api :8080 + web :5500
 ### 演示数据快照
 
 ```
+users: 7 (1 admin + 1 student + 5 e2e biztest)
 courses: 6          degrees: 2          hackathons: 6
 instructors: 6      badges: 10
 enrollments / orders / hackathonRegs — 看你演示时跑出来的
