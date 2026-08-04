@@ -29,6 +29,7 @@ const HackathonDetailPage = lazy(() => import('./features/hackathons/HackathonDe
 const ProfilePage = lazy(() => import('./features/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const AiSettingsPage = lazy(() => import('./features/ai/AiSettingsPage').then(m => ({ default: m.AiSettingsPage })));
 const AboutPage = lazy(() => import('./features/about/AboutPage').then(m => ({ default: m.AboutPage })));
+const InstructorListPage = lazy(() => import('./features/instructors/InstructorListPage').then(m => ({ default: m.InstructorListPage })));
 const InstructorDetailPage = lazy(() => import('./features/instructors/InstructorDetailPage').then(m => ({ default: m.InstructorDetailPage })));
 const NotificationsPage = lazy(() => import('./features/dashboard/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const OrdersPage = lazy(() => import('./features/dashboard/orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
@@ -45,6 +46,7 @@ const AdminUsersPage = lazy(() => import('./features/admin/AdminUsersPage').then
 const AdminBadgesPage = lazy(() => import('./features/admin/AdminBadgesPage').then(m => ({ default: m.AdminBadgesPage })));
 const AdminDashboardPage = lazy(() => import('./features/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
 const AdminHackathonsPage = lazy(() => import('./features/admin/AdminHackathonsPage').then(m => ({ default: m.AdminHackathonsPage })));
+const AdminInstructorsPage = lazy(() => import('./features/admin/AdminInstructorsPage').then(m => ({ default: m.AdminInstructorsPage })));
 const AdminEnterprisePage = lazy(() => import('./features/admin/AdminEnterprisePage').then(m => ({ default: m.AdminEnterprisePage })));
 const AdminAuditLogsPage = lazy(() => import('./features/admin/AdminAuditLogsPage').then(m => ({ default: m.AdminAuditLogsPage })));
 const AdminReviewsPage = lazy(() => import('./features/admin/AdminReviewsPage').then(m => ({ default: m.AdminReviewsPage })));
@@ -96,6 +98,7 @@ export const router = createBrowserRouter([
       { path: 'hackathons/:id', element: <PublicSuspense><HackathonDetailPage /></PublicSuspense> },
       { path: 'enterprise', element: <PublicSuspense><EnterprisePage /></PublicSuspense> },
       { path: 'about', element: <PublicSuspense><AboutPage /></PublicSuspense> },
+      { path: 'instructors', element: <PublicSuspense><InstructorListPage /></PublicSuspense> },
       { path: 'instructors/:slug', element: <PublicSuspense><InstructorDetailPage /></PublicSuspense> },
       // P1-2: 全站搜索结果页(公开,带 ?q=)
       { path: 'search', element: <PublicSuspense><SearchPage /></PublicSuspense> },
@@ -111,6 +114,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="dashboard" replace /> },
           { path: 'dashboard', element: <PublicSuspense><AdminDashboardPage /></PublicSuspense> },
           { path: 'courses', element: <PublicSuspense><AdminCoursesPage /></PublicSuspense> },
+          { path: 'instructors', element: <PublicSuspense><AdminInstructorsPage /></PublicSuspense> },
           { path: 'degrees', element: <PublicSuspense><AdminDegreesPage /></PublicSuspense> },
           { path: 'users', element: <PublicSuspense><AdminUsersPage /></PublicSuspense> },
           { path: 'badges', element: <PublicSuspense><AdminBadgesPage /></PublicSuspense> },

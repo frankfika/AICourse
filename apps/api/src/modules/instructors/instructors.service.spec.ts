@@ -372,4 +372,157 @@ describe('InstructorsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
   });
+
+  // =============================================================
+  // findAllExpertises / createExpertise / updateExpertise / deleteExpertise
+  // (2026-08-04 补: 覆盖 admin 专长管理 UI 调用链)
+  // =============================================================
+
+  describe('Expertise CRUD', () => {
+    it('findAllExpertises → 返回按 isActive desc + orderIndex asc 排序', async () => {
+      const rows = [
+        { id: 'e1', isActive: true, orderIndex: 0 },
+        { id: 'e2', isActive: true, orderIndex: 1 },
+      ];
+      mockPrisma.instructorExpertise.findMany.mockResolvedValueOnce(rows);
+
+      const result = await service.findAllExpertises();
+
+      expect(result).toEqual(rows);
+      expect(mockPrisma.instructorExpertise.findMany).toHaveBeenCalledWith({
+        orderBy: [{ isActive: 'desc' }, { orderIndex: 'asc' }],
+      });
+    });
+
+    it('createExpertise → 新 key → 成功', async () => {
+      mockPrisma.instructorExpertise.findUnique.mockResolvedValueOnce(null);
+      const created = {
+        id: 'e1',
+        key: 'devops',
+        label: 'DevOps',
+        isActive: true,
+        orderIndex: 0,
+      };
+      mockPrisma.instructorExpertise.create.mockResolvedValueOnce(created);
+
+      const result = await service.createExpertise({
+        key: 'devops',
+        label: 'DevOps',
+        isActive: true,
+        orderIndex: 0,
+      });
+
+      expect(result).toEqual(created);
+      expect(mockAuditLog.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'expertise.create' }),
+      );
+    });
+
+    it('createExpertise → key 重复 → ConflictException', async () => {
+      mockPrisma.instructorExpertise.findUnique.mockResolvedValueOnce({ id: 'e1' });
+
+      await expect(
+        service.createExpertise({ key: 'devops', label: 'DevOps' }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('updateExpertise → id 不存在 → NotFoundException', async () => {
+      mockPrisma.instructorExpertise.findUnique.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateExpertise('missing', { label: 'New' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('updateExpertise → 存在 → 更新 + 写 audit', async () => {
+      mockPrisma.instructorExpertise.findUnique.mockResolvedValueOnce({ id: 'e1' });
+      const updated = { id: 'e1', label: 'New', isActive: false };
+      mockPrisma.instructorExpertise.update.mockResolvedValueOnce(updated);
+
+      const result = await service.updateExpertise('e1', { label: 'New', isActive: false });
+
+      expect(result).toEqual(updated);
+      expect(mockAuditLog.log).toHaveBeenCalled();
+    });
+
+    it('deleteExpertise → 不存在 → NotFoundException', async () => {
+      mockPrisma.instructorExpertise.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.deleteExpertise('missing')).rejects.toThrow(NotFoundException);
+    });
+
+    it('deleteExpertise → 存在 → cascade 删除 + 写 audit', async () => {
+      mockPrisma.instructorExpertise.findUnique.mockResolvedValueOnce({ id: 'e1' });
+      mockPrisma.instructorExpertise.delete.mockResolvedValueOnce({ id: 'e1' });
+
+      const result = await service.deleteExpertise('e1');
+
+      expect(result).toEqual({ deleted: true, id: 'e1' });
+      expect(mockPrisma.instructorExpertise.delete).toHaveBeenCalledWith({ where: { id: 'e1' } });
+    });
+  });
+
+  // =============================================================
+  // findAll / findBySlug / findById (基础查询 + publishedOnly 行为)
+  // =============================================================
+
+  describe('findAll', () => {
+    it('前台 publishedOnly → where 强制 publishedAt not null', async () => {
+      mockPrisma.instructor.findMany.mockResolvedValueOnce([]);
+      mockPrisma.instructor.count.mockResolvedValueOnce(0);
+
+      await service.findAll({ page: 1, limit: 10 }, { publishedOnly: true });
+
+      expect(mockPrisma.instructor.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ publishedAt: { not: null } }),
+        }),
+      );
+    });
+
+    it('按 expertiseIds 过滤 → where 含 expertiseLinks.some', async () => {
+      mockPrisma.instructor.findMany.mockResolvedValueOnce([]);
+      mockPrisma.instructor.count.mockResolvedValueOnce(0);
+
+      await service.findAll(
+        { expertiseIds: ['e1', 'e2'] } as any,
+        { publishedOnly: true },
+      );
+
+      expect(mockPrisma.instructor.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            expertiseLinks: { some: { expertiseId: { in: ['e1', 'e2'] } } },
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('listCourseLinks', () => {
+    it('课程不存在 → NotFoundException', async () => {
+      mockPrisma.course.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.listCourseLinks('c1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('课程存在 → 返 link 列表 (按 role + orderIndex asc)', async () => {
+      mockPrisma.course.findUnique.mockResolvedValueOnce({ id: 'c1' });
+      const links = [
+        { id: 'l1', role: 'instructor', isPrimary: true, orderIndex: 0, instructor: { id: 'i1', name: 'Sky' } },
+        { id: 'l2', role: 'mentor', isPrimary: false, orderIndex: 0, instructor: { id: 'i2', name: 'Alice' } },
+      ];
+      mockPrisma.courseInstructorLink.findMany.mockResolvedValueOnce(links);
+
+      const result = await service.listCourseLinks('c1');
+
+      expect(result).toEqual(links);
+      expect(mockPrisma.courseInstructorLink.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { courseId: 'c1' },
+          orderBy: [{ role: 'asc' }, { orderIndex: 'asc' }],
+        }),
+      );
+    });
+  });
 });

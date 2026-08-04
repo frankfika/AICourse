@@ -604,6 +604,7 @@ export const LIST_FALLBACK: Record<ListResource, any[]> = {
   ],
   'top-nav': [
     { label: '课程', path: '/courses' },
+    { label: '讲师', path: '/instructors' },
     { label: '学位', path: '/degrees' },
     { label: '黑客松', path: '/hackathons' },
     { label: '企业培训', path: '/enterprise' },
@@ -620,6 +621,7 @@ export const LIST_FALLBACK: Record<ListResource, any[]> = {
       title: '学习',
       links: [
         { label: '课程', path: '/courses' },
+        { label: '讲师', path: '/instructors' },
         { label: '学位', path: '/degrees' },
         { label: '黑客松', path: '/hackathons' },
         { label: '企业培训', path: '/enterprise' },

@@ -27,7 +27,7 @@ async function bootstrap() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: [`'self'`],
-          imgSrc: [`'self'`, 'data:', 'https://coresg-normal.trae.ai'],
+          imgSrc: [`'self'`, 'data:', 'https://coresg-normal.trae.ai', 'https://api.dicebear.com'],
           scriptSrc: [`'self'`],
           styleSrc: [`'self'`, `'unsafe-inline'`],
           connectSrc: [`'self'`, 'https://generativelanguage.googleapis.com'],

@@ -17,6 +17,7 @@ import {
   ScrollText,
   Settings,
   Star,
+  Presentation, // 讲师 icon
 } from 'lucide-react';
 import { MobileBlocked } from '../../components/MobileBlocked';
 
@@ -31,6 +32,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = [
     { path: '/admin/dashboard', label: '数据看板', icon: BarChart3 },
     { path: '/admin/courses', label: '课程管理', icon: BookOpen },
+    { path: '/admin/instructors', label: '讲师管理', icon: Presentation },
     { path: '/admin/degrees', label: '学位管理', icon: GraduationCap },
     { path: '/admin/users', label: '用户管理', icon: Users },
     { path: '/admin/hackathons', label: '黑客松管理', icon: Rocket },

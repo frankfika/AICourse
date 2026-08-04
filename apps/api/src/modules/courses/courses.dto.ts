@@ -180,4 +180,14 @@ export class ListCoursesQueryDto {
   @IsOptional()
   @IsEnum(CourseSort)
   sort?: CourseSort = CourseSort.recent;
+
+  // 按讲师 ID 过滤 (前台公开可访问, 只返该讲师挂的课程)
+  @IsOptional()
+  @IsString()
+  instructorId?: string;
+
+  // 按讲师 slug 过滤 (前台友好 URL 共享)
+  @IsOptional()
+  @IsString()
+  instructorSlug?: string;
 }

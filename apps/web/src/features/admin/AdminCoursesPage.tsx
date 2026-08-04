@@ -54,6 +54,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import api from '../../lib/api';
+import { useToast } from '../../components/auth/Toast';
+import { instructorsApi } from '../../lib/instructorsApi';
 import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
 import { coursesAdminApi, type Chapter, type ChapterLesson, type ChapterResource, type ResourceType } from '../../lib/coursesAdminApi';
@@ -571,7 +573,7 @@ function CourseListView({
 // 2) 编辑模式:5 tab(全部接真后端,无 mock)
 // ──────────────────────────────────────────────────────────────────────────
 
-type Tab = 'info' | 'chapters' | 'practices' | 'pricing' | 'publish';
+type Tab = 'info' | 'instructors' | 'chapters' | 'practices' | 'pricing' | 'publish';
 
 interface CourseForEdit {
   id: string;
@@ -1802,6 +1804,214 @@ function PricingTab({ courseId }: { courseId: string }) {
 // PublishTab — 发布设置(接 PATCH /api/v1/courses/:id 真后端)
 // ──────────────────────────────────────────────────────────────────────
 
+// ──────────────────────────────────────────────────────────────────────
+// 讲师挂载 tab (2026-08-04 新增)
+//  - 列出当前讲师/导师 link
+//  - 增 (POST /admin/courses/:id/instructors)
+//  - 删 (DELETE /admin/courses/:id/instructors/:linkId)
+//  - 同步 (PUT /admin/courses/:id/instructors) — 整组覆盖
+//  注: 这里只调 instructors 模块的 API, 不动 course.instructor 字符串 (那字段做 fallback)
+// ──────────────────────────────────────────────────────────────────────
+
+interface CourseInstructorLinkFull {
+  id: string;
+  courseId: string;
+  instructorId: string;
+  role: 'instructor' | 'mentor';
+  isPrimary: boolean;
+  orderIndex: number;
+  instructor: {
+    id: string;
+    slug: string;
+    name: string;
+    title: string | null;
+    avatarUrl: string | null;
+    publishedAt: string | null;
+  };
+}
+
+function InstructorsTab({ courseId }: { courseId: string }) {
+  const queryClient = useQueryClient();
+  const { showToast: _showToast } = useToast();
+  const [newInstructorId, setNewInstructorId] = useState('');
+  const [newRole, setNewRole] = useState<'instructor' | 'mentor'>('instructor');
+  const [newIsPrimary, setNewIsPrimary] = useState(false);
+
+  // 当前课程下所有讲师 link
+  const linksQuery = useQuery({
+    queryKey: ['admin-course-instructors', courseId],
+    queryFn: async () => {
+      const { data } = await api.get<CourseInstructorLinkFull[]>(`/api/v1/admin/courses/${courseId}/instructors`);
+      return data;
+    },
+  });
+
+  // 所有讲师 (下拉选项)
+  const allInstructorsQuery = useQuery({
+    queryKey: ['admin-instructors', { forSelect: true }],
+    queryFn: () => instructorsApi.adminList({ limit: 200 }),
+  });
+
+  const linkMutation = useMutation({
+    mutationFn: (payload: { instructorId: string; role: 'instructor' | 'mentor'; isPrimary: boolean }) =>
+      api.post(`/api/v1/admin/courses/${courseId}/instructors`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-course-instructors', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      _showToast('讲师已挂载', 'success');
+      setNewInstructorId('');
+      setNewIsPrimary(false);
+    },
+    onError: (e: any) => _showToast(`挂载失败: ${e?.response?.data?.message ?? e.message}`, 'error'),
+  });
+
+  const unlinkMutation = useMutation({
+    mutationFn: (linkId: string) => api.delete(`/api/v1/admin/courses/${courseId}/instructors/${linkId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-course-instructors', courseId] });
+      _showToast('已解除', 'success');
+    },
+    onError: (e: any) => _showToast(`解除失败: ${e?.response?.data?.message ?? e.message}`, 'error'),
+  });
+
+  if (linksQuery.isLoading || allInstructorsQuery.isLoading) {
+    return <div className="p-8 text-center text-sm text-[#666666]">加载中…</div>;
+  }
+
+  const links = linksQuery.data ?? [];
+  const allInstructors = allInstructorsQuery.data?.items ?? [];
+  const linkedIds = new Set(links.map((l) => l.instructorId));
+  const availableInstructors = allInstructors.filter((i) => !linkedIds.has(i.id));
+
+  return (
+    <div className="space-y-6">
+      {/* 当前挂载列表 */}
+      <div>
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-3">
+          / 当前讲师 / 导师 ({links.length})
+        </h3>
+        {links.length === 0 ? (
+          <div className="border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500">
+            还没有挂载讲师。
+          </div>
+        ) : (
+          <div className="border border-[#171717] divide-y divide-neutral-200">
+            {links.map((link) => (
+              <div key={link.id} className="flex items-center gap-4 p-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#171717] text-base font-black text-white">
+                  {link.instructor.avatarUrl ? (
+                    <img src={link.instructor.avatarUrl} alt={link.instructor.name} className="h-full w-full object-cover" />
+                  ) : (
+                    link.instructor.name.charAt(0)
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold">{link.instructor.name}</span>
+                    <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 ${
+                      link.role === 'mentor' ? 'bg-[#EEEDE9] text-[#666666]' : 'bg-[#171717] text-white'
+                    }`}>
+                      {link.role === 'mentor' ? '导师' : link.isPrimary ? '主讲' : '讲师'}
+                    </span>
+                    {!link.instructor.publishedAt && (
+                      <span className="text-[10px] font-black uppercase px-1.5 py-0.5 bg-warning-100 text-warning-600 border border-warning-500">
+                        草稿
+                      </span>
+                    )}
+                  </div>
+                  {link.instructor.title && (
+                    <div className="text-xs text-neutral-500 mt-0.5">{link.instructor.title}</div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`解除 ${link.instructor.name}?`)) {
+                      unlinkMutation.mutate(link.id);
+                    }
+                  }}
+                  className="px-3 py-1.5 text-xs font-black uppercase text-error-500 hover:text-error-600 border border-error-500 hover:bg-error-50"
+                >
+                  解除
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 新增挂载 */}
+      <div className="border-t-2 border-neutral-200 pt-6">
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-3">
+          / 挂载新讲师
+        </h3>
+        {availableInstructors.length === 0 ? (
+          <div className="border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500">
+            {allInstructors.length === 0
+              ? '还没有讲师, 请先到「讲师管理」创建。'
+              : '所有讲师都已挂载, 解除一个再添加。'}
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex-1 min-w-[240px]">
+              <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 mb-1">选择讲师</div>
+              <select
+                value={newInstructorId}
+                onChange={(e) => setNewInstructorId(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-[#171717] text-sm focus:outline-none focus:ring-2 focus:ring-[#171717]"
+              >
+                <option value="">— 选择 —</option>
+                {availableInstructors.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name} {i.title ? `(${i.title})` : ''} {!i.publishedAt ? '· 草稿' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <div className="text-[10px] font-black uppercase tracking-widest text-neutral-600 mb-1">角色</div>
+              <select
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value as 'instructor' | 'mentor')}
+                className="px-3 py-2 bg-white border border-[#171717] text-sm focus:outline-none focus:ring-2 focus:ring-[#171717]"
+              >
+                <option value="instructor">主讲 / 讲师</option>
+                <option value="mentor">导师</option>
+              </select>
+            </label>
+            {newRole === 'instructor' && (
+              <label className="flex items-center gap-2 text-sm self-end pb-2">
+                <input
+                  type="checkbox"
+                  checked={newIsPrimary}
+                  onChange={(e) => setNewIsPrimary(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span>设为主讲</span>
+              </label>
+            )}
+            <button
+              type="button"
+              disabled={!newInstructorId || linkMutation.isPending}
+              onClick={() => {
+                linkMutation.mutate({ instructorId: newInstructorId, role: newRole, isPrimary: newIsPrimary });
+              }}
+              className="inline-flex items-center gap-2 bg-[#171717] text-white px-4 py-2 text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
+            >
+              {linkMutation.isPending ? '挂载中…' : '挂载'}
+            </button>
+          </div>
+        )}
+        <p className="mt-3 text-xs text-neutral-500">
+          注: 同 (讲师, 角色) 重复挂载会更新 isPrimary / orderIndex; 主讲 (instructor) 同 role
+          唯一, 新挂为主讲会自动取消旧的。
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function PublishTab({ courseId }: { courseId: string }) {
   const { courseQuery, updateCourse } = useCourseEdit(courseId);
   const course = courseQuery.data;
@@ -1890,6 +2100,7 @@ function CourseEditInline({
 
   const TABS_DYNAMIC: { id: Tab; label: string; count?: string }[] = [
     { id: 'info', label: '基本信息' },
+    { id: 'instructors', label: '讲师挂载' },
     { id: 'chapters', label: '课程模块', count: `${chapters.length} 个模块` },
     { id: 'practices', label: '实践项目' },
     { id: 'pricing', label: '价格 / 试看' },
@@ -1989,6 +2200,7 @@ function CourseEditInline({
         ) : (
           <>
             {currentTab === 'info' && <InfoTab courseId={courseId} />}
+            {currentTab === 'instructors' && <InstructorsTab courseId={courseId} />}
             {currentTab === 'chapters' && <ChaptersTab courseId={courseId} />}
             {currentTab === 'practices' && <PracticesTab courseId={courseId} />}
             {currentTab === 'pricing' && <PricingTab courseId={courseId} />}
@@ -2007,7 +2219,7 @@ function CourseEditInline({
 // (URL-based 路由兼容性保留:从 URL 直接进入会回退到列表 mode,不显示编辑)
 // ──────────────────────────────────────────────────────────────────────────
 
-const VALID_TABS: Tab[] = ['info', 'chapters', 'practices', 'pricing', 'publish'];
+const VALID_TABS: Tab[] = ['info', 'instructors', 'chapters', 'practices', 'pricing', 'publish'];
 
 export function AdminCoursesPage() {
   const [params, setParams] = useSearchParams();

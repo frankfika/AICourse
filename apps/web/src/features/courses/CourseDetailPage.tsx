@@ -34,6 +34,24 @@ import { parseCourseTags, parseStringList } from '../../lib/courseTags';
 import { isDirectVideoUrl, normalizeEmbeddedVideoUrl } from '../../lib/videoUrl';
 import type { PracticeCompletion, PracticeProject } from '@ai-academy/shared-types';
 
+interface CourseInstructorLink {
+  id: string;
+  role: 'instructor' | 'mentor';
+  isPrimary: boolean;
+  instructor: {
+    id: string;
+    slug: string;
+    name: string;
+    nameEn?: string | null;
+    title?: string | null;
+    headline?: string | null;
+    avatarUrl?: string | null;
+    company?: string | null;
+    publishedAt?: string | null;
+    expertiseLinks: Array<{ expertise: { id: string; key: string; label: string } }>;
+  };
+}
+
 interface Course {
   id: string;
   title: string;
@@ -49,6 +67,8 @@ interface Course {
   externalUrl?: string;
   price: number;
   chapters: Chapter[];
+  // 2026-08-04: 多讲师/导师挂载 (新表, course.instructor 字符串作为 fallback)
+  courseLinks?: CourseInstructorLink[];
 }
 
 interface Chapter {
@@ -408,8 +428,23 @@ export function CourseDetailPage() {
                 </Link>
               )}
 
-              <div className="text-[10px] font-black uppercase tracking-widest text-white/40 pt-2 flex items-center gap-2">
-                <UserIcon className="w-3.5 h-3.5" /> 讲师 / {course.instructor}
+              <div className="text-[10px] font-black uppercase tracking-widest text-white/40 pt-2 flex items-center gap-2 flex-wrap">
+                <UserIcon className="w-3.5 h-3.5" />
+                {/* 2026-08-04: 多讲师/导师挂载 (新表) — course.instructor 字符串作为 fallback */}
+                {course.courseLinks && course.courseLinks.length > 0 ? (
+                  course.courseLinks.map((link) => (
+                    <Link
+                      key={link.id}
+                      to={`/instructors/${link.instructor.slug}`}
+                      className="text-white/60 hover:text-white underline-offset-4 hover:underline"
+                    >
+                      {link.instructor.name}
+                      {link.role === 'mentor' && <span className="ml-1 text-white/40">(导师)</span>}
+                    </Link>
+                  ))
+                ) : (
+                  <span>{course.instructor}</span>
+                )}
               </div>
             </div>
           </div>
@@ -471,6 +506,67 @@ export function CourseDetailPage() {
                           </div>
                           <span className="text-sm font-medium leading-relaxed pt-1">{p}</span>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2026-08-04: 讲师/导师介绍区块 — 来自 courseLinks 表 */}
+                {course.courseLinks && course.courseLinks.length > 0 && (
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
+                      / 03 Instructors & Mentors
+                    </div>
+                    <div className="space-y-4">
+                      {course.courseLinks.map((link) => (
+                        <Link
+                          key={link.id}
+                          to={`/instructors/${link.instructor.slug}`}
+                          className="group flex items-start gap-4 border border-[#171717] p-4 transition-colors hover:bg-white"
+                        >
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#171717] text-xl font-black text-white">
+                            {link.instructor.avatarUrl ? (
+                              <img
+                                src={link.instructor.avatarUrl}
+                                alt={`${link.instructor.name} 头像`}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              link.instructor.name.charAt(0)
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base font-bold group-hover:underline">{link.instructor.name}</span>
+                              <span className="rounded-sm bg-[#171717] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
+                                {link.role === 'mentor' ? '导师' : link.isPrimary ? '主讲' : '讲师'}
+                              </span>
+                            </div>
+                            {link.instructor.title && (
+                              <p className="mt-0.5 text-xs text-[#666666]">
+                                {[link.instructor.title, link.instructor.company].filter(Boolean).join(' · ')}
+                              </p>
+                            )}
+                            {link.instructor.headline && (
+                              <p className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-700">
+                                {link.instructor.headline}
+                              </p>
+                            )}
+                            {link.instructor.expertiseLinks.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {link.instructor.expertiseLinks.slice(0, 3).map(({ expertise }) => (
+                                  <span
+                                    key={expertise.id}
+                                    className="rounded-full bg-[#EEEDE9] px-2 py-0.5 text-[10px] font-semibold text-neutral-700"
+                                  >
+                                    {expertise.label}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <ArrowUpRight className="h-4 w-4 shrink-0 text-[#A3A3A3] group-hover:text-[#171717]" />
+                        </Link>
                       ))}
                     </div>
                   </div>

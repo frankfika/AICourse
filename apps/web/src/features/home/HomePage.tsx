@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { useMemo } from 'react';
 import api from '../../lib/api';
+import { instructorsApi } from '../../lib/instructorsApi';
 import { hackathonsApi } from '../../lib/hackathonsApi';
 import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../../components/ui/Button';
@@ -735,16 +736,13 @@ function AiTutorSection() {
 }
 
 // =============================================================
-// 8 段:讲师墙
+// 8 段:讲师墙 (2026-08-04 升级: 改用真 /api/v1/instructors 数据)
 // =============================================================
 function InstructorsSection() {
-  // 从真实课程数据聚合 instructor 字段去重(共享 CoursesSection 的 query cache)
-  const { data: courses } = useQuery({
-    queryKey: ['home', 'courses'],
-    queryFn: async () => {
-      const { data } = await api.get<Course[]>('/api/v1/courses');
-      return data;
-    },
+  // 直接拉讲师列表 (新数据源, 替换老 string 聚合)
+  const { data: instructorData, isLoading } = useQuery({
+    queryKey: ['home', 'instructors'],
+    queryFn: () => instructorsApi.list({ limit: 4, sort: 'orderIndex' }),
     retry: 1,
     staleTime: 60_000,
   });
@@ -753,35 +751,39 @@ function InstructorsSection() {
   const { t } = useI18n();
   const { data: homePages } = usePageSettings('home', ['instructors_subhead']);
 
-  // 按 instructor 字段去重,保留前 4 个
-  const instructors: Instructor[] = useMemo(() => {
-    if (!courses) return [];
-    const seen = new Set<string>();
-    // 4 宫格讲师 cover 色板 — 走品牌色 token (#171717 / #262626)
-    // (设计 token, 不通过 CMS 配; 跟 .archive 暗色化 token 体系一致)
-    const palette = [
-      { cover: 'bg-[#171717]' },
-      { cover: 'bg-[#262626]' },
-      { cover: 'bg-[#171717]' },
-      { cover: 'bg-[#262626]' },
-    ];
-    const result: Instructor[] = [];
-    for (let i = 0; i < courses.length && result.length < 4; i++) {
-      const c = courses[i];
-      const name = c.instructor?.trim();
-      if (!name || seen.has(name)) continue;
-      seen.add(name);
-      result.push({
-        id: `i-${name}`,
-        name,
-        // P0 (audit 2026-07-24): 改 useI18n, 投资人海外站改占位文案可走 i18n message
-        title: t('home.instructor.title_fallback', '课程讲师'),
-        initials: name.charAt(0),
-        cover: palette[result.length].cover,
-      });
-    }
-    return result;
-  }, [courses]);
+  // 取前 4 个, 4 宫格 cover 走 brand token (跟老版视觉一致, 不通过 CMS 配)
+  const palette = [
+    { cover: 'bg-[#171717]' },
+    { cover: 'bg-[#262626]' },
+    { cover: 'bg-[#171717]' },
+    { cover: 'bg-[#262626]' },
+  ];
+  const instructors = useMemo(() => {
+    const items = instructorData?.items ?? [];
+    return items.slice(0, 4).map((inst, i) => ({
+      id: inst.id,
+      slug: inst.slug,
+      name: inst.name,
+      title: inst.title ?? t('home.instructor.title_fallback', '课程讲师'),
+      avatarUrl: inst.avatarUrl,
+      initials: inst.name.charAt(0),
+      cover: palette[i]?.cover ?? palette[0].cover,
+    }));
+  }, [instructorData, t]);
+
+  if (isLoading) {
+    // 加载状态: 显示 4 个灰圈占位
+    return (
+      <section className="py-16 md:py-24 bg-[#F5F4F0]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">
+            {t('section.instructors.title', '来自一线的讲师')}
+          </h2>
+          <p className="mt-2 text-[#666666] text-sm md:text-base">{t('section.instructors.loading', '讲师加载中…')}</p>
+        </div>
+      </section>
+    );
+  }
 
   if (instructors.length === 0) {
     return (
@@ -797,28 +799,49 @@ function InstructorsSection() {
   return (
     <section className="py-16 md:py-24 bg-[#F5F4F0]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 md:mb-10">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">
-            {t('section.instructors.title', '来自一线的讲师')}
-          </h2>
-          <p className="mt-2 text-[#666666] text-sm md:text-base">
-            {pickPage(homePages, 'instructors_subhead', 'zh-CN', t('section.instructors.sub', '不是 PPT 复读机,是正在写代码、正在做产品的人'))}
-          </p>
+        <div className="mb-8 md:mb-10 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#171717]">
+              {t('section.instructors.title', '来自一线的讲师')}
+            </h2>
+            <p className="mt-2 text-[#666666] text-sm md:text-base">
+              {pickPage(homePages, 'instructors_subhead', 'zh-CN', t('section.instructors.sub', '不是 PPT 复读机,是正在写代码、正在做产品的人'))}
+            </p>
+          </div>
+          <Link
+            to="/instructors"
+            className="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-[#171717] hover:underline shrink-0"
+          >
+            查看全部 <ArrowUpRight className="w-4 h-4" />
+          </Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {instructors.map((inst) => (
-            <div key={inst.id} className="text-center group relative">
+            <Link
+              key={inst.id}
+              to={`/instructors/${inst.slug}`}
+              className="text-center group block"
+            >
               <div
-                className={`w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full ${inst.cover} flex items-center justify-center text-white text-2xl font-bold`}
+                className={`w-20 h-20 md:w-24 md:h-24 mx-auto rounded-full ${inst.cover} flex items-center justify-center text-white text-2xl font-bold overflow-hidden`}
               >
-                {inst.initials}
+                {inst.avatarUrl ? (
+                  <img src={inst.avatarUrl} alt={`${inst.name} 头像`} className="h-full w-full object-cover" />
+                ) : (
+                  inst.initials
+                )}
               </div>
-              <h3 className="mt-3 font-semibold text-[#171717]">
+              <h3 className="mt-3 font-semibold text-[#171717] group-hover:underline">
                 {inst.name}
               </h3>
-              <p className="text-xs text-[#666666] mt-1">{inst.title}</p>
-            </div>
+              <p className="text-xs text-[#666666] mt-1 line-clamp-2">{inst.title}</p>
+            </Link>
           ))}
+        </div>
+        <div className="mt-8 md:hidden text-center">
+          <Link to="/instructors" className="inline-flex items-center gap-2 text-sm font-semibold text-[#171717] hover:underline">
+            查看全部讲师 <ArrowUpRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </section>

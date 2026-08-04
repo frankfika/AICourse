@@ -27,7 +27,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Seo } from '../../components/Seo';
 import {
@@ -58,6 +58,18 @@ import { firstCourseTag, parseCourseTags } from '../../lib/courseTags';
 // =============================================================
 // 类型(与 API 实际返回对齐)
 // =============================================================
+interface CourseInstructorLink {
+  id: string;
+  role: 'instructor' | 'mentor';
+  isPrimary: boolean;
+  instructor: {
+    id: string;
+    slug: string;
+    name: string;
+    avatarUrl?: string | null;
+  };
+}
+
 interface Course {
   id: string;
   title: string;
@@ -75,6 +87,8 @@ interface Course {
   reviewCount: number;
   enrollmentCount: number;
   createdAt: string;
+  // 2026-08-04: 多讲师挂载 — 卡片上展示讲师头像, 跳讲师主页
+  courseLinks?: CourseInstructorLink[];
 }
 
 type SortKey = 'popular' | 'recent' | 'rating';
@@ -708,12 +722,33 @@ function CourseCardLink({ course }: { course: Course }) {
   const { getLabel: getLevelLabel } = useEnum('course_level');
   const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || lv;
   const tags = parseCourseTags(course.tags);
+  const navigate = useNavigate();
+  // 2026-08-04: 卡片整体可点(跳课程详情), 讲师名字作为 inner Link 跳讲师页
+  // 不能用 <Link> 套 <Link> (HTML invalid), 改成 div + onClick 编程式跳转
+  const courseHref = course.externalUrl && course.courseType === 'third_party'
+    ? course.externalUrl
+    : `/courses/${course.id}`;
+  const isExternal = !!(course.externalUrl && course.courseType === 'third_party');
+  const primaryInstructor = course.courseLinks?.find((l) => l.isPrimary)?.instructor
+    ?? course.courseLinks?.[0]?.instructor;
   return (
-    <Link
-      to={course.externalUrl && course.courseType === 'third_party' ? course.externalUrl : `/courses/${course.id}`}
-      target={course.externalUrl && course.courseType === 'third_party' ? '_blank' : undefined}
-      rel={course.externalUrl && course.courseType === 'third_party' ? 'noopener noreferrer' : undefined}
-      className="group bg-[#F5F4F0] border border-[#171717] hover:bg-[#EEEDE9] transition overflow-hidden flex flex-col"
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={() => {
+        if (isExternal) {
+          window.open(courseHref, '_blank', 'noopener,noreferrer');
+        } else {
+          navigate(courseHref);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          (e.currentTarget as HTMLElement).click();
+        }
+      }}
+      className="group bg-[#F5F4F0] border border-[#171717] hover:bg-[#EEEDE9] transition overflow-hidden flex flex-col cursor-pointer"
     >
       <div
         className={`aspect-video bg-gradient-to-br ${getCourseCoverGradient(course.tags)} relative`}
@@ -758,9 +793,43 @@ function CourseCardLink({ course }: { course: Course }) {
           </div>
         )}
         <div className="mt-auto pt-3 flex items-center justify-between text-xs text-[#666666] border-t border-[#171717]">
-          <div className="flex items-center gap-2 truncate">
-            <div className="w-5 h-5 rounded-full bg-[#171717] shrink-0" />
-            <span className="truncate">{course.instructor}</span>
+          <div className="flex items-center gap-2 truncate min-w-0">
+            {/* 2026-08-04: 讲师头像 — 优先 courseLinks 头像, fallback 死字符串 */}
+            {(() => {
+              const primary = course.courseLinks?.find((l) => l.isPrimary)?.instructor
+                ?? course.courseLinks?.[0]?.instructor;
+              if (primary?.avatarUrl) {
+                return (
+                  <img
+                    src={primary.avatarUrl}
+                    alt={`${primary.name} 头像`}
+                    className="w-5 h-5 rounded-full object-cover shrink-0 bg-[#EEEDE9]"
+                  />
+                );
+              }
+              return <div className="w-5 h-5 rounded-full bg-[#171717] shrink-0" />;
+            })()}
+            {(() => {
+              // 2026-08-04: 讲师名字 Link 到 /instructors/:slug (courseLinks 优先)
+              // 阻止冒泡避免点讲师跳到课程页
+              const primary = course.courseLinks?.find((l) => l.isPrimary)?.instructor
+                ?? course.courseLinks?.[0]?.instructor;
+              if (primary) {
+                return (
+                  <Link
+                    to={`/instructors/${primary.slug}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="truncate text-[#171717] font-medium hover:underline"
+                  >
+                    {primary.name}
+                    {course.courseLinks && course.courseLinks.length > 1 && (
+                      <span className="text-[#666666] font-normal"> 等 {course.courseLinks.length} 位</span>
+                    )}
+                  </Link>
+                );
+              }
+              return <span className="truncate">{course.instructor}</span>;
+            })()}
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {course.reviewCount > 0 && (
@@ -774,7 +843,7 @@ function CourseCardLink({ course }: { course: Course }) {
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 

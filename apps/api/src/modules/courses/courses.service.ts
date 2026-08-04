@@ -29,7 +29,37 @@ export class CoursesService {
     private readonly auditLog: AuditLogService,
   ) {}
 
-  private courseInclude = {
+  // 公共 sub-include: 讲师/导师关联 (前/后台详情/列表都用)
+  // 前台用 publishedOnly 约束: 草稿讲师不进 public API
+  private courseInstructorLinksInclude = (publishedOnly: boolean) => ({
+    courseLinks: {
+      where: publishedOnly ? { instructor: { publishedAt: { not: null } } } : undefined,
+      orderBy: [{ role: 'asc' as const }, { orderIndex: 'asc' as const }],
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            nameEn: true,
+            title: true,
+            headline: true,
+            avatarUrl: true,
+            company: true,
+            publishedAt: true,
+            expertiseLinks: {
+              orderBy: { orderIndex: 'asc' as const },
+              include: { expertise: { select: { id: true, key: true, label: true } } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // 公共 include, 默认 admin 视角 (含草稿讲师)
+  // 公开访问点 (findAll + findOne 非 admin) 自行覆盖 courseLinks
+  private courseIncludeBase = {
     chapters: {
       include: {
         lessons: {
@@ -53,12 +83,26 @@ export class CoursesService {
     category: { select: { id: true, key: true, label: true } },
   };
 
+  private getCourseInclude(publishedOnly: boolean) {
+    return {
+      ...this.courseIncludeBase,
+      courseLinks: this.courseInstructorLinksInclude(publishedOnly).courseLinks,
+    };
+  }
+
+  // 保留旧名 (admin 内部用 — 含草稿讲师)
+  private get courseInclude() {
+    return this.getCourseInclude(false);
+  }
+
   async findAll(params: {
     status?: CourseStatus;
     courseType?: CourseType;
     search?: string;
     sort?: CourseSort;
     allowNonPublished?: boolean;
+    instructorId?: string;
+    instructorSlug?: string;
   }) {
     const where: any = {};
     // Public list must never expose draft/archived courses by omission.
@@ -74,6 +118,16 @@ export class CoursesService {
         { instructor: { contains: params.search } },
       ];
     }
+    // 讲师过滤: 通过 courseLinks 关联
+    if (params.instructorId || params.instructorSlug) {
+      where.courseLinks = {
+        some: {
+          instructor: params.instructorId
+            ? { id: params.instructorId }
+            : { slug: params.instructorSlug },
+        },
+      };
+    }
 
     const courses = await this.prisma.course.findMany({
       where,
@@ -87,6 +141,8 @@ export class CoursesService {
             enrollments: { where: { deletedAt: null } },
           },
         },
+        // 讲师关联(只返 published 讲师, 草稿讲师不进公开 API)
+        ...this.courseInstructorLinksInclude(true),
       },
       orderBy: { createdAt: 'desc' },
       // P1-7 防御: 默认 50, max 100, 防 DoS (公开 list 拉全表 OOM)
@@ -129,12 +185,13 @@ export class CoursesService {
     id: string,
     access: { includeDraft?: boolean; userId?: string; isAdmin?: boolean } = {},
   ) {
+    const publishedOnly = !access.isAdmin && !access.includeDraft;
     const course = await this.prisma.course.findFirst({
       where: {
         id,
         ...(access.includeDraft ? {} : { status: 'published' }),
       },
-      include: this.courseInclude,
+      include: this.getCourseInclude(publishedOnly),
     });
     if (!course) throw new NotFoundException('Course not found');
     let hasAccess = access.isAdmin || course.costType === 'free' || course.costType === 'charity';
