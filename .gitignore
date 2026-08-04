@@ -25,6 +25,9 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+# 部署用的 .env.production 含真实 secrets, 由 deploy/generate-production-env.mjs 在
+# 服务器上生成, 不进版本控制; 模板见 .env.production.example
+.env.production
 *.bak
 *.lock
 openhackathon-external-ai-plan.md
