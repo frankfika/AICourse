@@ -52,6 +52,11 @@ export default defineConfig(({ mode }) => {
       plugins: [react(), devCspPlugin],
       define: {
         __APP_VERSION__: JSON.stringify(webPackage.version),
+        // 强制让 import.meta.env.DEV 在 prod build 时是字面量 false。
+        // 默认 Vite 也会替换, 但通过 define 显式声明让 esbuild 在 minify 阶段
+        // 把 `false ? [devRoutes] : []` 折叠为 `[]`, 消除 dev-only 路由
+        // (防止 /__design-system 与 /__error-demo/* 在 production bundle 暴露)。
+        'import.meta.env.DEV': mode === 'production' ? 'false' : 'true',
       },
       build: {
         rollupOptions: {

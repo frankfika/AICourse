@@ -160,9 +160,9 @@ export const router = createBrowserRouter([
       { path: 'learning', element: <PublicSuspense><DashboardPage /></PublicSuspense> },
     ],
   },
-  // P0-4 设计系统演示页 — 临时挂载,后续 worktree 跑完移除
-  // (仅 dev mode — prod build 时 import.meta.env.DEV === false, 整段被 tree-shake 掉
-  //  防止投资人直链进 /__design-system 看到内部色板/字号 token)
+  // P0-4 设计系统演示页 — 仅 dev 模式可访问
+  // (Vite `define` 在 prod build 时把 import.meta.env.DEV 强制替换为 false,
+  //  esbuild 把 `false ? [a] : []` 折叠为 `[]`, 整个 spread 消除, 路由不进 prod bundle)
   ...(import.meta.env.DEV
     ? [
         {
@@ -173,7 +173,7 @@ export const router = createBrowserRouter([
     : []),
   // P1-9 错误页演示路由 (仅 dev mode — 用来截图/QA 验证 4 个错误页)
   // 路径: /__error-demo/:type  (type = 404|403|500|network)
-  // prod build 时 import.meta.env.DEV === false, 整段被 tree-shake 掉
+  // 同样的 prod define 策略, dev-only 路由不会 leak 到 production
   ...(import.meta.env.DEV
     ? [
         {
