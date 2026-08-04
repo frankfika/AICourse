@@ -1,5 +1,5 @@
 /**
- * 讲师测试数据生成器 (2026-08-04)
+ * seed-instructors-test-data.ts (2026-08-04)
  *
  * 用途: 给生产 demo / 投资人路演 / 内部测试 制造丰富的讲师/课程数据
  *
@@ -9,7 +9,9 @@
  *   - 给现有 6 课程 + 演示数据多挂讲师 (单讲师/双讲师/三讲师场景)
  *   - 草稿讲师 (前台不可见) 演示 publishedOnly 过滤
  *
- * 运行: ts-node prisma/seed-instructor-test-data.ts
+ * 运行:
+ *   pnpm db:seed:instructors-test-data       (单跑)
+ *   pnpm db:seed:demo                        (走 master 流程)
  * 幂等: 用 upsert by name, 重复跑覆盖不重建
  */
 import { PrismaClient, CourseInstructorRole, CourseStatus } from '@prisma/client';

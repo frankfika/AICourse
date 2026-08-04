@@ -1,8 +1,12 @@
 /**
- * Nav / Footer 增强 seed (2026-08-04)
+ * seed-nav-footer.ts (2026-08-04)
  *
  * 把"讲师"加入 top-nav 和 footer 学习列
  * (idempotent: 重复跑不会重复插入)
+ *
+ * 运行:
+ *   pnpm db:seed:nav-footer                  (单跑)
+ *   pnpm db:seed:demo                       (走 master 流程)
  */
 import { PrismaClient, Prisma } from '@prisma/client';
 

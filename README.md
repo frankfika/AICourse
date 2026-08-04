@@ -219,7 +219,23 @@ erDiagram
 - pnpm 11.12+ (`corepack enable`)
 - Docker Desktop / Compose
 
-### 一气呵成
+### 一气呵成(推荐)
+
+```bash
+git clone <repo>
+cd ai-academy
+bash scripts/setup-demo.sh     # 自动: .env + docker up + pnpm install + migrate + 灌完整 demo
+pnpm dev                        # api :8080 + web :5500
+```
+
+`scripts/setup-demo.sh` 会自动:
+1. 从 `.env.example` 复制 `.env`, 用 `openssl rand -hex 32` 生成 JWT_SECRET
+2. `docker compose up -d` 启 mysql / redis / minio 并等 health check
+3. `pnpm install` 装根 + 所有 workspace 依赖
+4. `pnpm db:generate` + `pnpm db:migrate` 应用所有迁移
+5. `pnpm db:seed:demo` 灌 6 步 demo 数据(用户 / CMS 16 表 / 讲师 / 学员 / 选课 / 订单)
+
+### 手动版(想自己看每一步的)
 
 ```bash
 git clone <repo>
@@ -227,10 +243,9 @@ cd ai-academy
 pnpm install
 cp .env.example .env            # 已含 dev 默认值, 改 JWT_SECRET 即可
 docker compose up -d            # 启动 mysql :3307 + redis :6380 + minio :9010
-pnpm --filter @ai-academy/api exec prisma generate
+pnpm db:generate
 pnpm db:migrate                 # 应用迁移
-pnpm db:seed                    # 写入 6 课程 / 2 学位 / 6 黑客松 / admin & student 账号
-pnpm --filter @ai-academy/api exec ts-node ../../prisma/seed-instructors.ts  # 讲师回填(公开讲师墙)
+pnpm db:seed:demo               # 完整 demo 数据 (admin / 16 讲师 / 6 课程 / 学员 / 订单 / 徽章)
 
 pnpm dev                        # api :8080 + web :5500
 ```
@@ -258,19 +273,25 @@ pnpm dev                        # api :8080 + web :5500
 2. **登录**(任选一个账号,都已写库 — 见下方账号清单)
 3. **点对应的路径** — 5 分钟看完所有能力
 
-### 账号清单(7 个,任选登)
+### 账号清单(3 个核心 + 10 个额外演示学员,任选登)
+
+**核心账号** — `db:seed:demo` 必出,演示必用:
 
 | 角色 | 邮箱 | 密码 | 用途 |
 | --- | --- | --- | --- |
-| **管理员** | `admin@ai-academy.local` | `admin123` | 登 `/admin/*` 看后台所有功能 |
-| **学员(原始)** | `student@test.com` | `123456` | 看前台,演示主用 |
-| **学员(e2e 1)** | `biztest1785846398673@academy.test` | `BizTest!Pass2026` | 已下过 1 单(mockPay paid),演示订单管理 |
-| **学员(e2e 2)** | `biztest1785846469464@academy.test` | `BizTest!Pass2026` | 演示用,无订单 |
-| **学员(e2e 3)** | `biztest1785846579112@academy.test` | `BizTest!Pass2026` | 演示用,无订单 |
-| **学员(e2e 4)** | `biztest1785846611781@academy.test` | `BizTest!Pass2026` | 演示用,无订单 |
-| **学员(e2e 5)** | `viztest1785846634434@academy.test` | `BizTest!Pass2026` | 演示用,无订单 |
+| **管理员 (主)** | `admin@opencsg.com` | `admin123` | 登 `/admin/*` 看后台所有功能 |
+| **管理员 (备)** | `admin@ai-academy.local` | `admin123` | 原始 seed 账号,跟老版兼容 |
+| **学员 (主)** | `student@test.com` | `123456` | 看前台,演示主用 — 已下 1 单 mockPay paid(¥79.99) |
 
-> 所有账号的 `passwordResetRequired` 已设成 `false`,登进去不会被强制改密。生产 seed 行为不同(强制改密 + 强密码)。
+**10 个额外演示学员** — `db:seed:demo` 必出,给首页 KPI 凑数(让"已学完课程" / "总学习时长" / "成就徽章" 看上去真实):
+
+| 邮箱 | 密码 | 备注 |
+| --- | --- | --- |
+| `alice@ai-academy.local` ~ `jack@ai-academy.local` | `123456` | 10 人 (Alice / Bob / Carol / David / Emma / Frank / Grace / Henry / Ivy / Jack),各有不同选课/实践完成/徽章组合 |
+
+> **biztest 系列学员** (`biztest1785...@academy.test`) — **不是 seed 出来的**,是 `pnpm e2e` 跑 Playwright 时落库的,演示用得上,新部署的 demo 环境里没有。生产 seed 行为不同(强制改密 + 强密码)。
+
+> 所有 demo 账号的 `passwordResetRequired` 已设成 `false`,登进去不会被强制改密。
 
 ### 5 条必看路径
 
@@ -320,6 +341,7 @@ pnpm dev                        # api :8080 + web :5500
 | --- | --- | --- |
 | `/hackathons` | 公开 | 6 个黑客松,有 `upcoming` 的能点"报名" |
 | `/instructors/sky-walker` | 公开 | 讲师墙详情页(从 `Course.instructor` 字符串回填的 6 个讲师) |
+| `/instructors?expertise=Rust` | 公开 | 讲师墙按专长 chip 筛选(16 讲师 14 专长) |
 | `/degrees` | 公开 | 2 个学位项目(自动统计关联课程数) |
 | `/verify/:serial` | 公开 | 公开证书验证 — 学员下完单会自动签发证书,管理员可在 `/admin/courses` 找 |
 | `/admin/courses` | admin | 课程编辑 5 tab(info / chapters / practices / pricing / publish) |
@@ -329,10 +351,10 @@ pnpm dev                        # api :8080 + web :5500
 ### 演示数据快照
 
 ```
-users: 7 (1 admin + 1 student + 5 e2e biztest)
-courses: 6          degrees: 2          hackathons: 6
-instructors: 6      badges: 10
-enrollments / orders / hackathonRegs — 看你演示时跑出来的
+users: 13 (2 admin + 1 student + 10 extra)    courses: 6          degrees: 2   hackathons: 6
+instructors: 16 (15 published + 1 draft)      expertises: 14      badges: 10
+instructor↔expertise links: 37               course↔instructor links: 13
+enrollments: 22     practice completions: 6    paid orders: 2     user badges: 8
 ```
 
 ### 已知边界(演示时直接告诉对方,别装作没事)
@@ -379,6 +401,8 @@ pnpm e2e            # Playwright 浏览器 smoke
 | `pnpm db:migrate` | 开发环境迁移 |
 | `pnpm db:migrate:prod` | 生产环境迁移(只 apply,不创建新迁移) |
 | `pnpm db:seed` | dev 种子数据(6 课程 / 2 学位 / 6 黑客松) |
+| `pnpm db:seed:demo` | 完整 demo 数据(6 步: 用户 / CMS / 16 讲师 / 学员 / 选课 / 订单 / 徽章) |
+| `pnpm setup:demo` | **新同事开箱** — `bash scripts/setup-demo.sh` 一键(docker + install + migrate + seed) |
 | `pnpm db:studio` | Prisma Studio |
 | `pnpm deploy:generate-env` | 生成 `.env.production`(random secrets + image SHA) |
 | `pnpm deploy:validate` | 校验生产 env 配置(无占位符 / 必填项) |

@@ -1,10 +1,16 @@
 /**
- * 讲师回填 Seed 脚本 (2026-07-24)
+ * ⚠️ MIGRATION-ONLY — 一次性回填脚本 (2026-07-24)
  *
- * 用途: 把现有 Course.instructor 字符串字段的数据, 按 name trim 精确匹配
+ * 历史: 早期 Course.instructor 是 string 字段, 2026-07-24 切换到 Instructor
+ *       表 + CourseInstructorLink 多对多, 写了本脚本做一次性回填.
+ *
+ * 用途: 把 Course.instructor 字符串字段的数据, 按 name trim 精确匹配
  *       回填到新表 Instructor (发布态) + 挂 CourseInstructorLink.
  *
- * 运行: ts-node prisma/seed-instructors.ts
+ * 何时跑: 只在从老 schema 升级到新 schema 时跑一次.
+ *        新部署 (pnpm db:seed:demo) 不需要, 流程里没有这一步.
+ *
+ * 运行: ts-node prisma/migration-seed-instructors-from-string.ts
  *
  * 行为:
  *   1. SELECT DISTINCT instructor FROM courses WHERE TRIM(instructor) <> ''

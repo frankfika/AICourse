@@ -1,5 +1,5 @@
 /**
- * 讲师内容增强 seed (2026-08-04)
+ * seed-instructors-content.ts (2026-08-04)
  *
  * 用途: 把现有 6 个讲师从"只有 name"填充到有真实可展示的内容
  *       (title / headline / bio / avatar / company / social / 专长标签)
@@ -8,7 +8,9 @@
  * 风格: 跟课程主题贴合 (云/AI/安全/Python/产品/设计)
  *       头像走 https://api.dicebear.com 真实 SVG avatar 端点
  *
- * 运行: ts-node prisma/seed-instructor-content.ts
+ * 运行:
+ *   pnpm db:seed:instructors-content          (单跑)
+ *   pnpm db:seed:demo                         (走 master 流程)
  * 幂等: 每次跑都会刷新 (用 upsert + 覆盖)
  */
 import { PrismaClient } from '@prisma/client';

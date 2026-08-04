@@ -21,7 +21,9 @@
     "db:generate": "pnpm --filter @ai-academy/api db:generate",
     "db:migrate": "pnpm --filter @ai-academy/api db:migrate",
     "db:studio": "pnpm --filter @ai-academy/api db:studio",
-    "db:seed": "pnpm --filter @ai-academy/api db:seed"
+    "db:seed": "pnpm --filter @ai-academy/api db:seed",
+    "db:seed:demo": "pnpm --filter @ai-academy/api db:seed:demo",
+    "setup:demo": "bash scripts/setup-demo.sh"
   },
   "devDependencies": {
     "@prisma/client": "6.2.0",
