@@ -230,18 +230,110 @@ docker compose up -d            # 启动 mysql :3307 + redis :6380 + minio :9010
 pnpm --filter @ai-academy/api exec prisma generate
 pnpm db:migrate                 # 应用迁移
 pnpm db:seed                    # 写入 6 课程 / 2 学位 / 6 黑客松 / admin & student 账号
+pnpm --filter @ai-academy/api exec ts-node ../../prisma/seed-instructors.ts  # 讲师回填(公开讲师墙)
 
 pnpm dev                        # api :8080 + web :5500
 ```
 
-打开:
-- 学员:`http://localhost:5500` — 用 seed 的 `student@test.com / (看 .env 或跑 pnpm db:seed 输出的密码)`
-- 管理员:`http://localhost:5500/admin/dashboard` — `admin@ai-academy.local / admin123`
-- API 文档:`http://localhost:8080/api/docs`
+启动后会拿到:
+
+| 服务 | 地址 |
+| --- | --- |
+| **Web 前端** | <http://localhost:5500> |
+| **API 后端** | <http://localhost:8080/api/v1> |
+| **Swagger API 文档** | <http://localhost:8080/api/docs> |
+| **健康检查(redis/mysql/minio 三件套)** | <http://localhost:8080/api/v1/health/ready> |
+
+> **局域网访问**:把 `localhost` 换成机器 IP(同 WiFi 下手机/另一台电脑可看)。Mac 用 `ifconfig | grep "inet "` 查。
 
 ---
 
-## 7. 常用命令
+## 7. 演示指南(给"非技术"同事 / 投资人 / 客户)
+
+> 不用装任何东西、不用懂代码。浏览器打开 4 个页面就行。
+
+### 3 步进系统
+
+1. **打开** <http://localhost:5500>(让服务跑的人给你地址)
+2. **登录**(两个账号任选,都已写库):
+   - **管理员** — 看后台:`admin@ai-academy.local` / `admin123`
+   - **学员** — 看前台:`student@test.com` / `123456`
+3. **点这 5 条路径** — 5 分钟看完所有能力
+
+### 5 条必看路径
+
+| # | 角色 | 路径 | 看什么 |
+| --- | --- | --- | --- |
+| 1 | **访客**(不用登) | <http://localhost:5500/> | 首页 8 段位、热门课程、CTA 按钮 |
+| 2 | **访客** | <http://localhost:5500/courses> | 6 个 seed 课程,4 种排序(newest/recent/rating/popular) |
+| 3 | **学员**(`student@test.com`) | <http://localhost:5500/courses/55ca51ce-...> | 单课程详情:大纲/讲师/评价/报名(已下 mock 订单的会显示已支付) |
+| 4 | **学员** | <http://localhost:5500/dashboard/orders> | "我的订单" — 1 笔真实 mock 支付订单(¥79.99 · 白帽黑客:数字防御) |
+| 5 | **管理员**(`admin@ai-academy.local`) | <http://localhost:5500/admin/dashboard> | 后台看板:KPI / 课程管理 5 tab / 用户管理 Drawer / 审计日志 / AI 配置 |
+
+### 演示一条完整业务流(2 分钟)
+
+跟着点一遍,展示从访客到学员到管理员的全链路:
+
+1. 打开 `/`,点首页"开始学习" → 跳到 `/courses`
+2. 点任一课程 → 跳到 `/courses/:id` 详情页
+3. 点"立即报名" → 跳到 `/auth/login` 注册 / 登录
+4. 学员登录后 → 回课程详情,再点"立即报名"
+5. 跳到 `/dashboard/orders` → 看到刚下的订单
+6. 点"支付"按钮 → mockPay 立即把订单标 paid
+7. 自动跳转 → 显示已获得课程报名、证书已颁发
+8. **切换管理员** → `/admin/audit` 看到刚才那条 `order.create` + `order.pay` 审计记录
+
+### 7 个更多可点的(可选)
+
+| 路径 | 角色 | 卖点 |
+| --- | --- | --- |
+| `/hackathons` | 公开 | 6 个黑客松,有 `upcoming` 的能点"报名" |
+| `/instructors/sky-walker` | 公开 | 讲师墙详情页(从 `Course.instructor` 字符串回填的 6 个讲师) |
+| `/degrees` | 公开 | 2 个学位项目(自动统计关联课程数) |
+| `/verify/:serial` | 公开 | 公开证书验证 — 学员下完单会自动签发证书,管理员可在 `/admin/courses` 找 |
+| `/admin/courses` | admin | 课程编辑 5 tab(info / chapters / practices / pricing / publish) |
+| `/admin/users` | admin | 用户管理 Drawer — 6 个 section(基本信息 / 学习概况 / 订单 / 证书 / 积分 / 活动日志) |
+| `/admin/settings` | admin | AI provider 配置 — Gemini / OpenAI / Claude / Ollama 任意配,保存即可用 |
+
+### 演示数据快照
+
+```
+courses: 6          degrees: 2          hackathons: 6
+instructors: 6      badges: 10
+enrollments / orders / hackathonRegs — 看你演示时跑出来的
+```
+
+### 已知边界(演示时直接告诉对方,别装作没事)
+
+| 功能 | 当前状态 | 原因 |
+| --- | --- | --- |
+| **真实支付** | mock 流程,生产环境 503 | 没接 Stripe / 微信 / 支付宝,真实支付 + webhook 验证在后续 release 单独发 |
+| **AI 助手对话** | 没配 `GEMINI_API_KEY` 时回"AI 服务暂不可用" | `/admin/settings` 配用户级 API key 即可恢复(任何 provider) |
+| **OAuth Google/GitHub / SAML** | 默认只启 `email_password` | 在 `.env` 配 `AUTH_PROVIDERS=...` + 对应 client id/secret 即可 |
+| **真实邮件发送** | 询价通知默认只落库 | 设 `RESEND_API_KEY` + `MAIL_FROM` 即发邮件 |
+
+### 启停命令速查
+
+```bash
+# 启动
+pnpm dev                          # API + Web(热更新)
+pnpm dev:api                      # 只 API
+pnpm dev:web                      # 只 Web
+
+# 看进程
+lsof -iTCP:8080 -iTCP:5500 -sTCP:LISTEN
+
+# 停
+pkill -f "nest\|vite"
+
+# 跑测试
+pnpm check          # lint + test + build
+pnpm e2e            # Playwright 浏览器 smoke
+```
+
+---
+
+## 8. 常用命令
 
 | 命令 | 作用 |
 | --- | --- |
@@ -261,7 +353,7 @@ pnpm dev                        # api :8080 + web :5500
 
 ---
 
-## 8. 环境变量(关键)
+## 9. 环境变量(关键)
 
 完整模板:[`.env.example`](./.env.example) / [`.env.production.example`](./.env.production.example)
 
@@ -298,7 +390,7 @@ AUTH_PROVIDERS=email_password,oauth.google,oauth.github,sso.saml
 
 ---
 
-## 9. 部署架构
+## 10. 部署架构
 
 ```mermaid
 flowchart TB
@@ -338,7 +430,7 @@ flowchart TB
 
 ---
 
-## 10. 质量门(发版前必过)
+## 11. 质量门(发版前必过)
 
 ```bash
 pnpm check       # lint + test + build  (全 workspace 0 错)
@@ -358,7 +450,7 @@ pnpm deploy:validate   # 生产 env 校验
 
 ---
 
-## 11. 文档地图
+## 12. 文档地图
 
 | 文档 | 适用 | 内容 |
 | --- | --- | --- |
@@ -373,7 +465,7 @@ pnpm deploy:validate   # 生产 env 校验
 
 ---
 
-## 12. 贡献
+## 13. 贡献
 
 ```bash
 git checkout -b feature/your-change
