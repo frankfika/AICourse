@@ -37,7 +37,7 @@ import { HealthModule } from './modules/health/health.module';
 import { NotesModule } from './modules/notes/notes.module';
 import { RedisModule } from './common/redis/redis.module';
 import { RedisService } from './common/redis/redis.service';
-import { GeminiModule } from './common/gemini/gemini.module';
+import { AiProviderModule } from './common/ai-provider/ai-provider.module';
 
 @Module({
   imports: [
@@ -95,7 +95,7 @@ import { GeminiModule } from './common/gemini/gemini.module';
     SiteModule,
     CmsModule,
     InstructorsModule,
-    GeminiModule,
+    AiProviderModule,
     ChatModule,
     HealthModule,
     NotesModule,

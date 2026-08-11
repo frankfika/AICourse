@@ -86,6 +86,7 @@ export interface BadgeCriteriaRule {
   rules?: BadgeCriteriaRule[];
   type?: BadgeCriteriaType;
   value?: number;
+  courseId?: string;
 }
 
 // ==================== Entity Interfaces ====================

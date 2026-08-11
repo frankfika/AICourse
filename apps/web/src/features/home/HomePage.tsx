@@ -6,8 +6,8 @@
  *   2) 热门课程(coursesApi 前 6)
  *   3) 学位路径(degreesApi 前 3)
  *   4) 黑客松(hackathonsApi 进行中 3 个,含倒计时)
- *   5) AI 助教 CTA(品牌宣言 + mock 聊天气泡)
- *   6) 讲师墙(4 个 mock 讲师)
+ *   5) AI 助教 CTA(品牌宣言 + AI 聊天气泡)
+ *   6) 讲师墙(4 个真实讲师, 走 /api/v1/instructors, 2026-08-04 接入)
  *   7) footer(4 列)
  *   8) AI 助教 FAB + mobile bottom tab — 实际放在 Layout
  *
@@ -44,7 +44,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { useSiteSettings, usePageSettings, useI18n, pickSite, pickPage, pickI18n } from '../../lib/cms';
+import { useSiteSettings, usePageSettings, useI18n, pickSite, pickPage } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
 import { firstCourseTag } from '../../lib/courseTags';
@@ -87,15 +87,6 @@ interface Hackathon {
   maxTeamSize: number;
   minTeamSize: number;
   _count?: { registrations?: number };
-}
-
-interface Instructor {
-  id: string;
-  name: string;
-  title: string;
-  initials: string;
-  cover: string;
-  // linkedin 字段移除(后端无 source-of-truth, 之前硬编码 '#' 点了不跳转)
 }
 
 // =============================================================
@@ -280,9 +271,11 @@ function CoursesSection() {
                   <div
                     className={`aspect-video ${getCourseCoverBg(course.tags)} relative flex items-end p-4`}
                   >
-                    <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
-                      {firstCourseTag(course.tags, t('home.course.tag_fallback', 'LLM 应用'))}
-                    </span>
+                    {firstCourseTag(course.tags) && (
+                      <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
+                        {firstCourseTag(course.tags)}
+                      </span>
+                    )}
                     <span className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-cert-500 text-white font-medium">
                       {course.level}
                     </span>
@@ -1040,7 +1033,7 @@ export function HomePage() {
   const hackathonCount = stats?.activeHackathonCount ?? 0;
 
   // CMS-driven copy (site_settings.brand.hero.* + page_settings.home.*)
-  // 全部 hook,API 失败 fallback 到 I18N_FALLBACK
+  // 全部文案 hook 以 CMS API / 数据库为权威来源。
   const { data: heroSite } = useSiteSettings([
     'brand.hero.headline',
     'brand.hero.subheadline',
@@ -1049,15 +1042,6 @@ export function HomePage() {
     'brand.hero.cta_secondary',
     'brand.hero.badge_template',
   ]);
-  const { data: homePages } = usePageSettings('home', [
-    'courses_subhead',
-    'degrees_subhead',
-    'hackathons_subhead',
-    'aitutor_subhead',
-    'aitutor_chip',
-    'instructors_subhead',
-  ]);
-  const { t } = useI18n();
   const headline = pickSite(heroSite, 'brand.hero.headline', 'zh-CN', '学完仍然不会做?\n让 AI 时代的能力\n可被看见。');
   const subheadline = pickSite(heroSite, 'brand.hero.subheadline', 'zh-CN', '课程 + 学位 + 实践项目 + 黑客松 + AI 助教 —— 一条连续的学习回路,不是又一个视频站。');
   const termDefault = pickSite(heroSite, 'brand.hero.term_default', 'zh-CN', '2026 夏季 · 开放报名');

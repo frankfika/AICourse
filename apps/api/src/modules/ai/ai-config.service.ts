@@ -11,6 +11,8 @@ export interface AiConfigPublic {
   model: string;
   baseUrl: string | null;
   isActive: boolean;
+  verifiedAt: string | null;
+  lastVerifyError: string | null;
   /** Masked: 末 4 位, e.g. "****abcd". 前端展示用, 不暴露完整 key */
   apiKeyMasked: string;
   createdAt: string;
@@ -19,7 +21,7 @@ export interface AiConfigPublic {
 
 export interface UpdateAiConfigDto {
   provider: string;
-  apiKey: string;
+  apiKey?: string;
   model: string;
   baseUrl?: string | null;
   isActive?: boolean;
@@ -99,7 +101,7 @@ export class AiConfigService implements OnModuleInit {
   onModuleInit() {
     const err = this.crypto.checkReady();
     if (err) {
-      // fail-closed: 启动时打 warning, 提醒运维补 env. 已有 .env GEMINI_API_KEY 仍能 fallback.
+      // fail-closed: 管理后台保存的 provider key 必须使用服务端主密钥加密。
       this.logger.warn(`AI key 加密未就绪: ${err}. admin 修改 AI key 端点将 503.`);
     }
   }
@@ -118,6 +120,8 @@ export class AiConfigService implements OnModuleInit {
       model: row.model,
       baseUrl: row.baseUrl,
       isActive: row.isActive,
+      verifiedAt: row.verifiedAt instanceof Date ? row.verifiedAt.toISOString() : row.verifiedAt ?? null,
+      lastVerifyError: row.lastVerifyError ?? null,
       apiKeyMasked: this.mask(plain),
       createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : row.createdAt,
       updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : row.updatedAt,
@@ -142,6 +146,47 @@ export class AiConfigService implements OnModuleInit {
     return { apiKey, model: row.model, baseUrl: row.baseUrl };
   }
 
+  async getForVerification(provider: string): Promise<{
+    provider: string;
+    apiKey: string;
+    model: string;
+    baseUrl: string | null;
+  } | null> {
+    const row = await this.prisma.aiConfig.findUnique({ where: { provider } });
+    if (!row) return null;
+    const apiKey = this.crypto.decrypt(row.apiKeyEnc);
+    if (!apiKey) return null;
+    return { provider: row.provider, apiKey, model: row.model, baseUrl: row.baseUrl };
+  }
+
+  /** 平台级唯一启用配置，供课程生成、学位生成和全局助手共同使用。 */
+  async getActiveGlobal(requireVerified = true): Promise<{
+    provider: string;
+    apiKey: string;
+    model: string;
+    baseUrl: string | null;
+  } | null> {
+    const row = await this.prisma.aiConfig.findFirst({
+      where: {
+        isActive: true,
+        ...(requireVerified ? { verifiedAt: { not: null } } : {}),
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (!row) return null;
+    const apiKey = this.crypto.decrypt(row.apiKeyEnc);
+    if (!apiKey) {
+      this.logger.error(`AI config ${row.provider} 解密失败(密钥轮换?)`);
+      return null;
+    }
+    return {
+      provider: row.provider,
+      apiKey,
+      model: row.model,
+      baseUrl: row.baseUrl,
+    };
+  }
+
   /**
    * upsert 配置: provider 已存在则覆盖, 否则新建.
    * 触发 audit log.
@@ -151,33 +196,61 @@ export class AiConfigService implements OnModuleInit {
     if (err) {
       throw new BadRequestException(`AI key 加密未就绪: ${err}`);
     }
-    if (!dto.apiKey || dto.apiKey.trim().length < 8) {
-      throw new BadRequestException('apiKey 长度至少 8 字符');
-    }
-    if (!/^(gemini|openai|claude)$/.test(dto.provider)) {
-      throw new BadRequestException(`provider 必须是 gemini | openai | claude, 收到: ${dto.provider}`);
+    const provider = dto.provider.trim().toLowerCase();
+    if (!/^[a-z0-9][a-z0-9._-]{0,63}$/.test(provider)) {
+      throw new BadRequestException('provider 只能包含小写字母、数字、点、下划线和连字符');
     }
     if (!dto.model || dto.model.trim().length === 0) {
       throw new BadRequestException('model 不能为空');
     }
 
-    const apiKeyEnc = this.crypto.encrypt(dto.apiKey);
-    const row = await this.prisma.aiConfig.upsert({
-      where: { provider: dto.provider },
+    const existing = await this.prisma.aiConfig.findUnique({
+      where: { provider },
+      select: { apiKeyEnc: true },
+    });
+    const nextApiKey = dto.apiKey?.trim();
+    if (!existing && (!nextApiKey || nextApiKey.length < 8)) {
+      throw new BadRequestException('新增配置时 apiKey 长度至少 8 字符');
+    }
+    if (nextApiKey && nextApiKey.length < 8) {
+      throw new BadRequestException('apiKey 长度至少 8 字符');
+    }
+    if (!dto.baseUrl?.trim()) {
+      throw new BadRequestException('OpenAI-compatible 配置必须填写 Base URL');
+    }
+    const baseUrl = await assertSafeAiBaseUrl(provider, dto.baseUrl.trim());
+    const apiKeyEnc = nextApiKey ? this.crypto.encrypt(nextApiKey) : existing!.apiKeyEnc;
+    const isActive = dto.isActive ?? true;
+    const upsert = this.prisma.aiConfig.upsert({
+      where: { provider },
       create: {
-        provider: dto.provider,
+        provider,
         apiKeyEnc,
         model: dto.model,
-        baseUrl: dto.baseUrl ?? null,
-        isActive: dto.isActive ?? true,
+        baseUrl,
+        isActive,
+        verifiedAt: null,
+        lastVerifyError: null,
       },
       update: {
         apiKeyEnc,
         model: dto.model,
-        baseUrl: dto.baseUrl ?? null,
-        isActive: dto.isActive ?? true,
+        baseUrl,
+        isActive,
+        verifiedAt: null,
+        lastVerifyError: null,
       },
     });
+    // 平台级配置只允许一个 active，避免不同功能挑到不同上游。
+    const row = isActive
+      ? (await this.prisma.$transaction([
+          this.prisma.aiConfig.updateMany({
+            where: { provider: { not: provider }, isActive: true },
+            data: { isActive: false },
+          }),
+          upsert,
+        ]))[1]
+      : await upsert;
 
     await this.auditLog.log({
       action: 'AI_CONFIG_UPSERT',
@@ -186,6 +259,22 @@ export class AiConfigService implements OnModuleInit {
       details: { provider: row.provider, model: row.model },
     });
 
+    return this.toPublic(row);
+  }
+
+  async recordVerification(provider: string, error?: string): Promise<AiConfigPublic> {
+    const row = await this.prisma.aiConfig.update({
+      where: { provider },
+      data: error
+        ? { verifiedAt: null, lastVerifyError: error.slice(0, 1000) }
+        : { verifiedAt: new Date(), lastVerifyError: null },
+    });
+    await this.auditLog.log({
+      action: error ? 'AI_CONFIG_VERIFY_FAILED' : 'AI_CONFIG_VERIFY_OK',
+      entity: 'ai_config',
+      entityId: row.id,
+      details: { provider, error: error ? error.slice(0, 300) : undefined },
+    });
     return this.toPublic(row);
   }
 

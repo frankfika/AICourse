@@ -27,7 +27,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from './ui/Skeleton';
 import { EmptyState } from './ui/EmptyState';
 import { cn } from '../lib/cn';
-import { searchAll, groupResults, FALLBACK_HOT_SEARCHES, type SearchResult, type SearchResultType } from '../lib/searchApi';
+import { searchAll, groupResults, type SearchResult, type SearchResultType } from '../lib/searchApi';
 import { useList, useI18n } from '../lib/cms';
 
 interface CommandPaletteProps {
@@ -68,13 +68,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     staleTime: 30_000,
   });
 
-  // CMS-driven hot searches(useList('popular-searches') 或 fallback 到 FALLBACK_HOT_SEARCHES)
+  // 热门搜索只来自 CMS/数据库；空表就不展示，不能伪造旧热词。
   const { data: hotData } = useList<{ keyword: string; isActive?: boolean }>('popular-searches');
   const hotSearches = useMemo(() => {
-    if (hotData && hotData.length > 0) {
-      return hotData.filter((s) => s.isActive !== false).map((s) => s.keyword);
-    }
-    return FALLBACK_HOT_SEARCHES;
+    return (hotData ?? []).filter((s) => s.isActive !== false).map((s) => s.keyword);
   }, [hotData]);
 
   // i18n

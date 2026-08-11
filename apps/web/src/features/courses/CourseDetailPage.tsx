@@ -317,23 +317,17 @@ export function CourseDetailPage() {
           },
         }}
       />
-      {/* Top action bar */}
-      <section className="border-b border-[#171717] bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <Link
-            to="/courses"
-            className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#666666] hover:text-[#171717]"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back To Courses
-          </Link>
-        </div>
-      </section>
-
       {/* Hero — split white + black */}
-      <section className="border-b border-[#171717]">
-        <div className="grid grid-cols-1 lg:grid-cols-2">
-          <div className="p-8 md:p-12 lg:p-16 bg-white border-b lg:border-b-0 lg:border-r border-[#171717] flex flex-col justify-center">
-            <div className="flex items-center gap-2 mb-6 flex-wrap">
+      <section className="border-b border-[#171717] px-0 lg:px-6">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 border-x-0 border-[#171717] lg:grid-cols-2 lg:border-x">
+          <div className="flex flex-col justify-center border-b border-[#171717] bg-white p-7 sm:p-10 lg:border-b-0 lg:border-r lg:p-12 xl:p-14">
+            <Link
+              to="/courses"
+              className="mb-7 inline-flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#666666] transition-colors hover:text-[#171717]"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> 返回全部课程
+            </Link>
+            <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center px-2 py-0.5 bg-[#171717] text-white text-[10px] font-black uppercase tracking-widest">
                 {course.level}
               </span>
@@ -350,23 +344,23 @@ export function CourseDetailPage() {
                 {courseTypeLabel(course.courseType)}
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter leading-[0.95] mb-6 break-words">
+            <h1 className="mb-5 break-words text-4xl font-black leading-[0.96] tracking-tighter sm:text-5xl">
               {course.title}
             </h1>
-            <p className="text-[#666666] text-lg leading-relaxed mb-8 max-w-2xl">
+            <p className="mb-8 max-w-2xl text-base leading-7 text-[#666666] sm:text-lg">
               {course.description}
             </p>
 
             <div className="grid grid-cols-3 border-t border-[#171717]">
-              <div className="py-5 border-r border-[#171717]">
+              <div className="border-r border-[#171717] py-4 sm:py-5">
                 <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">Duration</div>
                 <div className="text-2xl font-black tracking-tighter">{course.duration}</div>
               </div>
-              <div className="py-5 border-r border-[#171717]">
+              <div className="border-r border-[#171717] py-4 pl-4 sm:py-5 sm:pl-5">
                 <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">Lessons</div>
                 <div className="text-2xl font-black tracking-tighter">{totalLessons}</div>
               </div>
-              <div className="py-5">
+              <div className="py-4 pl-4 sm:py-5 sm:pl-5">
                 <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">Resources</div>
                 <div className="text-2xl font-black tracking-tighter">{totalResources}</div>
               </div>
@@ -374,16 +368,23 @@ export function CourseDetailPage() {
           </div>
 
           {/* Right: thumbnail + CTA */}
-          <div className="bg-[#171717] text-white flex flex-col">
-            <div className="aspect-[16/10] border-b border-white/20 overflow-hidden bg-[#262626]">
+          <div className="flex min-h-0 flex-col bg-[#171717] text-white">
+            <div className="relative h-64 shrink-0 overflow-hidden border-b border-white/20 bg-[#262626] sm:h-80 lg:h-[340px]">
               <LazyImage
                 src={course.thumbnail}
                 alt={course.title}
                 fill
+                eager
                 className="object-cover"
+                fallback={
+                  <div className="flex h-full w-full flex-col items-center justify-center bg-[#262626] px-8 text-center">
+                    <BookOpen className="h-12 w-12 text-white/25" />
+                    <p className="mt-4 max-w-sm text-sm font-semibold text-white/50">{course.title}</p>
+                  </div>
+                }
               />
             </div>
-            <div className="p-8 md:p-12 flex flex-col gap-4">
+            <div className="flex flex-1 flex-col gap-4 p-7 sm:p-8 lg:p-9">
               {user && courseProgress ? (
                 <div className="flex items-center gap-4 border border-white/20 p-4">
                   <ProgressRing percent={courseProgress.percent} size={64} strokeWidth={6} />

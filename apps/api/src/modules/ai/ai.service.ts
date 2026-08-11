@@ -1,27 +1,26 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import {
+  BadGatewayException,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { z } from 'zod';
 import { CourseLevel, CostType } from '@prisma/client';
-import { GeminiService } from '../../common/gemini/gemini.service';
+import { AiProviderService } from '../../common/ai-provider/ai-provider.service';
 
 /**
  * AI 内容生成服务
  *
- * 当前使用 Google Gemini（GEMINI_API_KEY），通过共享 GeminiService 调用。
- * 失败时回退到规则化生成，确保前端始终能拿到可用的草稿。
+ * 使用管理员后台配置的 OpenAI-compatible 服务。
+ * 生成失败时返回真实错误，绝不以规则模板伪装成模型结果。
  */
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
 
   constructor(
-    private readonly config: ConfigService,
-    private readonly gemini: GeminiService,
+    private readonly provider: AiProviderService,
   ) {}
-
-  private get apiKey(): string | undefined {
-    return this.config.get<string>('GEMINI_API_KEY');
-  }
 
   /**
    * 课程智能填充
@@ -29,30 +28,16 @@ export class AiService {
    * @param hint  课程描述或额外要求（可选）
    */
   async generateCourse(topic: string, hint?: string): Promise<CourseDraft> {
-    const fallback = this.fallbackCourse(topic, hint);
-    if (!this.apiKey) {
-      this.logger.warn('GEMINI_API_KEY 未配置，使用规则化兜底');
-      return fallback;
-    }
-
     const prompt = this.buildCoursePrompt(topic, hint);
-    const result = await this.callGeminiWithJson(prompt, fallback);
-    return result;
+    return this.callProviderWithJson(prompt, CourseDraftSchema, '课程');
   }
 
   /**
    * 学位（Nano Degree）智能填充
    */
   async generateDegree(topic: string, hint?: string): Promise<DegreeDraft> {
-    const fallback = this.fallbackDegree(topic, hint);
-    if (!this.apiKey) {
-      this.logger.warn('GEMINI_API_KEY 未配置，使用规则化兜底');
-      return fallback;
-    }
-
     const prompt = this.buildDegreePrompt(topic, hint);
-    const result = await this.callGeminiWithJson(prompt, fallback);
-    return result;
+    return this.callProviderWithJson(prompt, DegreeDraftSchema, '学位');
   }
 
   // ==================== Prompt 构造 ====================
@@ -91,7 +76,7 @@ export class AiService {
   "level": "Beginner | Intermediate | Advanced | Expert 之一",
   "duration": "string, 如 '45 分钟'、'2 小时'、'4 周'",
   "tags": "string, 4-6 个英文或中文标签，逗号分隔",
-  "thumbnail": "string, 一个 https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=AI%20course%20thumbnail&image_size=landscape_16_9 的占位图 URL",
+  "thumbnail": "string, 必须返回空字符串，不要编造图片 URL",
   "costType": "free | paid | charity 之一",
   "price": number, 0-9999,
   "courseType": "own | external 之一。如果题目或附加要求里出现'外部课'、'外链'、'参考课'、'配套视频'、含 http(s):// 链接,返回 external；否则 own",
@@ -117,7 +102,7 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
   "icon": "string, lucide-react 图标名（建议: brain / rocket / sparkles / zap / code / graduation-cap）",
   "costType": "free | paid | charity 之一",
   "price": number, 0-9999,
-  "thumbnail": "string, 占位图 URL，https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Nano%20Degree%20program%20cover&image_size=landscape_16_9"
+  "thumbnail": "string, 必须返回空字符串，不要编造图片 URL"
 }
 
 用户题目：${safeTopic}
@@ -129,41 +114,39 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
   // ==================== Gemini 调用 ====================
 
   /**
-   * JSON 草稿模式: 调 Gemini -> 解析 JSON -> zod 校验 -> 合并 fallback.
-   * 任何环节失败都安全回退到规则化草稿, 不向前端暴露错误.
+   * JSON 草稿模式: 调模型 -> 解析 JSON -> zod 校验。
+   * 任一环节失败都向调用方返回可诊断错误，禁止生成伪草稿。
    */
-  private async callGeminiWithJson<T>(prompt: string, fallback: T): Promise<T> {
-    if (!this.apiKey) return fallback;
+  private async callProviderWithJson<T>(
+    prompt: string,
+    schema: z.ZodType<T>,
+    resourceName: string,
+  ): Promise<T> {
     let text = '';
     try {
-      text = await this.gemini.generateText(prompt, { maxOutputTokens: 1024 });
+      text = await this.provider.generateText(prompt, { maxOutputTokens: 1024 });
     } catch (err) {
       if (err instanceof ServiceUnavailableException) {
-        this.logger.warn('Gemini 不可用, 使用兜底');
-        return fallback;
+        throw err;
       }
-      this.logger.error('Gemini 调用异常', err as Error);
-      return fallback;
+      this.logger.error('AI Provider 调用异常', err as Error);
+      throw new ServiceUnavailableException('AI 服务调用失败，请稍后重试');
+    }
+
+    if (typeof text !== 'string' || !text.trim()) {
+      throw new BadGatewayException(`AI 未返回${resourceName}草稿内容，请重试`);
     }
 
     const json = this.extractJson(text);
     if (!json) {
-      this.logger.warn('Gemini 返回无法解析为 JSON，使用兜底');
-      return fallback;
+      throw new BadGatewayException(`AI 返回的${resourceName}草稿不是有效 JSON，请重试`);
     }
-    // Security: validate LLM output against the strict schema before merging.
-    // If the LLM produced something malicious or malformed, fall back instead
-    // of trusting the partial result.
-    const schema: z.ZodTypeAny =
-      (fallback as any)?.courseType !== undefined || (fallback as any)?.instructor !== undefined
-        ? CourseDraftSchema
-        : DegreeDraftSchema;
     const parsed = schema.safeParse(json);
     if (!parsed.success) {
-      this.logger.warn(`Gemini 输出未通过 schema 校验，使用兜底: ${parsed.error.message}`);
-      return fallback;
+      this.logger.warn(`AI 输出未通过 schema 校验: ${parsed.error.message}`);
+      throw new BadGatewayException(`AI 返回的${resourceName}草稿字段不完整，请重试`);
     }
-    return this.mergeWithFallback(parsed.data, fallback);
+    return parsed.data;
   }
 
   private extractJson(text: string): any | null {
@@ -181,134 +164,6 @@ ${safeHint ? `附加要求：${safeHint}` : ''}
     }
   }
 
-  private mergeWithFallback<T>(partial: any, fallback: T): T {
-    // 浅合并：LLM 输出的字段优先，缺失时回退到规则化字段
-    return { ...(fallback as any), ...partial } as T;
-  }
-
-  // ==================== 规则化兜底 ====================
-
-  private fallbackCourse(topic: string, hint?: string): CourseDraft {
-    const cleanTopic = topic.trim();
-    const tags = this.inferTags(cleanTopic);
-    const level: CourseLevel = this.inferLevel(cleanTopic);
-    const costType: CostType = this.inferCostType(cleanTopic, hint);
-    const duration = this.inferDuration(level);
-    const courseType = this.inferCourseType(cleanTopic, hint);
-    const externalUrl = this.inferExternalUrl(cleanTopic, hint);
-    const placeholderThumb = `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(
-      `${cleanTopic} AI course thumbnail minimalist brutalist design`,
-    )}&image_size=landscape_16_9`;
-
-    return {
-      title: cleanTopic.slice(0, 25),
-      description: `系统讲解「${cleanTopic}」的核心概念、技术原理与典型应用场景，帮助你快速建立从入门到实战的完整能力。`,
-      learningPoints: [
-        `理解 ${cleanTopic} 的核心概念与发展脉络`,
-        `掌握关键技术与工具链的使用方法`,
-        `通过实战案例完成端到端项目交付`,
-        `建立可复用的最佳实践与避坑指南`,
-      ].join('\n'),
-      instructor: '平台教研团队',
-      level,
-      duration,
-      tags,
-      thumbnail: placeholderThumb,
-      costType,
-      price: this.defaultPrice(costType, courseType),
-      courseType,
-      externalUrl,
-    };
-  }
-
-  private fallbackDegree(topic: string, hint?: string): DegreeDraft {
-    const cleanTopic = topic.trim();
-    const tags = this.inferTags(cleanTopic);
-    const costType: CostType = this.inferCostType(cleanTopic, hint);
-    const placeholderThumb = `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(
-      `${cleanTopic} Nano Degree program cover minimalist brutalist design`,
-    )}&image_size=landscape_16_9`;
-
-    return {
-      title: cleanTopic.slice(0, 20),
-      description: `围绕「${cleanTopic}」设计体系化学习路径，覆盖从基础概念到高级实战的完整能力图谱，配套 4-6 门课程、可量化考核与企业级实战项目。`,
-      learningPoints: [
-        `建立 ${cleanTopic} 领域的完整知识体系`,
-        `完成 4-6 门核心课程的系统化学习`,
-        `在导师陪跑下完成 1 个企业级实战项目`,
-        `获得平台官方认证学位证书`,
-      ].join('\n'),
-      icon: 'sparkles',
-      costType,
-      price: costType === 'free' ? 0 : 1999,
-      thumbnail: placeholderThumb,
-      tags,
-    };
-  }
-
-  private inferTags(topic: string): string {
-    const lower = topic.toLowerCase();
-    const tags: string[] = [];
-    if (/(llm|大模型|gpt|claude|gemini|qwen|llama)/i.test(lower)) tags.push('LLM');
-    if (/(rag|检索)/i.test(lower)) tags.push('RAG');
-    if (/(agent|智能体|助手)/i.test(lower)) tags.push('Agent');
-    if (/(transformer|注意力|attention)/i.test(lower)) tags.push('Transformer');
-    if (/(训练|fine.?tuning|微调|pretrain)/i.test(lower)) tags.push('训练');
-    if (/(推理|inference|部署|deployment)/i.test(lower)) tags.push('部署');
-    if (/(代码|coding|编程|code)/i.test(lower)) tags.push('Code');
-    if (/(视觉|cv|图像|vision)/i.test(lower)) tags.push('Vision');
-    if (/(nlp|自然语言|文本)/i.test(lower)) tags.push('NLP');
-    if (tags.length === 0) tags.push('AI', '大模型', '实战');
-    return tags.slice(0, 6).join(',');
-  }
-
-  private inferLevel(topic: string): CourseLevel {
-    const lower = topic.toLowerCase();
-    if (/(入门|基础|零基础|beginner|intro|基础课)/i.test(lower)) return CourseLevel.Beginner;
-    if (/(高阶|深入|expert|专家|高级)/i.test(lower)) return CourseLevel.Expert;
-    if (/(进阶|intermediate|中级)/i.test(lower)) return CourseLevel.Intermediate;
-    if (/(实战|项目|practice|project)/i.test(lower)) return CourseLevel.Advanced;
-    return CourseLevel.Intermediate;
-  }
-
-  private inferCostType(topic: string, hint?: string): CostType {
-    const lower = `${topic} ${hint ?? ''}`.toLowerCase();
-    if (/(免费|free)/i.test(lower)) return CostType.free;
-    if (/(公益|慈善|charity)/i.test(lower)) return CostType.charity;
-    return CostType.paid;
-  }
-
-  private inferDuration(level: CourseLevel): string {
-    switch (level) {
-      case CourseLevel.Beginner:
-        return '45 分钟';
-      case CourseLevel.Intermediate:
-        return '2 小时';
-      case CourseLevel.Advanced:
-        return '4 小时';
-      case CourseLevel.Expert:
-        return '8 小时';
-      default:
-        return '2 小时';
-    }
-  }
-
-  private inferCourseType(topic: string, hint?: string): 'own' | 'external' {
-    const lower = `${topic} ${hint ?? ''}`.toLowerCase();
-    if (/(外部|外链|external|外链课|参考课|配套|视频课|录播)/i.test(lower)) return 'external';
-    return 'own';
-  }
-
-  private inferExternalUrl(topic: string, hint?: string): string {
-    const m = `${topic} ${hint ?? ''}`.match(/https?:\/\/[^\s)]+/i);
-    return m ? m[0] : '';
-  }
-
-  private defaultPrice(costType: CostType, courseType: 'own' | 'external'): number {
-    if (costType === CostType.free) return 0;
-    if (costType === CostType.charity) return 0; // charity 课程是公益导向，price=0 让 admin 自行决定捐赠金额
-    return courseType === 'external' ? 99 : 199;
-  }
 }
 
 export interface CourseDraft {
@@ -339,7 +194,7 @@ export interface DegreeDraft {
 
 // Security: validate every field coming out of the LLM. This blocks prompt
 // injection from sneaking in javascript: URLs, absurd lengths, or wrong
-// types. The fallback stays as a safety net.
+// types. Invalid output is rejected and surfaced to the caller.
 const HttpsUrl = z
   .string()
   .url()
@@ -355,12 +210,12 @@ const CourseDraftSchema = z.object({
   instructor: z.string().min(1).max(100),
   level: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Expert']),
   duration: z.string().min(1).max(50),
-  thumbnail: HttpsUrl,
+  thumbnail: z.union([z.literal(''), HttpsUrl]),
   tags: z.string().max(500),
   costType: z.enum(['free', 'paid', 'charity']),
   price: z.number().int().min(0).max(9999),
-  courseType: z.enum(['own', 'external']).optional().default('own'),
-  externalUrl: z.string().max(2000).optional().default(''),
+  courseType: z.enum(['own', 'external']),
+  externalUrl: z.string().max(2000),
 });
 
 const DegreeDraftSchema = z.object({
@@ -370,6 +225,6 @@ const DegreeDraftSchema = z.object({
   icon: z.string().min(1).max(50),
   costType: z.enum(['free', 'paid', 'charity']),
   price: z.number().int().min(0).max(9999),
-  thumbnail: HttpsUrl,
+  thumbnail: z.union([z.literal(''), HttpsUrl]),
   tags: z.string().max(500),
 });

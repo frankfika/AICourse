@@ -8,6 +8,7 @@ import { HackathonStatusBadge } from '../hackathons/HackathonStatusBadge';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import api from '../../lib/api';
+import { useToast } from '../../components/auth/Toast';
 
 const STATUS_OPTIONS: HackathonStatus[] = [
   'upcoming',
@@ -60,6 +61,7 @@ const EMPTY_FORM = {
 
 export function AdminHackathonsPage() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -83,22 +85,29 @@ export function AdminHackathonsPage() {
 
   const createMutation = useMutation({
     mutationFn: (payload: any) => hackathonsApi.create(payload),
-    onSuccess: () => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['admin-hackathons'] });
       queryClient.invalidateQueries({ queryKey: ['hackathons'] });
-      resetForm();
+      // 创建后继续留在完整编辑流程，让管理员紧接着配置评委/赞助商。
+      startEdit(created);
+      showToast('黑客松已创建，请继续完善评委和赞助商', 'success');
     },
+    onError: (error: any) =>
+      showToast(error?.response?.data?.message ?? '创建失败', 'error'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: any }) =>
       hackathonsApi.update(id, payload),
-    onSuccess: () => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['admin-hackathons'] });
       queryClient.invalidateQueries({ queryKey: ['hackathons'] });
       queryClient.invalidateQueries({ queryKey: ['hackathon', editingId] });
-      resetForm();
+      startEdit(updated);
+      showToast('黑客松基础信息已保存', 'success');
     },
+    onError: (error: any) =>
+      showToast(error?.response?.data?.message ?? '保存失败', 'error'),
   });
 
   // P2-4b: 接 ConfirmDialog
@@ -139,6 +148,27 @@ export function AdminHackathonsPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+    if (start >= end) {
+      showToast('结束时间必须晚于开始时间', 'error');
+      return;
+    }
+    if (form.minTeamSize > form.maxTeamSize) {
+      showToast('最小团队人数不能大于最大团队人数', 'error');
+      return;
+    }
+    if (form.registerDeadline && new Date(form.registerDeadline) > start) {
+      showToast('报名截止时间不能晚于活动开始时间', 'error');
+      return;
+    }
+    if (
+      form.submissionDeadline &&
+      (new Date(form.submissionDeadline) < start || new Date(form.submissionDeadline) > end)
+    ) {
+      showToast('作品提交截止时间必须位于活动周期内', 'error');
+      return;
+    }
     const payload = {
       ...form,
       startDate: toISOString(form.startDate)!,
@@ -195,7 +225,7 @@ export function AdminHackathonsPage() {
               onChange={(v) => setForm({ ...form, location: v })}
             />
             <Select
-              label="状态"
+              label="流程状态（报名中/进行中会按日期自动校正）"
               value={form.status}
               onChange={(v) => setForm({ ...form, status: v as HackathonStatus })}
               options={STATUS_OPTIONS.map((s) => ({ value: s, label: STATUS_LABELS[s] }))}

@@ -16,7 +16,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { cn } from '../../lib/cn';
 import api from '../../lib/api';
-import { useSiteSettings, pickSite } from '../../lib/cms';
+import { useList, useSiteSettings, pickSite } from '../../lib/cms';
+import type { Testimonial } from '../../lib/cmsApi';
 
 interface SiteStats {
   activeLearners: number;
@@ -72,12 +73,12 @@ export function AuthShell({ children }: { children: ReactNode }) {
     retry: 1,
   });
 
-  // CMS-driven brand copy (shell headline / sub / testimonial)
+  // CMS-driven brand copy. Testimonials come from their real managed table.
   const { data: siteData } = useSiteSettings([
     'brand.auth.shell_headline',
     'brand.auth.shell_sub_template',
-    'brand.auth.testimonial',
   ]);
+  const { data: testimonials } = useList<Testimonial>('testimonials');
   const shellHeadline = pickSite(
     siteData,
     'brand.auth.shell_headline',
@@ -93,25 +94,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
   const shellSub = stats
     ? shellSubTpl.replace('{count}', formatStatNumber(stats.activeLearners))
     : shellSubTpl.replace('{count}', '工程师、创业者、CTO');
-  const testimonialData = siteData?.['brand.auth.testimonial'];
-  const testimonialLabel = pickSite(
-    { 'brand.auth.testimonial': testimonialData?.label },
-    'brand.auth.testimonial',
-    'zh-CN',
-    '学员故事',
-  );
-  const testimonialQuote = pickSite(
-    { 'brand.auth.testimonial': testimonialData?.quote },
-    'brand.auth.testimonial',
-    'zh-CN',
-    '我以为 RAG 就是把文档塞进向量库。学完才发现 prompt 模板、reranking、citation、evaluation 才是真正决定效果的地方。AI 助教在我卡壳时直接引用课里第几节第几分几秒 —— 救了我 3 个通宵。',
-  );
-  const testimonialName = testimonialData?.name ?? 'K. Chen';
-  const testimonialTitle = testimonialData?.title ?? 'LLM 应用工程师学位';
-  const configuredTestimonialContext = testimonialData?.placeholder?.trim();
-  const testimonialContext = !configuredTestimonialContext || configuredTestimonialContext.includes('占位')
-    ? '学习反馈'
-    : configuredTestimonialContext;
+  const testimonial = testimonials?.find((item) => item.isActive);
 
   // 把 shellHeadline 切成 3 行(line2 加下划线)
   const headlineLines = shellHeadline.split('\n');
@@ -207,25 +190,23 @@ export function AuthShell({ children }: { children: ReactNode }) {
                 <div className="text-xs opacity-80 mt-1">完成项目</div>
               </div>
             </div>
-            <blockquote className="p-5 rounded-xl bg-neutral-0/10 backdrop-blur-sm border border-neutral-0/20">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-mono uppercase tracking-widest opacity-50">
-                  {testimonialLabel} · {testimonialContext}
+            {testimonial && (
+              <blockquote className="p-5 rounded-xl bg-neutral-0/10 backdrop-blur-sm border border-neutral-0/20">
+                <p className="mb-2 text-[10px] font-mono uppercase tracking-widest opacity-50">
+                  学员故事 · 学习反馈
                 </p>
-              </div>
-              <p className="text-sm leading-relaxed">
-                "{testimonialQuote}"
-              </p>
-              <div className="mt-3 flex items-center gap-2 text-xs">
-                <div className="w-7 h-7 rounded-full bg-cert-500 text-neutral-0 flex items-center justify-center font-bold text-xs">
-                  {testimonialName.charAt(0).toUpperCase()}
+                <p className="text-sm leading-relaxed">“{testimonial.quote}”</p>
+                <div className="mt-3 flex items-center gap-2 text-xs">
+                  <div className="w-7 h-7 rounded-full bg-cert-500 text-neutral-0 flex items-center justify-center font-bold text-xs">
+                    {(testimonial.avatar || testimonial.name.charAt(0)).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-medium">{testimonial.name}</div>
+                    <div className="opacity-70">{testimonial.title}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-medium">{testimonialName}</div>
-                  <div className="opacity-70">{testimonialTitle}</div>
-                </div>
-              </div>
-            </blockquote>
+              </blockquote>
+            )}
           </div>
         </section>
 

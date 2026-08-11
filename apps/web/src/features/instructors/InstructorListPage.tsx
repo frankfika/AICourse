@@ -14,7 +14,7 @@
  * 复用组件: SearchInput / Skeleton / EmptyState / QueryErrorState / Seo
  * (跟 CourseListPage 风格统一 — brutalist 硬边 + #171717 hover)
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Search as SearchIcon, BookOpen, X as XIcon, GraduationCap } from 'lucide-react';

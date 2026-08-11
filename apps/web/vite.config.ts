@@ -3,7 +3,7 @@ import fs from 'fs';
 import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Security: GEMINI_API_KEY must NEVER be injected into the client bundle.
+// Security: AI provider API keys must NEVER be injected into the client bundle.
 // Any Gemini call goes through the backend (apps/api) — see ai.service.ts.
 export default defineConfig(({ mode }) => {
     // 读根目录 .env(与 apps/api 共享),不注入到 client
@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
     return {
       server: {
         port: 5500,
+        strictPort: true,
         host: '0.0.0.0',
         // P1 fix: 把 /api/* proxy 到后端,让 frontend 与 backend 视为同源
         //

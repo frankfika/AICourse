@@ -59,6 +59,36 @@ export class HackathonsService {
     avatarUrl: true,
   };
 
+  private validateSchedule(input: {
+    startDate: string | Date;
+    endDate: string | Date;
+    registerDeadline?: string | Date | null;
+    submissionDeadline?: string | Date | null;
+    minTeamSize: number;
+    maxTeamSize: number;
+  }) {
+    const start = new Date(input.startDate);
+    const end = new Date(input.endDate);
+    if (start >= end) {
+      throw new BadRequestException('结束时间必须晚于开始时间');
+    }
+    if (input.minTeamSize > input.maxTeamSize) {
+      throw new BadRequestException('最小团队人数不能大于最大团队人数');
+    }
+    if (input.registerDeadline) {
+      const deadline = new Date(input.registerDeadline);
+      if (deadline > start) {
+        throw new BadRequestException('报名截止时间不能晚于活动开始时间');
+      }
+    }
+    if (input.submissionDeadline) {
+      const deadline = new Date(input.submissionDeadline);
+      if (deadline < start || deadline > end) {
+        throw new BadRequestException('作品提交截止时间必须位于活动开始与结束时间之间');
+      }
+    }
+  }
+
   /**
    * Keep public status consistent with the event dates even when an organizer
    * has not manually advanced an event. Judging/finished/cancelled remain
@@ -164,6 +194,11 @@ export class HackathonsService {
   }
 
   async create(dto: CreateHackathonDto, organizerId: string) {
+    this.validateSchedule({
+      ...dto,
+      minTeamSize: dto.minTeamSize ?? 1,
+      maxTeamSize: dto.maxTeamSize ?? 5,
+    });
     const hackathon = await this.prisma.hackathon.create({
       data: {
         ...dto,
@@ -190,7 +225,15 @@ export class HackathonsService {
   }
 
   async update(id: string, dto: UpdateHackathonDto) {
-    await this.ensureExists(id);
+    const current = await this.ensureExists(id);
+    this.validateSchedule({
+      startDate: dto.startDate ?? current.startDate,
+      endDate: dto.endDate ?? current.endDate,
+      registerDeadline: dto.registerDeadline ?? current.registerDeadline,
+      submissionDeadline: dto.submissionDeadline ?? current.submissionDeadline,
+      minTeamSize: dto.minTeamSize ?? current.minTeamSize,
+      maxTeamSize: dto.maxTeamSize ?? current.maxTeamSize,
+    });
     const hackathon = await this.prisma.hackathon.update({
       where: { id },
       data: dto,

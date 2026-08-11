@@ -629,7 +629,7 @@ export class UpdatePopularSearchDto {
 
 // P1-2 (2026-07-24): scope 改成 prisma enum 同步 (courses / home / search / all).
 // 之前 DTO 是 ['homepage', 'search', 'course', 'all'] — 跟 prisma default 'courses' 不一致,
-// 跟 apps/web/src/lib/cms.ts:589 LIST_FALLBACK 用 'courses' 也不一致. 改 prisma enum 同步.
+// 与 Prisma enum 保持一致，避免后台写入前端无法识别的 scope。
 export const HOT_KEYWORD_SCOPES = ['courses', 'home', 'search', 'all'] as const;
 export type HotKeywordScope = (typeof HOT_KEYWORD_SCOPES)[number];
 

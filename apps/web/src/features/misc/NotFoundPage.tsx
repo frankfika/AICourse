@@ -9,7 +9,7 @@
  * 增强 (基于 audit-web-ux-long.md:32 缺口):
  *   - 加「返回上一页」按钮 (useNavigate(-1), 没有历史时回首页)
  *   - 加搜索框 (跳 /search?q=...) — 让用户直接搜想要的
- *   - 加 4 个热门分类入口 — 兜底推荐,即使后端无数据也显示
+ *   - 加最多 4 个由后台维护的热门分类入口
  *   - 全 i18n 化 (走 I18nText, default 中文)
  *
  * 设计:
@@ -21,19 +21,20 @@ import { useNavigate } from 'react-router-dom';
 import { Home, ArrowLeft, Search } from 'lucide-react';
 import { ErrorShell, ActionButton } from './ErrorShell';
 import { I18nText } from '../../components/I18nText';
-
-// 4 个热门入口 — 跟 HomePage / 主导航对齐,后端无数据时也始终显示
-const HOT_CATEGORIES = [
-  { key: 'hot.ai', to: '/courses?category=ai', label: 'AI 大模型', en: 'AI & LLMs' },
-  { key: 'hot.ml', to: '/courses?category=ml', label: '机器学习', en: 'Machine Learning' },
-  { key: 'hot.frontend', to: '/courses?category=frontend', label: '前端开发', en: 'Frontend' },
-  { key: 'hot.hackathon', to: '/hackathons', label: '黑客松', en: 'Hackathons' },
-] as const;
+import { useList } from '../../lib/cms';
 
 export function NotFoundPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const { data: categories = [] } = useList<{
+    key: string;
+    label: string;
+    isActive?: boolean;
+  }>('course-categories');
+  const popularCategories = categories
+    .filter((category) => category.isActive !== false)
+    .slice(0, 4);
 
   // 进入页面自动 focus 搜索框 (无障碍 + 引导用户操作)
   useEffect(() => {
@@ -121,27 +122,24 @@ export function NotFoundPage() {
             </div>
           </form>
 
-          {/* 4 个热门入口 — 兜底推荐 */}
-          <div>
+          {popularCategories.length > 0 && <div>
             <div className="text-[10px] font-black uppercase tracking-[0.3em] text-[#666666] mb-3">
               <I18nText k="error.404.popular" default="/ Popular" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {HOT_CATEGORIES.map((cat) => (
+              {popularCategories.map((category) => (
                 <ActionButton
-                  key={cat.key}
-                  to={cat.to}
+                  key={category.key}
+                  to={`/courses?category=${encodeURIComponent(category.key)}`}
                   variant="secondary"
                   showIcon={false}
-                  ariaLabel={cat.en}
+                  ariaLabel={category.label}
                 >
-                  <span className="text-xs">
-                    <I18nText k={`error.404.hot.${cat.key}.label`} default={cat.label} />
-                  </span>
+                  <span className="text-xs">{category.label}</span>
                 </ActionButton>
               ))}
             </div>
-          </div>
+          </div>}
         </>
       }
     />

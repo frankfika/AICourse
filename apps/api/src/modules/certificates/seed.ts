@@ -30,7 +30,7 @@ async function main() {
     console.error('No admin user found. Run apps/api/prisma/seed.ts first.');
     process.exit(1);
   }
-  console.log(`Seeding certificates for admin: ${admin.email} (${admin.id})`);
+  console.info(`Seeding certificates for admin: ${admin.email} (${admin.id})`);
 
   // 找第一个 course / degree / hackathon 当 ref
   const course = await prisma.course.findFirst({
@@ -55,9 +55,9 @@ async function main() {
       completedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
       metadata: { score: 92, hours: 12 },
     });
-    console.log(`  course certificate: ${cert.serialNumber}`);
+    console.info(`  course certificate: ${cert.serialNumber}`);
   } else {
-    console.log('  (skipped course certificate: no published course found)');
+    console.info('  (skipped course certificate: no published course found)');
   }
 
   if (degree) {
@@ -70,9 +70,9 @@ async function main() {
       completedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
       metadata: { gpa: 3.8, totalCourses: 6 },
     });
-    console.log(`  degree certificate: ${cert.serialNumber}`);
+    console.info(`  degree certificate: ${cert.serialNumber}`);
   } else {
-    console.log('  (skipped degree certificate: no degree found)');
+    console.info('  (skipped degree certificate: no degree found)');
   }
 
   if (hackathon) {
@@ -85,13 +85,13 @@ async function main() {
       completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
       metadata: { teamName: 'AI Pioneers', rank: 2 },
     });
-    console.log(`  hackathon certificate: ${cert.serialNumber}`);
+    console.info(`  hackathon certificate: ${cert.serialNumber}`);
   } else {
-    console.log('  (skipped hackathon certificate: no hackathon found)');
+    console.info('  (skipped hackathon certificate: no hackathon found)');
   }
 
   await prisma.$disconnect();
-  console.log('Done.');
+  console.info('Done.');
 }
 
 main().catch((err) => {

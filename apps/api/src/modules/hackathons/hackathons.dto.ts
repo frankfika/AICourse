@@ -7,7 +7,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   HackathonStatus,
   SubmissionStatus,
@@ -96,7 +96,7 @@ export class CreateHackathonDto {
   registrationLabel?: string;
 }
 
-export class UpdateHackathonDto extends CreateHackathonDto {}
+export class UpdateHackathonDto extends PartialType(CreateHackathonDto) {}
 
 export class CreateTeamDto {
   @ApiProperty({ description: '队伍名称' })

@@ -135,7 +135,6 @@ test.describe('Smoke', () => {
   test('暗色主题切换', async ({ page }) => {
     await page.goto('/');
     // 初始是 light
-    const initialClass = await page.evaluate(() => document.documentElement.className);
     // 切到暗色
     await page.getByLabel(/切换为暗色|切换为亮色/).click();
     await expect(page.locator('html.dark')).toBeVisible({ timeout: 2_000 });

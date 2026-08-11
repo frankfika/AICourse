@@ -6,6 +6,71 @@
 
 ---
 
+## v1.5.5 (2026-08-08)
+
+> **主线:发布基线收口** — 6 项遗留改动落地 + 通知 `total` 语义修复 + 版本治理漂移清理 + 真实依赖 E2E 上 CI。
+>
+> v1.5.4 → v1.5.5 是个 2–3 天的收口版本, 不增加新功能, 主要为 v1.6.0「AI 学习闭环」扫清发布基线。
+
+### 通知分页 `total` 语义修复 (P1)
+
+- `apps/api/src/modules/notification/notification.service.ts`
+  - 之前 `total` 错误地统计 "未读 + 当前过滤范围", 致使非 `unreadOnly` 筛选下分页 `total` 偏小, 客户端分页器算不出真实页数
+  - v1.5.5 修正: `total` = 当前过滤范围(用户 + 软删 + type/unreadOnly)的**总条数**, 始终给分页用
+  - `unreadCount` 语义不变, 始终是用户站内总未读(忽略 type/unreadOnly 过滤), 给 bell 角标
+- 同步更新 `notification.service.spec.ts`, 加 4 条新断言覆盖新语义
+  - `unreadOnly=true` 时 total 的 count 也走 `isRead: false`
+  - `type=comment` 时 total 的 count 也带 `type: 'comment'`
+  - `type=all` 时 total 是用户全量
+  - `unreadCount` 始终不带 type/unreadOnly 过滤
+
+### 讲师体系收尾 (承接 1.4.x)
+
+- `apps/api/prisma/seed.ts`: demo seed 补齐 `admin@opencsg.com` 账号, 配合 `scripts/setup-demo.sh` 演示指南
+- `apps/api/src/common/validators/safe-url.decorator.ts`
+  - 修 bug: 之前 `protocols` 参数被硬编码 `https?` 忽略
+  - 现在 `protocols` 真正生效, 默认 `['http', 'https']`
+  - 同步加 `IsHttpUrl({ protocols: [...] })` 重载, 已有 class-validator 体系调用也能用
+- `apps/web/src/features/admin/AdminCoursesPage.tsx`: 讲师/导师解绑统一 `ConfirmDialog`, 移除内联 `confirm()`
+- `apps/web/src/features/admin/AdminInstructorsPage.tsx`: 专长管理动态 import 改顶部 static import
+- `apps/web/src/features/courses/CourseListPage.tsx`
+  - 讲师筛选 + 计数优先看 `courseLinks` 挂的讲师, fallback 老字符串字段
+  - 修正"等 N 位"计数(原本含主讲, 应不含)
+- `apps/web/src/features/instructors/InstructorDetailPage.tsx`: 统计接口失败时显示明确错误提示, 不再静默
+
+### 版本治理漂移清理 (P0)
+
+- 根包 `package.json` `version`: `1.0.0` → `1.5.5`
+- `apps/api` / `apps/web` / `packages/shared-types` `version`: `1.5.4` → `1.5.5`
+- `apps/web/src/lib/cms.ts` `brand.footer.version_tag` 同步 `1.5.4` → `1.5.5`
+- 根 → 子包版本号现在一致, `pnpm -r exec node -p "require('./package.json').version"` 应都返 `1.5.5`
+
+### lint 0 warning
+
+- `apps/api/src/main.ts`: 启动横幅 `console.log` → `console.info`(rule `no-console` 允许)
+- `apps/api/src/modules/certificates/seed.ts`: 8 处 `console.log` → `console.info`
+- `pnpm check` 现在 0 error 0 warning
+
+### 真实依赖 E2E 上 CI (P0)
+
+- `.github/workflows/ci.yml` 新增 `e2e-real` 任务(占位, 详见 §4)
+  - 服务: `mysql:8.0` + `redis:7-alpine` + `minio/minio:latest` (已有的 `api-integration` 只跑 MySQL+Redis, 缺 MinIO)
+  - 跑完 `prisma migrate deploy` 后启动 API, curl `/api/v1/health/ready` 等到 status=ok
+  - 业务流脚本: `scripts/e2e-real-flow.mjs` 注册 → 登录 → 选课 → 完成课时 → 拿证书 → 触发通知 → 列通知, 任何一步失败 exit 1
+  - 与前端 Playwright smoke 互不替代: 浏览器 smoke 验证前端壳层, real E2E 验证后端 + DB + Redis + MinIO 真链路
+- 详见 `docs/ROADMAP-1.6.md` §2.2
+
+### 测试 + 构建
+
+- `pnpm lint`: 0 error 0 warning
+- API: 39 suites / 353 tests
+- Web: 27 files / 150 tests
+- 真实依赖 E2E: 业务流全过
+- 浏览器 smoke (Playwright): 29 passed / 1 skipped (mobile-only)
+- 生产构建: 通过
+
+---
+
 ## v1.5.4 (2026-07-27)
 
 > **主线:横向扩展基础 + 测试黑洞扫尾** — Redis throttler store 真接上 + 6 模块测试补完 + pre-existing vite build 修。

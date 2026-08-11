@@ -11,7 +11,6 @@ import {
   Users,
   ScrollText,
   Megaphone,
-  Edit,
   ArrowUpRight,
 } from 'lucide-react';
 import { hackathonsApi } from '../../lib/hackathonsApi';

@@ -30,7 +30,6 @@ import api from '../../lib/api';
 import { useAuthStore } from '../../stores/authStore';
 import type { NanoDegreeWithPath } from '@ai-academy/shared-types';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { PurchaseModal } from './PurchaseModal';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';

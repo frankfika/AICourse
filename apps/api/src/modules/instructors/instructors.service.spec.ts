@@ -43,6 +43,7 @@ const mockPrisma: any = {
   },
   course: {
     findUnique: jest.fn(),
+    update: jest.fn(),
   },
   auditLog: {
     create: jest.fn(),
@@ -147,7 +148,7 @@ describe('InstructorsService', () => {
 
   describe('softDelete', () => {
     it('讲师存在 → 解除所有 link + 置草稿', async () => {
-      mockPrisma.instructor.findUnique.mockResolvedValueOnce({ id: 'i1' });
+      mockPrisma.instructor.findUnique.mockResolvedValueOnce({ id: 'i1', name: '张明' });
       // $transaction 数组模式
       mockPrisma.courseInstructorLink.deleteMany.mockResolvedValueOnce({ count: 3 });
       mockPrisma.instructor.update.mockResolvedValueOnce({
@@ -202,7 +203,7 @@ describe('InstructorsService', () => {
 
     it('role=instructor + isPrimary=true → 把同 course 同 role 旧主讲师取消', async () => {
       mockPrisma.course.findUnique.mockResolvedValueOnce({ id: 'c1' });
-      mockPrisma.instructor.findUnique.mockResolvedValueOnce({ id: 'i1' });
+      mockPrisma.instructor.findUnique.mockResolvedValueOnce({ id: 'i1', name: '张明' });
       mockPrisma.courseInstructorLink.updateMany.mockResolvedValueOnce({ count: 1 });
       mockPrisma.courseInstructorLink.upsert.mockResolvedValueOnce({ id: 'l1' });
 
@@ -223,6 +224,10 @@ describe('InstructorsService', () => {
           data: { isPrimary: false },
         }),
       );
+      expect(mockPrisma.course.update).toHaveBeenCalledWith({
+        where: { id: 'c1' },
+        data: { instructor: '张明' },
+      });
     });
 
     it('课程不存在 → NotFoundException', async () => {

@@ -22,7 +22,7 @@
  *   />
  *
  * 国际化:
- *   - 标题 / 描述 文案走 I18nText,fallback 写到 I18N_FALLBACK 表
+ *   - 标题 / 描述文案走 I18nText，以 i18n_messages 表为权威来源
  *   - 不引 useTranslation 库,跟项目其他页保持一致
  */
 import type { ReactNode } from 'react';

@@ -30,12 +30,12 @@ import {
 } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { useAuth } from '../lib/auth/AuthProvider';
+import { useAuth } from '../lib/auth/AuthContext';
 import { useTheme, useThemeStore } from '../stores/themeStore';
 import { useWebAssistantStore } from '../stores/webAssistantStore';
 import { cn } from '../lib/cn';
 import { Skeleton } from './ui/Skeleton';
-import { useList, useSiteSettings, useI18n, pickSite, safeNavPath } from '../lib/cms';
+import { useList, useSiteSettings, pickSite, safeNavPath } from '../lib/cms';
 
 const CommandPalette = lazy(() =>
   import('./CommandPalette').then((module) => ({ default: module.CommandPalette })),
@@ -48,7 +48,7 @@ const WebAssistantDrawer = lazy(() =>
 export { initThemeFromStorage } from '../stores/themeStore';
 
 /**
- * useNavItems — 顶部 nav 4 项 (CMS 驱动,fallback LIST_FALLBACK.top-nav)
+ * useNavItems — 顶部导航项（CMS / 数据库驱动）
  */
 function useNavItems(): Array<{ label: string; path: string }> {
   const { data } = useList<{ label: string; path: string; isActive?: boolean }>('top-nav');
@@ -66,7 +66,7 @@ function useNavItems(): Array<{ label: string; path: string }> {
 }
 
 /**
- * useFooterColumns — footer 4 列 (CMS 驱动,fallback LIST_FALLBACK.footer-columns)
+ * useFooterColumns — footer 分栏（CMS / 数据库驱动）
  */
 function useFooterColumns(): Array<{ title: string; links: Array<{ label: string; path: string }> }> {
   const { data } = useList<{ title: string; links: Array<{ label: string; path: string }>; isActive?: boolean }>('footer-columns');
@@ -171,18 +171,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans dark:bg-neutral-950 dark:text-neutral-900">
+    <div className="min-h-screen bg-neutral-50 pb-[calc(4.5rem+env(safe-area-inset-bottom))] font-sans text-neutral-900 dark:bg-neutral-950 dark:text-neutral-900 md:pb-0">
       {/* ============================================================
        * 顶部 nav(P0-4 结构,只加 theme toggle 按钮)
        * ============================================================ */}
       <header className="sticky top-0 z-50 bg-neutral-50/95 backdrop-blur-md border-b border-neutral-200 dark:bg-neutral-950/95 dark:border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 font-black text-lg tracking-tighter">
+          <Link to="/" className="flex shrink-0 items-center gap-2 font-black text-lg tracking-tighter">
             <span className="w-7 h-7 bg-[#171717] flex items-center justify-center text-white rounded-md">
               <GraduationCap className="w-4 h-4" />
             </span>
-            <span className="uppercase text-neutral-900 dark:text-neutral-900">
-              AI Academy
+            <span className="whitespace-nowrap uppercase text-neutral-900 dark:text-neutral-900">
+              <span className="sm:hidden">AI</span>
+              <span className="hidden sm:inline">AI Academy</span>
             </span>
           </Link>
 
@@ -503,7 +504,6 @@ function SiteFooter() {
   const columns = useFooterColumns();
   const { data: siteData } = useSiteSettings([
     'brand.footer.tagline',
-    'brand.footer.version_tag',
   ]);
   const tagline = pickSite(
     siteData,
@@ -511,12 +511,7 @@ function SiteFooter() {
     'zh-CN',
     '学完仍然不会做?让 AI 时代的能力可被看见。',
   );
-  const versionTag = pickSite(
-    siteData,
-    'brand.footer.version_tag',
-    'zh-CN',
-    `v${__APP_VERSION__} · built for AI era`,
-  );
+  const versionTag = `v${__APP_VERSION__} · built for AI era`;
   return (
     <footer className="pt-12 pb-28 md:py-12 border-t border-neutral-200 bg-neutral-50 dark:bg-neutral-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

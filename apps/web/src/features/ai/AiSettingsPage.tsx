@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, Eye, EyeOff, KeyRound, Plus, Server, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { aiProviderApi, type AiProvider, type UserAiProviderConfig } from '../../lib/aiProviderApi';
+import { aiProviderApi, type AiProvider } from '../../lib/aiProviderApi';
 
 const PROVIDERS: Array<{ id: AiProvider; name: string; hint: string; defaultModel: string; baseUrl?: string }> = [
   { id: 'gemini', name: 'Google Gemini', hint: '适合轻量对话，支持 Gemini API Key', defaultModel: 'gemini-2.0-flash' },
@@ -45,7 +45,7 @@ export function AiSettingsPage() {
   return (
     <main className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-5xl">
-        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 mb-8"><ArrowLeft className="w-4 h-4" />返回学习中心</Link>
+        <Link to="/profile" className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 mb-8"><ArrowLeft className="w-4 h-4" />返回个人中心</Link>
         <div className="mb-8"><div className="flex items-center gap-3"><div className="w-11 h-11 rounded-2xl bg-[#171717] text-white flex items-center justify-center"><KeyRound className="w-5 h-5" /></div><div><h1 className="text-2xl font-semibold">AI 助教设置</h1><p className="text-sm text-neutral-500 mt-1">连接你自己的模型服务，Key 仅加密保存在你的账号下。</p></div></div></div>
         <div className="grid lg:grid-cols-[280px_1fr] gap-5">
           <section className="rounded-2xl border border-neutral-200 bg-white p-3 h-fit">

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ChatRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { GeminiService } from '../../common/gemini/gemini.service';
+import { AiProviderService } from '../../common/ai-provider/ai-provider.service';
 import { RagService, RagHit, RagSource } from './rag.service';
 import { AiConfigService, assertSafeAiBaseUrl } from '../ai/ai-config.service';
 
@@ -40,7 +40,7 @@ export interface AnswerResult {
  *
  * - 复用 ChatSession / ChatMessage 表, lessonId=null 即 scope=general.
  * - 不依赖 vector DB, rag.service 跑 Prisma contains 检索.
- * - Gemini 调通后 800 token 限制 (P2 quota 友好), 失败抛 ServiceUnavailableException,
+ * - OpenAI-compatible 服务调通后 800 token 限制，失败抛 ServiceUnavailableException,
  *   不允许向前端返假数据.
  */
 @Injectable()
@@ -50,7 +50,7 @@ export class ChatService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rag: RagService,
-    private readonly gemini: GeminiService,
+    private readonly provider: AiProviderService,
     @Optional() private readonly aiConfig?: AiConfigService,
   ) {}
 
@@ -137,7 +137,7 @@ export class ChatService {
         await this.prisma.chatMessage.delete({ where: { id: userMsg.id } });
       } catch (cleanupErr) {
         this.logger.error(
-          `failed to cleanup user message ${userMsg.id} after Gemini failure`,
+          `failed to cleanup user message ${userMsg.id} after AI provider failure`,
           cleanupErr as Error,
         );
       }
@@ -173,7 +173,7 @@ export class ChatService {
 
   private async generateForUser(userId: string, prompt: string): Promise<string> {
     const config = this.aiConfig ? await this.aiConfig.getUserActive(userId) : null;
-    if (!config) return this.gemini.generateText(prompt, { maxOutputTokens: 800, temperature: 0.4 });
+    if (!config) return this.provider.generateText(prompt, { maxOutputTokens: 800, temperature: 0.4 });
     const apiKey = config.apiKey ?? '';
     if (config.provider !== 'ollama' && !apiKey) throw new ServiceUnavailableException('AI Key 无效，请重新配置');
 

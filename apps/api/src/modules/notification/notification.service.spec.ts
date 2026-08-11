@@ -66,9 +66,11 @@ describe('NotificationService', () => {
         { id: 'n1', isRead: false },
         { id: 'n2', isRead: true },
       ]);
-      // total = unread match filter, unreadCount = total unread for badge
+      // v1.5.5 语义:
+      //   total       = 当前过滤范围(用户+软删+type/unreadOnly)的总条数, 用于分页
+      //   unreadCount = 用户站内总未读(忽略过滤), 用于 bell 角标
       mockPrisma.notification.count
-        .mockResolvedValueOnce(1) // total (with filter)
+        .mockResolvedValueOnce(5) // total (含已读 + 未读, 仅受 where 影响)
         .mockResolvedValueOnce(3); // unreadCount (bell badge)
 
       const result = await service.list('u1', { page: 1, limit: 20 });
@@ -76,7 +78,7 @@ describe('NotificationService', () => {
       expect(result.items).toHaveLength(2);
       expect(result.page).toBe(1);
       expect(result.limit).toBe(20);
-      expect(result.total).toBe(1);
+      expect(result.total).toBe(5);
       expect(result.unreadCount).toBe(3);
       expect(result.hasMore).toBe(false);
       // 软删过滤必须带上
@@ -88,42 +90,79 @@ describe('NotificationService', () => {
           }),
         }),
       );
+      // v1.5.5 回归: total 的 count 调用不能包含 isRead: false 覆盖
+      const totalCountCall = mockPrisma.notification.count.mock.calls[0][0];
+      expect(totalCountCall.where).not.toHaveProperty('isRead');
+      // unreadCount 的 count 调用必须包含 isRead: false, 且忽略 type/unreadOnly
+      const unreadCountCall = mockPrisma.notification.count.mock.calls[1][0];
+      expect(unreadCountCall.where).toEqual({
+        userId: 'u1',
+        isRead: false,
+        deletedAt: null,
+      });
     });
 
-    it('应支持 unreadOnly 过滤', async () => {
+    it('应支持 unreadOnly 过滤 (含 total 也按 isRead=false)', async () => {
       mockPrisma.notification.findMany.mockResolvedValue([]);
       mockPrisma.notification.count.mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
-      await service.list('u1', { unreadOnly: true });
+      const result = await service.list('u1', { unreadOnly: true });
 
+      // findMany 应当走 isRead=false
       expect(mockPrisma.notification.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ userId: 'u1', isRead: false }),
         }),
       );
+      // total 的 count 也应走 isRead=false (因为 where 含 isRead)
+      const totalCountCall = mockPrisma.notification.count.mock.calls[0][0];
+      expect(totalCountCall.where).toEqual(
+        expect.objectContaining({ userId: 'u1', isRead: false, deletedAt: null }),
+      );
+      expect(result.total).toBe(0);
     });
 
-    it('应支持 type 过滤 (除 all 外)', async () => {
+    it('应支持 type 过滤 (除 all 外), total 也按 type', async () => {
       mockPrisma.notification.findMany.mockResolvedValue([]);
-      mockPrisma.notification.count.mockResolvedValueOnce(0).mockResolvedValueOnce(0);
+      mockPrisma.notification.count
+        .mockResolvedValueOnce(7) // total = type=comment 全量
+        .mockResolvedValueOnce(3); // unreadCount = 用户总未读 (忽略 type)
 
-      await service.list('u1', { type: 'comment' });
+      const result = await service.list('u1', { type: 'comment' });
 
       expect(mockPrisma.notification.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ type: 'comment' }),
         }),
       );
+      // total 的 count 也带 type=comment
+      const totalCountCall = mockPrisma.notification.count.mock.calls[0][0];
+      expect(totalCountCall.where).toEqual(
+        expect.objectContaining({ userId: 'u1', type: 'comment', deletedAt: null }),
+      );
+      // unreadCount 不带 type (始终按用户全部未读)
+      const unreadCountCall = mockPrisma.notification.count.mock.calls[1][0];
+      expect(unreadCountCall.where).toEqual({
+        userId: 'u1',
+        isRead: false,
+        deletedAt: null,
+      });
+      expect(result.total).toBe(7);
+      expect(result.unreadCount).toBe(3);
     });
 
-    it('type=all 应不附加 type 条件', async () => {
+    it('type=all 应不附加 type 条件, total 是全量', async () => {
       mockPrisma.notification.findMany.mockResolvedValue([]);
-      mockPrisma.notification.count.mockResolvedValueOnce(0).mockResolvedValueOnce(0);
+      mockPrisma.notification.count.mockResolvedValueOnce(20).mockResolvedValueOnce(5);
 
-      await service.list('u1', { type: 'all' });
+      const result = await service.list('u1', { type: 'all' });
 
       const call = mockPrisma.notification.findMany.mock.calls[0][0];
       expect(call.where).not.toHaveProperty('type');
+      const totalCountCall = mockPrisma.notification.count.mock.calls[0][0];
+      expect(totalCountCall.where).not.toHaveProperty('type');
+      expect(result.total).toBe(20);
+      expect(result.unreadCount).toBe(5);
     });
 
     it('limit 应被 clamp 到 [1, 100], page < 1 视为 1', async () => {

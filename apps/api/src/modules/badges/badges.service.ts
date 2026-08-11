@@ -28,6 +28,12 @@ export class BadgesService {
     });
   }
 
+  async findAllAdmin() {
+    return this.prisma.badge.findMany({
+      orderBy: [{ category: 'asc' }, { orderIndex: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
   async findById(id: string) {
     const badge = await this.prisma.badge.findUnique({ where: { id } });
     if (!badge) throw new NotFoundException('Badge not found');

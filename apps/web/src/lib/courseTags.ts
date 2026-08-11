@@ -26,6 +26,6 @@ export function parseStringList(value?: string | null): string[] {
 
 export const parseCourseTags = parseStringList;
 
-export function firstCourseTag(value?: string | null, fallback = 'LLM 应用'): string {
-  return parseCourseTags(value)[0] ?? fallback;
+export function firstCourseTag(value?: string | null): string {
+  return parseCourseTags(value)[0] ?? '';
 }

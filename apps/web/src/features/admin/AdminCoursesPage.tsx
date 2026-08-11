@@ -3,18 +3,21 @@
  *
  * 两种模式(由 URL ?tab= 决定):
  *   1) /admin/courses           → 列表模式(保留原 AdminCoursesPage 的 list + 新增/导入)
- *   2) /admin/courses?tab=...   → 编辑模式(5 tab:info / chapters / practices / pricing / publish)
+ *   2) /admin/courses?tab=...   → 编辑模式(6 tab:info / instructors / chapters / practices / pricing / publish)
  *
- * 5 tab 全部接真后端:
- *   - info      PATCH /api/v1/courses/:id          基本信息
- *   - chapters  GET/POST/PATCH/DELETE /chapters + /lessons + /resources
- *                                                 模块树 + 课时 CRUD + 每课时资源 CRUD
- *   - practices GET/POST/PATCH/DELETE /api/v1/practices
- *   - pricing   PATCH /api/v1/courses/:id (costType + price)
- *   - publish   PATCH /api/v1/courses/:id (status)
+ * 6 tab 全部接真后端:
+ *   - info         PATCH /api/v1/courses/:id          基本信息
+ *   - instructors  GET/POST/DELETE /api/v1/admin/courses/:id/instructors
+ *                                                   讲师/导师挂载 (CourseInstructorLink)
+ *   - chapters     GET/POST/PATCH/DELETE /chapters + /lessons + /resources
+ *                                                   模块树 + 课时 CRUD + 每课时资源 CRUD
+ *   - practices    GET/POST/PATCH/DELETE /api/v1/practices
+ *   - pricing      PATCH /api/v1/courses/:id (costType + price)
+ *   - publish      PATCH /api/v1/courses/:id (status)
  *
  * v1.2.0 起:无前端 mock,无 hardcode 数据,所有写操作走后端。
  * v1.3.0 起:资源管理从「课程级 P2 占位 tab」迁到「课时面板内」,因为 Resource model 是 lesson 级。
+ * v1.4.0 起 (2026-08-04): 新增 instructors tab (讲师体系 e35d526 全链路)
  */
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -26,28 +29,9 @@ import {
   Link2,
   ChevronDown,
   ChevronRight,
-  Check,
   X,
-  Eye,
-  Save,
-  Send,
-  RotateCcw,
-  Upload,
-  Image as ImageIcon,
   Video as VideoIcon,
-  FileText,
-  Tag as TagIcon,
-  Clock as ClockIcon,
-  User as UserIcon,
-  Code,
-  Bold,
-  Italic,
-  Type,
-  ImagePlus,
-  Paperclip,
-  Sparkle,
   Pencil,
-  Calendar,
   Lock,
   Unlock,
   ExternalLink,
@@ -55,10 +39,11 @@ import {
 } from 'lucide-react';
 import api from '../../lib/api';
 import { useToast } from '../../components/auth/Toast';
+import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { instructorsApi } from '../../lib/instructorsApi';
 import { aiApi } from '../../lib/aiApi';
 import { AiGeneratePanel } from '../../components/AiGeneratePanel';
-import { coursesAdminApi, type Chapter, type ChapterLesson, type ChapterResource, type ResourceType } from '../../lib/coursesAdminApi';
+import { coursesAdminApi, type ChapterLesson, type ResourceType } from '../../lib/coursesAdminApi';
 import { practicesApi } from '../../lib/practicesApi';
 import { FileUploadButton } from '../../components/admin/FileUploadButton';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -98,7 +83,7 @@ function CourseListView({
     title: '',
     description: '',
     learningPoints: '',
-    instructor: '',
+    instructorId: '',
     level: 'Beginner',
     duration: '',
     thumbnail: '',
@@ -117,6 +102,11 @@ function CourseListView({
     },
   });
 
+  const { data: instructorOptions } = useQuery({
+    queryKey: ['admin-instructors', { forSelect: true }],
+    queryFn: () => instructorsApi.adminList({ limit: 100 }),
+  });
+
   const createMutation = useMutation({
     mutationFn: (payload: any) => api.post('/api/v1/courses', payload),
     onSuccess: () => {
@@ -127,7 +117,7 @@ function CourseListView({
         title: '',
         description: '',
         learningPoints: '',
-        instructor: '',
+        instructorId: '',
         level: 'Beginner',
         duration: '',
         thumbnail: '',
@@ -365,7 +355,8 @@ function CourseListView({
                 title: draft.title ?? '',
                 description: draft.description ?? '',
                 learningPoints: draft.learningPoints ?? '',
-                instructor: draft.instructor ?? '',
+                instructorId:
+                  instructorOptions?.items.find((item) => item.name === draft.instructor)?.id ?? '',
                 level: draft.level ?? 'Beginner',
                 duration: draft.duration ?? '',
                 thumbnail: draft.thumbnail ?? '',
@@ -380,7 +371,25 @@ function CourseListView({
 
           <div className="grid md:grid-cols-2 gap-4">
             <Field label={t('admin.courses.field.title', '课程标题')} required value={form.title} onChange={(v) => setForm({ ...form, title: v })} />
-            <Field label={t('admin.courses.field.instructor', '讲师')} required value={form.instructor} onChange={(v) => setForm({ ...form, instructor: v })} />
+            <div>
+              <Label>{t('admin.courses.field.instructor', '主讲讲师')}</Label>
+              <select
+                required
+                value={form.instructorId}
+                onChange={(e) => setForm({ ...form, instructorId: e.target.value })}
+                className="w-full px-4 py-3 bg-white dark:bg-neutral-100 border border-[#171717] dark:border-neutral-50 text-sm focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800"
+              >
+                <option value="">— 从讲师库选择 —</option>
+                {(instructorOptions?.items ?? []).map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}{item.title ? ` · ${item.title}` : ''}{!item.publishedAt ? ' · 草稿' : ''}
+                  </option>
+                ))}
+              </select>
+              {(instructorOptions?.items ?? []).length === 0 && (
+                <p className="mt-1.5 text-xs text-red-600">请先到「讲师管理」创建讲师。</p>
+              )}
+            </div>
             <div>
               <Label>{t('admin.courses.field.level', '难度')}</Label>
               <select
@@ -706,20 +715,18 @@ function InfoTab({ courseId }: { courseId: string }) {
   const [form, setForm] = useState<{
     title: string;
     description: string;
-    instructor: string;
     level: string;
     duration: string;
     thumbnail: string;
     industryId: string;
     categoryId: string;
-  }>({ title: '', description: '', instructor: '', level: 'Beginner', duration: '', thumbnail: '', industryId: '', categoryId: '' });
+  }>({ title: '', description: '', level: 'Beginner', duration: '', thumbnail: '', industryId: '', categoryId: '' });
 
   useEffect(() => {
     if (course) {
       setForm({
         title: course.title ?? '',
         description: course.description ?? '',
-        instructor: course.instructor ?? '',
         level: course.level ?? 'Beginner',
         duration: course.duration ?? '',
         thumbnail: course.thumbnail ?? '',
@@ -727,7 +734,7 @@ function InfoTab({ courseId }: { courseId: string }) {
         categoryId: course.categoryId ?? course.category?.id ?? '',
       });
     }
-  }, [course?.id, course?.title, course?.description, course?.instructor, course?.level, course?.duration, course?.thumbnail, course?.industryId, course?.categoryId]);
+  }, [course?.id, course?.title, course?.description, course?.level, course?.duration, course?.thumbnail, course?.industryId, course?.categoryId]);
 
   if (courseQuery.isLoading) {
     return <div className="p-8 text-center text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
@@ -769,12 +776,15 @@ function InfoTab({ courseId }: { courseId: string }) {
             onChange={(v) => setForm({ ...form, title: v })}
             required
           />
-          <BrutalField
-            label={t('admin.courses.field.instructor', '讲师')}
-            value={form.instructor}
-            onChange={(v) => setForm({ ...form, instructor: v })}
-            required
-          />
+          <div className="border border-[#171717] dark:border-neutral-50 px-4 py-3 text-sm">
+            <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-1">
+              主讲讲师
+            </div>
+            <div className="font-medium">{course?.instructor || '尚未关联'}</div>
+            <p className="mt-1 text-xs text-[#666666]">
+              讲师来自讲师库，请在「讲师挂载」中更换或增加导师。
+            </p>
+          </div>
           <BrutalSelect
             label={t('admin.courses.field.level', '难度')}
             value={form.level}
@@ -1499,26 +1509,6 @@ function LessonDetail({ lesson, onDelete }: { lesson: ChapterLesson; onDelete: (
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────
-// ResourcesTab — v1.3.0 起资源管理迁到 LessonDetail 内
-// (resource 是 lesson 级而非 course 级,放在课时面板更准确)
-// 保留函数兼容 router 引用,改返回 EmptyState 避免误点
-// ──────────────────────────────────────────────────────────────────────
-
-function ResourcesTab({ courseId: _courseId }: { courseId: string }) {
-  return (
-    <div className="border-2 border-[#171717] dark:border-neutral-50 dark:border-neutral-50 bg-white dark:bg-neutral-100 dark:bg-neutral-100 p-6">
-      <div className="border-2 border-dashed border-[#171717] dark:border-neutral-50 dark:border-neutral-50 p-12 text-center">
-        <FileText className="w-10 h-10 mx-auto mb-2 text-[#A3A3A3]" />
-        <p className="text-sm text-[#666666] dark:text-neutral-400 dark:text-neutral-400">资源已迁到「课程模块」tab</p>
-        <p className="text-[10px] text-[#666666] dark:text-neutral-400 dark:text-neutral-400 mt-1">
-            在课程模块里选中具体课时,在右侧课时详情面板的「附加资源」段管理
-        </p>
-      </div>
-    </div>
-  );
-}
-
 const EMPTY_PRACTICE_FORM = {
   title: '',
   description: '',
@@ -1832,10 +1822,11 @@ interface CourseInstructorLinkFull {
 
 function InstructorsTab({ courseId }: { courseId: string }) {
   const queryClient = useQueryClient();
-  const { showToast: _showToast } = useToast();
+  const { showToast } = useToast();
   const [newInstructorId, setNewInstructorId] = useState('');
   const [newRole, setNewRole] = useState<'instructor' | 'mentor'>('instructor');
   const [newIsPrimary, setNewIsPrimary] = useState(false);
+  const [pendingUnlink, setPendingUnlink] = useState<CourseInstructorLinkFull | null>(null);
 
   // 当前课程下所有讲师 link
   const linksQuery = useQuery({
@@ -1859,20 +1850,21 @@ function InstructorsTab({ courseId }: { courseId: string }) {
       queryClient.invalidateQueries({ queryKey: ['admin-course-instructors', courseId] });
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
       queryClient.invalidateQueries({ queryKey: ['courses'] });
-      _showToast('讲师已挂载', 'success');
+      showToast('讲师已挂载', 'success');
       setNewInstructorId('');
       setNewIsPrimary(false);
     },
-    onError: (e: any) => _showToast(`挂载失败: ${e?.response?.data?.message ?? e.message}`, 'error'),
+    onError: (e: any) => showToast(`挂载失败: ${e?.response?.data?.message ?? e.message}`, 'error'),
   });
 
   const unlinkMutation = useMutation({
     mutationFn: (linkId: string) => api.delete(`/api/v1/admin/courses/${courseId}/instructors/${linkId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-course-instructors', courseId] });
-      _showToast('已解除', 'success');
+      showToast('已解除', 'success');
+      setPendingUnlink(null);
     },
-    onError: (e: any) => _showToast(`解除失败: ${e?.response?.data?.message ?? e.message}`, 'error'),
+    onError: (e: any) => showToast(`解除失败: ${e?.response?.data?.message ?? e.message}`, 'error'),
   });
 
   if (linksQuery.isLoading || allInstructorsQuery.isLoading) {
@@ -1926,11 +1918,7 @@ function InstructorsTab({ courseId }: { courseId: string }) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm(`解除 ${link.instructor.name}?`)) {
-                      unlinkMutation.mutate(link.id);
-                    }
-                  }}
+                  onClick={() => setPendingUnlink(link)}
                   className="px-3 py-1.5 text-xs font-black uppercase text-error-500 hover:text-error-600 border border-error-500 hover:bg-error-50"
                 >
                   解除
@@ -2008,6 +1996,18 @@ function InstructorsTab({ courseId }: { courseId: string }) {
           唯一, 新挂为主讲会自动取消旧的。
         </p>
       </div>
+
+      {pendingUnlink && (
+        <ConfirmDialog
+          open={!!pendingUnlink}
+          onClose={() => setPendingUnlink(null)}
+          title={`解除讲师 ${pendingUnlink.instructor.name}?`}
+          description="解除后该讲师/导师不再出现在本课程中, 课程详情页会立即更新。"
+          variant="danger"
+          confirmText="解除"
+          onConfirm={() => unlinkMutation.mutate(pendingUnlink.id)}
+        />
+      )}
     </div>
   );
 }
@@ -2428,31 +2428,6 @@ function BrutalButton({
       onClick={onClick}
       disabled={disabled}
       className={`${base} ${sizeCls} ${variantCls} ${className}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function BrutalIconButton({
-  onClick,
-  children,
-  title,
-  className = '',
-  danger,
-}: {
-  onClick?: () => void;
-  children: React.ReactNode;
-  title?: string;
-  className?: string;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`p-1.5 ${danger ? 'text-[#A3A3A3] hover:text-red-600 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800' : 'text-[#A3A3A3] hover:text-[#171717] dark:text-neutral-50 hover:bg-[#EEEDE9] dark:bg-neutral-800 dark:hover:bg-neutral-800 dark:hover:bg-neutral-800'} transition-colors ${className}`}
     >
       {children}
     </button>

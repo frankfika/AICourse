@@ -32,28 +32,28 @@ export class CmsContentController {
   }
 
   // P2-5: 公开端点 30 req/sec (前台 boot 拉一批; admin / 公开访问可承受)
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('industries')
   @ApiOperation({ summary: '行业列表 (含 methodology)' })
   listIndustries(@Query('active') active?: string) {
     return this.cmsContentService.listIndustries(this.parseActive(active));
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('enterprise-methods')
   @ApiOperation({ summary: '企业方法论 3 步法' })
   listEnterpriseMethods(@Query('active') active?: string) {
     return this.cmsContentService.listEnterpriseMethods(this.parseActive(active));
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('testimonials')
   @ApiOperation({ summary: '学员故事 / 证言' })
   listTestimonials(@Query('active') active?: string) {
     return this.cmsContentService.listTestimonials(this.parseActive(active));
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('quick-prompts')
   @ApiOperation({ summary: 'AI 快捷 prompt' })
   listQuickPrompts(@Query('scope') scope?: string, @Query('active') active?: string) {
@@ -64,21 +64,21 @@ export class CmsContentController {
     });
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('course-categories')
   @ApiOperation({ summary: '课程分类 (6 类)' })
   listCourseCategories(@Query('active') active?: string) {
     return this.cmsContentService.listCourseCategories(this.parseActive(active));
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('popular-searches')
   @ApiOperation({ summary: '热门搜索词' })
   listPopularSearches(@Query('active') active?: string) {
     return this.cmsContentService.listPopularSearches(this.parseActive(active));
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('hot-keywords')
   @ApiOperation({ summary: '热词 (按 scope)' })
   listHotKeywords(@Query('scope') scope?: string, @Query('active') active?: string) {
@@ -89,7 +89,7 @@ export class CmsContentController {
     });
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('auth-providers')
   @ApiOperation({ summary: '第三方登录 provider 列表' })
   listAuthProviders() {
@@ -98,14 +98,14 @@ export class CmsContentController {
     return this.cmsContentService.listAuthProvidersPublic();
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('top-nav')
   @ApiOperation({ summary: '顶部导航项' })
   listTopNav(@Query('active') active?: string) {
     return this.cmsContentService.listTopNavItems(this.parseActive(active));
   }
 
-  @Throttle({ short: { limit: 30, ttl: 1000 } })
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('footer-columns')
   @ApiOperation({ summary: 'Footer 列' })
   listFooterColumns(@Query('active') active?: string) {

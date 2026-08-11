@@ -325,9 +325,11 @@ function CourseResultCard({ item }: { item: SearchResult }) {
       className="group rounded-xl bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 hover:border-[#171717] hover:shadow-md transition overflow-hidden flex flex-col"
     >
       <div className={`aspect-video bg-gradient-to-br ${getCourseCoverGradient(tags)} relative`}>
-        <span className="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium text-neutral-900">
-          {tags}
-        </span>
+        {tags && (
+          <span className="absolute top-3 left-3 text-xs px-2 py-0.5 rounded-full bg-neutral-0/90 dark:bg-neutral-0/90 font-medium text-neutral-900">
+            {tags}
+          </span>
+        )}
         {item.badge && (
           <span
             className={cn(

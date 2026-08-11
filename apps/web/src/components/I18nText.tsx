@@ -3,7 +3,7 @@
  *
  * 用途:替代组件里 `<>{'中文'}</>` 硬编码,统一走 useI18n().
  * props:
- *   - k:        i18n key (i18n_messages 表 / I18N_FALLBACK 静态表)
+ *   - k:        i18n key (i18n_messages 表)
  *   - default:  中文 fallback (即使后端没数据也不白屏)
  *   - args:     插值 map,支持 {name}/{count} 占位
  *   - as:       包裹元素 (默认 span, 也可改 'div' / 'h1' 等)
@@ -12,7 +12,7 @@
  * fallback 顺序 (跟 useI18n().t 一致):
  *   1) i18n_messages 真实翻译
  *   2) default prop
- *   3) I18N_FALLBACK 静态表
+ *   3) key 本身（便于发现缺失配置）
  *   4) key 本身 (调试可见)
  *
  * 用法:

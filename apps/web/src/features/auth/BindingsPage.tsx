@@ -17,13 +17,14 @@
  * identities 查询和解绑均走真实后端；该页面必须经过 AuthGuard。
  */
 import { useState } from 'react';
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Mail,
   Lock,
   Trash2,
   ShieldCheck,
   AlertTriangle,
+  ArrowLeft,
   RefreshCw,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
@@ -34,61 +35,24 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { ProviderButtons } from '../../components/auth/ProviderButtons';
 import { useToast } from '../../components/auth/Toast';
-import { useAuth } from '../../lib/auth/AuthProvider';
+import { useAuth } from '../../lib/auth/AuthContext';
 import { ApiError } from '../../lib/apiError';
 import { api } from '../../lib/api';
-import type { Identity } from '../../lib/auth/types';
-import { useAuthStore } from '../../stores/authStore';
-import { useList, usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import type { Identity, ProviderInfo } from '../../lib/auth/types';
+import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
-/**
- * Provider 视觉元数据
- * 跟 ProviderButtons 共用 LIST_FALLBACK['auth-providers'] 兜底(7 项)
- * (id → 名称 / 缩写 logo / 主色)
- */
-const FALLBACK_PROVIDER_META: Record<
-  string,
-  { label: string; icon: React.ReactNode; isPrimary?: boolean }
-> = {
-  email_password: {
-    label: '本地账号(邮箱 + 密码)',
-    icon: <Mail className="h-5 w-5" />,
-    isPrimary: true,
-  },
-  google: { label: 'Google', icon: <span className="font-bold text-sm">G</span> },
-  github: { label: 'GitHub', icon: <span className="font-bold text-sm">GH</span> },
-  wechat: { label: '微信', icon: <span className="font-bold text-sm">微</span> },
-  wecom: { label: '企业微信', icon: <span className="font-bold text-sm">企</span> },
-  feishu: { label: '飞书', icon: <span className="font-bold text-sm">飞</span> },
-  apple: { label: 'Apple', icon: <span className="font-bold text-sm"></span> },
-};
-
-/**
- * 提供 meta helper: 优先用 LIST_FALLBACK[auth-providers] (hook 拿不到时),
- * 再次用 FALLBACK_PROVIDER_META (默认 6 + 1)
- */
-function useProviderMeta(): Record<string, { label: string; icon: React.ReactNode; isPrimary?: boolean }> {
-  const { data } = useList<{ id: string; label: string; icon: string; isActive?: boolean }>('auth-providers');
-  if (data && data.length > 0) {
-    const map: Record<string, { label: string; icon: React.ReactNode; isPrimary?: boolean }> = {};
-    for (const p of data) {
-      if (p.isActive === false) continue;
-      // CMS keeps short ids (email/google/github), while auth identities use
-      // the provider ids (email_password/oauth.google/oauth.github).
-      const providerId = p.id === 'email'
-        ? 'email_password'
-        : ['google', 'github'].includes(p.id) ? `oauth.${p.id}` : p.id;
-      // 缩写: 取 label 第 1 个字符
-      const firstChar = (p.label || p.id).charAt(0);
-      map[providerId] = { label: p.label, icon: <span className="font-bold text-sm">{firstChar}</span> };
-    }
-    // email_password 是 primary,后端不一定返回;补回去
-    if (!map.email_password) {
-      map.email_password = FALLBACK_PROVIDER_META.email_password;
-    }
-    return map;
-  }
-  return FALLBACK_PROVIDER_META;
+function providerMetaFromCapabilities(
+  providers: ProviderInfo[],
+): Record<string, { label: string; icon: React.ReactNode }> {
+  return Object.fromEntries(providers.map((provider) => [
+    provider.id,
+    {
+      label: provider.label,
+      icon: provider.type === 'email_password'
+        ? <Mail className="h-5 w-5" />
+        : <span className="font-bold text-sm">{provider.label.charAt(0)}</span>,
+    },
+  ]));
 }
 
 /** ISO 时间 → "2025.08.14" 形式(跟 mock 一致) */
@@ -103,9 +67,7 @@ function formatDate(iso: string | undefined): string {
 }
 
 export function BindingsPage() {
-  const { identities, providers, isAuthenticating, bindProvider, unbindProvider, signOut } = useAuth();
-  // user 直接从 store 读, 不走 context, 跟其他页面(Layout, PurchaseModal)一致
-  const user = useAuthStore((s) => s.user);
+  const { user, identities, providers, isAuthenticating, bindProvider, unbindProvider, signOut } = useAuth();
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
   // P0 (audit 2026-07-24): 改用 ConfirmDialog, 跟 OrdersPage / NotificationsPage
@@ -121,9 +83,7 @@ export function BindingsPage() {
 
   const displayedIdentities: Identity[] = identities;
 
-  // CMS-driven provider meta(从 auth-providers 列表拿 label/icon)
-  // 必须在所有 early return 之前调用
-  const providerMeta = useProviderMeta();
+  const providerMeta = providerMetaFromCapabilities(providers);
   const { t } = useI18n();
   const { data: pageData } = usePageSettings('auth', ['h1_bindings']);
   const bindingsH1 = pickPage(pageData, 'h1_bindings', 'zh-CN', t('auth.h1_bindings', '绑定第三方账号,登录更便捷'));
@@ -147,7 +107,6 @@ export function BindingsPage() {
   }
 
   const handleUnbind = async (id: Identity) => {
-    const meta = providerMeta[id.provider];
     if (id.provider === 'email_password') {
       showToast(t('auth.toast.local_primary', '本地账号是主登录,无法解绑'), 'warning');
       return;
@@ -235,6 +194,12 @@ export function BindingsPage() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Link
+          to="/profile"
+          className="mb-6 inline-flex min-h-[44px] items-center gap-2 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+        >
+          <ArrowLeft className="h-4 w-4" /> 返回个人中心
+        </Link>
         {/* Header */}
         <header className="text-center mb-10">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-xp-100 text-xp-500">
@@ -403,9 +368,7 @@ export function BindingsPage() {
             </p>
           )}
           <p className="mt-3 text-[10px] text-neutral-400">
-            启用 / 停用某个 provider,改{' '}
-            <code className="px-1 font-mono">AUTH_PROVIDERS</code> 环境变量即可,无需改代码 ·
-            详细架构见 redesign-spec.md §9
+            登录方式由后台认证配置与部署凭据共同决定；未完成凭据配置的方式不会展示。
           </p>
         </section>
 

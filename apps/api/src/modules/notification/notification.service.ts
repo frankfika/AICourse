@@ -56,8 +56,16 @@ export class NotificationService {
   // ============================================================
 
   /**
-   * 列出当前用户通知 + 返回未读数。
+   * 列出当前用户通知 + 返回分页信息 + 未读数。
    * 软删过滤:默认隐藏 deletedAt 非空的。
+   *
+   * 字段语义(2026-08-08 修, v1.5.5):
+   *   - total      = 当前过滤范围内(用户+未删+type/unreadOnly)的总条数, 用于分页
+   *   - unreadCount = 用户站内总未读数(忽略 type / unreadOnly 过滤), 用于 bell 角标
+   *   - hasMore    = 当前页是否还有下一页(用 items.length === limit 推断, 不完全准确但够用)
+   *
+   * 之前 total 错误地统计"未读"(`{ ...where, isRead: false }`), 致使非 unreadOnly
+   * 筛选下的分页 total 永远小于真实总条数, 客户端分页器算不出真实页数。修。
    */
   async list(userId: string, q: ListNotificationsQuery = {}) {
     const page = Math.max(1, Number(q.page) || 1);
@@ -80,7 +88,9 @@ export class NotificationService {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.notification.count({ where: { ...where, isRead: false } }),
+      // total = 当前过滤范围的总条数(包含已读 + 未读, 仅受 where 的 type / unreadOnly 影响)
+      this.prisma.notification.count({ where }),
+      // unreadCount = 用户站内总未读, 始终忽略 type/unreadOnly 过滤, 给 bell 角标稳定
       this.prisma.notification.count({
         where: { userId, isRead: false, deletedAt: null },
       }),
@@ -90,7 +100,7 @@ export class NotificationService {
       items,
       page,
       limit,
-      total, // 满足当前过滤条件的"未读"总数
+      total, // 当前过滤范围的总条数(分页用)
       unreadCount, // 站内总未读(bell 角标用)
       hasMore: items.length === limit,
     };

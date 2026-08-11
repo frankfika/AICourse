@@ -27,7 +27,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Seo } from '../../components/Seo';
 import {
@@ -48,9 +48,8 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Button } from '../../components/ui/Button';
 import { QueryErrorState } from '../../components/QueryErrorState';
-import { I18nText } from '../../components/I18nText';
 import { cn } from '../../lib/cn';
-import { useEnum, useList, usePageSettings, useI18n, pickPage, LIST_FALLBACK } from '../../lib/cms';
+import { useEnum, useList, usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { usePagination } from '../../hooks/usePagination';
 import { firstCourseTag, parseCourseTags } from '../../lib/courseTags';
@@ -121,23 +120,17 @@ const DURATION_LABELS: Record<ReturnType<typeof durationBucket>, string> = {
   gt12: '12 小时以上',
 };
 
-// CMS-driven 6 分类(后端 course_categories 表 + LIST_FALLBACK 集中定义)
-// P0 (audit 2026-07-24): 删 inline FALLBACK_CATEGORIES, 改用 LIST_FALLBACK['course-categories']
-// (cms.ts:575 集中定义, 改一处生效)
+// 课程分类只来自后台 course_categories 表；空表显示空筛选，不伪造分类。
 function useCategories() {
   const { data } = useList<{ key: string; label: string; isActive?: boolean }>('course-categories');
-  if (data && data.length > 0) {
-    return data.filter((c) => c.isActive !== false).map((c) => ({ key: c.key, label: c.label }));
-  }
-  return (LIST_FALLBACK['course-categories'] as Array<{ key: string; label: string }>).map((c) => ({
-    key: c.key,
-    label: c.label,
-  }));
+  return (data ?? [])
+    .filter((category) => category.isActive !== false)
+    .map((category) => ({ key: category.key, label: category.label }));
 }
 
 const LEVELS: Array<Course['level']> = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 // P0 (audit 2026-07-24): 删 inline FALLBACK_LEVEL_LABELS, useEnum('course_level') 内部
-// __FALLBACK_ENUMS__ 已有 course_level fallback. levelLabel 调用方式不变.
+// course_level label 由 enum_translations 表提供。
 
 // =============================================================
 // 主组件
@@ -226,7 +219,12 @@ export function CourseListPage() {
         const courseTags = (c.tags ?? '').split(/[,，]/).map((t) => t.trim()).filter(Boolean);
         if (!courseTags.some((t) => selectedTags.has(t))) return false;
       }
-      if (selectedInstructors.size > 0 && !selectedInstructors.has(c.instructor)) return false;
+      // 讲师筛选: 优先看 courseLinks 里挂的讲师, fallback 老字符串字段
+      if (selectedInstructors.size > 0) {
+        const linkedNames = (c.courseLinks ?? []).map((l) => l.instructor.name);
+        const hits = [c.instructor, ...linkedNames].some((n) => selectedInstructors.has(n));
+        if (!hits) return false;
+      }
       if (minRating > 0 && (c.rating ?? 0) < minRating) return false;
       return true;
     });
@@ -253,7 +251,12 @@ export function CourseListPage() {
     if (!courses) return [];
     const counts = new Map<string, number>();
     for (const c of courses) {
-      counts.set(c.instructor, (counts.get(c.instructor) ?? 0) + 1);
+      // 优先用 courseLinks 里挂的讲师, fallback 老字符串字段
+      const names = (c.courseLinks ?? []).map((l) => l.instructor.name);
+      if (names.length === 0 && c.instructor) names.push(c.instructor);
+      for (const n of names) {
+        counts.set(n, (counts.get(n) ?? 0) + 1);
+      }
     }
     return [...counts.entries()].sort((a, b) => b[1] - a[1]);
   }, [courses]);
@@ -722,40 +725,37 @@ function CourseCardLink({ course }: { course: Course }) {
   const { getLabel: getLevelLabel } = useEnum('course_level');
   const levelLabel = (lv: Course['level']) => getLevelLabel(lv) || lv;
   const tags = parseCourseTags(course.tags);
-  const navigate = useNavigate();
-  // 2026-08-04: 卡片整体可点(跳课程详情), 讲师名字作为 inner Link 跳讲师页
-  // 不能用 <Link> 套 <Link> (HTML invalid), 改成 div + onClick 编程式跳转
+  // 卡片用覆盖层链接提供真实 href；讲师链接提升 z-index 保持独立可点。
+  // 这样既避免嵌套 <a>，也保留复制链接、新标签页和辅助技术语义。
   const courseHref = course.externalUrl && course.courseType === 'third_party'
     ? course.externalUrl
     : `/courses/${course.id}`;
   const isExternal = !!(course.externalUrl && course.courseType === 'third_party');
-  const primaryInstructor = course.courseLinks?.find((l) => l.isPrimary)?.instructor
-    ?? course.courseLinks?.[0]?.instructor;
   return (
-    <div
-      role="link"
-      tabIndex={0}
-      onClick={() => {
-        if (isExternal) {
-          window.open(courseHref, '_blank', 'noopener,noreferrer');
-        } else {
-          navigate(courseHref);
-        }
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          (e.currentTarget as HTMLElement).click();
-        }
-      }}
-      className="group bg-[#F5F4F0] border border-[#171717] hover:bg-[#EEEDE9] transition overflow-hidden flex flex-col cursor-pointer"
-    >
+    <div className="group relative bg-[#F5F4F0] border border-[#171717] hover:bg-[#EEEDE9] transition overflow-hidden flex flex-col">
+      {isExternal ? (
+        <a
+          href={courseHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`查看课程：${course.title}（外部网站）`}
+          className="absolute inset-0 z-[1] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#171717]"
+        />
+      ) : (
+        <Link
+          to={courseHref}
+          aria-label={`查看课程：${course.title}`}
+          className="absolute inset-0 z-[1] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#171717]"
+        />
+      )}
       <div
         className={`aspect-video bg-gradient-to-br ${getCourseCoverGradient(course.tags)} relative`}
       >
-        <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
-          {firstCourseTag(course.tags)}
-        </span>
+        {firstCourseTag(course.tags) && (
+          <span className="absolute top-3 left-3 text-xs px-2 py-0.5 bg-white/90 font-medium text-[#171717]">
+            {firstCourseTag(course.tags)}
+          </span>
+        )}
         <span className="absolute top-3 right-3 text-xs px-2 py-0.5 bg-cert-500 text-white font-medium">
           {levelLabel(course.level)}
         </span>
@@ -818,12 +818,11 @@ function CourseCardLink({ course }: { course: Course }) {
                 return (
                   <Link
                     to={`/instructors/${primary.slug}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="truncate text-[#171717] font-medium hover:underline"
+                    className="relative z-[2] truncate text-[#171717] font-medium hover:underline"
                   >
                     {primary.name}
                     {course.courseLinks && course.courseLinks.length > 1 && (
-                      <span className="text-[#666666] font-normal"> 等 {course.courseLinks.length} 位</span>
+                      <span className="text-[#666666] font-normal"> 等 {course.courseLinks.length - 1} 位</span>
                     )}
                   </Link>
                 );

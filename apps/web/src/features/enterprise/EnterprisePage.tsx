@@ -19,13 +19,12 @@ import {
   Briefcase,
 } from 'lucide-react';
 import api from '../../lib/api';
-import { useList, usePageSettings, useSiteSettings, useI18n, pickPage, pickSite, LIST_FALLBACK } from '../../lib/cms';
+import { useList, usePageSettings, useSiteSettings, useI18n, pickPage } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
 import { useAuthStore } from '../../stores/authStore';
 
-// CMS LIST_FALLBACK['enterprise-methods'] 用 icon 字符串名 (e.g. 'Target') 表示图标,
-// 这里建个 string→Component 映射表,这样 fallback 数组保持纯数据,不嵌 React component
+// CMS 表用 icon 字符串名（如 Target）表示图标，这里映射为组件。
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Target,
   GraduationCap,
@@ -115,7 +114,7 @@ export function EnterprisePage() {
     'cases.eyebrow', 'cases.headline', 'cases.tag', 'cases.eyebrow_us',
     'stat.active_learners', 'stat.total_courses', 'stat.total_projects', 'stat.total_degrees',
     'form.name', 'form.email', 'form.company', 'form.phone',
-    'form.team_size', 'form.topic', 'form.description',
+    'form.team_size', 'form.team_sizes', 'form.topic', 'form.description',
     'form.placeholder.topic', 'form.placeholder.description',
   ]);
   const { data: industriesData } = useList<{
@@ -127,22 +126,15 @@ export function EnterprisePage() {
     id: string; num: string; icon?: string; title: string; desc: string; bullets: string[];
     isActive?: boolean; orderIndex: number;
   }>('enterprise-methods');
-  const { data: teamSizesData } = useList<{ key?: string; label: string }>('team-sizes');
   const { data: siteData } = useSiteSettings(['brand.company.addresses']);
 
-  // 把 industries 8 宫格拉成 list — 数据源: API → LIST_FALLBACK.industries (无 inline 硬编码)
-  const industries = (industriesData && industriesData.length > 0
-    ? industriesData
-    : LIST_FALLBACK.industries as { key: string; label: string; description?: string | null; isActive?: boolean; orderIndex: number }[]
-  )
+  // 行业与方法论只来自后台 CMS 表；空表就显示空状态，不回退旧业务数据。
+  const industries = (industriesData ?? [])
     .filter((i) => i.isActive !== false)
     .map((i) => ({ label: i.label, desc: i.description ?? '' }));
 
   // 把 3 步法拉成 list — icon 字段是字符串名,ICON_MAP 映射到 lucide-react component
-  const methods = (methodsData && methodsData.length > 0
-    ? methodsData
-    : LIST_FALLBACK['enterprise-methods'] as { num: string; icon?: string; title: string; desc: string; bullets?: string[]; isActive?: boolean; orderIndex: number }[]
-  )
+  const methods = (methodsData ?? [])
     .filter((m) => m.isActive !== false)
     .map((m) => ({
       num: m.num,
@@ -152,11 +144,11 @@ export function EnterprisePage() {
       bullets: m.bullets ?? [],
     }));
 
-  // 团队规模选项 (CMS list 兜底,无 inline 数组)
-  const teamSizes = (teamSizesData && teamSizesData.length > 0
-    ? teamSizesData
-    : LIST_FALLBACK['team-sizes'] as { label: string }[]
-  ).map((s) => s.label);
+  // 团队规模来自 page_settings.enterprise.form.team_sizes。
+  const teamSizeSetting = entPages?.['form.team_sizes'];
+  const teamSizes = Array.isArray(teamSizeSetting?.items)
+    ? teamSizeSetting.items.filter((item: unknown): item is string => typeof item === 'string')
+    : [];
 
   // Hero copy
   const heroEyebrow = pickPage(entPages, 'hero.eyebrow', 'zh-CN', t('enterprise.eyebrow.hero', '/ Enterprise Training'));
@@ -177,7 +169,6 @@ export function EnterprisePage() {
   const casesTag = pickPage(entPages, 'cases.tag', 'zh-CN', t('enterprise.cases.tag', '示例 · 行业范围'));
   const casesEyebrowUs = pickPage(entPages, 'cases.eyebrow_us', 'zh-CN', t('enterprise.cases.eyebrow_us', 'Industries We Serve'));
   // Inquiry copy
-  const inquiryEyebrow = pickPage(entPages, 'inquiry.eyebrow', 'zh-CN', t('enterprise.eyebrow.inquiry.short', 'Get In Touch'));
   const inquiryEyebrowFull = pickPage(entPages, 'inquiry.eyebrow', 'zh-CN', t('enterprise.eyebrow.inquiry', 'Get In Touch'));
   const inquiryHeadline = pickPage(entPages, 'inquiry.headline', 'zh-CN', t('enterprise.headline.inquiry', 'Start\nThe\nConversation'));
   const inquiryHeadlineLines = inquiryHeadline.split('\n');

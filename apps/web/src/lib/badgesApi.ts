@@ -9,7 +9,7 @@ import type {
 
 export const badgesApi = {
   getAll: async (): Promise<Badge[]> => {
-    const response = await api.get('/api/v1/badges');
+    const response = await api.get('/api/v1/badges/admin/all');
     return response.data;
   },
 

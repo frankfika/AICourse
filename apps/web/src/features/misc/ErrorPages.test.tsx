@@ -12,7 +12,7 @@
  *   - 500 错误码生成稳定 (timestamp + 随机)
  *   - network 监听 online/offline 事件切换状态
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,6 +43,13 @@ function makeWrapper() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
+  qc.setQueryData(['cms', 'list', 'course-categories'], [
+    { key: 'llm', label: 'AI 大模型', isActive: true },
+    { key: 'ml', label: '机器学习', isActive: true },
+    { key: 'frontend', label: '前端开发', isActive: true },
+    { key: 'hackathon', label: '黑客松', isActive: true },
+  ]);
+  qc.setQueryData(['cms', 'i18n-messages', 'zh-CN'], {});
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={qc}>

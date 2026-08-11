@@ -1,137 +1,71 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
+import { BadGatewayException, ServiceUnavailableException } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { AiProviderService } from '../../common/ai-provider/ai-provider.service';
 import { AiService } from './ai.service';
-import { GeminiService } from '../../common/gemini/gemini.service';
-import { CourseLevel, CostType } from '@prisma/client';
+
+const courseDraft = {
+  title: 'RAG 系统实战',
+  description: '从检索到评测，完成一套可运行的 RAG 系统。',
+  learningPoints: '理解检索流程\n完成端到端项目',
+  instructor: '平台教研团队',
+  level: 'Advanced',
+  duration: '4 小时',
+  tags: 'RAG,LLM',
+  thumbnail: '',
+  costType: 'paid',
+  price: 199,
+  courseType: 'own',
+  externalUrl: '',
+};
+
+const degreeDraft = {
+  title: 'AI 全栈工程师',
+  description: '覆盖模型应用、工程交付与上线运维的体系化学习路径。',
+  learningPoints: '构建模型应用\n完成工程交付',
+  icon: 'sparkles',
+  costType: 'paid',
+  price: 1999,
+  thumbnail: '',
+  tags: 'AI,工程',
+};
 
 describe('AiService', () => {
   let service: AiService;
+  let generateText: jest.Mock;
 
   beforeEach(async () => {
+    generateText = jest.fn();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiService,
-        {
-          provide: ConfigService,
-          useValue: {
-            get: jest.fn(),
-          },
-        },
-        {
-          // 测试只走 fallback 路径, gemini 永远不被调到. 留个空 stub 占位.
-          provide: GeminiService,
-          useValue: { generateText: jest.fn() },
-        },
+        { provide: AiProviderService, useValue: { generateText } },
       ],
     }).compile();
-
-    service = module.get<AiService>(AiService);
+    service = module.get(AiService);
   });
 
-  describe('generateCourse — fallback path (no API key)', () => {
-    it('should return a valid course draft', async () => {
-      const result = await service.generateCourse('RAG 系统实战');
-      expect(result).toMatchObject({
-        title: expect.any(String),
-        description: expect.any(String),
-        learningPoints: expect.any(String),
-        instructor: expect.any(String),
-        level: expect.stringMatching(/Beginner|Intermediate|Advanced|Expert/),
-        duration: expect.any(String),
-        tags: expect.any(String),
-        thumbnail: expect.stringContaining('coresg-normal'),
-        costType: expect.stringMatching(/free|paid|charity/),
-        price: expect.any(Number),
-      });
-    });
-
-    it('should extract RAG tag from topic containing rag', async () => {
-      const result = await service.generateCourse('RAG 系统实战：企业知识库');
-      expect(result.tags).toContain('RAG');
-    });
-
-    it('should extract LLM tag from topic with llm', async () => {
-      const result = await service.generateCourse('LLM 大模型微调实战');
-      expect(result.tags).toContain('LLM');
-    });
-
-    it('should infer Beginner level for 入门 topic', async () => {
-      const result = await service.generateCourse('LLM 入门基础课');
-      expect(result.level).toBe(CourseLevel.Beginner);
-    });
-
-    it('should infer Expert level for 高级 topic', async () => {
-      const result = await service.generateCourse('RAG 高级调优专家课');
-      expect(result.level).toBe(CourseLevel.Expert);
-    });
-
-    it('should infer Expert level for 高阶 topic (legacy keyword)', async () => {
-      const result = await service.generateCourse('RAG 高阶调优专家课');
-      expect(result.level).toBe(CourseLevel.Expert);
-    });
-
-    it('should infer free costType when free in topic', async () => {
-      const result = await service.generateCourse('RAG 入门免费课程');
-      expect(result.costType).toBe(CostType.free);
-    });
-
-    it('should set price=0 for charity courses', async () => {
-      const result = await service.generateCourse('AI 公益课为乡村教师');
-      expect(result.costType).toBe(CostType.charity);
-      expect(result.price).toBe(0);
-    });
-
-    it('should default to own courseType for non-external hint', async () => {
-      const result = await service.generateCourse('RAG 系统');
-      expect(result.courseType).toBe('own');
-      expect(result.externalUrl).toBe('');
-    });
-
-    it('should infer external courseType when hint contains 外部 or URL', async () => {
-      const result = await service.generateCourse('OpenAI 配套视频课', '参考 https://cookbook.openai.com');
-      expect(result.courseType).toBe('external');
-      expect(result.externalUrl).toBe('https://cookbook.openai.com');
-    });
-
-    it('should set external courseType price to 99', async () => {
-      const result = await service.generateCourse('外部课', 'https://example.com');
-      expect(result.courseType).toBe('external');
-      expect(result.price).toBe(99);
-    });
-
-    it('should use advanced duration for Advanced level (实战 in topic)', async () => {
-      const result = await service.generateCourse('RAG 系统实战');
-      // "实战" in topic -> Advanced -> "4 小时"
-      expect(result.level).toBe(CourseLevel.Advanced);
-      expect(result.duration).toBe('4 小时');
-    });
-
-    it('should use intermediate duration for Intermediate level (default)', async () => {
-      const result = await service.generateCourse('RAG 系统');
-      // No level keyword -> default Intermediate -> "2 小时"
-      expect(result.level).toBe(CourseLevel.Intermediate);
-      expect(result.duration).toBe('2 小时');
-    });
+  it('returns a schema-validated course draft from the configured provider', async () => {
+    generateText.mockResolvedValue(JSON.stringify(courseDraft));
+    await expect(service.generateCourse('RAG 系统实战')).resolves.toEqual(courseDraft);
   });
 
-  describe('generateDegree — fallback path', () => {
-    it('should return a valid degree draft', async () => {
-      const result = await service.generateDegree('AI 全栈工程师');
-      expect(result).toMatchObject({
-        title: expect.any(String),
-        description: expect.any(String),
-        learningPoints: expect.any(String),
-        icon: expect.any(String),
-        costType: expect.stringMatching(/free|paid|charity/),
-        price: expect.any(Number),
-        thumbnail: expect.stringContaining('coresg-normal'),
-        tags: expect.any(String),
-      });
-    });
+  it('returns a schema-validated degree draft from the configured provider', async () => {
+    generateText.mockResolvedValue(`\`\`\`json\n${JSON.stringify(degreeDraft)}\n\`\`\``);
+    await expect(service.generateDegree('AI 全栈工程师')).resolves.toEqual(degreeDraft);
+  });
 
-    it('should extract Agent tag from topic with agent', async () => {
-      const result = await service.generateDegree('Agent 智能体开发');
-      expect(result.tags).toContain('Agent');
-    });
+  it('exposes provider outages instead of fabricating a rule-based draft', async () => {
+    generateText.mockRejectedValue(new ServiceUnavailableException('未配置可用的 AI Provider'));
+    await expect(service.generateCourse('RAG')).rejects.toThrow(ServiceUnavailableException);
+  });
+
+  it('rejects empty provider output', async () => {
+    generateText.mockResolvedValue('');
+    await expect(service.generateCourse('RAG')).rejects.toThrow(BadGatewayException);
+  });
+
+  it('rejects malformed or incomplete provider output', async () => {
+    generateText.mockResolvedValue('{"title":"只有标题"}');
+    await expect(service.generateDegree('AI')).rejects.toThrow(BadGatewayException);
   });
 });

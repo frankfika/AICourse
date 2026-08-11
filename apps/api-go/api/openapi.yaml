@@ -1,0 +1,6646 @@
+openapi: 3.0.0
+paths:
+  /api/v1/audit-logs:
+    get:
+      operationId: AuditLogController_list_v1
+      parameters:
+      - name: userId
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: entity
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: action
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: relatedUserId
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 审计日志列表(分页 + 过滤)
+      tags:
+      - audit-logs
+  /api/v1/auth/providers:
+    get:
+      operationId: AuthController_listProviders_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/password-reset/capability:
+    get:
+      operationId: AuthController_passwordResetCapability_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/password-reset/request:
+    post:
+      operationId: AuthController_requestPasswordReset_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestDto'
+      responses:
+        '202':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/password-reset/confirm:
+    post:
+      operationId: AuthController_confirmPasswordReset_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmDto'
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/identities:
+    get:
+      operationId: AuthController_listIdentities_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/identities/{id}:
+    delete:
+      operationId: AuthController_unlinkIdentity_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/{providerId}/start:
+    get:
+      operationId: AuthController_start_v1
+      parameters:
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/{providerId}/link/start:
+    get:
+      operationId: AuthController_startLink_v1
+      parameters:
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/{providerId}/link/callback:
+    post:
+      operationId: AuthController_linkCallback_v1
+      parameters:
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthCallbackDto'
+      responses:
+        '201':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/register:
+    post:
+      operationId: AuthController_register_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDto'
+      responses:
+        '201':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/login:
+    post:
+      operationId: AuthController_login_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/refresh:
+    post:
+      operationId: AuthController_refresh_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/logout:
+    post:
+      operationId: AuthController_logout_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/{providerId}:
+    post:
+      operationId: AuthController_authenticate_v1
+      parameters:
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/auth/{providerId}/callback:
+    post:
+      operationId: AuthController_callback_v1
+      parameters:
+      - name: providerId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthCallbackDto'
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Auth
+  /api/v1/users/me:
+    get:
+      operationId: UsersController_getMe_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取当前登录用户信息
+      tags:
+      - users
+  /api/v1/users:
+    get:
+      operationId: UsersController_findAll_v1
+      parameters:
+      - name: role
+        required: false
+        in: query
+        description: 按角色过滤
+        schema:
+          enum:
+          - admin
+          - student
+          - instructor
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: 邮箱/姓名模糊搜索
+        schema:
+          type: string
+      - name: status
+        required: false
+        in: query
+        schema:
+          enum:
+          - active
+          - disabled
+          - all
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: 每页大小（默认 20）
+        schema: {}
+      - name: page
+        required: false
+        in: query
+        description: 页码（默认 1）
+        schema: {}
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 用户列表（管理员）
+      tags:
+      - users
+    post:
+      operationId: UsersController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建用户（管理员）
+      tags:
+      - users
+  /api/v1/users/{id}:
+    get:
+      operationId: UsersController_findOne_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 用户ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取指定用户信息（管理员）
+      tags:
+      - users
+    patch:
+      operationId: UsersController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 用户ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新用户（自己可改自己；管理员可改任意）
+      tags:
+      - users
+    delete:
+      operationId: UsersController_delete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 用户ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除用户（管理员）
+      tags:
+      - users
+  /api/v1/users/me/change-password:
+    post:
+      operationId: UsersController_changePassword_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 修改当前用户密码并吊销其他会话
+      tags:
+      - users
+  /api/v1/users/{id}/reset-password:
+    post:
+      operationId: UsersController_resetPassword_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 生成一次性临时密码并吊销该用户全部会话（管理员）
+      tags:
+      - users
+  /api/v1/users/{id}/restore:
+    post:
+      operationId: UsersController_restore_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 恢复已停用用户（管理员）
+      tags:
+      - users
+  /api/v1/users/{id}/grant-course:
+    post:
+      operationId: UsersController_grantCourseAccess_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 用户ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrantCourseAccessDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 给用户授权课程访问（管理员）
+      tags:
+      - users
+  /api/v1/users/{id}/grant-degree:
+    post:
+      operationId: UsersController_grantDegreeAccess_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 用户ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GrantDegreeAccessDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 给用户授权学位访问（管理员）
+      tags:
+      - users
+  /api/v1/courses:
+    get:
+      operationId: CoursesController_findAll_v1
+      parameters:
+      - name: sort
+        required: false
+        in: query
+        schema:
+          enum:
+          - newest
+          - recent
+          - rating
+          - popular
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: 标题/描述/讲师模糊搜索
+        schema: {}
+      - name: courseType
+        required: false
+        in: query
+        description: 课程类型过滤
+        schema:
+          enum:
+          - own
+          - partner
+          - public
+          - third_party
+          type: string
+      - name: status
+        required: false
+        in: query
+        description: 课程状态过滤
+        schema:
+          enum:
+          - draft
+          - published
+          - archived
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取课程列表（公开）
+      tags:
+      - courses
+    post:
+      operationId: CoursesController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCourseDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建课程（管理员）
+      tags:
+      - courses
+  /api/v1/courses/{id}:
+    get:
+      operationId: CoursesController_findOne_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取课程详情（公开；管理员可见草稿）
+      tags:
+      - courses
+    patch:
+      operationId: CoursesController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCourseDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新课程（管理员）
+      tags:
+      - courses
+    delete:
+      operationId: CoursesController_delete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除课程（管理员）
+      tags:
+      - courses
+  /api/v1/courses/{id}/degrees:
+    post:
+      operationId: CoursesController_linkDegrees_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkDegreesDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 把课程追加到指定学位末尾（管理员）
+      tags:
+      - courses
+  /api/v1/courses/{courseId}/chapters:
+    get:
+      operationId: ChaptersController_list_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 列出课程章节(含 lessons + resources)
+      tags:
+      - chapters
+    post:
+      operationId: ChaptersController_create_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 新建章节
+      tags:
+      - chapters
+  /api/v1/courses/chapters/{id}:
+    patch:
+      operationId: ChaptersController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 改章节
+      tags:
+      - chapters
+    delete:
+      operationId: ChaptersController_remove_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 软删章节(同时级联软删 lessons)
+      tags:
+      - chapters
+  /api/v1/courses/{courseId}/chapters/reorder:
+    post:
+      operationId: ChaptersController_reorder_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 批量重排章节顺序
+      tags:
+      - chapters
+  /api/v1/chapters/{chapterId}/lessons:
+    get:
+      operationId: LessonsController_list_v1
+      parameters:
+      - name: chapterId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 列出章节下课时
+      tags:
+      - lessons
+    post:
+      operationId: LessonsController_create_v1
+      parameters:
+      - name: chapterId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLessonDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 新建课时
+      tags:
+      - lessons
+  /api/v1/chapters/lessons/{id}:
+    patch:
+      operationId: LessonsController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLessonDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 改课时
+      tags:
+      - lessons
+    delete:
+      operationId: LessonsController_remove_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 软删课时
+      tags:
+      - lessons
+  /api/v1/chapters/{chapterId}/lessons/reorder:
+    post:
+      operationId: LessonsController_reorder_v1
+      parameters:
+      - name: chapterId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 批量重排课时顺序
+      tags:
+      - lessons
+  /api/v1/lessons/{lessonId}/resources:
+    get:
+      operationId: ResourcesController_list_v1
+      parameters:
+      - name: lessonId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 列出课时资源
+      tags:
+      - resources
+    post:
+      operationId: ResourcesController_create_v1
+      parameters:
+      - name: lessonId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateResourceDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 新建资源
+      tags:
+      - resources
+  /api/v1/resources/{id}:
+    patch:
+      operationId: ResourceItemController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateResourceDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 改资源
+      tags:
+      - resources
+    delete:
+      operationId: ResourceItemController_remove_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 软删资源
+      tags:
+      - resources
+  /api/v1/degrees:
+    get:
+      operationId: DegreesController_findAll_v1
+      parameters:
+      - name: status
+        required: false
+        in: query
+        description: 状态过滤
+        schema:
+          enum:
+          - draft
+          - published
+          - archived
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: 标题/描述模糊搜索
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取纳米学位列表（公开）
+      tags:
+      - degrees
+    post:
+      operationId: DegreesController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDegreeDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建纳米学位（管理员）
+      tags:
+      - degrees
+  /api/v1/degrees/{id}:
+    get:
+      operationId: DegreesController_findOne_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 学位ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取纳米学位详情（公开；管理员可见草稿）
+      tags:
+      - degrees
+    patch:
+      operationId: DegreesController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 学位ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDegreeDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新纳米学位（管理员）
+      tags:
+      - degrees
+    delete:
+      operationId: DegreesController_delete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 学位ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除纳米学位（管理员）
+      tags:
+      - degrees
+  /api/v1/degrees/{id}/courses:
+    post:
+      operationId: DegreesController_linkCourses_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 学位ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkCoursesDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 给学位绑定课程（管理员）
+      tags:
+      - degrees
+  /api/v1/enrollments/me:
+    get:
+      operationId: EnrollmentsController_getMyEnrollments_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取我的全部注册记录
+      tags:
+      - enrollments
+  /api/v1/enrollments/courses/{id}/free:
+    post:
+      operationId: EnrollmentsController_enrollFreeCourse_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 注册免费课程
+      tags:
+      - enrollments
+  /api/v1/badges:
+    get:
+      operationId: BadgesController_findAll_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: 获取全部启用徽章（公开）
+      tags:
+      - badges
+    post:
+      operationId: BadgesController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBadgeDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建徽章（管理员）
+      tags:
+      - badges
+  /api/v1/badges/me:
+    get:
+      operationId: BadgesController_getMyBadges_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取我的徽章墙（含进度）
+      tags:
+      - badges
+  /api/v1/badges/{id}:
+    patch:
+      operationId: BadgesController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 徽章ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBadgeDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新徽章（管理员）
+      tags:
+      - badges
+    delete:
+      operationId: BadgesController_delete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 徽章ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除徽章（管理员）
+      tags:
+      - badges
+  /api/v1/badges/admin/stats:
+    get:
+      operationId: BadgesController_getAdminStats_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 管理员数据看板
+      tags:
+      - badges
+  /api/v1/points/me:
+    get:
+      operationId: PointsController_getMyPoints_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取我的积分、等级与最近流水
+      tags:
+      - points
+  /api/v1/practices/courses/{courseId}:
+    get:
+      operationId: PracticesController_getProjectsByCourse_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取课程的实践项目列表
+      tags:
+      - practices
+  /api/v1/practices/courses/{courseId}/access:
+    get:
+      operationId: PracticesController_getAccessibleProjectsByCourse_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取当前用户可访问的课程实践项目
+      tags:
+      - practices
+  /api/v1/practices/admin/courses/{courseId}:
+    get:
+      operationId: PracticesController_getAdminProjectsByCourse_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取课程的全部实践项目（管理员）
+      tags:
+      - practices
+  /api/v1/practices/{id}:
+    get:
+      operationId: PracticesController_getProject_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 项目ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取实践项目详情
+      tags:
+      - practices
+    patch:
+      operationId: PracticesController_updateProject_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 项目ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePracticeProjectDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新实践项目（管理员）
+      tags:
+      - practices
+    delete:
+      operationId: PracticesController_deleteProject_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 项目ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除实践项目（管理员）
+      tags:
+      - practices
+  /api/v1/practices:
+    post:
+      operationId: PracticesController_createProject_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePracticeProjectDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建实践项目（管理员）
+      tags:
+      - practices
+  /api/v1/practices/user/progress:
+    get:
+      operationId: PracticesController_getUserProgress_v1
+      parameters:
+      - name: courseId
+        required: false
+        in: query
+        description: 可选：按课程筛选
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取用户的实践进度
+      tags:
+      - practices
+  /api/v1/practices/{id}/start:
+    post:
+      operationId: PracticesController_startProject_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 项目ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 开始实践项目
+      tags:
+      - practices
+  /api/v1/practices/{id}/complete:
+    post:
+      operationId: PracticesController_completeProject_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 项目ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletePracticeDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 完成实践项目
+      tags:
+      - practices
+  /api/v1/practices/{id}/skip:
+    post:
+      operationId: PracticesController_skipProject_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 项目ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 跳过实践项目
+      tags:
+      - practices
+  /api/v1/progress/me:
+    get:
+      operationId: ProgressController_getMyProgress_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取我的全部学习进度
+      tags:
+      - progress
+  /api/v1/progress/me/stats:
+    get:
+      operationId: ProgressController_getMyStats_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取我的学习统计（仪表盘）
+      tags:
+      - progress
+  /api/v1/progress/courses/{courseId}:
+    get:
+      operationId: ProgressController_getCourseProgress_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取我在某课程的进度
+      tags:
+      - progress
+  /api/v1/progress/lessons/{lessonId}/complete:
+    post:
+      operationId: ProgressController_completeLesson_v1
+      parameters:
+      - name: lessonId
+        required: true
+        in: path
+        description: 课时ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 标记课时完成
+      tags:
+      - progress
+  /api/v1/certificates:
+    get:
+      operationId: CertificatesController_list_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 我的证书列表(按 issuedAt DESC)
+      tags:
+      - certificates
+  /api/v1/certificates/verify/{serial}:
+    get:
+      operationId: CertificatesController_verify_v1
+      parameters:
+      - name: serial
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 公开验证(匿名可访问,按 serial number)
+      tags:
+      - certificates
+  /api/v1/certificates/{id}:
+    get:
+      operationId: CertificatesController_findOne_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 证书详情(公开可访问)
+      tags:
+      - certificates
+  /api/v1/certificates/revoke/{id}:
+    post:
+      operationId: CertificatesController_revoke_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 管理员撤销证书
+      tags:
+      - certificates
+  /api/v1/notifications:
+    get:
+      operationId: NotificationController_list_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 我的通知列表 + 未读数
+      tags:
+      - notifications
+  /api/v1/notifications/unread-count:
+    get:
+      operationId: NotificationController_unreadCount_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 未读通知数(bell 角标)
+      tags:
+      - notifications
+  /api/v1/notifications/{id}/read:
+    post:
+      operationId: NotificationController_markRead_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 标已读
+      tags:
+      - notifications
+  /api/v1/notifications/read-all:
+    post:
+      operationId: NotificationController_markAllRead_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 全部标已读
+      tags:
+      - notifications
+  /api/v1/notifications/{id}:
+    delete:
+      operationId: NotificationController_softDelete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 软删通知
+      tags:
+      - notifications
+  /api/v1/notifications/clear-read:
+    post:
+      operationId: NotificationController_clearRead_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 清空已读(批量软删已读通知)
+      tags:
+      - notifications
+  /api/v1/hackathons:
+    get:
+      operationId: HackathonsController_findAll_v1
+      parameters:
+      - name: status
+        required: false
+        in: query
+        schema:
+          enum:
+          - upcoming
+          - active
+          - judging
+          - finished
+          - cancelled
+          type: string
+      - name: search
+        required: false
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取黑客松列表
+      tags:
+      - hackathons
+    post:
+      operationId: HackathonsController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHackathonDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建黑客松（管理员）
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}:
+    get:
+      operationId: HackathonsController_findOne_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取黑客松详情
+      tags:
+      - hackathons
+    patch:
+      operationId: HackathonsController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHackathonDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新黑客松（管理员）
+      tags:
+      - hackathons
+    delete:
+      operationId: HackathonsController_delete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除黑客松（管理员）
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/register:
+    post:
+      operationId: HackathonsController_register_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 报名黑客松
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/cancel:
+    post:
+      operationId: HackathonsController_cancelRegistration_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 取消报名
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/my-registration:
+    get:
+      operationId: HackathonsController_getMyRegistration_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取当前用户报名状态
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/announcements:
+    get:
+      operationId: HackathonsController_getAnnouncements_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取黑客松公告
+      tags:
+      - hackathons
+    post:
+      operationId: HackathonsController_createAnnouncement_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAnnouncementDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 发布公告（管理员）
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/teams:
+    get:
+      operationId: HackathonsController_getTeams_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 获取队伍列表
+      tags:
+      - hackathons
+    post:
+      operationId: HackathonsController_createTeam_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeamDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建队伍
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/teams/{teamId}/join:
+    post:
+      operationId: HackathonsController_joinTeam_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      - name: teamId
+        required: true
+        in: path
+        description: 队伍ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 加入队伍
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/teams/{teamId}/leave:
+    post:
+      operationId: HackathonsController_leaveTeam_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      - name: teamId
+        required: true
+        in: path
+        description: 队伍ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 退出队伍
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/submissions:
+    get:
+      operationId: HackathonsController_getMySubmissions_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取我的作品
+      tags:
+      - hackathons
+    post:
+      operationId: HackathonsController_createSubmission_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubmissionDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建作品
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/submissions/all:
+    get:
+      operationId: HackathonsController_getAllSubmissions_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取所有作品（管理员/评委）
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/submissions/{submissionId}:
+    patch:
+      operationId: HackathonsController_updateSubmission_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      - name: submissionId
+        required: true
+        in: path
+        description: 作品ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubmissionDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新作品
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/submissions/{submissionId}/judge:
+    post:
+      operationId: HackathonsController_judgeSubmission_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      - name: submissionId
+        required: true
+        in: path
+        description: 作品ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JudgeSubmissionDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 作品评分（管理员/评委）
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/judges:
+    get:
+      operationId: HackathonsController_listJudges_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 列出黑客松评委
+      tags:
+      - hackathons
+    post:
+      operationId: HackathonsController_addJudge_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJudgeDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 新增评委（管理员）
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/judges/{judgeId}:
+    patch:
+      operationId: HackathonsController_updateJudge_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      - name: judgeId
+        required: true
+        in: path
+        description: 评委ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateJudgeDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新评委（管理员）
+      tags:
+      - hackathons
+    delete:
+      operationId: HackathonsController_removeJudge_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      - name: judgeId
+        required: true
+        in: path
+        description: 评委ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除评委（管理员）
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/sponsors:
+    get:
+      operationId: HackathonsController_listSponsors_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 列出黑客松赞助商
+      tags:
+      - hackathons
+    post:
+      operationId: HackathonsController_addSponsor_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSponsorDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 新增赞助商（管理员）
+      tags:
+      - hackathons
+  /api/v1/hackathons/{id}/sponsors/{sponsorId}:
+    patch:
+      operationId: HackathonsController_updateSponsor_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      - name: sponsorId
+        required: true
+        in: path
+        description: 赞助商ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSponsorDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新赞助商（管理员）
+      tags:
+      - hackathons
+    delete:
+      operationId: HackathonsController_removeSponsor_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 黑客松ID
+        schema:
+          type: string
+      - name: sponsorId
+        required: true
+        in: path
+        description: 赞助商ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除赞助商（管理员）
+      tags:
+      - hackathons
+  /api/v1/orders/me:
+    get:
+      operationId: OrdersController_myOrders_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 我的订单
+      tags:
+      - orders
+  /api/v1/orders/{id}:
+    get:
+      operationId: OrdersController_findOne_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 单订单详情
+      tags:
+      - orders
+  /api/v1/orders:
+    post:
+      operationId: OrdersController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建订单（免费商品会直接注册）
+      tags:
+      - orders
+  /api/v1/orders/{id}/pay:
+    post:
+      operationId: OrdersController_pay_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MockPayDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 开发环境模拟支付（生产环境关闭）
+      tags:
+      - orders
+  /api/v1/orders/{id}/cancel:
+    post:
+      operationId: OrdersController_cancel_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 取消未支付订单
+      tags:
+      - orders
+  /api/v1/orders/{id}/refund:
+    post:
+      operationId: OrdersController_refund_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundOrderDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 开发环境模拟退款（生产环境关闭）
+      tags:
+      - orders
+  /api/v1/ai/generate-course:
+    post:
+      operationId: AiController_generateCourse_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateCourseDto'
+      responses:
+        '201':
+          description: ''
+      tags:
+      - Ai
+  /api/v1/ai/generate-degree:
+    post:
+      operationId: AiController_generateDegree_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateDegreeDto'
+      responses:
+        '201':
+          description: ''
+      tags:
+      - Ai
+  /api/v1/admin/ai/config:
+    get:
+      operationId: AiConfigController_list_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 列所有 AI provider 配置 (key 仅返末 4 位)
+      tags:
+      - admin/ai-config
+    put:
+      operationId: AiConfigController_upsert_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: upsert 一个 provider (传入明文 apiKey, 写库前加密)
+      tags:
+      - admin/ai-config
+  /api/v1/admin/ai/config/{provider}:
+    delete:
+      operationId: AiConfigController_remove_v1
+      parameters:
+      - name: provider
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除一个 provider
+      tags:
+      - admin/ai-config
+  /api/v1/admin/ai/config/test:
+    post:
+      operationId: AiConfigController_test_v1
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 用当前 active gemini 调一次最小 prompt, 验证 key + 网络
+      tags:
+      - admin/ai-config
+  /api/v1/ai/config/providers:
+    get:
+      operationId: AiUserConfigController_list_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      tags:
+      - ai-config
+    put:
+      operationId: AiUserConfigController_upsert_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      tags:
+      - ai-config
+  /api/v1/ai/config/providers/{provider}:
+    delete:
+      operationId: AiUserConfigController_remove_v1
+      parameters:
+      - name: provider
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      tags:
+      - ai-config
+  /api/v1/uploads/sign:
+    post:
+      operationId: UploadsController_sign_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUploadDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 申请一个 presigned PUT URL (前端直传 MinIO/S3)
+      tags:
+      - uploads
+  /api/v1/uploads/complete:
+    post:
+      operationId: UploadsController_complete_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteUploadDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 确认上传完成, 把 publicUrl 写到目标 entity 字段
+      tags:
+      - uploads
+  /api/v1/enterprise/inquiries:
+    post:
+      operationId: EnterpriseController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnterpriseInquiryDto'
+      responses:
+        '201':
+          description: ''
+      tags:
+      - Enterprise
+    get:
+      operationId: EnterpriseController_findAll_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Enterprise
+  /api/v1/enterprise/inquiries/{id}/status:
+    patch:
+      operationId: EnterpriseController_updateStatus_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInquiryStatusDto'
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Enterprise
+  /api/v1/enterprise/inquiries/{id}:
+    delete:
+      operationId: EnterpriseController_delete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      tags:
+      - Enterprise
+  /api/v1/courses/import-from-url:
+    post:
+      operationId: UrlImportController_importFromUrl_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportFromUrlDto'
+      responses:
+        '201':
+          description: ''
+      tags:
+      - UrlImport
+  /api/v1/courses/import-batch-from-urls:
+    post:
+      operationId: UrlImportController_importBatch_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchImportFromUrlDto'
+      responses:
+        '201':
+          description: ''
+      tags:
+      - UrlImport
+  /api/v1/admin/stats:
+    get:
+      operationId: AdminController_getStats_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 后台看板统计(KPI / 图表 / 待办 / 系统状态)
+      tags:
+      - admin
+  /api/v1/courses/{id}/reviews:
+    get:
+      operationId: CoursesReviewsController_list_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: 页码
+        schema:
+          minimum: 1
+          default: 1
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: 每页大小 (1-50)
+        schema:
+          minimum: 1
+          maximum: 50
+          default: 10
+          type: number
+      responses:
+        '200':
+          description: ''
+      summary: 获取课程评价列表（公开）
+      tags:
+      - reviews
+    post:
+      operationId: CoursesReviewsController_create_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 课程ID
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 写课程评价（登录用户）
+      tags:
+      - reviews
+  /api/v1/reviews/{id}/helpful:
+    post:
+      operationId: ReviewsController_helpful_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 评价ID
+        schema:
+          type: string
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 给评价点赞（登录用户）
+      tags:
+      - reviews
+  /api/v1/reviews:
+    get:
+      operationId: ReviewsController_findAll_v1
+      parameters:
+      - name: onlyDeleted
+        required: false
+        in: query
+        description: 只显示已软删评价
+        schema: {}
+      - name: rating
+        required: false
+        in: query
+        description: 按评分过滤（1-5）
+        schema: {}
+      - name: courseId
+        required: false
+        in: query
+        description: 按课程过滤
+        schema: {}
+      - name: limit
+        required: false
+        in: query
+        description: 每页大小（默认 20）
+        schema: {}
+      - name: page
+        required: false
+        in: query
+        description: 页码（默认 1）
+        schema: {}
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 全量评价列表（管理员）
+      tags:
+      - reviews
+  /api/v1/reviews/{id}:
+    delete:
+      operationId: ReviewsController_adminRemove_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 评价ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 软删评价（管理员；保留审计）
+      tags:
+      - reviews
+  /api/v1/learning-events:
+    post:
+      operationId: LearningEventsController_createOne_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLearningEventDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 上报单条学习事件（complete / note 等）
+      tags:
+      - learning-events
+  /api/v1/learning-events/batch:
+    post:
+      operationId: LearningEventsController_createBatch_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchCreateLearningEventDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 批量上报学习事件（video player flush）
+      tags:
+      - learning-events
+  /api/v1/learning-events/me:
+    get:
+      operationId: LearningEventsController_listMine_v1
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: 返回条数（默认 50，上限 100）
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 我的最近学习事件
+      tags:
+      - learning-events
+  /api/v1/learning-events/lesson/{lessonId}:
+    get:
+      operationId: LearningEventsController_listByLesson_v1
+      parameters:
+      - name: lessonId
+        required: true
+        in: path
+        description: 课时ID
+        schema:
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: 返回条数（默认 50，上限 100）
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 课时的学习事件列表（管理员/讲师）
+      tags:
+      - learning-events
+  /api/v1/site/stats:
+    get:
+      operationId: SiteController_getStats_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: 公开站点统计(首页 hero / 登录注册页品牌侧)
+      tags:
+      - site
+  /api/v1/enum-translations:
+    get:
+      operationId: CmsEnumController_listEnumTranslations_v1
+      parameters:
+      - name: type
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: locale
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 枚举 i18n (label + color + icon)
+      tags:
+      - cms-enum
+  /api/v1/date-format-templates:
+    get:
+      operationId: CmsEnumController_listDateFormatTemplates_v1
+      parameters:
+      - name: scope
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: locale
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 日期/时间格式模板
+      tags:
+      - cms-enum
+  /api/v1/app-settings:
+    get:
+      operationId: CmsConfigController_listAppSettings_v1
+      parameters:
+      - name: scope
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 全局业务规则 key-value 配置
+      tags:
+      - cms-config
+  /api/v1/site-settings:
+    get:
+      operationId: CmsConfigController_getSiteSettings_v1
+      parameters:
+      - name: keys
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 全局品牌文案 (key 批量)
+      tags:
+      - cms-config
+  /api/v1/page-settings:
+    get:
+      operationId: CmsConfigController_getPageSettings_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: 页面级文案 (按 page 批量)
+      tags:
+      - cms-config
+  /api/v1/industries:
+    get:
+      operationId: CmsContentController_listIndustries_v1
+      parameters:
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 行业列表 (含 methodology)
+      tags:
+      - cms-content
+  /api/v1/enterprise-methods:
+    get:
+      operationId: CmsContentController_listEnterpriseMethods_v1
+      parameters:
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 企业方法论 3 步法
+      tags:
+      - cms-content
+  /api/v1/testimonials:
+    get:
+      operationId: CmsContentController_listTestimonials_v1
+      parameters:
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 学员故事 / 证言
+      tags:
+      - cms-content
+  /api/v1/quick-prompts:
+    get:
+      operationId: CmsContentController_listQuickPrompts_v1
+      parameters:
+      - name: scope
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: AI 快捷 prompt
+      tags:
+      - cms-content
+  /api/v1/course-categories:
+    get:
+      operationId: CmsContentController_listCourseCategories_v1
+      parameters:
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 课程分类 (6 类)
+      tags:
+      - cms-content
+  /api/v1/popular-searches:
+    get:
+      operationId: CmsContentController_listPopularSearches_v1
+      parameters:
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 热门搜索词
+      tags:
+      - cms-content
+  /api/v1/hot-keywords:
+    get:
+      operationId: CmsContentController_listHotKeywords_v1
+      parameters:
+      - name: scope
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 热词 (按 scope)
+      tags:
+      - cms-content
+  /api/v1/auth-providers:
+    get:
+      operationId: CmsContentController_listAuthProviders_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: 第三方登录 provider 列表
+      tags:
+      - cms-content
+  /api/v1/top-nav:
+    get:
+      operationId: CmsContentController_listTopNav_v1
+      parameters:
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 顶部导航项
+      tags:
+      - cms-content
+  /api/v1/footer-columns:
+    get:
+      operationId: CmsContentController_listFooterColumns_v1
+      parameters:
+      - name: active
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: Footer 列
+      tags:
+      - cms-content
+  /api/v1/i18n/messages:
+    get:
+      operationId: CmsI18nController_listMessages_v1
+      parameters:
+      - name: locale
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: category
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: i18n 通用文案 (按 locale + category)
+      tags:
+      - cms-i18n
+  /api/v1/admin/cms/app-settings:
+    get:
+      operationId: CmsAdminController_listAppSettings_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 app_settings'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createAppSetting_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAppSettingDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 app_setting'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/app-settings/{key}:
+    patch:
+      operationId: CmsAdminController_updateAppSetting_v1
+      parameters:
+      - name: key
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAppSettingDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 app_setting'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteAppSetting_v1
+      parameters:
+      - name: key
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 app_setting'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/enum-translations:
+    get:
+      operationId: CmsAdminController_listEnumTranslations_v1
+      parameters:
+      - name: type
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: locale
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 enum_translations'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createEnumTranslation_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnumTranslationDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 enum_translation'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/enum-translations/{id}:
+    patch:
+      operationId: CmsAdminController_updateEnumTranslation_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEnumTranslationDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 enum_translation'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteEnumTranslation_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 enum_translation'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/date-format-templates:
+    get:
+      operationId: CmsAdminController_listDateFormatTemplates_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 date_format_templates'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createDateFormatTemplate_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDateFormatTemplateDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 date_format_template'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/date-format-templates/{id}:
+    patch:
+      operationId: CmsAdminController_updateDateFormatTemplate_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDateFormatTemplateDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 date_format_template'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteDateFormatTemplate_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 date_format_template'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/site-settings:
+    get:
+      operationId: CmsAdminController_listSiteSettings_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 site_settings'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createSiteSetting_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSiteSettingDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 site_setting'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/site-settings/{key}:
+    patch:
+      operationId: CmsAdminController_updateSiteSetting_v1
+      parameters:
+      - name: key
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSiteSettingDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 site_setting'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteSiteSetting_v1
+      parameters:
+      - name: key
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 site_setting'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/page-settings:
+    get:
+      operationId: CmsAdminController_listPageSettings_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 page_settings'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createPageSetting_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePageSettingDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 page_setting'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/page-settings/{id}:
+    patch:
+      operationId: CmsAdminController_updatePageSetting_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePageSettingDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 page_setting'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deletePageSetting_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 page_setting'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/industries:
+    get:
+      operationId: CmsAdminController_listIndustries_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 industries'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createIndustry_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIndustryDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 industry'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/industries/{id}:
+    patch:
+      operationId: CmsAdminController_updateIndustry_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateIndustryDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 industry'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteIndustry_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 industry'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/enterprise-methods:
+    get:
+      operationId: CmsAdminController_listEnterpriseMethods_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 enterprise_methods'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createEnterpriseMethod_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEnterpriseMethodDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 enterprise_method'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/enterprise-methods/{id}:
+    patch:
+      operationId: CmsAdminController_updateEnterpriseMethod_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEnterpriseMethodDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 enterprise_method'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteEnterpriseMethod_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 enterprise_method'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/testimonials:
+    get:
+      operationId: CmsAdminController_listTestimonials_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 testimonials'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createTestimonial_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestimonialDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 testimonial'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/testimonials/{id}:
+    patch:
+      operationId: CmsAdminController_updateTestimonial_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTestimonialDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 testimonial'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteTestimonial_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 testimonial'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/quick-prompts:
+    get:
+      operationId: CmsAdminController_listQuickPrompts_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 quick_prompts'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createQuickPrompt_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuickPromptDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 quick_prompt'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/quick-prompts/{id}:
+    patch:
+      operationId: CmsAdminController_updateQuickPrompt_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuickPromptDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 quick_prompt'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteQuickPrompt_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 quick_prompt'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/course-categories:
+    get:
+      operationId: CmsAdminController_listCourseCategories_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 course_categories'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createCourseCategory_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCourseCategoryDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 course_category'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/course-categories/{id}:
+    patch:
+      operationId: CmsAdminController_updateCourseCategory_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCourseCategoryDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 course_category'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteCourseCategory_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 course_category'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/popular-searches:
+    get:
+      operationId: CmsAdminController_listPopularSearches_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 popular_searches'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createPopularSearch_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePopularSearchDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 popular_search'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/popular-searches/{id}:
+    patch:
+      operationId: CmsAdminController_updatePopularSearch_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePopularSearchDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 popular_search'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deletePopularSearch_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 popular_search'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/hot-keywords:
+    get:
+      operationId: CmsAdminController_listHotKeywords_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 hot_keywords'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createHotKeyword_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHotKeywordDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 hot_keyword'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/hot-keywords/{id}:
+    patch:
+      operationId: CmsAdminController_updateHotKeyword_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHotKeywordDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 hot_keyword'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteHotKeyword_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 hot_keyword'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/auth-providers:
+    get:
+      operationId: CmsAdminController_listAuthProviders_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 auth_providers'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createAuthProvider_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAuthProviderDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 auth_provider'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/auth-providers/{id}:
+    patch:
+      operationId: CmsAdminController_updateAuthProvider_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAuthProviderDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 auth_provider'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteAuthProvider_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 auth_provider'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/top-nav:
+    get:
+      operationId: CmsAdminController_listTopNav_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 top_nav_items'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createTopNavItem_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTopNavItemDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 top_nav_item'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/top-nav/{id}:
+    patch:
+      operationId: CmsAdminController_updateTopNavItem_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTopNavItemDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 top_nav_item'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteTopNavItem_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 top_nav_item'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/footer-columns:
+    get:
+      operationId: CmsAdminController_listFooterColumns_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 footer_columns'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createFooterColumn_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFooterColumnDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 footer_column'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/footer-columns/{id}:
+    patch:
+      operationId: CmsAdminController_updateFooterColumn_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFooterColumnDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 footer_column'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteFooterColumn_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 footer_column'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/i18n/messages:
+    get:
+      operationId: CmsAdminController_listI18nMessages_v1
+      parameters:
+      - name: locale
+        required: true
+        in: query
+        schema:
+          type: string
+      - name: category
+        required: true
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 列出 i18n_messages'
+      tags:
+      - cms-admin
+    post:
+      operationId: CmsAdminController_createI18nMessage_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateI18nMessageDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 创建 i18n_message'
+      tags:
+      - cms-admin
+  /api/v1/admin/cms/i18n/messages/{id}:
+    patch:
+      operationId: CmsAdminController_updateI18nMessage_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateI18nMessageDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 更新 i18n_message'
+      tags:
+      - cms-admin
+    delete:
+      operationId: CmsAdminController_deleteI18nMessage_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 'Admin: 删除 i18n_message'
+      tags:
+      - cms-admin
+  /api/v1/instructors/expertises:
+    get:
+      operationId: ExpertisesPublicController_findAll_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      summary: 专长列表 (前台, 用于 chip 筛选)
+      tags:
+      - instructor-expertises (public)
+  /api/v1/instructors:
+    get:
+      operationId: InstructorsPublicController_findAll_v1
+      parameters:
+      - name: search
+        required: false
+        in: query
+        description: '搜索: name/title/headline 模糊匹配'
+        schema:
+          type: string
+      - name: expertiseIds
+        required: false
+        in: query
+        description: 按专长 ID 过滤 (多选 OR)
+        schema:
+          type: array
+          items:
+            type: string
+      - name: published
+        required: false
+        in: query
+        description: null=全部, true=已发布, false=草稿
+        schema:
+          type: boolean
+      - name: sort
+        required: false
+        in: query
+        description: '排序: orderIndex | name | recent'
+        schema:
+          default: orderIndex
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: 页码 (1-based)
+        schema:
+          minimum: 1
+          default: 1
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: 每页数量, max 100
+        schema:
+          minimum: 1
+          maximum: 100
+          default: 24
+          type: number
+      responses:
+        '200':
+          description: ''
+      summary: 讲师列表 (前台, 仅 published)
+      tags:
+      - instructors (public)
+  /api/v1/instructors/{slug}:
+    get:
+      operationId: InstructorsPublicController_findBySlug_v1
+      parameters:
+      - name: slug
+        required: true
+        in: path
+        description: 讲师 slug
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 讲师详情 (按 slug, 前台)
+      tags:
+      - instructors (public)
+  /api/v1/instructors/{id}/stats:
+    get:
+      operationId: InstructorsPublicController_getStats_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 讲师 ID
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      summary: 讲师统计 (公开, 仅统计该讲师 published 课程的聚合)
+      tags:
+      - instructors (public)
+  /api/v1/admin/instructors/expertises:
+    get:
+      operationId: ExpertisesAdminController_findAll_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 专长列表 (admin, 含禁用)
+      tags:
+      - instructor-expertises (admin)
+    post:
+      operationId: ExpertisesAdminController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExpertiseDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 新建专长 (admin)
+      tags:
+      - instructor-expertises (admin)
+  /api/v1/admin/instructors/expertises/{id}:
+    patch:
+      operationId: ExpertisesAdminController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExpertiseDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新专长 (admin)
+      tags:
+      - instructor-expertises (admin)
+    delete:
+      operationId: ExpertisesAdminController_delete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除专长 (admin, 级联删除关联 link)
+      tags:
+      - instructor-expertises (admin)
+  /api/v1/admin/instructors:
+    get:
+      operationId: InstructorsAdminController_findAll_v1
+      parameters:
+      - name: search
+        required: false
+        in: query
+        description: '搜索: name/title/headline 模糊匹配'
+        schema:
+          type: string
+      - name: expertiseIds
+        required: false
+        in: query
+        description: 按专长 ID 过滤 (多选 OR)
+        schema:
+          type: array
+          items:
+            type: string
+      - name: published
+        required: false
+        in: query
+        description: null=全部, true=已发布, false=草稿
+        schema:
+          type: boolean
+      - name: sort
+        required: false
+        in: query
+        description: '排序: orderIndex | name | recent'
+        schema:
+          default: orderIndex
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: 页码 (1-based)
+        schema:
+          minimum: 1
+          default: 1
+          type: number
+      - name: limit
+        required: false
+        in: query
+        description: 每页数量, max 100
+        schema:
+          minimum: 1
+          maximum: 100
+          default: 24
+          type: number
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 讲师列表 (admin, 含草稿)
+      tags:
+      - instructors (admin)
+    post:
+      operationId: InstructorsAdminController_create_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstructorDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 新建讲师 (admin)
+      tags:
+      - instructors (admin)
+  /api/v1/admin/instructors/{id}:
+    get:
+      operationId: InstructorsAdminController_findOne_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 讲师详情 (admin, 按 id)
+      tags:
+      - instructors (admin)
+    patch:
+      operationId: InstructorsAdminController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInstructorDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 更新讲师 (admin)
+      tags:
+      - instructors (admin)
+    delete:
+      operationId: InstructorsAdminController_softDelete_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 软删讲师 (admin, 置草稿 + 解除所有 link)
+      tags:
+      - instructors (admin)
+  /api/v1/admin/instructors/reorder:
+    post:
+      operationId: InstructorsAdminController_reorder_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderInstructorsDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 拖拽排序讲师 (admin, 一次提交完整 ID 列表)
+      tags:
+      - instructors (admin)
+  /api/v1/admin/courses/{courseId}/instructors:
+    get:
+      operationId: CourseInstructorsAdminController_list_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 获取该课程的所有讲师/导师 link
+      tags:
+      - course-instructors (admin)
+    post:
+      operationId: CourseInstructorsAdminController_link_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkCourseDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 挂一个讲师/导师到课程 (admin)
+      tags:
+      - course-instructors (admin)
+    put:
+      operationId: CourseInstructorsAdminController_syncLinks_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncCourseLinksDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 整组同步课程的讲师/导师 link (admin, 一次 diff 覆盖)
+      tags:
+      - course-instructors (admin)
+  /api/v1/admin/courses/{courseId}/instructors/{linkId}:
+    delete:
+      operationId: CourseInstructorsAdminController_unlink_v1
+      parameters:
+      - name: courseId
+        required: true
+        in: path
+        schema:
+          type: string
+      - name: linkId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 解除一个讲师 link (admin)
+      tags:
+      - course-instructors (admin)
+  /api/v1/chat/sessions:
+    post:
+      operationId: ChatController_createSession_v1
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      summary: 创建 general scope 的 ChatSession
+      tags:
+      - chat
+    get:
+      operationId: ChatController_listSessions_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 当前用户所有 general session
+      tags:
+      - chat
+  /api/v1/chat/sessions/{id}/messages:
+    get:
+      operationId: ChatController_listMessages_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 拉取 session 全部消息
+      tags:
+      - chat
+    post:
+      operationId: ChatController_sendMessage_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      summary: 发消息, 走 RAG + Gemini, 返 assistant 回复 + 来源
+      tags:
+      - chat
+  /api/v1/chat/sessions/{id}:
+    delete:
+      operationId: ChatController_deleteSession_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+      security:
+      - bearer: []
+      summary: 删除 session (硬删, ChatMessage 走 cascade)
+      tags:
+      - chat
+  /api/v1/health:
+    get:
+      operationId: HealthController_liveness_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - health
+  /api/v1/health/ready:
+    get:
+      operationId: HealthController_readiness_v1
+      parameters: []
+      responses:
+        '200':
+          description: ''
+      tags:
+      - health
+  /api/v1/lessons/{lessonId}/notes:
+    get:
+      operationId: LessonNotesController_list_v1
+      parameters:
+      - name: lessonId
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      tags:
+      - notes
+    post:
+      operationId: LessonNotesController_create_v1
+      parameters:
+      - name: lessonId
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteDto'
+      responses:
+        '201':
+          description: ''
+      security:
+      - bearer: []
+      tags:
+      - notes
+  /api/v1/notes/{id}:
+    patch:
+      operationId: NotesController_update_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNoteDto'
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      tags:
+      - notes
+    delete:
+      operationId: NotesController_remove_v1
+      parameters:
+      - name: id
+        required: true
+        in: path
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+      security:
+      - bearer: []
+      tags:
+      - notes
+info:
+  title: AI Academy API
+  description: AI and LLM education platform API
+  version: '1.0'
+  contact: {}
+tags: []
+servers: []
+components:
+  securitySchemes:
+    bearer:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+  schemas:
+    PasswordResetRequestDto:
+      type: object
+      properties:
+        email:
+          type: string
+          description: Account email to send the reset link to
+          example: user@example.com
+          maxLength: 320
+      required:
+      - email
+    PasswordResetConfirmDto:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Reset token from the email link
+          minLength: 32
+          maxLength: 256
+        newPassword:
+          type: string
+          description: New password, 12-128 chars, must include uppercase, lowercase, digit, and symbol
+          example: NewPass!5678
+          minLength: 12
+          maxLength: 128
+      required:
+      - token
+      - newPassword
+    OAuthCallbackDto:
+      type: object
+      properties:
+        code:
+          type: string
+          description: OAuth2 authorization code from the IdP redirect
+          minLength: 1
+          maxLength: 2048
+        state:
+          type: string
+          description: Opaque state token, must match what we issued in the auth URL
+          minLength: 20
+          maxLength: 4096
+      required:
+      - code
+      - state
+    RegisterDto:
+      type: object
+      properties:
+        email:
+          type: string
+          description: User email, must be RFC 5321 compliant
+          example: user@example.com
+          maxLength: 320
+        password:
+          type: string
+          description: Password, 12-128 chars, must include uppercase, lowercase, digit, and symbol
+          example: GoodPass!1234
+          minLength: 12
+          maxLength: 128
+        name:
+          type: string
+          description: Display name shown in UI
+          example: 陈大文
+          maxLength: 120
+      required:
+      - email
+      - password
+      - name
+    LoginDto:
+      type: object
+      properties:
+        email:
+          type: string
+          description: Registered email
+          example: user@example.com
+        password:
+          type: string
+          description: Plaintext password (TLS only, never logged)
+          example: GoodPass!1234
+      required:
+      - email
+      - password
+    CreateUserDto:
+      type: object
+      properties:
+        email:
+          type: string
+          description: 邮箱
+          example: '[email protected]'
+        password:
+          type: string
+          description: 密码（至少 12 位，包含大小写、数字和符号）
+          minLength: 12
+        name:
+          type: string
+          description: 显示名
+        role:
+          type: string
+          enum:
+          - admin
+          - student
+          - instructor
+          description: 用户角色
+      required:
+      - email
+      - password
+      - name
+      - role
+    ChangePasswordDto:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+          description: 当前密码
+        newPassword:
+          type: string
+          description: 新密码，至少 12 位且包含大小写字母、数字和符号
+      required:
+      - currentPassword
+      - newPassword
+    UpdateUserDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 显示名
+        avatarUrl:
+          type: string
+          description: 头像 URL (http/https)
+        role:
+          type: string
+          enum:
+          - admin
+          - student
+          - instructor
+          description: 用户角色（仅管理员可修改）
+    GrantCourseAccessDto:
+      type: object
+      properties:
+        courseIds:
+          description: 要授权的课程 UUID 列表
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - courseIds
+    GrantDegreeAccessDto:
+      type: object
+      properties:
+        degreeIds:
+          description: 要授权的学位 UUID 列表
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - degreeIds
+    CreateResourceDto:
+      type: object
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+          description: 资源 URL (http/https)
+        type:
+          type: string
+          enum:
+          - pdf
+          - code
+          - link
+          - video
+          - audio
+        isLocked:
+          type: boolean
+          default: true
+      required:
+      - title
+      - url
+      - type
+    NestedCourseLessonDto:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: string
+          description: 课时视频 URL (http/https)
+        videoDuration:
+          type: number
+        isPreview:
+          type: boolean
+          default: false
+        orderIndex:
+          type: number
+          description: 排序索引
+        resources:
+          description: 关联资源
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateResourceDto'
+      required:
+      - title
+    CreateChapterDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 章节标题
+        description:
+          type: string
+          description: 章节描述
+        orderIndex:
+          type: number
+          description: 排序索引
+        lessons:
+          description: 章节下的课时
+          type: array
+          items:
+            $ref: '#/components/schemas/NestedCourseLessonDto'
+      required:
+      - title
+      - orderIndex
+    CreateCourseDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 课程标题
+        description:
+          type: string
+          description: 课程描述
+        learningPoints:
+          type: string
+          description: 学习要点
+        instructor:
+          type: string
+          description: 讲师名称
+        instructorId:
+          type: string
+          description: 讲师用户 UUID
+        level:
+          type: string
+          enum:
+          - Beginner
+          - Intermediate
+          - Advanced
+          - Expert
+          description: 难度等级
+        duration:
+          type: string
+          description: 学习时长（人类可读，例如 "8h"）
+        thumbnail:
+          type: string
+          description: 课程缩略图 URL
+        tags:
+          type: string
+          description: 标签（逗号分隔或 JSON 字符串）
+        costType:
+          type: string
+          enum:
+          - free
+          - paid
+          - charity
+          description: 计费类型
+        price:
+          type: number
+          description: 价格（元，0 表示免费）
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 课程状态
+        courseType:
+          type: string
+          enum:
+          - own
+          - partner
+          - public
+          - third_party
+          description: 课程类型
+        externalUrl:
+          type: string
+          description: 外链课程 URL（外部跳转类型课程用）
+          maxLength: 500
+        sourceVideoUrl:
+          type: string
+          description: 原始视频源 URL（导入用）
+          maxLength: 500
+        sourcePlatform:
+          type: string
+          description: 来源平台标识
+          maxLength: 20
+        industryId:
+          type: string
+          description: 行业 UUID
+        categoryId:
+          type: string
+          description: 课程分类 UUID
+        chapters:
+          description: 课程章节（含课时和资源）
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateChapterDto'
+      required:
+      - title
+      - description
+      - learningPoints
+      - instructor
+      - level
+      - duration
+      - thumbnail
+      - tags
+      - costType
+      - price
+    UpdateCourseDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 课程标题
+        description:
+          type: string
+          description: 课程描述
+        learningPoints:
+          type: string
+          description: 学习要点
+        instructor:
+          type: string
+          description: 讲师名称
+        instructorId:
+          type: string
+          description: 讲师用户 UUID
+        level:
+          type: string
+          enum:
+          - Beginner
+          - Intermediate
+          - Advanced
+          - Expert
+          description: 难度等级
+        duration:
+          type: string
+          description: 学习时长（人类可读，例如 "8h"）
+        thumbnail:
+          type: string
+          description: 课程缩略图 URL
+        tags:
+          type: string
+          description: 标签（逗号分隔或 JSON 字符串）
+        costType:
+          type: string
+          enum:
+          - free
+          - paid
+          - charity
+          description: 计费类型
+        price:
+          type: number
+          description: 价格（元，0 表示免费）
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 课程状态
+        courseType:
+          type: string
+          enum:
+          - own
+          - partner
+          - public
+          - third_party
+          description: 课程类型
+        externalUrl:
+          type: string
+          description: 外链课程 URL（外部跳转类型课程用）
+          maxLength: 500
+        sourceVideoUrl:
+          type: string
+          description: 原始视频源 URL（导入用）
+          maxLength: 500
+        sourcePlatform:
+          type: string
+          description: 来源平台标识
+          maxLength: 20
+        industryId:
+          type: string
+          description: 行业 UUID
+        categoryId:
+          type: string
+          description: 课程分类 UUID
+        chapters:
+          description: 课程章节（含课时和资源）
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateChapterDto'
+      required:
+      - title
+      - description
+      - learningPoints
+      - instructor
+      - level
+      - duration
+      - thumbnail
+      - tags
+      - costType
+      - price
+    LinkDegreesDto:
+      type: object
+      properties:
+        degreeIds:
+          description: 要追加到的学位 UUID 列表
+          type: array
+          items:
+            type: string
+      required:
+      - degreeIds
+    CreateLessonDto:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: string
+          description: 课时视频 URL (http/https)
+        videoDuration:
+          type: number
+        isPreview:
+          type: boolean
+          default: false
+        orderIndex:
+          type: number
+      required:
+      - title
+    UpdateLessonDto:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        videoUrl:
+          type: string
+        videoDuration:
+          type: number
+        isPreview:
+          type: boolean
+        orderIndex:
+          type: number
+    UpdateResourceDto:
+      type: object
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+        type:
+          type: string
+          enum:
+          - pdf
+          - code
+          - link
+          - video
+          - audio
+        isLocked:
+          type: boolean
+    CreateDegreeDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 学位标题
+        description:
+          type: string
+          description: 学位描述
+        learningPoints:
+          type: string
+          description: 学习要点
+        price:
+          type: number
+          description: 价格（元，0 表示免费）
+        icon:
+          type: string
+          description: 图标 URL 或 emoji
+        costType:
+          type: string
+          enum:
+          - free
+          - paid
+          - charity
+          description: 计费类型
+        thumbnail:
+          type: string
+          description: 缩略图 URL (http/https)
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 学位状态
+      required:
+      - title
+      - description
+      - learningPoints
+      - price
+      - costType
+    UpdateDegreeDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 学位标题
+        description:
+          type: string
+          description: 学位描述
+        learningPoints:
+          type: string
+          description: 学习要点
+        price:
+          type: number
+          description: 价格（元，0 表示免费）
+        icon:
+          type: string
+          description: 图标 URL 或 emoji
+        costType:
+          type: string
+          enum:
+          - free
+          - paid
+          - charity
+          description: 计费类型
+        thumbnail:
+          type: string
+          description: 缩略图 URL (http/https)
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+          description: 学位状态
+      required:
+      - title
+      - description
+      - learningPoints
+      - price
+      - costType
+    DegreeCourseLinkDto:
+      type: object
+      properties:
+        courseId:
+          type: string
+          description: 课程 UUID
+        orderIndex:
+          type: number
+          description: 在学位内的排序索引
+      required:
+      - courseId
+      - orderIndex
+    LinkCoursesDto:
+      type: object
+      properties:
+        courses:
+          description: 要绑定的课程列表（含排序）
+          type: array
+          items:
+            $ref: '#/components/schemas/DegreeCourseLinkDto'
+      required:
+      - courses
+    CreateBadgeDto:
+      type: object
+      properties:
+        code:
+          type: string
+          description: 程序内唯一标识，如 first_course
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+          description: Lucide 图标名
+        category:
+          type: string
+          description: 分组：learning / streak / milestone ...
+        criteriaType:
+          type: string
+          enum:
+          - course_completed
+          - lessons_completed
+          - streak_days
+          - first_enrollment
+          - practice_completed
+          - points_reached
+          - course_specific
+        criteriaValue:
+          type: number
+        points:
+          type: number
+          description: 解锁时奖励积分
+        isActive:
+          type: boolean
+        orderIndex:
+          type: number
+      required:
+      - code
+      - name
+      - description
+      - criteriaType
+    UpdateBadgeDto:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        category:
+          type: string
+        criteriaType:
+          type: string
+          enum:
+          - course_completed
+          - lessons_completed
+          - streak_days
+          - first_enrollment
+          - practice_completed
+          - points_reached
+          - course_specific
+        criteriaValue:
+          type: number
+        points:
+          type: number
+        isActive:
+          type: boolean
+        orderIndex:
+          type: number
+    CreatePracticeProjectDto:
+      type: object
+      properties:
+        courseId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        projectUrl:
+          type: string
+        thumbnailUrl:
+          type: string
+        difficulty:
+          type: string
+          enum:
+          - beginner
+          - intermediate
+          - advanced
+          - expert
+        estimatedTime:
+          type: number
+        tags:
+          type: string
+        projectType:
+          type: string
+          enum:
+          - model_deployment
+          - model_training
+          - model_inference
+          - api_integration
+          - notebook
+          - sandbox
+          - repository
+          - csghub_space
+        orderIndex:
+          type: number
+        requirements:
+          type: string
+        objectives:
+          type: string
+        isActive:
+          type: boolean
+      required:
+      - courseId
+      - title
+      - description
+      - projectUrl
+      - difficulty
+      - estimatedTime
+      - projectType
+    UpdatePracticeProjectDto:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        projectUrl:
+          type: string
+        thumbnailUrl:
+          type: string
+        difficulty:
+          type: string
+          enum:
+          - beginner
+          - intermediate
+          - advanced
+          - expert
+        estimatedTime:
+          type: number
+        tags:
+          type: string
+        projectType:
+          type: string
+          enum:
+          - model_deployment
+          - model_training
+          - model_inference
+          - api_integration
+          - notebook
+          - sandbox
+          - repository
+          - csghub_space
+        orderIndex:
+          type: number
+        requirements:
+          type: string
+        objectives:
+          type: string
+        isActive:
+          type: boolean
+    CompletePracticeDto:
+      type: object
+      properties:
+        submissionUrl:
+          type: string
+        notes:
+          type: string
+    CreateHackathonDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 黑客松标题
+        description:
+          type: string
+          description: 黑客松描述
+        bannerUrl:
+          type: string
+          description: Banner 图片 URL (http/https)
+        status:
+          type: string
+          enum:
+          - upcoming
+          - active
+          - judging
+          - finished
+          - cancelled
+          description: 状态
+        startDate:
+          type: string
+          description: 开始时间 ISO 字符串
+        endDate:
+          type: string
+          description: 结束时间 ISO 字符串
+        submissionDeadline:
+          type: string
+          description: 作品提交截止时间 ISO 字符串
+        registerDeadline:
+          type: string
+          description: 报名截止时间 ISO 字符串
+        minTeamSize:
+          type: number
+          description: 最小团队人数
+          default: 1
+        maxTeamSize:
+          type: number
+          description: 最大团队人数
+          default: 5
+        location:
+          type: string
+          description: 地点
+        rules:
+          type: string
+          description: 比赛规则
+        submissionRequirements:
+          type: string
+          description: 作品提交要求，建议逐行填写清单
+        prizes:
+          type: string
+          description: 奖项设置
+        registrationUrl:
+          type: string
+          description: 外链 CTA URL (报名 / 了解更多 / 官网 等任意一个)
+        registrationLabel:
+          type: string
+          description: 外链 CTA 文案, 留空默认 "前往报名"
+      required:
+      - title
+      - description
+      - startDate
+      - endDate
+    UpdateHackathonDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 黑客松标题
+        description:
+          type: string
+          description: 黑客松描述
+        bannerUrl:
+          type: string
+          description: Banner 图片 URL (http/https)
+        status:
+          type: string
+          enum:
+          - upcoming
+          - active
+          - judging
+          - finished
+          - cancelled
+          description: 状态
+        startDate:
+          type: string
+          description: 开始时间 ISO 字符串
+        endDate:
+          type: string
+          description: 结束时间 ISO 字符串
+        submissionDeadline:
+          type: string
+          description: 作品提交截止时间 ISO 字符串
+        registerDeadline:
+          type: string
+          description: 报名截止时间 ISO 字符串
+        minTeamSize:
+          type: number
+          description: 最小团队人数
+          default: 1
+        maxTeamSize:
+          type: number
+          description: 最大团队人数
+          default: 5
+        location:
+          type: string
+          description: 地点
+        rules:
+          type: string
+          description: 比赛规则
+        submissionRequirements:
+          type: string
+          description: 作品提交要求，建议逐行填写清单
+        prizes:
+          type: string
+          description: 奖项设置
+        registrationUrl:
+          type: string
+          description: 外链 CTA URL (报名 / 了解更多 / 官网 等任意一个)
+        registrationLabel:
+          type: string
+          description: 外链 CTA 文案, 留空默认 "前往报名"
+      required:
+      - title
+      - description
+      - startDate
+      - endDate
+    CreateAnnouncementDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 公告标题
+        content:
+          type: string
+          description: 公告内容
+        isPinned:
+          type: boolean
+          description: 是否置顶
+          default: false
+      required:
+      - title
+      - content
+    CreateTeamDto:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 队伍名称
+        slogan:
+          type: string
+          description: 队伍口号
+      required:
+      - name
+    CreateSubmissionDto:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 作品标题
+        description:
+          type: string
+          description: 作品描述
+        demoUrl:
+          type: string
+          description: Demo 链接
+        repoUrl:
+          type: string
+          description: 代码仓库链接
+        videoUrl:
+          type: string
+          description: 视频链接
+        teamId:
+          type: string
+          description: 所属队伍 ID，为空则个人参赛
+        status:
+          type: string
+          enum:
+          - draft
+          - submitted
+          - under_review
+          - shortlisted
+          - winner
+          - rejected
+          description: 作品状态
+      required:
+      - title
+      - description
+    UpdateSubmissionDto:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        demoUrl:
+          type: string
+        repoUrl:
+          type: string
+        videoUrl:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - submitted
+          - under_review
+          - shortlisted
+          - winner
+          - rejected
+    JudgeSubmissionDto:
+      type: object
+      properties:
+        score:
+          type: number
+          description: 评分 0-100
+        feedback:
+          type: string
+          description: 评语
+        status:
+          type: string
+          enum:
+          - draft
+          - submitted
+          - under_review
+          - shortlisted
+          - winner
+          - rejected
+          description: 评审后状态
+      required:
+      - score
+    CreateJudgeDto:
+      type: object
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        avatarUrl:
+          type: string
+          description: 头像 URL (http/https)
+        bio:
+          type: string
+        orderIndex:
+          type: number
+        role:
+          type: string
+          enum:
+          - judge
+          - advisor
+          - host
+      required:
+      - name
+    UpdateJudgeDto:
+      type: object
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        avatarUrl:
+          type: string
+          description: 头像 URL (http/https)
+        bio:
+          type: string
+        orderIndex:
+          type: number
+        role:
+          type: string
+          enum:
+          - judge
+          - advisor
+          - host
+    CreateSponsorDto:
+      type: object
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: string
+          description: Logo URL (http/https)
+        websiteUrl:
+          type: string
+          description: 官网 URL (http/https)
+        tier:
+          type: string
+          enum:
+          - platinum
+          - gold
+          - silver
+          - bronze
+        orderIndex:
+          type: number
+      required:
+      - name
+    UpdateSponsorDto:
+      type: object
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: string
+          description: Logo URL (http/https)
+        websiteUrl:
+          type: string
+          description: 官网 URL (http/https)
+        tier:
+          type: string
+          enum:
+          - platinum
+          - gold
+          - silver
+          - bronze
+        orderIndex:
+          type: number
+    CreateOrderDto:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - course
+          - degree
+          description: 订单类型（course / degree）
+        courseId:
+          type: string
+          description: 课程 UUID（type=course 时必填）
+        degreeId:
+          type: string
+          description: 学位 UUID（type=degree 时必填）
+        paymentMethod:
+          type: string
+          description: 支付方式（wechat / alipay / stripe）
+      required:
+      - type
+    MockPayDto:
+      type: object
+      properties:
+        paymentMethod:
+          type: string
+          description: 支付方式（wechat / alipay / stripe）
+    RefundOrderDto:
+      type: object
+      properties:
+        reason:
+          type: string
+          description: 退款原因（mock 模式不持久化）
+    GenerateCourseDto:
+      type: object
+      properties: {}
+    GenerateDegreeDto:
+      type: object
+      properties: {}
+    SignUploadDto:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum:
+          - lesson-video
+          - resource
+          - course-thumbnail
+          - degree-thumbnail
+          - hackathon-banner
+          - hackathon-judge-avatar
+          - hackathon-sponsor-logo
+          - submission-video
+          - user-avatar
+        filename:
+          type: string
+          description: 原始文件名, 用于扩展名推断
+        mimeType:
+          type: string
+          description: MIME type
+        size:
+          type: number
+          description: 文件字节数
+        refId:
+          type: string
+          description: 目标 entity id (lesson / hackathon / user). 留空用于 "create 时上传" (resource / submission-video), 由业务侧 setField
+      required:
+      - scope
+      - filename
+      - mimeType
+      - size
+    CompleteUploadDto:
+      type: object
+      properties:
+        key:
+          type: string
+        scope:
+          type: string
+          enum:
+          - lesson-video
+          - resource
+          - course-thumbnail
+          - degree-thumbnail
+          - hackathon-banner
+          - hackathon-judge-avatar
+          - hackathon-sponsor-logo
+          - submission-video
+          - user-avatar
+        refId:
+          type: string
+          description: 目标 entity id (e.g. lessonId / userId). 留空 = 只 confirm object 存在, 不写库 (前端用 publicUrl 走原 create/update flow)
+      required:
+      - key
+      - scope
+    CreateEnterpriseInquiryDto:
+      type: object
+      properties: {}
+    UpdateInquiryStatusDto:
+      type: object
+      properties: {}
+    ImportFromUrlDto:
+      type: object
+      properties: {}
+    BatchImportFromUrlDto:
+      type: object
+      properties: {}
+    CreateReviewDto:
+      type: object
+      properties:
+        rating:
+          type: number
+          description: 评分 (1-5 整数)
+          minimum: 1
+          maximum: 5
+        content:
+          type: string
+          description: 评价内容 (10-1000 字符)
+          minLength: 10
+          maxLength: 1000
+      required:
+      - rating
+      - content
+    CreateLearningEventDto:
+      type: object
+      properties:
+        lessonId:
+          type: string
+          description: 课时 UUID
+        eventType:
+          type: string
+          enum:
+          - play
+          - pause
+          - seek
+          - complete
+          - replay
+          - skip
+          - note
+          description: 事件类型
+        positionSec:
+          type: number
+          description: 视频位置（秒）
+          minimum: 0
+          maximum: 86400
+        durationMs:
+          type: number
+          description: 事件持续时长（毫秒）
+          minimum: 0
+          maximum: 600000
+        metadata:
+          type: object
+          description: 附加元数据（自由 JSON）
+          additionalProperties: true
+      required:
+      - eventType
+    BatchCreateLearningEventDto:
+      type: object
+      properties:
+        events:
+          description: 事件数组 (1-50 条)
+          minItems: 1
+          maxItems: 50
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateLearningEventDto'
+      required:
+      - events
+    CreateAppSettingDto:
+      type: object
+      properties:
+        key:
+          type: string
+        valueJson:
+          type: object
+          description: JSON value (任意合法 JSON, ≤64KB, depth≤10)
+        scope:
+          type: string
+          enum:
+          - global
+          - page
+          - user
+        description:
+          type: string
+      required:
+      - key
+      - valueJson
+    UpdateAppSettingDto:
+      type: object
+      properties:
+        valueJson:
+          type: object
+        scope:
+          type: string
+          enum:
+          - global
+          - page
+          - user
+        description:
+          type: string
+    CreateEnumTranslationDto:
+      type: object
+      properties:
+        enumType:
+          type: string
+        enumValue:
+          type: string
+        locale:
+          type: string
+        label:
+          type: string
+        colorClass:
+          type: string
+        icon:
+          type: string
+        sortOrder:
+          type: number
+      required:
+      - enumType
+      - enumValue
+      - locale
+      - label
+    UpdateEnumTranslationDto:
+      type: object
+      properties:
+        label:
+          type: string
+        colorClass:
+          type: string
+        icon:
+          type: string
+        sortOrder:
+          type: number
+    CreateDateFormatTemplateDto:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum:
+          - global
+          - locale
+          - admin_users_list
+          - common_date
+          - dashboard_lesson_duration
+        locale:
+          type: string
+        template:
+          type: string
+      required:
+      - scope
+      - locale
+      - template
+    UpdateDateFormatTemplateDto:
+      type: object
+      properties:
+        template:
+          type: string
+      required:
+      - template
+    CreateSiteSettingDto:
+      type: object
+      properties:
+        key:
+          type: string
+        valueJson:
+          type: object
+          description: JSON value (任意合法 JSON, ≤64KB, depth≤10)
+        scope:
+          type: string
+          enum:
+          - global
+          - page
+          - user
+        description:
+          type: string
+      required:
+      - key
+      - valueJson
+    UpdateSiteSettingDto:
+      type: object
+      properties:
+        valueJson:
+          type: object
+        scope:
+          type: string
+          enum:
+          - global
+          - page
+          - user
+        description:
+          type: string
+    CreatePageSettingDto:
+      type: object
+      properties:
+        page:
+          type: string
+        key:
+          type: string
+        valueJson:
+          type: object
+          description: JSON value (任意合法 JSON, ≤64KB, depth≤10)
+        description:
+          type: string
+      required:
+      - page
+      - key
+      - valueJson
+    UpdatePageSettingDto:
+      type: object
+      properties:
+        valueJson:
+          type: object
+        description:
+          type: string
+    CreateIndustryDto:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        icon:
+          type: string
+        desc:
+          type: string
+        bullets:
+          type: array
+          items:
+            type: string
+      required:
+      - key
+      - label
+    UpdateIndustryDto:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        icon:
+          type: string
+        desc:
+          type: string
+        bullets:
+          type: array
+          items:
+            type: string
+    CreateEnterpriseMethodDto:
+      type: object
+      properties:
+        num:
+          type: string
+        title:
+          type: string
+        desc:
+          type: string
+        bullets:
+          type: array
+          items:
+            type: string
+      required:
+      - num
+      - title
+    UpdateEnterpriseMethodDto:
+      type: object
+      properties:
+        num:
+          type: string
+        title:
+          type: string
+        desc:
+          type: string
+        bullets:
+          type: array
+          items:
+            type: string
+    CreateTestimonialDto:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        company:
+          type: string
+        quote:
+          type: string
+        avatar:
+          type: string
+      required:
+      - name
+      - quote
+    UpdateTestimonialDto:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        company:
+          type: string
+        quote:
+          type: string
+        avatar:
+          type: string
+    CreateQuickPromptDto:
+      type: object
+      properties:
+        emoji:
+          type: string
+          default: 💡
+        label:
+          type: string
+        promptText:
+          type: string
+        scope:
+          type: string
+          enum:
+          - lesson
+          - course
+          - degree
+          - global
+        isActive:
+          type: boolean
+          default: true
+        orderIndex:
+          type: number
+          default: 0
+      required:
+      - label
+      - promptText
+    UpdateQuickPromptDto:
+      type: object
+      properties:
+        emoji:
+          type: string
+        label:
+          type: string
+        promptText:
+          type: string
+        scope:
+          type: string
+          enum:
+          - lesson
+          - course
+          - degree
+          - global
+        isActive:
+          type: boolean
+        orderIndex:
+          type: number
+    CreateCourseCategoryDto:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        order:
+          type: number
+      required:
+      - key
+      - label
+    UpdateCourseCategoryDto:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        order:
+          type: number
+    CreatePopularSearchDto:
+      type: object
+      properties:
+        keyword:
+          type: string
+        order:
+          type: number
+      required:
+      - keyword
+    UpdatePopularSearchDto:
+      type: object
+      properties:
+        keyword:
+          type: string
+        order:
+          type: number
+    CreateHotKeywordDto:
+      type: object
+      properties:
+        keyword:
+          type: string
+        order:
+          type: number
+        scope:
+          type: string
+          enum:
+          - courses
+          - home
+          - search
+          - all
+      required:
+      - keyword
+    UpdateHotKeywordDto:
+      type: object
+      properties:
+        keyword:
+          type: string
+        order:
+          type: number
+        scope:
+          type: string
+          enum:
+          - courses
+          - home
+          - search
+          - all
+    CreateAuthProviderDto:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        icon:
+          type: string
+        config:
+          type: object
+          description: JSON config (≤64KB, depth≤10). 不要存 OAuth client_secret。
+        orderIndex:
+          type: number
+        isActive:
+          type: boolean
+      required:
+      - id
+      - label
+    UpdateAuthProviderDto:
+      type: object
+      properties:
+        label:
+          type: string
+        icon:
+          type: string
+        config:
+          type: object
+          description: JSON config (≤64KB, depth≤10). 不要存 OAuth client_secret。
+        orderIndex:
+          type: number
+        isActive:
+          type: boolean
+    CreateTopNavItemDto:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        path:
+          type: string
+          description: '白名单: 内部路由("/xxx") / 外部("https://...") / 锚点("#xxx") / mailto: / tel:. 拒 javascript: / data: / vbscript: / 协议相对("//evil.com")'
+        icon:
+          type: string
+        order:
+          type: number
+        isActive:
+          type: boolean
+      required:
+      - key
+      - label
+      - path
+    UpdateTopNavItemDto:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        path:
+          type: string
+          description: '白名单: 内部路由("/xxx") / 外部("https://...") / 锚点("#xxx") / mailto: / tel:. 拒 javascript: / data: / vbscript: / 协议相对("//evil.com")'
+        icon:
+          type: string
+        order:
+          type: number
+        isActive:
+          type: boolean
+    FooterLinkDto:
+      type: object
+      properties:
+        label:
+          type: string
+        path:
+          type: string
+          description: '白名单: 内部路由("/xxx") / 外部("https://...") / 锚点("#xxx") / mailto: / tel:. 拒 javascript: / data: / vbscript: / 协议相对("//evil.com")'
+      required:
+      - label
+      - path
+    CreateFooterColumnDto:
+      type: object
+      properties:
+        key:
+          type: string
+        title:
+          type: string
+        order:
+          type: number
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FooterLinkDto'
+      required:
+      - key
+      - title
+    UpdateFooterColumnDto:
+      type: object
+      properties:
+        key:
+          type: string
+        title:
+          type: string
+        order:
+          type: number
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/FooterLinkDto'
+    CreateI18nMessageDto:
+      type: object
+      properties:
+        key:
+          type: string
+        locale:
+          type: string
+        value:
+          type: string
+        category:
+          type: string
+          enum:
+          - common
+          - auth
+          - course
+          - hackathon
+          - degree
+          - enterprise
+          - admin
+        description:
+          type: string
+      required:
+      - key
+      - locale
+      - value
+    UpdateI18nMessageDto:
+      type: object
+      properties:
+        value:
+          type: string
+        category:
+          type: string
+          enum:
+          - common
+          - auth
+          - course
+          - hackathon
+          - degree
+          - enterprise
+          - admin
+        description:
+          type: string
+    CreateExpertiseDto:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 英文 key, 唯一, 程序内标识
+          maxLength: 60
+        label:
+          type: string
+          description: 中文 label
+          maxLength: 80
+        labelEn:
+          type: string
+          description: 英文 label
+          maxLength: 80
+        isActive:
+          type: boolean
+          description: 是否启用
+          default: true
+        orderIndex:
+          type: number
+          description: 排序权重
+          default: 0
+      required:
+      - key
+      - label
+    UpdateExpertiseDto:
+      type: object
+      properties:
+        key:
+          type: string
+          description: 英文 key, 唯一, 程序内标识
+          maxLength: 60
+        label:
+          type: string
+          description: 中文 label
+          maxLength: 80
+        labelEn:
+          type: string
+          description: 英文 label
+          maxLength: 80
+        isActive:
+          type: boolean
+          description: 是否启用
+          default: true
+        orderIndex:
+          type: number
+          description: 排序权重
+          default: 0
+    CreateInstructorDto:
+      type: object
+      properties:
+        slug:
+          type: string
+          description: URL slug, 留空自动生成
+          maxLength: 80
+        name:
+          type: string
+          description: 中文主显示名
+          maxLength: 80
+        nameEn:
+          type: string
+          description: 英文/拼音别名
+          maxLength: 80
+        title:
+          type: string
+          description: 头衔 (自由文本, 不做 enum)
+          maxLength: 120
+        titleEn:
+          type: string
+          description: 英文头衔
+          maxLength: 120
+        headline:
+          type: string
+          description: 一句话标语 (摘要用)
+          maxLength: 255
+        headlineEn:
+          type: string
+          description: 英文标语
+          maxLength: 255
+        bio:
+          type: string
+          description: 长 bio, markdown
+          maxLength: 5000
+        bioEn:
+          type: string
+          description: 英文 bio
+          maxLength: 5000
+        avatarUrl:
+          type: string
+          description: 头像 URL
+        company:
+          type: string
+          description: 当前就职公司
+          maxLength: 120
+        yearsOfExperience:
+          type: number
+          description: 从业年限
+          minimum: 0
+          maximum: 80
+        linkedinUrl:
+          type: string
+          description: LinkedIn URL
+        githubUrl:
+          type: string
+          description: GitHub URL
+        twitterUrl:
+          type: string
+          description: Twitter/X URL
+        websiteUrl:
+          type: string
+          description: 个人网站 URL
+        contactEmail:
+          type: string
+          description: 联系邮箱 (admin 可见, 前台不暴露)
+        notes:
+          type: string
+          description: admin 内部备注
+          maxLength: 2000
+        orderIndex:
+          type: number
+          description: 排序权重, 升序
+          default: 0
+        published:
+          type: boolean
+          description: true=发布, false/null=草稿
+          default: false
+        expertiseIds:
+          description: 专长 ID 数组 (创建时一次性挂载)
+          items:
+            type: array
+            items:
+              type: string
+          type: array
+      required:
+      - name
+    UpdateInstructorDto:
+      type: object
+      properties:
+        slug:
+          type: string
+          description: URL slug, 留空自动生成
+          maxLength: 80
+        name:
+          type: string
+          description: 中文主显示名
+          maxLength: 80
+        nameEn:
+          type: string
+          description: 英文/拼音别名
+          maxLength: 80
+        title:
+          type: string
+          description: 头衔 (自由文本, 不做 enum)
+          maxLength: 120
+        titleEn:
+          type: string
+          description: 英文头衔
+          maxLength: 120
+        headline:
+          type: string
+          description: 一句话标语 (摘要用)
+          maxLength: 255
+        headlineEn:
+          type: string
+          description: 英文标语
+          maxLength: 255
+        bio:
+          type: string
+          description: 长 bio, markdown
+          maxLength: 5000
+        bioEn:
+          type: string
+          description: 英文 bio
+          maxLength: 5000
+        avatarUrl:
+          type: string
+          description: 头像 URL
+        company:
+          type: string
+          description: 当前就职公司
+          maxLength: 120
+        yearsOfExperience:
+          type: number
+          description: 从业年限
+          minimum: 0
+          maximum: 80
+        linkedinUrl:
+          type: string
+          description: LinkedIn URL
+        githubUrl:
+          type: string
+          description: GitHub URL
+        twitterUrl:
+          type: string
+          description: Twitter/X URL
+        websiteUrl:
+          type: string
+          description: 个人网站 URL
+        contactEmail:
+          type: string
+          description: 联系邮箱 (admin 可见, 前台不暴露)
+        notes:
+          type: string
+          description: admin 内部备注
+          maxLength: 2000
+        orderIndex:
+          type: number
+          description: 排序权重, 升序
+          default: 0
+        published:
+          type: boolean
+          description: true=发布, false/null=草稿
+          default: false
+        expertiseIds:
+          description: 专长 ID 数组 (创建时一次性挂载)
+          items:
+            type: array
+            items:
+              type: string
+          type: array
+    ReorderInstructorsDto:
+      type: object
+      properties:
+        orderedIds:
+          description: 按新顺序排列的讲师 ID 列表
+          type: array
+          items:
+            type: string
+      required:
+      - orderedIds
+    LinkCourseDto:
+      type: object
+      properties:
+        instructorId:
+          type: string
+          description: 讲师 ID
+        role:
+          type: string
+          enum:
+          - instructor
+          - mentor
+          description: '角色: instructor 主讲师 / mentor 导师'
+        isPrimary:
+          type: boolean
+          description: 是否主讲师, 仅 instructor role 有效
+          default: false
+        orderIndex:
+          type: number
+          description: 展示顺序
+          default: 0
+      required:
+      - instructorId
+      - role
+    SyncCourseLinksDto:
+      type: object
+      properties:
+        links:
+          description: 完整 link 列表, 后端 diff 同步
+          type: array
+          items:
+            $ref: '#/components/schemas/LinkCourseDto'
+      required:
+      - links
+    CreateSessionDto:
+      type: object
+      properties: {}
+    SendMessageDto:
+      type: object
+      properties: {}
+    CreateNoteDto:
+      type: object
+      properties: {}
+    UpdateNoteDto:
+      type: object
+      properties: {}

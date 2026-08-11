@@ -18,9 +18,7 @@
  * LocalAuthAdapter 同时负责邮箱密码和后端配置驱动的 OAuth 跳转。
  */
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -33,7 +31,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 //      AuthGuard 是单独组件,只在路由元素里用,所以可以在它里面用 useLocation。
 //      AuthProvider 自身只用 store / api,跟 router 无关。
 import { LocalAuthAdapter } from './LocalAuthAdapter';
-import api, { setAccessToken } from '../api';
+import api, { getAccessToken, setAccessToken } from '../api';
 import { useAuthStore } from '../../stores/authStore';
 import type {
   AuthAdapter,
@@ -44,28 +42,61 @@ import type {
   SignInInput,
 } from './types';
 import { clearOAuthLink, markOAuthLink } from './oauthCallback';
-
-export interface AuthContextValue {
-  user: ReturnType<typeof useAuthStore.getState>['user'];
-  identities: Identity[];
-  providers: ProviderInfo[];
-  signIn: (input: SignInInput) => Promise<AuthSession>;
-  signOut: () => Promise<void>;
-  bindProvider: (provider: string) => Promise<void>;
-  unbindProvider: (identityId: string) => Promise<void>;
-  isAuthenticating: boolean;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, useAuth, type AuthContextValue } from './AuthContext';
 
 function createAdapter(): AuthAdapter {
   return new LocalAuthAdapter();
+}
+
+type AuthBootResult = {
+  session: AuthSession | null;
+  providers: ProviderInfo[];
+};
+
+// React StrictMode 在开发环境会执行 effect 的 setup → cleanup → setup。
+// 共享进行中的启动请求，避免同一页面加载重复访问 providers/users/me/refresh，
+// 从而触发限流或 refresh-token 轮换竞态。请求结束后清空，不缓存会话结果。
+let authBootPromise: Promise<AuthBootResult> | null = null;
+
+function bootAuth(adapter: AuthAdapter): Promise<AuthBootResult> {
+  if (authBootPromise) return authBootPromise;
+
+  authBootPromise = (async () => {
+    // provider 列表只影响 OAuth 按钮展示，不是会话成立的前提。
+    // 限流或短暂网络失败时降级为空列表，不能清除已经验证成功的用户。
+    const providerPromise = adapter.listProviders().catch(() => [] as ProviderInfo[]);
+    let session: AuthSession | null = null;
+
+    if (getAccessToken()) {
+      try {
+        const { data: restoredUser } = await api.get<AuthUser>('/api/v1/users/me');
+        const restoredToken = getAccessToken();
+        if (restoredToken) {
+          session = { user: restoredUser, accessToken: restoredToken };
+        }
+      } catch {
+        // access token 已失效时，axios interceptor 会先尝试 refresh；若仍失败，
+        // 再由下面的 adapter.refresh() 做一次明确的会话探活。
+      }
+    }
+
+    if (!session) {
+      session = await adapter.refresh();
+    }
+
+    return { session, providers: await providerPromise };
+  })().finally(() => {
+    authBootPromise = null;
+  });
+
+  return authBootPromise;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const setAuth = useAuthStore((s) => s.setAuth);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const updateUser = useAuthStore((s) => s.updateUser);
 
   const [identities, setIdentities] = useState<Identity[]>([]);
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
@@ -77,7 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /**
    * 启动:探活 + 拉 providers + 拉 identities
    *
-   * 用 /auth/refresh(cookie 自动带)恢复会话 — 200 说明有 session,401 说明没
+   * 优先用 sessionStorage 中仍有效的 access token 恢复 user，只有 token
+   * 不存在或失效时才轮换 refresh cookie。这样 hard reload 不会因为 refresh
+   * cookie 被浏览器策略拦截或并发轮换而误登出。
    *
    * P1 fix: 顺序
    *   1) refresh() 一次 (Promise.all + listProviders 并发,不重复 refresh)
@@ -89,10 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const [session, providerList] = await Promise.all([
-          adapter.refresh(),
-          adapter.listProviders(),
-        ]);
+        const { session, providers: providerList } = await bootAuth(adapter);
         if (cancelled) return;
         let activeUser: AuthUser | null = null;
         if (session) {
@@ -210,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       providers,
       signIn,
       signOut,
+      updateUser,
       bindProvider,
       unbindProvider,
       isAuthenticating,
@@ -220,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       providers,
       signIn,
       signOut,
+      updateUser,
       bindProvider,
       unbindProvider,
       isAuthenticating,
@@ -227,14 +259,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth must be used within <AuthProvider>');
-  }
-  return ctx;
 }
 
 /**

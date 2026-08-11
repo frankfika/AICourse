@@ -95,14 +95,18 @@ export function InstructorDetailPage() {
       </section>
 
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        {stats && (
+        {statsQuery.isError ? (
+          <div className="border border-warning-500 bg-warning-50 text-warning-600 px-4 py-3 text-sm">
+            统计信息暂时无法加载, 请稍后再试。
+          </div>
+        ) : stats ? (
           <section className="grid grid-cols-2 gap-px overflow-hidden border border-neutral-200 bg-neutral-200 md:grid-cols-4">
             <Metric icon={BookOpen} label="课程" value={String(stats.courseCount)} />
             <Metric icon={Users} label="学习人次" value={stats.studentCount.toLocaleString()} />
             <Metric icon={Star} label="平均评分" value={stats.reviewCount ? stats.averageRating.toFixed(1) : '暂无'} />
             <Metric icon={Users} label="完成率" value={`${Math.round(stats.completionRate * 100)}%`} />
           </section>
-        )}
+        ) : null}
 
         {instructor.bio && (
           <section className="mt-12 max-w-3xl">

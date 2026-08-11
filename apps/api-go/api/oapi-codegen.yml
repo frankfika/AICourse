@@ -1,0 +1,31 @@
+# ogen configuration — generates Go types + Handler interface
+# from apps/api-go/api/openapi.yaml.
+#
+# Phase 0 strategy: ogen generates (1) Request/Response/Params types for
+# every operation, (2) the schema types, and (3) the Server Handler
+# interface. We do NOT use ogen's HTTP routing in Phase 0 — we keep
+# Fiber as the framework and bind the generated types to our handlers
+# in internal/handler/*. Phase 1+ may choose to swap in ogen's
+# net/http router if it stays simpler.
+#
+# Usage:
+#   ogen --target apps/api-go/api/gen --config apps/api-go/api/oapi-codegen.yml --clean apps/api-go/api/openapi.yaml
+#
+# CLI flags supply the package name and target dir.
+
+parser:
+  # Allow type inference for untyped schemas (helps with controllers
+  # that don't use @ApiResponse decorators).
+  infer_types: true
+  # Disable cross-type constraint interpretation (we don't ship pattern
+  # on numbers or max on strings in our DTOs).
+  allow_cross_type_constraints: false
+
+generator:
+  features:
+    enable: []
+    disable:
+      - "paths/client"        # we don't need the client in Phase 0
+      - "webhooks/client"     # no webhooks
+      - "webhooks/server"     # no webhooks
+    # Server remains on, providing Handler interface.

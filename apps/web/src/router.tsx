@@ -51,6 +51,7 @@ const AdminEnterprisePage = lazy(() => import('./features/admin/AdminEnterpriseP
 const AdminAuditLogsPage = lazy(() => import('./features/admin/AdminAuditLogsPage').then(m => ({ default: m.AdminAuditLogsPage })));
 const AdminReviewsPage = lazy(() => import('./features/admin/AdminReviewsPage').then(m => ({ default: m.AdminReviewsPage })));
 const AdminSettingsPage = lazy(() => import('./features/admin/AdminSettingsPage').then(m => ({ default: m.AdminSettingsPage })));
+const AdminAiPage = lazy(() => import('./features/admin/AdminAiPage').then(m => ({ default: m.AdminAiPage })));
 const EnterprisePage = lazy(() => import('./features/enterprise/EnterprisePage').then(m => ({ default: m.EnterprisePage })));
 const NotFoundPage = lazy(() => import('./features/misc/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 const DesignSystemPage = lazy(() => import('./routes/design-system').then(m => ({ default: m.default })));
@@ -122,6 +123,7 @@ export const router = createBrowserRouter([
           { path: 'enterprise', element: <PublicSuspense><AdminEnterprisePage /></PublicSuspense> },
           { path: 'reviews', element: <PublicSuspense><AdminReviewsPage /></PublicSuspense> },
           { path: 'audit', element: <PublicSuspense><AdminAuditLogsPage /></PublicSuspense> },
+          { path: 'ai', element: <PublicSuspense><AdminAiPage /></PublicSuspense> },
           { path: 'settings', element: <PublicSuspense><AdminSettingsPage /></PublicSuspense> },
         ],
       },

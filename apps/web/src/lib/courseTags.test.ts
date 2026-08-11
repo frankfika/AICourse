@@ -14,7 +14,7 @@ describe('course tags compatibility', () => {
     expect(parseCourseTags('[broken')).toEqual(['[broken']);
   });
 
-  it('provides a stable card fallback', () => {
-    expect(firstCourseTag('')).toBe('LLM 应用');
+  it('does not invent a tag when the database field is empty', () => {
+    expect(firstCourseTag('')).toBe('');
   });
 });

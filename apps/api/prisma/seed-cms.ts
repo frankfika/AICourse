@@ -9,7 +9,7 @@
  *   - date_format_templates 6 行
  *   - industries         8 行
  *   - enterprise_methods 3 行
- *   - testimonials       1 行 (占位示例)
+ *   - testimonials       不写入演示数据，由后台录入真实学员授权内容
  *   - quick_prompts      4 行
  *   - course_categories  6 行
  *   - popular_searches   4 行
@@ -234,10 +234,9 @@ const siteSettings: Array<{
   { key: 'brand.hero.headline', value: { 'zh-CN': '与 AI 一起, 构建未来' }, description: '首页 hero 主标题' },
   { key: 'brand.hero.subheadline', value: { 'zh-CN': 'AI Academy — 与世界级 AI 工程师一起实战' }, description: '首页 hero 副标题' },
   { key: 'brand.footer.tagline', value: { 'zh-CN': 'AI Academy · 实战驱动的 AI 工程师培养平台' }, description: 'footer 一句话定位' },
-  { key: 'brand.footer.version_tag', value: { 'zh-CN': 'v1.5.4 · built for AI era' }, description: 'footer 发布版本' },
   { key: 'brand.footer.signature', value: { 'zh-CN': '© 2026 AI Academy · 保留所有权利' }, description: 'footer 版权信息' },
   { key: 'brand.auth.shell_headline', value: { 'zh-CN': '加入 AI Academy 学员社区' }, description: 'AuthShell (登录/注册页) 品牌侧标题' },
-  { key: 'brand.auth.shell_subline', value: { 'zh-CN': '在 30 天内构建可上线的 AI 应用' }, description: 'AuthShell 品牌侧副标题' },
+  { key: 'brand.auth.shell_sub_template', value: { 'zh-CN': '{count} 名工程师、创业者、CTO 在这里把 AI 能力变成可被验证的作品。' }, description: 'AuthShell 品牌侧副标题模板' },
   { key: 'brand.global.product_name', value: { 'zh-CN': 'AI Academy' }, description: '全站通用产品名' },
   { key: 'nav.top_items', value: { items: ['课程', '学位', '黑客松', '企业培训'] }, description: '顶部导航 4 项 label' },
   {
@@ -295,6 +294,12 @@ const pageSettings: Array<{
   { page: 'enterprise', key: 'hero.subline', value: { 'zh-CN': '为团队定制 AI 实战培训方案' } },
   { page: 'enterprise', key: 'form.submit_label', value: { 'zh-CN': '提交咨询' } },
   { page: 'enterprise', key: 'form.success', value: { 'zh-CN': '已收到您的咨询, 我们会尽快联系' } },
+  {
+    page: 'enterprise',
+    key: 'form.team_sizes',
+    value: { items: ['1-10 人', '11-50 人', '51-200 人', '201-500 人', '500 人以上'] },
+    description: '企业咨询表单团队规模选项',
+  },
 
   // auth
   { page: 'auth', key: 'login.title', value: { 'zh-CN': '登录' } },
@@ -430,7 +435,8 @@ const enterpriseMethods: Array<{
 ];
 
 // ============================================================================
-// 8. testimonials (1 行, 占位示例)
+// 8. testimonials
+// 不提供演示证言。此类内容必须由后台录入真实且获得授权的学员反馈。
 // ============================================================================
 
 const testimonials: Array<{
@@ -438,14 +444,7 @@ const testimonials: Array<{
   title: string;
   quote: string;
   avatar: string;
-}> = [
-  {
-    name: 'K. Chen',
-    title: 'LLM 应用工程师学位 · 已毕业',
-    quote: '在 AI Academy 的 9 个月里, 我从零基础到能独立交付一个上线 LLM 应用, 导师的 1v1 陪跑是关键。',
-    avatar: 'K',
-  },
-];
+}> = [];
 
 // ============================================================================
 // 9. quick_prompts (4 行)
@@ -461,6 +460,10 @@ const quickPrompts: Array<{
   { emoji: '🧪', label: '给个代码例子', promptText: '基于本节内容, 给我一段可以立刻运行的代码示例, 加上逐行注释', scope: 'lesson' },
   { emoji: '❓', label: '我卡住了', promptText: '我在某个地方卡住了, 请给我一个引导式提示, 让我自己想到下一步', scope: 'lesson' },
   { emoji: '📝', label: '总结要点', promptText: '把这节课的要点压缩成 5 条笔记, 每条不超过 20 字', scope: 'lesson' },
+  { emoji: '📚', label: '推荐 AI 入门课', promptText: '请根据平台当前已发布课程，推荐一门适合零基础学习者的 AI 入门课，并说明理由。', scope: 'global' },
+  { emoji: '🎓', label: '了解纳米学位', promptText: '请介绍平台当前可报名的纳米学位、包含课程和适合人群。', scope: 'global' },
+  { emoji: '🏆', label: '查看黑客松', promptText: '请列出平台当前可以报名的黑客松，并说明报名条件和截止时间。', scope: 'global' },
+  { emoji: '🏢', label: '了解企业培训', promptText: '请根据平台企业培训页面，介绍可提供的企业 AI 培训方案。', scope: 'global' },
 ];
 
 // ============================================================================

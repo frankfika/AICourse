@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, ExternalLink, Star, UserCheck, UserX, Tags, Save, X, AlertCircle } from 'lucide-react';
 import { useToast } from '../../components/auth/Toast';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import api from '../../lib/api';
 import {
   instructorsApi,
   type InstructorSummary,
@@ -714,10 +715,11 @@ function ExpertisesTab({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ key: '', label: '', labelEn: '', orderIndex: 0 });
 
-  // 直接调 expertises admin endpoint (暂用 instructorsApi 客户端补全)
+  // 专长管理端点 (P2 fix: 改顶部 static import, 不再 dynamic import)
+  const [pendingDeleteExpertise, setPendingDeleteExpertise] = useState<InstructorExpertiseOption | null>(null);
+
   const createMut = useMutation({
     mutationFn: async (payload: typeof form) => {
-      const { api } = await import('../../lib/api');
       const { data } = await api.post('/api/v1/admin/instructors/expertises', payload);
       return data;
     },
@@ -732,7 +734,6 @@ function ExpertisesTab({
 
   const updateMut = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<typeof form> }) => {
-      const { api } = await import('../../lib/api');
       const { data } = await api.patch(`/api/v1/admin/instructors/expertises/${id}`, payload);
       return data;
     },
@@ -746,13 +747,13 @@ function ExpertisesTab({
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      const { api } = await import('../../lib/api');
       const { data } = await api.delete(`/api/v1/admin/instructors/expertises/${id}`);
       return data;
     },
     onSuccess: () => {
       onChanged();
       showToast('专长已删除', 'success');
+      setPendingDeleteExpertise(null);
     },
     onError: (e: any) => showToast(`删除失败: ${e?.response?.data?.message ?? e.message}`, 'error'),
   });
@@ -914,11 +915,7 @@ function ExpertisesTab({
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (confirm(`删除专长 "${e.label}"? 会级联删除所有讲师关联。`)) {
-                                deleteMut.mutate(e.id);
-                              }
-                            }}
+                            onClick={() => setPendingDeleteExpertise(e)}
                             className="px-2 py-1 text-xs text-error-500 hover:text-error-600"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -932,6 +929,18 @@ function ExpertisesTab({
             </tbody>
           </table>
         </div>
+      )}
+
+      {pendingDeleteExpertise && (
+        <ConfirmDialog
+          open={!!pendingDeleteExpertise}
+          onClose={() => setPendingDeleteExpertise(null)}
+          title={`删除专长 "${pendingDeleteExpertise.label}"?`}
+          description="会级联删除所有讲师关联, 且不可恢复。"
+          variant="danger"
+          confirmText="删除"
+          onConfirm={() => deleteMut.mutate(pendingDeleteExpertise.id)}
+        />
       )}
     </div>
   );

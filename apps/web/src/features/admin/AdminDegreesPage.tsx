@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2, Edit2, Sparkles, Check, X } from 'lucide-react';
 import { useApiMutation } from '../../hooks/useApiMutation';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -62,7 +62,6 @@ function learningPointsToPayload(v: string): string[] {
 }
 
 export function AdminDegreesPage() {
-  const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);

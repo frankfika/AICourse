@@ -10,12 +10,14 @@ export interface AuthUser {
   // 2026-07-23 安全加固时统一删除。如以后真要加 super_admin 角色, 同步
   // 改 prisma schema + backend + 这里。
   role: 'admin' | 'student' | 'instructor';
+  avatarUrl?: string | null;
   passwordResetRequired?: boolean;
 }
 
 interface AuthState {
   user: AuthUser | null;
   setAuth: (user: AuthUser, accessToken: string) => void;
+  updateUser: (patch: Partial<AuthUser>) => void;
   clearAuth: () => void;
 }
 
@@ -41,6 +43,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     setAccessToken(accessToken);
     set({ user });
   },
+  updateUser: (patch) => set((state) => ({
+    user: state.user ? { ...state.user, ...patch } : null,
+  })),
   clearAuth: () => {
     setAccessToken(null);
     set({ user: null });

@@ -2,13 +2,6 @@ import type { HackathonStatus } from '@ai-academy/shared-types';
 import { useEnum } from '../../lib/cms';
 
 // Fallback(API 失败时) —— 跟 review/cms-audit-labels.md §3 hackathon_status 当前值一致
-const FALLBACK_LABEL: Record<HackathonStatus, string> = {
-  upcoming: '报名中',
-  active: '进行中',
-  judging: '评审中',
-  finished: '已结束',
-  cancelled: '已取消',
-};
 const FALLBACK_STYLE: Record<HackathonStatus, string> = {
   upcoming: 'bg-[#171717] text-white border-[#171717]',
   active: 'bg-white text-[#171717] border-[#171717]',

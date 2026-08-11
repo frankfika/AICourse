@@ -7,6 +7,7 @@ import { queryClient } from './src/lib/queryClient';
 import { AuthProvider } from './src/lib/auth/AuthProvider';
 import { ToastProvider } from './src/components/auth/Toast';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { CmsErrorBanner } from './src/components/CmsErrorBanner';
 import { initThemeFromStorage } from './src/components/Layout';
 
 // 启动时同步 theme 到 <html class="dark">,避免首屏闪烁
@@ -25,6 +26,7 @@ root.render(
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ToastProvider>
+            <CmsErrorBanner />
             <RouterProvider router={router} />
           </ToastProvider>
         </AuthProvider>

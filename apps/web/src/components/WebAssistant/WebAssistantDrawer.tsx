@@ -19,7 +19,7 @@
  * 状态保留:currentSessionId 走 zustand + localStorage 持久化(下次打开恢复)
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Sparkles, X, Plus, MessageSquare, BookOpen, GraduationCap, Trophy } from 'lucide-react';
+import { Sparkles, X, Plus, MessageSquare } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { chatApi, type ChatSource, type ChatMessage } from '../../lib/chatApi';
 import { useWebAssistantStore } from '../../stores/webAssistantStore';
@@ -30,13 +30,7 @@ import { cn } from '../../lib/cn';
 import { WebAssistantMessage } from './WebAssistantMessage';
 import { WebAssistantInput } from './WebAssistantInput';
 import { WebAssistantSessionList } from './WebAssistantSessionList';
-
-const QUICK_PROMPTS = [
-  { label: '推荐一门 AI 入门课', icon: BookOpen },
-  { label: '什么是纳米学位?', icon: GraduationCap },
-  { label: '黑客松怎么报名?', icon: Trophy },
-  { label: '企业培训有哪些方案?', icon: Sparkles },
-];
+import { useList } from '../../lib/cms';
 
 export function WebAssistantDrawer() {
   const open = useWebAssistantStore((s) => s.open);
@@ -53,6 +47,14 @@ export function WebAssistantDrawer() {
   const [sendError, setSendError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastSourcesRef = useRef<ChatSource[]>([]);
+  const { data: quickPrompts = [] } = useList<{
+    id: string;
+    emoji: string;
+    label: string;
+    promptText: string;
+    scope: string;
+    isActive?: boolean;
+  }>('quick-prompts');
 
   // 拉 session 列表
   const sessionsQuery = useQuery({
@@ -322,13 +324,13 @@ export function WebAssistantDrawer() {
                     问我关于 AI Academy 的任何问题
                   </p>
                   <div className="grid grid-cols-1 gap-2">
-                    {QUICK_PROMPTS.map((q) => {
-                      const Icon = q.icon;
-                      return (
+                    {quickPrompts
+                      .filter((prompt) => prompt.isActive !== false && prompt.scope === 'global')
+                      .map((q) => (
                         <button
-                          key={q.label}
+                          key={q.id}
                           type="button"
-                          onClick={() => handleQuickPrompt(q.label)}
+                          onClick={() => handleQuickPrompt(q.promptText)}
                           data-testid={`chat-quick-${q.label}`}
                           className={cn(
                             'flex items-center gap-2 px-3 py-2 text-sm text-left',
@@ -338,11 +340,10 @@ export function WebAssistantDrawer() {
                             'transition-colors text-neutral-900',
                           )}
                         >
-                          <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                          <span className="w-4 shrink-0" aria-hidden="true">{q.emoji}</span>
                           <span>{q.label}</span>
                         </button>
-                      );
-                    })}
+                      ))}
                   </div>
                 </div>
               ) : (

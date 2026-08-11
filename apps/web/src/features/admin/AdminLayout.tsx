@@ -18,6 +18,7 @@ import {
   Settings,
   Star,
   Presentation, // 讲师 icon
+  Bot,
 } from 'lucide-react';
 import { MobileBlocked } from '../../components/MobileBlocked';
 
@@ -41,6 +42,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     // v1.1.0: 接 AuditLogController + ReviewsController,真后端
     { path: '/admin/reviews', label: '评价管理', icon: Star },
     { path: '/admin/audit', label: '审计日志', icon: ScrollText },
+    { path: '/admin/ai', label: 'AI 配置', icon: Bot },
     // CMS: 13 tab 统一管理 (cms-design §4)
     { path: '/admin/settings', label: '系统设置', icon: Settings },
   ];

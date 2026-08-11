@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsInt, IsBoolean, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsInt, IsBoolean, IsObject, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BadgeCriteriaType } from '@prisma/client';
 
@@ -53,6 +53,11 @@ export class CreateBadgeDto {
   @IsInt()
   @IsOptional()
   orderIndex?: number;
+
+  @ApiPropertyOptional({ description: '高级徽章规则 DSL（AND / OR / NOT / course_specific）' })
+  @IsOptional()
+  @IsObject()
+  criteriaJson?: Record<string, unknown>;
 }
 
 export class UpdateBadgeDto {
@@ -107,4 +112,9 @@ export class UpdateBadgeDto {
   @IsInt()
   @IsOptional()
   orderIndex?: number;
+
+  @ApiPropertyOptional({ description: '高级徽章规则 DSL；null 表示清除' })
+  @IsOptional()
+  @IsObject()
+  criteriaJson?: Record<string, unknown> | null;
 }

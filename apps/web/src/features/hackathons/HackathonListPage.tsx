@@ -7,35 +7,27 @@ import { Seo } from '../../components/Seo';
 import { useAuthStore } from '../../stores/authStore';
 import { hackathonsApi } from '../../lib/hackathonsApi';
 import { HackathonCard } from './HackathonCard';
-import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
+import { useEnum, usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
 import { Tabs } from '../../components/ui/Tabs';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { usePagination } from '../../hooks/usePagination';
 
-const FALLBACK_TABS: { key: HackathonStatus | 'all'; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'upcoming', label: '报名中' },
-  { key: 'active', label: '进行中' },
-  { key: 'judging', label: '评审中' },
-  { key: 'finished', label: '已结束' },
-];
-
 export function HackathonListPage() {
   const user = useAuthStore((s) => s.user);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<HackathonStatus | 'all'>('all');
 
-  // CMS-driven tabs (cms-audit-labels.md §3: hackathon_status)
   const { t } = useI18n();
-  const TABS = FALLBACK_TABS.map((tab) => ({
-    ...tab,
-    label:
-      tab.key === 'all'
-        ? t('hackathon.tab.all', tab.label)
-        : t(`hackathon.tab.${tab.key}`, tab.label),
-  }));
+  const { data: statusItems = [] } = useEnum('hackathon_status');
+  const TABS: { key: HackathonStatus | 'all'; label: string }[] = [
+    { key: 'all', label: t('hackathon.tab.all', '全部') },
+    ...statusItems.map((item) => ({
+      key: item.value as HackathonStatus,
+      label: item.label,
+    })),
+  ];
 
   const { data: hackathons, isLoading } = useQuery({
     queryKey: ['hackathons', activeTab, search],

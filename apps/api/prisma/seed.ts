@@ -69,6 +69,24 @@ export async function seed() {
     },
   });
 
+  // Demo 主管理员 (README §7 演示指南承诺的账号,setup-demo.sh / seed-demo.ts 都会输出这个)
+  // 只在 dev 创建;production 不暴露 demo 账号
+  if (!isProduction) {
+    const demoEmail = 'admin@opencsg.com';
+    const demoExisting = await prisma.user.findUnique({ where: { email: demoEmail } });
+    if (!demoExisting) {
+      await prisma.user.create({
+        data: {
+          email: demoEmail,
+          passwordHash: adminPassword,
+          name: 'OpenCSG Admin',
+          role: UserRole.admin,
+          passwordResetRequired: false,
+        },
+      });
+    }
+  }
+
   // Create test student
   const studentPassword = await bcrypt.hash(
     isProduction ? requireStrongSeedPassword('SEED_STUDENT_PASSWORD') : '123456',

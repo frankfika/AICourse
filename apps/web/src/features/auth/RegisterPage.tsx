@@ -17,7 +17,7 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { ProviderButtons } from '../../components/auth/ProviderButtons';
 import { AuthShell, AuthTabSwitcher } from '../../components/auth/AuthShell';
 import { useToast } from '../../components/auth/Toast';
-import { useAuth } from '../../lib/auth/AuthProvider';
+import { useAuth } from '../../lib/auth/AuthContext';
 import { api } from '../../lib/api';
 
 const registerSchema = z

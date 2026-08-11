@@ -1,0 +1,72 @@
+name: Go API
+
+on:
+  push:
+    paths:
+      - 'apps/api-go/**'
+      - '.github/workflows/go-api.yml'
+      - '.env.production.example'
+  pull_request:
+    paths:
+      - 'apps/api-go/**'
+      - '.github/workflows/go-api.yml'
+      - '.env.production.example'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-api-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
+defaults:
+  run:
+    shell: bash
+    working-directory: apps/api-go
+
+jobs:
+  go-quality:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api-go/go.mod
+          cache-dependency-path: apps/api-go/go.sum
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [[ -n "$unformatted" ]]; then
+            echo "The following Go files need gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+      - name: Vet
+        run: go vet ./...
+      - name: Race unit tests (exclude Docker suites)
+        run: |
+          mapfile -t packages < <(go list ./... | grep -Ev '/test/(e2e|integration)$')
+          test "${#packages[@]}" -gt 0
+          go test -race -count=1 "${packages[@]}"
+      - name: Compile E2E tests without running them
+        run: go test -count=1 -run '^$' ./test/e2e
+      - name: Build all Go packages
+        run: go build ./...
+
+  go-e2e:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 125
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api-go/go.mod
+          cache-dependency-path: apps/api-go/go.sum
+      - name: Run serialized dockertest E2E suite
+        run: go test -parallel=1 -count=1 -timeout=120m ./test/e2e

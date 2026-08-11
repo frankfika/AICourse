@@ -189,11 +189,11 @@ export async function getSiteSettings(keys: string[]): Promise<Record<string, an
 // =============================================================
 export async function getPageSettings(
   page: string,
-  keys?: string[],
 ): Promise<Record<string, any>> {
   const params: Record<string, string> = { page };
-  if (keys && keys.length > 0) params.keys = keys.join(',');
-  const { data } = await api.get<PageSetting[] | Record<string, any>>(
+  const { data } = await api.get<
+    PageSetting[] | Record<string, any> | Record<string, Record<string, any>>
+  >(
     '/api/v1/page-settings',
     { params },
   );
@@ -202,7 +202,14 @@ export async function getPageSettings(
     for (const s of data) out[s.key] = s.value;
     return out;
   }
-  return (data as Record<string, any>) ?? {};
+  const record = (data as Record<string, any>) ?? {};
+  // Nest CMS API returns { [page]: { [key]: value } } for filtered reads.
+  // Older clients treated that wrapper as the settings map, so every lookup
+  // missed and silently fell back to hardcoded content.
+  const pageSettings = record[page];
+  return pageSettings && typeof pageSettings === 'object'
+    ? pageSettings as Record<string, any>
+    : record;
 }
 
 // =============================================================
@@ -315,10 +322,15 @@ export interface I18nMessagesResponse {
 }
 
 export async function getI18nMessages(locale: string = 'zh-CN'): Promise<Record<string, string>> {
-  const { data } = await api.get<I18nMessagesResponse | Record<string, string>>(
+  const { data } = await api.get<
+    I18nMessage[] | I18nMessagesResponse | Record<string, string>
+  >(
     '/api/v1/i18n/messages',
     { params: { locale } },
   );
+  if (Array.isArray(data)) {
+    return Object.fromEntries(data.map((message) => [message.key, message.value]));
+  }
   if (data && typeof data === 'object' && 'messages' in data) {
     return (data as I18nMessagesResponse).messages ?? {};
   }

@@ -1,6 +1,6 @@
 {
   "name": "ai-academy",
-  "version": "1.0.0",
+  "version": "1.5.5",
   "private": true,
   "packageManager": "pnpm@11.18.0",
   "description": "AI Academy - AI and LLM education platform",
@@ -16,6 +16,7 @@
     "check": "pnpm lint && pnpm test && pnpm build",
     "test": "node --test deploy/*.test.mjs && pnpm -r test",
     "e2e": "pnpm --filter @ai-academy/web e2e",
+    "e2e:real": "node scripts/e2e-real-flow.mjs",
     "deploy:generate-env": "node deploy/generate-production-env.mjs",
     "deploy:validate": "node deploy/validate-production-env.mjs",
     "db:generate": "pnpm --filter @ai-academy/api db:generate",

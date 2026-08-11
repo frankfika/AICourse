@@ -103,9 +103,9 @@ async function bootstrap() {
   const host = configService.get<string>('API_HOST') ?? '0.0.0.0';
 
   await app.listen(port, host);
-  console.log(`🚀 API running on http://${host}:${port}/api`);
+  console.info(`🚀 API running on http://${host}:${port}/api`);
   if (configService.get<string>('NODE_ENV') !== 'production') {
-    console.log(`📚 API docs available on http://${host}:${port}/api/docs`);
+    console.info(`📚 API docs available on http://${host}:${port}/api/docs`);
   }
 }
 

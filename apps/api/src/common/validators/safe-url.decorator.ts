@@ -1,35 +1,41 @@
 /**
- * @SafeUrl — 限制 URL scheme 只能是 http(s) (防 javascript: / data: / file: XSS/SSRF)
+ * @SafeUrl — 限制 URL scheme (防 javascript: / data: / file: XSS/SSRF)
  *
  * 2026-07-24: P0 安全修 (video upload + permissions)
  * 之前大量 url 字段用 @IsString, 可被存 javascript:data:text/html,<script>...
  *
- * 用法:  @SafeUrl() url: string
- *        @SafeUrl({ optional: true }) url?: string
+ * 2026-08-05: 修 bug — 之前 protocols 参数被硬编码 https? 忽略
+ * 现在 protocols 真正生效, 默认 ['http', 'https']
+ *
+ * 用法:  @SafeUrl() url: string                            // 默认 http/https
+ *        @SafeUrl({ optional: true }) url?: string         // 可选
+ *        @SafeUrl({ protocols: ['https'] }) url: string    // 只允许 https
  */
 import { applyDecorators } from '@nestjs/common';
-import { IsOptional, IsUrl, IsString, MaxLength, ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface, Validate } from 'class-validator';
+import { IsOptional, IsString, IsUrl, Matches, MaxLength } from 'class-validator';
 
-// 严格模式: 只允许 http(s), validator.js 默认允许 ftp — 改 protocols
-const ALLOWED_PROTOCOLS = ['http', 'https'] as const;
+// 默认允许的 protocol 列表
+const DEFAULT_PROTOCOLS = ['http', 'https'] as const;
 
-@ValidatorConstraint({ name: 'isSafeUrl', async: false })
-class IsSafeUrlConstraint implements ValidatorConstraintInterface {
-  validate(value: any) {
-    if (value === null || value === undefined || value === '') return true; // optional 字段
-    if (typeof value !== 'string') return false;
-    // 简单 scheme 校验 — 比 class-validator 的 IsUrl 更严
-    return /^(https?):\/\/[^\s/$.?#].[^\s]*$/i.test(value);
-  }
-  defaultMessage(args: ValidationArguments) {
-    return `${args.property} 必须是合法的 http(s) URL`;
-  }
+// 协议字符串 → 正则
+function escapeForRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildSafeUrlRegex(protocols: readonly string[]): RegExp {
+  // 防 (?i) bypass: protocols 已知是 lower-case, 强制转义
+  const proto = protocols.map((p) => escapeForRegex(p.toLowerCase())).join('|');
+  // ^proto1|proto2:\/\/... — case-insensitive 协议头
+  return new RegExp(`^(?:${proto}):\\/\\/[^\\s/$.?#].[^\\s]*$`, 'i');
 }
 
 export function SafeUrl(options: { optional?: boolean; maxLength?: number; protocols?: readonly string[] } = {}) {
-  const { optional = false, maxLength = 500 } = options;
-  const decorators: any[] = [
-    Validate(IsSafeUrlConstraint),
+  const { optional = false, maxLength = 500, protocols = DEFAULT_PROTOCOLS } = options;
+  const regex = buildSafeUrlRegex(protocols);
+  const decorators: PropertyDecorator[] = [
+    Matches(regex, {
+      message: `${'{property}'} 必须是合法的 ${protocols.join('/')} URL`,
+    }),
   ];
   if (optional) {
     decorators.push(IsOptional());
@@ -43,11 +49,15 @@ export function SafeUrl(options: { optional?: boolean; maxLength?: number; proto
 }
 
 // 显式 @IsUrl 带 protocols — 用于已有 class-validator 体系的地方
-export function IsHttpUrl(options: { optional?: boolean; maxLength?: number } = {}) {
-  const { optional = false, maxLength = 500 } = options;
+export function IsHttpUrl(options: { optional?: boolean; maxLength?: number; protocols?: readonly string[] } = {}) {
+  const { optional = false, maxLength = 500, protocols = DEFAULT_PROTOCOLS } = options;
   return applyDecorators(
     optional ? IsOptional() : IsString(),
     MaxLength(maxLength),
-    IsUrl({ protocols: [...ALLOWED_PROTOCOLS], require_protocol: true, require_valid_protocol: true }),
+    IsUrl({
+      protocols: [...protocols],
+      require_protocol: true,
+      require_valid_protocol: true,
+    }),
   );
 }

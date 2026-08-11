@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import {
@@ -116,6 +116,7 @@ export class CoursesService {
         { title: { contains: params.search } },
         { description: { contains: params.search } },
         { instructor: { contains: params.search } },
+        { courseLinks: { some: { instructor: { name: { contains: params.search } } } } },
       ];
     }
     // 讲师过滤: 通过 courseLinks 关联
@@ -141,27 +142,37 @@ export class CoursesService {
             enrollments: { where: { deletedAt: null } },
           },
         },
-        // 讲师关联(只返 published 讲师, 草稿讲师不进公开 API)
-        ...this.courseInstructorLinksInclude(true),
+        // 公开 API 仅返已发布讲师；admin 列表需要看到草稿讲师以便编辑。
+        ...this.courseInstructorLinksInclude(!params.allowNonPublished),
       },
       orderBy: { createdAt: 'desc' },
       // P1-7 防御: 默认 50, max 100, 防 DoS (公开 list 拉全表 OOM)
       take: 100,
     });
 
-    const shaped = courses.map(({ reviews, _count, ...course }) => ({
-      ...course,
-      rating:
-        reviews.length === 0
-          ? 0
-          : Math.round(
-              (reviews.reduce((sum, review) => sum + review.rating, 0) /
-                reviews.length) *
-                10,
-            ) / 10,
-      reviewCount: reviews.length,
-      enrollmentCount: _count.enrollments,
-    }));
+    const shaped = courses.map(({ reviews, _count, ...course }) => {
+      // 兼容迁移期旧数据与只返回课程基础字段的调用方。
+      const courseLinks = course.courseLinks ?? [];
+      const primary = courseLinks.find(
+        (link) => link.role === 'instructor' && link.isPrimary,
+      );
+      const firstInstructor = courseLinks.find((link) => link.role === 'instructor');
+      return {
+        ...course,
+        // 旧 instructor 列只作导入兼容，所有展示优先以关联表为权威数据源。
+        instructor: primary?.instructor.name ?? firstInstructor?.instructor.name ?? course.instructor,
+        rating:
+          reviews.length === 0
+            ? 0
+            : Math.round(
+                (reviews.reduce((sum, review) => sum + review.rating, 0) /
+                  reviews.length) *
+                  10,
+              ) / 10,
+        reviewCount: reviews.length,
+        enrollmentCount: _count.enrollments,
+      };
+    });
 
     switch (params.sort) {
       case CourseSort.rating:
@@ -224,20 +235,54 @@ export class CoursesService {
   }
 
   async create(dto: CreateCourseDto) {
-    const { chapters, sourceVideoUrl, sourcePlatform, externalUrl, courseType, ...courseData } = dto as CreateCourseDto & {
+    const {
+      chapters,
+      sourceVideoUrl,
+      sourcePlatform,
+      externalUrl,
+      courseType,
+      instructorId,
+      instructor: legacyInstructor,
+      ...courseData
+    } = dto as CreateCourseDto & {
       sourceVideoUrl?: string;
       sourcePlatform?: string;
       externalUrl?: string;
       courseType?: CourseType;
     };
+
+    const selectedInstructor = instructorId
+      ? await this.prisma.instructor.findUnique({
+          where: { id: instructorId },
+          select: { id: true, name: true },
+        })
+      : null;
+    if (instructorId && !selectedInstructor) {
+      throw new BadRequestException('所选讲师不存在');
+    }
+    if (!selectedInstructor && !legacyInstructor?.trim()) {
+      throw new BadRequestException('请从讲师库选择一位主讲讲师');
+    }
+
     const course = await this.prisma.course.create({
       data: {
         ...courseData,
+        instructor: selectedInstructor?.name ?? legacyInstructor!.trim(),
         ...(sourceVideoUrl ? { sourceVideoUrl } : {}),
         ...(sourcePlatform ? { sourcePlatform } : {}),
         ...(externalUrl ? { externalUrl } : {}),
         ...(courseType ? { courseType } : {}),
         status: courseData.status ?? CourseStatus.draft,
+        courseLinks: selectedInstructor
+          ? {
+              create: {
+                instructorId: selectedInstructor.id,
+                role: 'instructor',
+                isPrimary: true,
+                orderIndex: 0,
+              },
+            }
+          : undefined,
         chapters: chapters
           ? {
               create: chapters.map((chapter) => ({
@@ -278,10 +323,51 @@ export class CoursesService {
 
   async update(id: string, dto: UpdateCourseDto) {
     // chapters 字段:dedicated endpoints 处理,这里只更新 course 本身
-    const { chapters: _chapters, ...courseData } = dto;
+    const {
+      chapters: _chapters,
+      instructorId,
+      instructor: _legacyInstructor,
+      ...courseData
+    } = dto;
+
+    if (instructorId) {
+      const selectedInstructor = await this.prisma.instructor.findUnique({
+        where: { id: instructorId },
+        select: { id: true, name: true },
+      });
+      if (!selectedInstructor) throw new BadRequestException('所选讲师不存在');
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.course.update({
+          where: { id },
+          data: { ...courseData, instructor: selectedInstructor.name },
+        });
+        await tx.courseInstructorLink.updateMany({
+          where: { courseId: id, role: 'instructor', isPrimary: true },
+          data: { isPrimary: false },
+        });
+        await tx.courseInstructorLink.upsert({
+          where: {
+            courseId_instructorId_role: {
+              courseId: id,
+              instructorId: selectedInstructor.id,
+              role: 'instructor',
+            },
+          },
+          create: {
+            courseId: id,
+            instructorId: selectedInstructor.id,
+            role: 'instructor',
+            isPrimary: true,
+            orderIndex: 0,
+          },
+          update: { isPrimary: true },
+        });
+      });
+    }
     const course = await this.prisma.course.update({
       where: { id },
-      data: courseData,
+      data: instructorId ? {} : courseData,
       include: this.courseInclude,
     });
 

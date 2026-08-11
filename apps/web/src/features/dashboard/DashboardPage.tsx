@@ -4,7 +4,7 @@
  * 严格按 review/mocks/mock-learn.html 落地:
  *   - 左 280-320px 课程大纲(折叠模块 → 课时,每课时显示 title + 时长 + 状态)
  *   - 中 1fr 视频 + tabs(笔记/字幕/资源) + sticky 完成按钮
- *   - 右 360-400px AI 助教入口，打开真实 WebAssistant 会话
+ *   - 右 360-400px 课程 RAG 助教，直接在当前学习上下文中对话
  *
  * 响应式:
  *   - lg+ (≥1024px): 三栏并排
@@ -16,10 +16,10 @@
  *   - 2) 失败 / 401 / 网络错 → 渲染 QueryErrorState(v1.4.1 修复,无 mock fallback)
  *   - 3) LearningEvent 视频上报走真实后端(v1.4.1 上线)
  *
- *   - AI 助教复用全站 WebAssistantDrawer，走真实 /api/v1/chat/sessions
+ *   - 课程助教有独立的嵌入式交互，不复用首页 WebAssistantDrawer 浮层
  */
 
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ChevronDown,
@@ -34,11 +34,12 @@ import {
   MessageSquare,
   Paperclip as AttachIcon,
   HelpCircle,
-  Plus,
   BookOpen,
   Clock,
   Pencil,
   Trash2,
+  X,
+  ExternalLink,
 } from 'lucide-react';
 import api from '../../lib/api';
 import { progressApi } from '../../lib/progressApi';
@@ -48,15 +49,10 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { QueryErrorState } from '../../components/QueryErrorState';
 import { useToast } from '../../components/auth/Toast';
 import { cn } from '../../lib/cn';
-import { useWebAssistantStore } from '../../stores/webAssistantStore';
 import { notesApi, type LessonNote } from '../../lib/notesApi';
 import { isDirectVideoUrl, normalizeEmbeddedVideoUrl } from '../../lib/videoUrl';
-
-const WebAssistantDrawer = lazy(() =>
-  import('../../components/WebAssistant/WebAssistantDrawer').then((module) => ({
-    default: module.WebAssistantDrawer,
-  })),
-);
+import { chatApi, type ChatMessage, type ChatSource } from '../../lib/chatApi';
+import { WebAssistantInput } from '../../components/WebAssistant/WebAssistantInput';
 
 // =============================================================
 // 类型(与 CourseDetailPage / shared-types 兼容)
@@ -352,7 +348,7 @@ export function NotesPanel({ lessonId, positionSec }: { lessonId: string; positi
   }, []);
 
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="mx-auto w-full max-w-3xl space-y-4 pb-2">
       <form
         className="rounded-lg border border-neutral-200 bg-neutral-0 p-4 dark:bg-neutral-100"
         onSubmit={(event) => {
@@ -554,9 +550,9 @@ function VideoCenter({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-neutral-50 dark:bg-neutral-50">
-      {/* 视频区 16:9 */}
-      <div className="aspect-video bg-black relative flex items-center justify-center text-white shrink-0">
+    <div className="flex h-full min-h-0 flex-col bg-neutral-50 dark:bg-neutral-50">
+      {/* 视频区：限制视口占比，确保下方笔记/资源始终有可用空间 */}
+      <div className="relative flex h-[clamp(210px,34dvh,360px)] shrink-0 items-center justify-center bg-black text-white">
         {!currentLesson.videoUrl ? (
           <div className="text-center px-6">
             <PlayCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -619,7 +615,7 @@ function VideoCenter({
       </div>
 
       {/* Tabs: 笔记 / 字幕 / 资源 / Q&A */}
-      <div className="border-b border-neutral-200 dark:border-neutral-200 bg-neutral-0 dark:bg-neutral-100 sticky top-0 z-10 flex px-4 sm:px-6 shrink-0 overflow-x-auto">
+      <div className="sticky top-0 z-10 flex shrink-0 overflow-x-auto overflow-y-hidden border-b border-neutral-200 bg-neutral-0 px-4 dark:border-neutral-200 dark:bg-neutral-100 sm:px-6">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -639,7 +635,10 @@ function VideoCenter({
       </div>
 
       {/* Tab 内容 */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-neutral-50 dark:bg-neutral-50">
+      <div
+        className="min-h-0 flex-1 overscroll-contain overflow-y-scroll bg-neutral-50 p-4 [scrollbar-color:#a3a3a3_transparent] [scrollbar-gutter:stable] dark:bg-neutral-50 sm:p-6"
+        data-testid="lesson-tab-scroll"
+      >
         {centerTab === 'notes' && (
           <NotesPanel lessonId={currentLesson.id} positionSec={videoTime} />
         )}
@@ -739,60 +738,207 @@ function VideoCenter({
 // =============================================================
 // 3) AI 助教(右栏 + mobile AI tab + tablet 抽屉)
 // =============================================================
-export function AiAssistant({
-  currentLessonTitle,
-  onClose,
+function CourseRagMessage({
+  message,
+  sources,
+  pending,
 }: {
-  currentLessonTitle: string;
-  onClose?: () => void;
+  message: ChatMessage;
+  sources?: ChatSource[];
+  pending?: boolean;
 }) {
-  const openDrawer = useWebAssistantStore((state) => state.openDrawer);
-  const setDraftInput = useWebAssistantStore((state) => state.setDraftInput);
-
-  const startLessonChat = (question?: string) => {
-    const lessonContext = `我正在学习课时「${currentLessonTitle}」`;
-    setDraftInput(question ? `${lessonContext}。${question}` : `${lessonContext}，请帮我梳理本节重点。`);
-    onClose?.();
-    openDrawer();
-  };
+  const isUser = message.role === 'user';
+  if (message.role === 'system') return null;
 
   return (
-    <div className="flex h-full flex-col bg-neutral-0 p-5 dark:bg-neutral-100">
-      <div className="flex items-center gap-3 border-b border-neutral-200 pb-4">
+    <div className={cn('flex w-full', isUser ? 'justify-end' : 'justify-start')}>
+      <div className={cn('flex max-w-[88%] flex-col', isUser ? 'items-end' : 'items-start')}>
+        <div
+          className={cn(
+            'rounded-md px-3 py-2 text-sm leading-relaxed',
+            isUser
+              ? 'rounded-br-sm bg-[#171717] text-white'
+              : 'rounded-bl-sm border border-neutral-200 bg-neutral-50 text-neutral-900',
+          )}
+        >
+          {pending ? (
+            <div className="flex min-w-[140px] items-center gap-2 text-xs text-neutral-600">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              正在检索当前课程资料…
+            </div>
+          ) : (
+            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          )}
+        </div>
+        {!isUser && sources && sources.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5" aria-label="RAG 引用来源">
+            {sources.map((source) => (
+              <a
+                key={`${source.type}-${source.id}`}
+                href={source.url}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-700 transition-colors hover:border-[#171717]"
+                title={source.title}
+              >
+                <BookOpen className="h-3 w-3 shrink-0" />
+                <span className="truncate">{source.title}</span>
+                <ExternalLink className="h-3 w-3 shrink-0 opacity-60" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function AiAssistant({
+  courseTitle,
+  currentLessonId,
+  currentLessonTitle,
+  resourceCount,
+  onClose,
+}: {
+  courseTitle: string;
+  currentLessonId: string;
+  currentLessonTitle: string;
+  resourceCount: number;
+  onClose?: () => void;
+}) {
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sourcesByMessage, setSourcesByMessage] = useState<Record<string, ChatSource[]>>({});
+  const [draft, setDraft] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setSessionId(null);
+    setMessages([]);
+    setSourcesByMessage({});
+    setDraft('');
+    setSendError(null);
+  }, [currentLessonId]);
+
+  useEffect(() => {
+    const list = messageListRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+  }, [messages, isSending]);
+
+  const sendQuestion = async (preset?: string) => {
+    const question = (preset ?? draft).trim();
+    if (!question || isSending) return;
+
+    const optimisticId = `course-rag-${Date.now()}`;
+    setMessages((current) => [
+      ...current,
+      { id: optimisticId, role: 'user', content: question, createdAt: new Date().toISOString() },
+    ]);
+    setDraft('');
+    setIsSending(true);
+    setSendError(null);
+
+    try {
+      let activeSessionId = sessionId;
+      if (!activeSessionId) {
+        const created = await chatApi.createSession(`课程 RAG · ${courseTitle} · ${currentLessonTitle}`);
+        activeSessionId = created.sessionId;
+        setSessionId(activeSessionId);
+      }
+
+      const scopedQuestion = `课程《${courseTitle}》，当前课时《${currentLessonTitle}》。请优先依据当前课程资料回答：${question}`;
+      const response = await chatApi.sendMessage(activeSessionId, scopedQuestion);
+      setMessages((current) => [
+        ...current.filter((message) => message.id !== optimisticId),
+        { ...response.userMsg, content: question },
+        response.assistantMsg,
+      ]);
+      setSourcesByMessage((current) => ({
+        ...current,
+        [response.assistantMsg.id]: response.sources,
+      }));
+    } catch {
+      setMessages((current) => current.filter((message) => message.id !== optimisticId));
+      setSendError('课程助教暂时无法回答，请检查 AI 配置后重试。');
+      setDraft(question);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const quickQuestions = ['梳理本节 3 个关键点', '出一道题检验我的理解', '结合实际案例解释本节内容'];
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-neutral-0 dark:bg-neutral-100" aria-label="课程 RAG 助教">
+      <div className="flex shrink-0 items-center gap-3 border-b border-neutral-200 px-4 py-4">
         <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#171717] text-white">
           <Sparkles className="h-5 w-5" aria-hidden="true" />
         </span>
-        <div className="min-w-0">
-          <h2 className="font-semibold">AI 助教</h2>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold">课程 RAG 助教</h2>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">当前上下文</span>
+          </div>
           <p className="truncate text-xs text-neutral-600">当前：{currentLessonTitle}</p>
         </div>
+        {onClose && (
+          <button type="button" onClick={onClose} aria-label="关闭课程助教" className="rounded-md p-2 hover:bg-neutral-100">
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
-      <div className="flex flex-1 flex-col justify-center py-8">
-        <h3 className="text-xl font-bold">带着当前课时去提问</h3>
-        <p className="mt-2 text-sm leading-6 text-neutral-600">
-          使用真实 AI 会话，历史记录、消息发送和引用来源都会保存在同一个助教中。
-        </p>
-        <div className="mt-5 space-y-2">
-          {['帮我梳理本节重点。', '给我一个检验理解程度的问题。', '用一个实际案例解释本节内容。'].map(
-            (question) => (
-              <button
-                key={question}
-                type="button"
-                onClick={() => startLessonChat(question)}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-left text-sm hover:border-[#171717]"
-              >
-                {question}
-              </button>
-            ),
-          )}
+
+      <div className="shrink-0 border-b border-neutral-200 bg-neutral-50 px-4 py-2.5">
+        <div className="flex flex-wrap gap-1.5 text-[11px] text-neutral-600">
+          <span className="rounded-md border border-neutral-200 bg-white px-2 py-1">当前课程</span>
+          <span className="rounded-md border border-neutral-200 bg-white px-2 py-1">当前课时</span>
+          <span className="rounded-md border border-neutral-200 bg-white px-2 py-1">课件资源 {resourceCount}</span>
         </div>
-        <button
-          type="button"
-          onClick={() => startLessonChat()}
-          className="mt-5 min-h-11 rounded-md bg-[#171717] px-4 py-2 text-sm font-semibold text-white hover:bg-[#262626]"
-        >
-          打开 AI 助教
-        </button>
+      </div>
+
+      <div ref={messageListRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 [scrollbar-color:#a3a3a3_transparent] [scrollbar-gutter:stable]">
+        {messages.length === 0 ? (
+          <div className="flex h-full min-h-[260px] flex-col justify-center">
+            <h3 className="text-lg font-bold">只聊这门课的内容</h3>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">
+              回答会自动携带当前课程和课时上下文，并展示命中的 RAG 来源，不会跳到首页助手。
+            </p>
+            <div className="mt-4 space-y-2">
+              {quickQuestions.map((question) => (
+                <button
+                  key={question}
+                  type="button"
+                  onClick={() => sendQuestion(question)}
+                  className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2.5 text-left text-sm transition-colors hover:border-[#171717] hover:bg-neutral-50"
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <CourseRagMessage key={message.id} message={message} sources={sourcesByMessage[message.id]} />
+          ))
+        )}
+        {isSending && (
+          <CourseRagMessage
+            pending
+            message={{ id: 'course-rag-pending', role: 'assistant', content: '', createdAt: new Date().toISOString() }}
+          />
+        )}
+      </div>
+
+      {sendError && <div role="alert" className="shrink-0 border-t border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">{sendError}</div>}
+      <div className="shrink-0">
+        <WebAssistantInput
+          value={draft}
+          onChange={setDraft}
+          onSend={() => sendQuestion()}
+          isSending={isSending}
+          placeholder="基于当前课程提问…"
+        />
+        <p className="border-t border-neutral-100 px-4 py-2 text-center text-[10px] text-neutral-500">AI 回答可能有误，请以课程资料与官方文档为准</p>
       </div>
     </div>
   );
@@ -804,8 +950,6 @@ export function AiAssistant({
 export function DashboardPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
-  const assistantOpen = useWebAssistantStore((state) => state.open);
-
   // 移动端顶部 tab 切换(大纲 / 视频 / AI)
   const [mobileTab, setMobileTab] = useState<'outline' | 'video' | 'ai'>('video');
   // tablet 抽屉 AI
@@ -992,7 +1136,7 @@ export function DashboardPage() {
   const currentLesson = findLessonById(course.chapters, currentLessonId) || course.chapters[0].lessons[0];
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] flex flex-col">
+    <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 flex-col overflow-hidden">
       {/* ============================================================
        * 移动端 3 tab(< md)
        * ============================================================ */}
@@ -1023,15 +1167,15 @@ export function DashboardPage() {
         className={cn(
           'flex-1 min-h-0 grid',
           'grid-cols-1',
-          'md:grid-cols-[280px_1fr]',
-          'lg:grid-cols-[280px_1fr_360px]',
-          'xl:grid-cols-[320px_1fr_400px]',
+          'md:grid-cols-[280px_minmax(0,1fr)]',
+          'lg:grid-cols-[280px_minmax(0,1fr)_360px]',
+          'xl:grid-cols-[320px_minmax(0,1fr)_400px]',
         )}
       >
         {/* 左栏:大纲 */}
         <aside
           className={cn(
-            'md:block overflow-hidden border-r border-neutral-200 dark:border-neutral-200',
+            'min-h-0 md:block overflow-hidden border-r border-neutral-200 dark:border-neutral-200',
             mobileTab === 'outline' ? 'block' : 'hidden',
             'md:block',
           )}
@@ -1048,7 +1192,7 @@ export function DashboardPage() {
         {/* 中栏:视频 + tabs */}
         <main
           className={cn(
-            'md:block overflow-hidden',
+            'min-h-0 min-w-0 md:block overflow-hidden',
             mobileTab === 'video' ? 'block' : 'hidden',
             'md:block',
           )}
@@ -1066,10 +1210,15 @@ export function DashboardPage() {
         {/* 右栏:AI 助教(仅 lg+ 显示) */}
         <aside
           className={cn(
-            'hidden lg:block overflow-hidden border-l border-neutral-200 dark:border-neutral-200',
+            'hidden min-h-0 min-w-0 overflow-hidden border-l border-neutral-200 dark:border-neutral-200 lg:block',
           )}
         >
-          <AiAssistant currentLessonTitle={currentLesson.title} />
+          <AiAssistant
+            courseTitle={course.title}
+            currentLessonId={currentLesson.id}
+            currentLessonTitle={currentLesson.title}
+            resourceCount={currentLesson.resources?.length ?? 0}
+          />
         </aside>
       </div>
 
@@ -1102,7 +1251,10 @@ export function DashboardPage() {
             aria-label="AI 助教"
           >
             <AiAssistant
+              courseTitle={course.title}
+              currentLessonId={currentLesson.id}
               currentLessonTitle={currentLesson.title}
+              resourceCount={currentLesson.resources?.length ?? 0}
               onClose={() => setAiDrawerOpen(false)}
             />
           </div>
@@ -1112,14 +1264,13 @@ export function DashboardPage() {
       {/* 移动端 AI tab 的内容(走 mobile tab 切换,直接在右栏渲染) */}
       {mobileTab === 'ai' && (
         <div className="md:hidden fixed inset-x-0 top-[7rem] bottom-0 z-30 bg-neutral-0 dark:bg-neutral-100">
-          <AiAssistant currentLessonTitle={currentLesson.title} />
+          <AiAssistant
+            courseTitle={course.title}
+            currentLessonId={currentLesson.id}
+            currentLessonTitle={currentLesson.title}
+            resourceCount={currentLesson.resources?.length ?? 0}
+          />
         </div>
-      )}
-
-      {assistantOpen && (
-        <Suspense fallback={null}>
-          <WebAssistantDrawer />
-        </Suspense>
       )}
     </div>
   );

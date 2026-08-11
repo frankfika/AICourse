@@ -73,29 +73,6 @@ const TONE_TEXT: Record<Tone, string> = {
 };
 
 // =============================================================
-// Sparkline 组件
-// =============================================================
-function Sparkline({ points, color }: { points: number[]; color: string }) {
-  if (points.length === 0) return null;
-  const max = Math.max(...points, 1);
-  const w = 100;
-  const h = 24;
-  const stepX = w / Math.max(points.length - 1, 1);
-  const path = points
-    .map((p, i) => {
-      const x = i * stepX;
-      const y = h - (p / max) * h;
-      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(' ');
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="mt-3 w-full h-6" preserveAspectRatio="none">
-      <path d={path} fill="none" stroke={color} strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-// =============================================================
 // 主页面
 // =============================================================
 export function AdminDashboardPage() {
@@ -103,7 +80,7 @@ export function AdminDashboardPage() {
   const theme = useTheme();
   const toggleTheme = useThemeStore((s) => s.toggle);
   const isDark = theme === 'dark';
-  const { formatNumber, formatCurrency } = useLocaleDate();
+  const { formatNumber } = useLocaleDate();
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin-stats'],

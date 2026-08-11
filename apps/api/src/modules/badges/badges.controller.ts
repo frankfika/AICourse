@@ -35,6 +35,15 @@ export class BadgesController {
     return this.badgesService.getUserBadgesWithStatus(req.user.userId);
   }
 
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '管理员获取全部徽章（包含已停用）' })
+  async findAllAdmin() {
+    return this.badgesService.findAllAdmin();
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')

@@ -7,7 +7,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { CostType, CourseStatus } from '@prisma/client';
 import { SafeUrl } from '../../common/validators/safe-url.decorator';
 
@@ -59,7 +59,7 @@ export class CreateDegreeDto {
   status?: CourseStatus;
 }
 
-export class UpdateDegreeDto extends CreateDegreeDto {}
+export class UpdateDegreeDto extends PartialType(CreateDegreeDto) {}
 
 export class LinkCoursesDto {
   @ApiProperty({ type: [DegreeCourseLinkDto], description: '要绑定的课程列表（含排序）' })

@@ -7,6 +7,7 @@
  */
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CmsI18nService } from './cms-i18n.service';
 
 @ApiTags('cms-i18n')
@@ -14,6 +15,7 @@ import { CmsI18nService } from './cms-i18n.service';
 export class CmsI18nController {
   constructor(private readonly cmsI18nService: CmsI18nService) {}
 
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('messages')
   @ApiOperation({ summary: 'i18n 通用文案 (按 locale + category)' })
   listMessages(

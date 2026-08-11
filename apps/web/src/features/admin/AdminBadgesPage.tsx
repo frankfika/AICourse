@@ -5,6 +5,7 @@ import { useApiMutation } from '../../hooks/useApiMutation';
 import { useToast } from '../../components/auth/Toast';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { badgesApi } from '../../lib/badgesApi';
+import api from '../../lib/api';
 import type {
   Badge,
   BadgeCriteriaType,
@@ -67,6 +68,16 @@ export function AdminBadgesPage() {
   const { data: badges } = useQuery({
     queryKey: ['admin-badges'],
     queryFn: () => badgesApi.getAll(),
+  });
+
+  const { data: courses } = useQuery({
+    queryKey: ['admin-courses-for-badges'],
+    queryFn: async () => {
+      const { data } = await api.get<Array<{ id: string; title: string; status: string }>>(
+        '/api/v1/courses',
+      );
+      return data ?? [];
+    },
   });
 
   const createMutation = useMutation({
@@ -267,11 +278,17 @@ export function AdminBadgesPage() {
               {/* P1 修复(2026-07-24): course_specific 时显示 courseId 输入 */}
               {form.criteriaType === 'course_specific' && (
                 <div className="md:col-span-2">
-                  <BrutalField
-                    label="目标课程 UUID (course_specific 必填)"
+                  <BrutalSelect
+                    label="目标课程"
                     value={form.specificCourseId}
                     onChange={(v) => setForm({ ...form, specificCourseId: v })}
-                    placeholder="e.g. 7f1a8c3e-..."
+                    options={[
+                      { value: '', label: '— 从课程库选择 —' },
+                      ...(courses ?? []).map((course) => ({
+                        value: course.id,
+                        label: `${course.title}${course.status !== 'published' ? ' · 草稿' : ''}`,
+                      })),
+                    ]}
                   />
                 </div>
               )}
@@ -285,6 +302,7 @@ export function AdminBadgesPage() {
                 rule={form.criteriaJson ?? { op: 'and', rules: [] }}
                 onChange={(r) => setForm({ ...form, criteriaJson: r })}
                 depth={0}
+                courses={courses ?? []}
               />
             </div>
           )}
@@ -542,10 +560,12 @@ function RuleBuilder({
   rule,
   onChange,
   depth,
+  courses,
 }: {
   rule: BadgeCriteriaRule;
   onChange: (r: BadgeCriteriaRule) => void;
   depth: number;
+  courses: Array<{ id: string; title: string; status: string }>;
 }) {
   const [expanded, setExpanded] = useState(true);
 
@@ -622,6 +642,7 @@ function RuleBuilder({
                   <RuleBuilder
                     rule={child}
                     depth={depth + 1}
+                    courses={courses}
                     onChange={(r) => {
                       const next = [...rule.rules];
                       next[idx] = r;
@@ -670,15 +691,32 @@ function RuleBuilder({
           </option>
         ))}
       </select>
-      <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400 dark:text-neutral-400">
-        阈值
-      </span>
-      <input
-        type="number"
-        value={rule.value ?? 1}
-        onChange={(e) => onChange({ ...rule, value: Number(e.target.value) })}
-        className="w-20 px-2 py-1 border border-[#171717] dark:border-neutral-50 dark:border-neutral-50 text-xs focus:outline-none focus:bg-[#EEEDE9] dark:bg-neutral-800 dark:focus:bg-neutral-800 dark:focus:bg-neutral-800"
-      />
+      {rule.type === 'course_specific' ? (
+        <select
+          value={rule.courseId ?? ''}
+          onChange={(e) => onChange({ ...rule, courseId: e.target.value, value: 1 })}
+          className="min-w-0 flex-1 px-2 py-1 border border-[#171717] dark:border-neutral-50 text-xs bg-white dark:bg-neutral-100"
+        >
+          <option value="">— 选择课程 —</option>
+          {courses.map((course) => (
+            <option key={course.id} value={course.id}>
+              {course.title}{course.status !== 'published' ? ' · 草稿' : ''}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <>
+          <span className="text-[10px] font-black uppercase tracking-widest text-[#666666] dark:text-neutral-400">
+            阈值
+          </span>
+          <input
+            type="number"
+            value={rule.value ?? 1}
+            onChange={(e) => onChange({ ...rule, value: Number(e.target.value) })}
+            className="w-20 px-2 py-1 border border-[#171717] dark:border-neutral-50 text-xs focus:outline-none focus:bg-[#EEEDE9] dark:focus:bg-neutral-800"
+          />
+        </>
+      )}
     </div>
   );
 }

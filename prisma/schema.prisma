@@ -1236,6 +1236,9 @@ model AiConfig {
   // 可选: 自定义 base URL (azure / proxy)
   baseUrl   String?  @map("base_url")
   isActive  Boolean  @default(true) @map("is_active")
+  // 每次 Key / Model / Base URL 变更都会清空，只有后台 Verify 成功才写入。
+  verifiedAt     DateTime? @map("verified_at")
+  lastVerifyError String?  @db.Text @map("last_verify_error")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

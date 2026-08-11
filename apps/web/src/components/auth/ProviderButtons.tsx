@@ -16,7 +16,7 @@ export interface ProviderButtonsProps {
   /** 强制全部禁用 */
   grayscale?: boolean;
   /** 后端能力列表；只渲染第三方 provider，不渲染 email_password */
-  providers?: ProviderInfo[];
+  providers: ProviderInfo[];
   /** 点击已启用的 provider */
   onProviderClick?: (providerId: string, label: string) => void;
   className?: string;
@@ -119,14 +119,16 @@ function AppleIcon() {
   );
 }
 
-const PROVIDERS: ProviderDef[] = [
-  { id: 'oauth.google', label: 'Google', icon: <GoogleIcon />, enabled: false },
-  { id: 'oauth.github', label: 'GitHub', icon: <GitHubIcon />, enabled: false },
-  { id: 'wechat', label: '微信', icon: <WechatIcon />, enabled: false },
-  { id: 'wecom', label: '企业微信', icon: <WecomIcon />, enabled: false },
-  { id: 'feishu', label: '飞书', icon: <FeishuIcon />, enabled: false },
-  { id: 'apple', label: 'Apple', icon: <AppleIcon />, enabled: false },
-];
+// Icons are presentation assets; provider labels and enabled state always come
+// from GET /auth/providers (which is joined with CMS auth_providers metadata).
+const PROVIDER_ICONS: Record<string, React.ReactNode> = {
+  'oauth.google': <GoogleIcon />,
+  'oauth.github': <GitHubIcon />,
+  wechat: <WechatIcon />,
+  wecom: <WecomIcon />,
+  feishu: <FeishuIcon />,
+  apple: <AppleIcon />,
+};
 
 export function ProviderButtons({
   grayscale = true,
@@ -135,18 +137,13 @@ export function ProviderButtons({
   className,
 }: ProviderButtonsProps) {
   const displayedProviders = providers
-    ? providers
-        .filter((provider) => provider.type !== 'email_password')
-        .map((provider): ProviderDef => {
-          const fallback = PROVIDERS.find((item) => item.id === provider.id);
-          return {
-            id: provider.id,
-            label: provider.label,
-            icon: fallback?.icon ?? <Lock className="h-6 w-6" />,
-            enabled: provider.enabled,
-          };
-        })
-    : PROVIDERS;
+    .filter((provider) => provider.type !== 'email_password')
+    .map((provider): ProviderDef => ({
+      id: provider.id,
+      label: provider.label,
+      icon: PROVIDER_ICONS[provider.id] ?? <Lock className="h-6 w-6" />,
+      enabled: provider.enabled,
+    }));
 
   if (displayedProviders.length === 0) return null;
 

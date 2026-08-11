@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiAssistant, NotesPanel } from './DashboardPage';
 import { notesApi } from '../../lib/notesApi';
-import { useWebAssistantStore } from '../../stores/webAssistantStore';
+import { chatApi } from '../../lib/chatApi';
 
 vi.mock('../../lib/notesApi', () => ({
   notesApi: {
@@ -11,6 +12,13 @@ vi.mock('../../lib/notesApi', () => ({
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
+  },
+}));
+
+vi.mock('../../lib/chatApi', () => ({
+  chatApi: {
+    createSession: vi.fn(),
+    sendMessage: vi.fn(),
   },
 }));
 
@@ -22,17 +30,33 @@ function renderWithQuery(ui: React.ReactNode) {
 describe('Dashboard 学习组件', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useWebAssistantStore.getState().reset();
   });
 
-  it('AI 助教携带当前课时上下文打开真实 Drawer', () => {
-    render(<AiAssistant currentLessonTitle="ReAct 循环" />);
+  it('课程 RAG 助教在当前面板内发送带课程与课时上下文的问题', async () => {
+    vi.mocked(chatApi.createSession).mockResolvedValue({ sessionId: 'session-1', title: '课程 RAG' });
+    vi.mocked(chatApi.sendMessage).mockResolvedValue({
+      userMsg: { id: 'user-1', role: 'user', content: 'scoped', createdAt: '2026-08-12T00:00:00Z' },
+      assistantMsg: { id: 'assistant-1', role: 'assistant', content: 'ReAct 会循环执行思考与行动。', createdAt: '2026-08-12T00:00:01Z' },
+      sources: [],
+    });
+    render(
+      <MemoryRouter>
+        <AiAssistant
+          courseTitle="Agent 工程"
+          currentLessonId="lesson-1"
+          currentLessonTitle="ReAct 循环"
+          resourceCount={2}
+        />
+      </MemoryRouter>,
+    );
 
-    fireEvent.click(screen.getByRole('button', { name: '打开 AI 助教' }));
+    fireEvent.click(screen.getByRole('button', { name: '梳理本节 3 个关键点' }));
 
-    const state = useWebAssistantStore.getState();
-    expect(state.open).toBe(true);
-    expect(state.draftInput).toContain('ReAct 循环');
+    await waitFor(() => expect(chatApi.sendMessage).toHaveBeenCalled());
+    expect(vi.mocked(chatApi.sendMessage).mock.calls[0][1]).toContain('Agent 工程');
+    expect(vi.mocked(chatApi.sendMessage).mock.calls[0][1]).toContain('ReAct 循环');
+    expect(screen.queryByRole('dialog', { name: 'AI 网页助手' })).not.toBeInTheDocument();
+    expect(await screen.findByText('ReAct 会循环执行思考与行动。')).toBeInTheDocument();
   });
 
   it('笔记面板读取并创建带当前时间戳的笔记', async () => {

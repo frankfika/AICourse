@@ -347,7 +347,7 @@ export class InstructorsService {
     // 校验讲师存在
     const instructor = await this.prisma.instructor.findUnique({
       where: { id: dto.instructorId },
-      select: { id: true },
+      select: { id: true, name: true },
     });
     if (!instructor) throw new NotFoundException('Instructor not found');
 
@@ -389,6 +389,15 @@ export class InstructorsService {
         },
       });
 
+      // courses.instructor 仅作历史兼容列；主讲关联变更时自动同步，
+      // 禁止后台存在两个互相矛盾的讲师数据源。
+      if (isPrimary) {
+        await tx.course.update({
+          where: { id: courseId },
+          data: { instructor: instructor.name },
+        });
+      }
+
       await this.auditLog.log({
         action: 'instructor.link',
         entity: 'course_instructor_link',
@@ -406,13 +415,32 @@ export class InstructorsService {
   async unlinkFromCourse(courseId: string, linkId: string) {
     const link = await this.prisma.courseInstructorLink.findUnique({
       where: { id: linkId },
-      select: { id: true, courseId: true },
+      select: { id: true, courseId: true, role: true, isPrimary: true },
     });
     if (!link || link.courseId !== courseId) {
       throw new NotFoundException('Link not found');
     }
 
-    await this.prisma.courseInstructorLink.delete({ where: { id: linkId } });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.courseInstructorLink.delete({ where: { id: linkId } });
+      if (link.role === CourseInstructorRole.instructor && link.isPrimary) {
+        const replacement = await tx.courseInstructorLink.findFirst({
+          where: { courseId, role: CourseInstructorRole.instructor },
+          orderBy: { orderIndex: 'asc' },
+          include: { instructor: { select: { name: true } } },
+        });
+        if (replacement) {
+          await tx.courseInstructorLink.update({
+            where: { id: replacement.id },
+            data: { isPrimary: true },
+          });
+          await tx.course.update({
+            where: { id: courseId },
+            data: { instructor: replacement.instructor.name },
+          });
+        }
+      }
+    });
     await this.auditLog.log({
       action: 'instructor.unlink',
       entity: 'course_instructor_link',
@@ -481,6 +509,22 @@ export class InstructorsService {
           }),
         ),
       );
+
+      const primaryInput = dto.links.find(
+        (l) => l.role === CourseInstructorRole.instructor && l.isPrimary,
+      ) ?? dto.links.find((l) => l.role === CourseInstructorRole.instructor);
+      if (primaryInput) {
+        const primaryInstructor = await tx.instructor.findUnique({
+          where: { id: primaryInput.instructorId },
+          select: { name: true },
+        });
+        if (primaryInstructor) {
+          await tx.course.update({
+            where: { id: courseId },
+            data: { instructor: primaryInstructor.name },
+          });
+        }
+      }
 
       await this.auditLog.log({
         action: 'instructor.syncLinks',

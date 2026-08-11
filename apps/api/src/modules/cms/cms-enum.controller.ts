@@ -8,6 +8,7 @@
  */
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CmsEnumService } from './cms-enum.service';
 
 @ApiTags('cms-enum')
@@ -15,6 +16,7 @@ import { CmsEnumService } from './cms-enum.service';
 export class CmsEnumController {
   constructor(private readonly cmsEnumService: CmsEnumService) {}
 
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('enum-translations')
   @ApiOperation({ summary: '枚举 i18n (label + color + icon)' })
   listEnumTranslations(
@@ -24,6 +26,7 @@ export class CmsEnumController {
     return this.cmsEnumService.listEnumTranslations(type, locale);
   }
 
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('date-format-templates')
   @ApiOperation({ summary: '日期/时间格式模板' })
   listDateFormatTemplates(

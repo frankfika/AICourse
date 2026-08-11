@@ -74,3 +74,17 @@ apps/web/test-results/
 apps/web/playwright-report/
 apps/web/blob-report/
 apps/web/playwright/.cache/
+
+# Go API local test, upload, coverage, and profiling artifacts
+apps/api-go/coverage.out
+apps/api-go/*.test
+apps/api-go/var/uploads/
+apps/api-go/*.prof
+apps/api-go/cpu.out
+apps/api-go/mem.out
+apps/api-go/trace.out
+apps/api-go/bin/
+apps/api-go/server
+apps/api-go/poc-ext-deps
+apps/api-go/poc-schema
+apps/api-go/coverage.html

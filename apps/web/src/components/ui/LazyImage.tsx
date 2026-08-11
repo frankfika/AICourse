@@ -51,7 +51,9 @@ export function LazyImage({
       <div
         className={cn(
           'flex items-center justify-center bg-neutral-200 text-neutral-500',
-          fill && 'absolute inset-0',
+          // 与正常图片的 fill 行为一致，留在父容器的布局范围内。
+          // absolute inset-0 会在父级忘记 relative 时覆盖整张页面。
+          fill && 'h-full w-full',
           className,
         )}
         role="img"

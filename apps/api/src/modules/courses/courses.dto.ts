@@ -8,7 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { CourseLevel, CostType, CourseStatus, CourseType } from '@prisma/client';
 import { CreateLessonDto as NestedCreateLessonDto } from './lessons.dto';
 import { CreateResourceDto as NestedCreateResourceDto } from './resources.dto';
@@ -68,13 +68,16 @@ export class CreateCourseDto {
   @IsString()
   learningPoints: string;
 
-  @ApiProperty({ description: '讲师名称' })
-  @IsString()
-  instructor: string;
-
-  @ApiPropertyOptional({ description: '讲师用户 UUID' })
+  @ApiPropertyOptional({
+    description: '兼容旧数据/导入流程的讲师名称；后台手工创建请传 instructorId',
+  })
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  instructor?: string;
+
+  @ApiPropertyOptional({ description: '讲师表 ID（Instructor 使用 cuid）' })
+  @IsOptional()
+  @IsString()
   instructorId?: string;
 
   @ApiProperty({ enum: CourseLevel, description: '难度等级' })
@@ -143,7 +146,7 @@ export class CreateCourseDto {
   chapters?: CreateChapterDto[];
 }
 
-export class UpdateCourseDto extends CreateCourseDto {}
+export class UpdateCourseDto extends PartialType(CreateCourseDto) {}
 
 /**
  * P0 修复(2026-07-24): 课程挂学位 — 接受学位 ID 列表(append 语义)。

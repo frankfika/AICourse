@@ -8,7 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { AuthShell } from '../../components/auth/AuthShell';
 import { api } from '../../lib/api';
-import { useAuth } from '../../lib/auth/AuthProvider';
+import { useAuth } from '../../lib/auth/AuthContext';
 
 export function ForgotPasswordPage() {
   const { isAuthenticating } = useAuth();

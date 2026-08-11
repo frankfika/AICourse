@@ -131,7 +131,7 @@ UPDATE users SET role = 'admin' WHERE email = '<email>';
 - Redis 状态
 - 最近一次部署时间
 
-> ⚠️ **当前版本**:P0-8 看板数据为 mock,接 `/api/v1/admin/stats` 待实现。
+> **当前版本**(v1.5.0 起):看板数据走真后端 `GET /api/v1/admin/stats`,不再使用 mock。包含 4 KPI(今日 GMV / 新增用户 / DAU / 订单总数)+ 30 天用户增长 + Top 10 报名课程 + 漏斗 + 收入饼图。
 
 ---
 
@@ -225,7 +225,7 @@ UPDATE users SET role = 'admin' WHERE email = '<email>';
 
 **行为**:
 1. 系统抓取视频元数据(标题 / 作者 / 封面)
-2. **Gemini AI** 自动补全:描述 / 学习要点(5 条) / 难度 / 时长 / 标签 / 价格
+2. **平台 AI** 自动补全:描述 / 学习要点(5 条) / 难度 / 时长 / 标签 / 价格（使用 `/admin/ai` 中验证通过的 OpenAI-compatible 配置）
 3. 自动去重:同一视频二次导入提示「该视频已导入过」
 4. 草稿状态:`status=draft`,不会出现在前台
 5. **8 秒超时**,抓取失败自动重试 1 次
@@ -720,13 +720,23 @@ BD 认领 → 状态「已联系」
 2. 选违规评价 → 删
 3. 写删因 + 通知用户
 
+### 15.8 配置平台 AI
+
+1. 管理员打开 `/admin/ai`（侧栏「AI 配置」）
+2. 选择 OpenAI、DeepSeek、通义千问、OpenRouter、硅基流动等预设，或选择自定义 OpenAI-compatible 服务
+3. 填写 Base URL、Model 和 API Key 后点「加密保存」
+4. 点 **Verify** 真实调用 `/chat/completions`
+5. 只有显示 **Verified + Active** 的配置才供课程生成、学位生成和全局 AI 助手使用
+
+API Key 只由管理员在页面填写并加密入库，列表只展示末 4 位；修改 Key、Model 或 Base URL 后必须重新 Verify。
+
 ---
 
 ## 附录:安全 checklist
 
 - [ ] 每周检查 admin 列表,清退离职人员
 - [ ] 每月 review 审计日志(P2 上线后)
-- [ ] 不在前端 bundle 写 GEMINI_API_KEY / STRIPE_SECRET_KEY
+- [ ] 不在前端 bundle 或业务配置文件写 AI Provider Key / STRIPE_SECRET_KEY
 - [ ] 操作前看 URL 二次确认
 - [ ] 删数据前先备份(联系 super_admin)
 - [ ] 客服场景避免直接「重置密码」,引导用户自助

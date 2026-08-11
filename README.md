@@ -1,16 +1,17 @@
 # AI Academy
 
 > 一个可二次品牌化(white-label)的在线教育平台 —— 课程 / 学位 / 黑客松 / 实践项目 / 证书 / AI 助教,端到端可上线。
-> pnpm monorepo,React 19 SPA + NestJS API + MySQL/Redis/MinIO。
+> pnpm monorepo,React 19 SPA + NestJS 主 API + Go 迁移实现 + MySQL/Redis/MinIO。
 
 | 指标 | 数字 |
 | --- | --- |
-| API 测试 | **38 suites / 347 tests** 全过 |
-| Web 测试 | **22 files / 132 tests** 全过 |
+| API 测试 | **39 suites / 353 tests** 全过 |
+| Web 测试 | **27 files / 150 tests** 全过 |
 | E2E (Playwright) | **29 passed / 1 skipped** (mobile-only) |
 | API modules | **26 个域** (auth / courses / hackathons / ai / ...) |
 | Prisma models | **59** / 索引 **105** |
-| 真实业务流 e2e | **31/32 通过** (注册 → 课程 → 下单 → 支付 → 报名 → 通知) |
+| 真实业务流 e2e | **9/9 通过** (CI `e2e-real-flow` 任务: 注册 → 选课 → 完课 → 证书 → 通知, v1.5.5 自动化) |
+| Go API 迁移 | **255 个 HTTP method / 43 个测试文件**，Phase 2 本地最终验证通过，生产切流尚未开始 |
 
 > **支付状态**:开发环境用 mock 流程;**生产环境 mock 接口 503**,购买/付款/退款需求走企业咨询工单(可追踪)。真实支付 + webhook 验证在后续 release 单独发布。
 
@@ -38,18 +39,18 @@ flowchart LR
     S3[("MinIO / S3<br/>对象存储")]
   end
 
-  GEMINI["Gemini / OpenAI<br/>(用户级 API key 配置)"]
+  LLM["OpenAI-compatible Provider<br/>(管理员配置 + Verify 后启用)"]
   OAUTH["Google / GitHub OAuth<br/>SAML IdP"]
 
   UI -->|HTTPS / JWT| AUTH
   UI -->|HTTPS| DOMAIN
   UI -->|HTTPS| CMS
-  UI -->|可选| GEMINI
+  UI -->|可选| LLM
   AUTH -->|可选| OAUTH
   DOMAIN --> MYSQL
   DOMAIN --> REDIS
   DOMAIN --> S3
-  DOMAIN -->|AI 调用| GEMINI
+  DOMAIN -->|AI 调用| LLM
   AUTH --> MYSQL
   AUTH --> REDIS
   CMS --> MYSQL
@@ -61,6 +62,7 @@ flowchart LR
 - **横向扩展**:Redis throttler store 让多实例部署时 rate limit 共享计数
 - **白盒 + 闭源友好**:mock 支付 / 退款在生产 503,真实业务依赖 webhook(未启用前关闭)
 - **可观测**:`/health/ready` 暴露 mysql/redis/minio 三件套状态
+- **渐进式 Go 迁移**:`apps/api-go` 以 OpenAPI 契约和兼容响应为边界完成 Phase 2；NestJS 仍是当前生产主 API，切流前保留双实现验证
 
 ---
 
@@ -75,6 +77,13 @@ ai-academy/                                 pnpm monorepo
 │   │   ├── src/modules/                    26 domain modules (见 §4)
 │   │   ├── src/common/                     共享: guards / filters / pipes / redis / prisma
 │   │   └── prisma/                         seed 脚本 (seed.ts / seed-cms / seed-instructors / bootstrap-production)
+│   │
+│   ├── api-go/                             Go/Fiber API 迁移实现（Phase 2，尚未生产切流）
+│   │   ├── cmd/server/                     服务入口 + 路由挂载
+│   │   ├── internal/                       handler / service / repo / middleware
+│   │   ├── db/                             sqlc queries + SQL migration
+│   │   ├── api/                            OpenAPI 契约 + 生成代码
+│   │   └── test/e2e/                       dockertest 真实 MySQL 回归
 │   │
 │   └── web/                                React 19 SPA (port 5500)
 │       ├── src/router.tsx                  React Router 7 路由树 + lazy split
@@ -123,7 +132,7 @@ ai-academy/                                 pnpm monorepo
 - 报名获得:`order.mockPay()` / 课程完成钩子 / hackathon judge → 自动 issueCertificate
 - 订单状态机:`pending → paid → (refunded)`,并发 pay 走 `updateMany + status guard` 原子化
 - 笔记:lesson 级 + 可选 `positionSec`(视频时间点)
-- AI 兜底:用户没配 API key 或上游报错 → 返回固定提示,不崩
+- AI 兜底:平台没有 Verified + Active 配置或上游报错 → 返回固定提示,不伪造生成结果
 
 ---
 
@@ -149,7 +158,7 @@ API 前缀 `/api/v1`,Swagger 在 `/api/docs`。
 | **certificates** | 颁发 / 公开验证 `/verify/:serial` | 公开 + Bearer |
 | **practices** | 实践项目 CRUD / 学员开始+完成 / 评测结果 | Bearer + admin |
 | **chat** | WebAssistant 会话 / 消息 / RAG 检索(Prisma contains 兜底) | Bearer |
-| **ai** | 草稿生成(课程/学位) / 用户级 provider 配置 | Bearer |
+| **ai** | 草稿生成(课程/学位) / 管理员 OpenAI-compatible provider 配置与 Verify / 用户级 provider 配置 | Bearer + admin |
 | **notifications** | 站内信 / 4 类 enum / 未读计数 | Bearer |
 | **learning-events** | 客户端学习事件上报(用于分析) | Bearer |
 | **enterprise** | 企业咨询 / 询价工单 / 邮件通知 | 公开 + admin |
@@ -318,7 +327,7 @@ pnpm dev                        # api :8080 + web :5500
 | 7 | <http://localhost:5500/admin/enterprise> | 企业询价 | 咨询工单列表 + 状态流转 |
 | 8 | <http://localhost:5500/admin/reviews> | 评价审核 | 学员评价列表 + helpful 统计 |
 | 9 | <http://localhost:5500/admin/audit> | 审计日志 | 谁在什么时间操作了什么(下完单会写 `order.create` / `order.pay`) |
-| 10 | <http://localhost:5500/admin/settings> | AI 设置 | 用户级 API key 配置(Gemini / OpenAI / Claude / Ollama 任意配) |
+| 10 | <http://localhost:5500/admin/ai> | AI 配置 | 管理员配置任意 OpenAI-compatible 服务，保存、掩码展示并 Verify |
 
 ### 演示一条完整业务流(2 分钟)
 
@@ -346,7 +355,7 @@ pnpm dev                        # api :8080 + web :5500
 | `/verify/:serial` | 公开 | 公开证书验证 — 学员下完单会自动签发证书,管理员可在 `/admin/courses` 找 |
 | `/admin/courses` | admin | 课程编辑 5 tab(info / chapters / practices / pricing / publish) |
 | `/admin/users` | admin | 用户管理 Drawer — 6 个 section(基本信息 / 学习概况 / 订单 / 证书 / 积分 / 活动日志) |
-| `/admin/settings` | admin | AI provider 配置 — Gemini / OpenAI / Claude / Ollama 任意配,保存即可用 |
+| `/admin/ai` | admin | 平台 AI 配置 — 任意 OpenAI-compatible Provider，保存并 Verify 后启用 |
 
 ### 演示数据快照
 
@@ -362,7 +371,7 @@ enrollments: 22     practice completions: 6    paid orders: 2     user badges: 8
 | 功能 | 当前状态 | 原因 |
 | --- | --- | --- |
 | **真实支付** | mock 流程,生产环境 503 | 没接 Stripe / 微信 / 支付宝,真实支付 + webhook 验证在后续 release 单独发 |
-| **AI 助手对话** | 没配 `GEMINI_API_KEY` 时回"AI 服务暂不可用" | `/admin/settings` 配用户级 API key 即可恢复(任何 provider) |
+| **AI 助手对话** | 后台没有 Verified + Active 配置时回"AI 服务暂不可用" | 管理员在 `/admin/ai` 填写 Base URL / Model / Key 并 Verify |
 | **OAuth Google/GitHub / SAML** | 默认只启 `email_password` | 在 `.env` 配 `AUTH_PROVIDERS=...` + 对应 client id/secret 即可 |
 | **真实邮件发送** | 询价通知默认只落库 | 设 `RESEND_API_KEY` + `MAIL_FROM` 即发邮件 |
 
@@ -382,7 +391,8 @@ pkill -f "nest\|vite"
 
 # 跑测试
 pnpm check          # lint + test + build
-pnpm e2e            # Playwright 浏览器 smoke
+pnpm e2e            # Playwright 浏览器 smoke (前端壳层 + 路由)
+pnpm e2e:real       # 真实依赖 E2E 业务流 (需先起 MySQL+Redis+MinIO+API)
 ```
 
 ---
@@ -398,6 +408,7 @@ pnpm e2e            # Playwright 浏览器 smoke
 | `pnpm lint` | 全 workspace lint/typecheck |
 | `pnpm build` | API + Web 单独构建(产物到 `apps/*/dist/`) |
 | `pnpm e2e` | Playwright 浏览器 smoke(自动起 dev server) |
+| `pnpm e2e:real` | 真实依赖 E2E 业务流(MySQL+Redis+MinIO+API 启动后跑, CI 自动) |
 | `pnpm db:migrate` | 开发环境迁移 |
 | `pnpm db:migrate:prod` | 生产环境迁移(只 apply,不创建新迁移) |
 | `pnpm db:seed` | dev 种子数据(6 课程 / 2 学位 / 6 黑客松) |
@@ -406,6 +417,7 @@ pnpm e2e            # Playwright 浏览器 smoke
 | `pnpm db:studio` | Prisma Studio |
 | `pnpm deploy:generate-env` | 生成 `.env.production`(random secrets + image SHA) |
 | `pnpm deploy:validate` | 校验生产 env 配置(无占位符 / 必填项) |
+| `cd apps/api-go && go build ./... && go vet ./...` | Go API 编译 + 静态检查 |
 
 ---
 
@@ -422,9 +434,8 @@ pnpm e2e            # Playwright 浏览器 smoke
 | `AUTH_PROVIDERS` | 启用的登录方式列表 | ✓ | `email_password` / `oauth.google` / `oauth.github` 逗号分隔 |
 | `AUTH_OAUTH_*` | Google / GitHub OAuth | 可选 | 生产回调用 HTTPS |
 | `AUTH_SSO_SAML_*` | SAML IdP | 可选 | 配置证书后再启用 |
-| `GEMINI_API_KEY` | AI 助手默认 key(服务端) | 可选 | 用户级 key 走 `UserAiProviderConfig`,此 key 作 fallback |
 | `MINIO_*` / `S3_*` | 对象存储 | ✓ | 生产用 S3, dev 用 MinIO |
-| `AI_KEY_ENCRYPTION_KEY` | 加密用户 AI key | ✓ | 64 位 hex(32 字节) |
+| `AI_KEY_ENCRYPTION_KEY` | 加密后台/用户 AI key 的服务端主密钥（不是 Provider Key） | ✓ | 64 位 hex(32 字节) |
 | `BOOTSTRAP_DATA` | 首次启动写 admin + 示例学员 | 可选 | 首次 `true`,之后 `false` |
 | `ENTERPRISE_NOTIFY_EMAIL` | 企业询价通知邮箱 | 可选 | 不填则只落库 |
 
@@ -496,9 +507,11 @@ pnpm deploy:validate   # 生产 env 校验
 
 | 维度 | 当前 | 触发条件 |
 | --- | --- | --- |
-| API Jest | 38 suites / 347 tests 全过 | `apps/api` 改 controller / service / dto |
-| Web Vitest | 22 files / 132 tests 全过 | `apps/web` 改组件 / hook / lib |
+| API Jest | 39 suites / 353 tests 全过 | `apps/api` 改 controller / service / dto |
+| Web Vitest | 27 files / 150 tests 全过 | `apps/web` 改组件 / hook / lib |
 | E2E Playwright | 29 passed / 1 skipped(mobile-only) | 任何路由 / 鉴权 / 公开页改动 |
+| 真实业务流 E2E | 9/9 全过 | API / DB / Redis / MinIO 业务链路改动 |
+| Go API | build / vet / 非 Docker race + 串行 dockertest 验证通过 | `apps/api-go` 改动；完整 e2e 禁止并发跑 |
 | TS check | 0 错 | `pnpm -r lint` |
 | Vite build | 0 错(主 bundle 不暴露 dev-only 路由) | `apps/web` 任何改动 |
 | Nest build | 0 错 | `apps/api` 任何改动 |
@@ -513,7 +526,9 @@ pnpm deploy:validate   # 生产 env 校验
 | [用户手册](./docs/USER_MANUAL.md) | 学员 | 注册 / 选课 / 学习 / 笔记 / 证书 / 黑客松报名 |
 | [管理员手册](./docs/ADMIN_MANUAL.md) | admin | 课程上架 / 审核 / 黑客松编排 / CMS / 审计 |
 | [术语表](./docs/GLOSSARY.md) | 全员 | 模块 / 课时 / 学位 / NanoDegree / 实践项目 |
-| [产品路线图](./docs/ROADMAP-1.6.md) | 产品/技术 | v1.5.x 工程基线 + v1.6.0 RAG / SSE / PWA 规划 |
+| [产品路线图](./docs/ROADMAP-1.6.md) | 产品/技术 | 当前进度 + v1.5.5 收口 + v1.6.0 AI 学习闭环规划 |
+| [Go 迁移最终验证](./apps/api-go/docs/FINAL-VALIDATION-2026-08-12.md) | 后端/测试 | Phase 2 本地验证结果、已知生产边界与切流前事项 |
+| [Go 迁移执行计划](./docs/go-migration-execution-plan.md) | 架构/后端 | NestJS → Go 的 OpenAPI-first / Strangler Fig 路径 |
 | [生产部署运行手册](./deploy/README.md) | 运维 | 容器编排 / Nginx / TLS / 备份 / 回滚 |
 | [完整 Changelog](./CHANGELOG.md) | 全员 | 每个 release 详细 notes(命名 `vMAJOR.MINOR.PATCH`) |
 | [Prisma Schema](./prisma/schema.prisma) | 开发 | 59 model + 105 index 完整定义 |

@@ -135,8 +135,8 @@ AI Academy 支持 **邮箱 + 密码** 和 **第三方登录** 两种方式。
 | 2. **热门课程** | 课程列表前 6 | 点卡片进详情 |
 | 3. **学位路径** | 学位前 3 | 点卡片进学位详情 |
 | 4. **黑客松** | 进行中的 3 个 + 倒计时 | 倒计时 0 自动跳详情 |
-| 5. **AI 助教 CTA** | 品牌宣言 + mock 聊天气泡 | 体验 AI |
-| 6. **讲师墙** | 4 个 mock 讲师 | 暂无交互(开发中) |
+| 5. **AI 助教 CTA** | 品牌宣言 + AI 聊天气泡(可点) | 体验 AI |
+| 6. **讲师墙** | 4 个真实讲师(走 `/api/v1/instructors`,按 `orderIndex` 排序) | 点卡片进讲师详情页 |
 | 7. **Footer** | 4 列:产品 / 学习 / 资源 / 团队 | 标准链接 |
 | 8. **AI 助教 FAB** | 右下角浮动按钮 | 移动端跳 learning 顶部 |
 
@@ -144,7 +144,7 @@ AI Academy 支持 **邮箱 + 密码** 和 **第三方登录** 两种方式。
 - `≥ md` (768px+):FAB 在右下角
 - `< md`:移动端底部 5 宫格 Tab(首页 / 课程 / 学位 / AI / 我的),FAB 在 Tab 上方
 
-**加载失败 fallback**:任何 API 4xx / 5xx 时,自动降级到 mock 数据(4 课程 / 3 学位 / 3 黑客松 / 4 讲师),不显示空白页。
+**加载失败行为**(v1.5.0 起,不再静默降级):任何 API 4xx / 5xx 时,显示 `QueryErrorState` 错误态 + 重试按钮,不再展示占位/mock 数据。空数据时显示 `EmptyState`。
 
 ---
 
@@ -359,9 +359,8 @@ Nano Degree 是一组「按学习顺序串联」的课程包,完成全部课程�
 
 ### 8.5 进度跟踪
 
-- **上报机制**:每 1 秒 video time + 1,触发 `LearningEvent` 上报
-- **后端记录**:`/api/v1/progress/lessons/:id/complete` (TODO 后续接)
-- **当前状态**:`Development` 模式下,LearningEvent 走 console.log(标 `TODO(后端)`),生产模式正常
+- **上报机制**(v1.4.1 起):每 1 秒 video time + 1,客户端用缓冲器 5s push,30s flush 一次,调 `/api/v1/learning-events`
+- **后端记录**:`POST /api/v1/progress/lessons/:lessonId/complete`(已实现,见 `apps/api/src/modules/progress/progress.controller.ts:43`)
 - **完成判定**:视频看完 + 「完成本节」按钮点了 → 100%
 
 ---
@@ -762,7 +761,7 @@ https://ai-academy.local/verify/<serial>
 | 症状 | 排查 |
 |------|------|
 | 视频卡顿 / 加载慢 | 1) 切到 720p(默认 1080p) 2) 检查网络 3) 刷新页面 |
-| 进度不更新 | DevTools Console 看 `[LearningEvent TODO]` 日志(开发模式正常,生产模式不会出现) |
+| 进度不更新 | DevTools Console 看 `[LearningEvent]` 上报,Network 看 `POST /api/v1/learning-events` 是否 200 |
 | 视频不播放 | 1) 浏览器禁用 Flash 旧插件 2) 试 Safari / Chrome 切换 |
 | 字幕不显示 | 课程可能未提供字幕,联系 admin\@ai-academy.local 反馈 |
 

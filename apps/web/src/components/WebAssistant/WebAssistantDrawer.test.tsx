@@ -52,6 +52,9 @@ function renderDrawer() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
+  // This component reads managed quick prompts. Keep the unit test isolated
+  // from the live API while exercising the empty database state.
+  qc.setQueryData(['cms', 'list', 'quick-prompts'], []);
   return render(
     <QueryClientProvider client={qc}>
       <MemoryRouter>

@@ -21,6 +21,7 @@ function makeWrapper() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
+  qc.setQueryData(['cms', 'i18n-messages', 'zh-CN'], {});
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={qc}>
@@ -273,9 +274,11 @@ describe('RefundPage 退款政策', () => {
 describe('router 集成', () => {
   it('4 个法律页路由都注册到 /terms /privacy /cookies /refund', () => {
     // 模拟进入 /terms 路径
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    queryClient.setQueryData(['cms', 'i18n-messages', 'zh-CN'], {});
     render(
       <QueryClientProvider
-        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+        client={queryClient}
       >
         <MemoryRouter initialEntries={['/terms']}>
           <Routes>

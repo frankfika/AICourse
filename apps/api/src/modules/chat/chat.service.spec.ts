@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChatService } from './chat.service';
 import { RagService } from './rag.service';
-import { GeminiService } from '../../common/gemini/gemini.service';
+import { AiProviderService } from '../../common/ai-provider/ai-provider.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { tokenize } from './rag.util';
@@ -35,7 +35,7 @@ describe('ChatService', () => {
         ChatService,
         { provide: PrismaService, useValue: prisma },
         { provide: RagService, useValue: rag },
-        { provide: GeminiService, useValue: gemini },
+        { provide: AiProviderService, useValue: gemini },
         { provide: ConfigService, useValue: { get: jest.fn() } },
       ],
     }).compile();

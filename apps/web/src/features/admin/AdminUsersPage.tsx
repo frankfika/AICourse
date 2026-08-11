@@ -135,20 +135,6 @@ const FALLBACK_STATUS_COLOR: Record<string, string> = {
   expired: 'border border-[#171717] text-[#666666]',
 };
 
-function formatDate(iso?: string | null): string {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-}
-
-function formatDateTime(iso?: string | null): string {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleString('zh-CN');
-}
-
 export function AdminUsersPage() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
@@ -551,7 +537,6 @@ function UserDetailContent({
               {detail.enrollments.slice(0, 10).map((e) => {
                 // P1 修复(2026-07-24): 完成度 + "已完成" 标记
                 const total = e.course?._count?.lessons ?? 0;
-                const done = e.completedLessonsCount ?? 0;
                 const pct = e.progressPercent ?? 0;
                 const isDone = e.isCompleted ?? false;
                 return (
@@ -902,35 +887,6 @@ function BrutalButton({
       onClick={onClick}
       disabled={disabled}
       className={`${base} ${sizeCls} ${variantCls} ${className}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function BrutalIconButton({
-  onClick,
-  children,
-  title,
-  className = '',
-  danger,
-}: {
-  onClick?: () => void;
-  children: React.ReactNode;
-  title?: string;
-  className?: string;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`p-1.5 ${
-        danger
-          ? 'text-[#A3A3A3] hover:text-red-600 hover:bg-[#EEEDE9]'
-          : 'text-[#A3A3A3] hover:text-[#171717] hover:bg-[#EEEDE9]'
-      } transition-colors ${className}`}
     >
       {children}
     </button>

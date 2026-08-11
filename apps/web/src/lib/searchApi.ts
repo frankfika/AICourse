@@ -223,15 +223,6 @@ function matchQuery(text: string, q: string): boolean {
 }
 
 // =============================================================
-// 热门搜索(空查询时显示)
-// 来源: backend GET /api/v1/popular-searches(本文件不直接 fetch,组件层用 useList)
-// 这里只给个 fallback, 跟 useList('popular-searches') 同源
-// =============================================================
-export const FALLBACK_HOT_SEARCHES = ['LangChain', 'RAG', 'Agent', 'vLLM'];
-/** @deprecated use useList('popular-searches') from lib/cms instead */
-export const HOT_SEARCHES = FALLBACK_HOT_SEARCHES;
-
-// =============================================================
 // 分组工具(给 CommandPalette + SearchPage 用)
 // =============================================================
 

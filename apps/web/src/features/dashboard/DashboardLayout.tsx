@@ -25,7 +25,7 @@ import { pointsApi } from '../../lib/pointsApi';
 import { progressApi } from '../../lib/progressApi';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../lib/api';
-import { usePageSettings, useI18n, pickPage, pickI18n } from '../../lib/cms';
+import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 
 // P1-2 修复:不再用 useDashboardTheme 独立复刻,改用全局 themeStore
 // 跟 Layout / AdminDashboardPage 共享同一份状态,icon 切换跟实际 class 永远一致
@@ -236,7 +236,7 @@ function DashboardFallback() {
     >
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-[#171717] border-t-transparent rounded-full animate-spin" />
-        <span className="text-sm">{pickI18n('common.loading.dots', '加载中…')}</span>
+        <span className="text-sm">加载中…</span>
       </div>
     </div>
   );

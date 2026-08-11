@@ -121,9 +121,9 @@ export function NotificationsPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Link
-              to="/dashboard"
+              to="/profile"
               className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-100 transition-colors"
-              aria-label="返回学习中心"
+              aria-label="返回个人中心"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
