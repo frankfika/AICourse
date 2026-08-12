@@ -1,5 +1,10 @@
 import { expect, type Page, test } from '@playwright/test';
 
+const studentEmail = process.env.E2E_STUDENT_EMAIL ?? 'student@test.com';
+const studentPassword = process.env.E2E_STUDENT_PASSWORD ?? '123456';
+const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin@opencsg.com';
+const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'admin123';
+
 const publicPages = [
   '/',
   '/courses',
@@ -108,7 +113,7 @@ test.describe('全前端页面健康检查', () => {
   });
 
   test('学员个人中心与所有关联子页可达', async ({ page, isMobile }) => {
-    await login(page, 'student@test.com', '123456');
+    await login(page, studentEmail, studentPassword);
 
     if (isMobile) {
       await page.goto('/');
@@ -143,14 +148,14 @@ test.describe('全前端页面健康检查', () => {
   });
 
   test('学员不能越权进入管理后台', async ({ page }) => {
-    await login(page, 'student@test.com', '123456');
+    await login(page, studentEmail, studentPassword);
     await page.goto('/admin/dashboard');
     await expect(page).toHaveURL(/\/$/);
   });
 
   test('管理员全部页面可达', async ({ page, isMobile }) => {
     test.skip(isMobile, '管理端在移动设备上统一显示桌面访问提示');
-    await login(page, 'admin@opencsg.com', 'admin123');
+    await login(page, adminEmail, adminPassword);
     await page.goto(adminPages[0]);
     await expect(page).toHaveURL(/\/admin\/dashboard$/);
     await assertCurrentPageHealthy(page, adminPages[0]);
@@ -166,7 +171,7 @@ test.describe('全前端页面健康检查', () => {
 
   test('移动端管理页显示桌面访问提示', async ({ page, isMobile }) => {
     test.skip(!isMobile, '仅移动端验证统一拦截页');
-    await login(page, 'admin@opencsg.com', 'admin123');
+    await login(page, adminEmail, adminPassword);
     await page.goto('/admin/dashboard');
     await expect(page.getByText(/桌面|电脑/).first()).toBeVisible({ timeout: 10_000 });
   });
