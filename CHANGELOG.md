@@ -56,6 +56,7 @@
 - Added `check:go` and `check:full` so the documented full gate includes browser E2E, the real dependency flow, and Go verification.
 - Fixed GitHub Actions MinIO startup by launching the server with its required `server /data` command before API integration tests.
 - Allowed the live browser E2E origin explicitly in the CI API CORS policy.
+- Seeded the live browser gate with the complete isolated demo graph while keeping production bootstrap verification in its dedicated integration job.
 - Reworked the root README to use English by default with a complete Chinese edition in `README.zh-CN.md`.
 
 ### Verification
