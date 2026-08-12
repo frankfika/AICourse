@@ -114,8 +114,8 @@ jobs:
       - run: pnpm --filter @ai-academy/api exec prisma migrate deploy
       - name: Create MinIO bucket + set anonymous download on public prefixes
         run: |
-          docker run --rm --network host minio/mc:RELEASE.2025-08-13T08-35-41Z \
-            sh -c "
+          docker run --rm --network host --entrypoint /bin/sh \
+            minio/mc:RELEASE.2025-08-13T08-35-41Z -c "
               mc alias set local http://127.0.0.1:9000 minioadmin minioadmin &&
               mc mb -p local/ai-academy || true &&
               mc anonymous set download local/ai-academy
@@ -213,8 +213,9 @@ jobs:
       - run: pnpm --filter @ai-academy/api exec prisma migrate deploy
       - name: Create MinIO bucket
         run: |
-          docker run --rm --network host minio/mc:RELEASE.2025-08-13T08-35-41Z \
-            sh -c "mc alias set local http://127.0.0.1:9000 minioadmin minioadmin && mc mb -p local/ai-academy"
+          docker run --rm --network host --entrypoint /bin/sh \
+            minio/mc:RELEASE.2025-08-13T08-35-41Z -c \
+            "mc alias set local http://127.0.0.1:9000 minioadmin minioadmin && mc mb -p local/ai-academy"
       - name: Bootstrap production DB (admin + 演示数据)
         env:
           NODE_ENV: production
