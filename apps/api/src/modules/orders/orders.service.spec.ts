@@ -2,9 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CertificatesService } from '../certificates/certificates.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import { NotificationService } from '../notification/notification.service';
+import { ProgressService } from '../progress/progress.service';
 import { OrderType, OrderStatus, CostType } from '@prisma/client';
 
 // Mock PrismaService
@@ -42,15 +42,14 @@ const mockPrisma: any = {
 // conditional updateMany / upsert flows can be exercised.
 mockPrisma.$transaction = jest.fn(async (cb: (tx: any) => any) => cb(mockPrisma));
 
-const mockCertificatesService: any = {
-  issueCertificate: jest.fn().mockResolvedValue({ id: 'cert-1' }),
-};
-
 const mockAuditLog: any = {
   log: jest.fn().mockResolvedValue({ id: 'audit-1' }),
 };
 const mockNotificationService = {
   create: jest.fn().mockResolvedValue({ id: 'notification-1' }),
+};
+const mockProgressService = {
+  issueDegreeCertificateIfCompleted: jest.fn().mockResolvedValue(null),
 };
 
 describe('OrdersService', () => {
@@ -73,16 +72,17 @@ describe('OrdersService', () => {
     mockPrisma.degreeCourse.findMany.mockReset();
     mockPrisma.progressRecord.count.mockReset();
     mockPrisma.lesson.count.mockReset();
-    mockCertificatesService.issueCertificate.mockClear();
     mockAuditLog.log.mockClear();
     mockNotificationService.create.mockClear();
+    mockProgressService.issueDegreeCertificateIfCompleted.mockClear();
+    mockProgressService.issueDegreeCertificateIfCompleted.mockResolvedValue(null);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: CertificatesService, useValue: mockCertificatesService },
         { provide: AuditLogService, useValue: mockAuditLog },
         { provide: NotificationService, useValue: mockNotificationService },
+        { provide: ProgressService, useValue: mockProgressService },
       ],
     }).compile();
 
@@ -161,6 +161,27 @@ describe('OrdersService', () => {
     });
   });
 
+  describe('createOrder — free degree', () => {
+    it('evaluates coursework completed before degree enrollment', async () => {
+      mockPrisma.nanoDegree.findUnique.mockResolvedValue({
+        id: 'd1',
+        costType: CostType.free,
+        price: 0,
+      });
+      mockPrisma.enrollment.findUnique.mockResolvedValue(null);
+      mockPrisma.enrollment.upsert.mockResolvedValue({ id: 'degree-enrollment' });
+      mockPrisma.degreeCourse.findMany.mockResolvedValue([]);
+
+      await expect(
+        service.createOrder('u1', { type: OrderType.degree, degreeId: 'd1' }),
+      ).resolves.toMatchObject({ enrolled: true });
+      expect(mockProgressService.issueDegreeCertificateIfCompleted).toHaveBeenCalledWith(
+        'u1',
+        'd1',
+      );
+    });
+  });
+
   describe('createOrder — paid course (create order)', () => {
     it('should create pending order for paid course', async () => {
       mockPrisma.course.findUnique.mockResolvedValue({
@@ -213,7 +234,7 @@ describe('OrdersService', () => {
       );
     });
 
-    it('should trigger certificate issuance for degree orders', async () => {
+    it('should enroll a paid degree and evaluate already-completed coursework', async () => {
       mockPrisma.order.findUnique
         .mockResolvedValueOnce({
           id: 'o1',
@@ -233,18 +254,13 @@ describe('OrdersService', () => {
       mockPrisma.order.updateMany.mockResolvedValue({ count: 1 });
       mockPrisma.enrollment.upsert.mockResolvedValue({ id: 'e1' });
       mockPrisma.degreeCourse.findMany.mockResolvedValue([]);
-      mockPrisma.nanoDegree.findUnique.mockResolvedValue({ id: 'd1', title: 'AI 工程师基础' });
+      const result = await service.mockPay('u1', 'o1', 'alipay');
 
-      // wait for async issueCertificate to fire
-      await service.mockPay('u1', 'o1', 'alipay');
-      await new Promise((r) => setTimeout(r, 10));
-
-      expect(mockCertificatesService.issueCertificate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: 'u1',
-          type: 'degree',
-          refId: 'd1',
-        }),
+      expect(result).toMatchObject({ type: OrderType.degree, status: OrderStatus.paid });
+      expect(mockPrisma.enrollment.upsert).toHaveBeenCalled();
+      expect(mockProgressService.issueDegreeCertificateIfCompleted).toHaveBeenCalledWith(
+        'u1',
+        'd1',
       );
     });
 

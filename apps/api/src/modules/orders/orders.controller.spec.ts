@@ -22,8 +22,12 @@ describe('OrdersController production payment guard', () => {
     expect(service.refundOrder).not.toHaveBeenCalled();
   });
 
-  it('keeps development payment flows available for local testing', async () => {
-    const config = { get: jest.fn(() => 'development') } as unknown as ConfigService;
+  it('keeps explicitly enabled development payment flows available for isolated testing', async () => {
+    const config = {
+      get: jest.fn((key: string) =>
+        key === 'NODE_ENV' ? 'development' : key === 'ENABLE_MOCK_PAYMENTS' ? 'true' : undefined,
+      ),
+    } as unknown as ConfigService;
     const controller = new OrdersController(service, config);
     const request = { user: { userId: 'u1' } };
     (service.mockPay as jest.Mock).mockResolvedValue({ id: 'o1', status: 'paid' });
@@ -33,5 +37,17 @@ describe('OrdersController production payment guard', () => {
       status: 'paid',
     });
     expect(service.mockPay).toHaveBeenCalledWith('u1', 'o1', 'alipay');
+  });
+
+  it('rejects mock payment by default in development', async () => {
+    const config = {
+      get: jest.fn((key: string) => key === 'NODE_ENV' ? 'development' : undefined),
+    } as unknown as ConfigService;
+    const controller = new OrdersController(service, config);
+
+    await expect(
+      controller.pay({ user: { userId: 'u1' } }, 'o1', {}),
+    ).rejects.toThrow(ServiceUnavailableException);
+    expect(service.mockPay).not.toHaveBeenCalled();
   });
 });

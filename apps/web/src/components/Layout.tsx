@@ -55,7 +55,8 @@ function useNavItems(): Array<{ label: string; path: string }> {
   if (data && data.length > 0) {
     return data
       .filter((it) => it.isActive !== false)
-      .map((it) => ({ label: it.label, path: safeNavPath(it.path) }));
+      .map((it) => ({ label: it.label, path: safeNavPath(it.path) }))
+      .filter((it) => it.path !== '#');
   }
   return [
     { label: '课程', path: '/courses' },
@@ -75,7 +76,9 @@ function useFooterColumns(): Array<{ title: string; links: Array<{ label: string
       .filter((c) => c.isActive !== false)
       .map((c) => ({
         title: c.title,
-        links: (c.links ?? []).map((l) => ({ label: l.label, path: safeNavPath(l.path) })),
+        links: (c.links ?? [])
+          .map((l) => ({ label: l.label, path: safeNavPath(l.path) }))
+          .filter((l) => l.path !== '#'),
       }));
   }
   return [
@@ -403,7 +406,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             active={isAssistantOpen}
           />
           <BottomTabLink
-            to={user ? '/profile' : '/login'}
+            // Always target the protected route. AuthGuard waits for session
+            // hydration and preserves the return path for signed-out users;
+            // choosing /login from transient store state races hard reloads.
+            to="/profile"
             label="我的"
             icon={UserIcon}
             active={isActive('/profile') || isActive('/login')}

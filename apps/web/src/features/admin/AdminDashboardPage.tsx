@@ -20,7 +20,6 @@
  *   - isError → QueryErrorState + 重试
  *   - 空数据 → "暂无数据" 占位
  */
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -76,7 +75,6 @@ const TONE_TEXT: Record<Tone, string> = {
 // 主页面
 // =============================================================
 export function AdminDashboardPage() {
-  const [period, setPeriod] = useState<'today' | '7d' | '30d' | 'custom'>('7d');
   const theme = useTheme();
   const toggleTheme = useThemeStore((s) => s.toggle);
   const isDark = theme === 'dark';
@@ -107,27 +105,9 @@ export function AdminDashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 p-1 border border-[#171717] bg-white text-xs">
-            {(['today', '7d', '30d', 'custom'] as const).map((p) => {
-              const label = p === 'today' ? '今日' : p === '7d' ? '7 天' : p === '30d' ? '30 天' : '自定义';
-              const active = period === p;
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setPeriod(p)}
-                  className={cn(
-                    'px-3 py-1 font-black uppercase tracking-widest transition-colors',
-                    active
-                      ? 'bg-[#171717] text-white'
-                      : 'text-[#171717] hover:bg-[#EEEDE9]',
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+          <span className="border border-[#171717] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest">
+            实时数据
+          </span>
           <button
             type="button"
             onClick={toggleTheme}

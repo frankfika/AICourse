@@ -83,10 +83,14 @@ export class LocalAuthAdapter implements AuthAdapter {
 
   async refresh(): Promise<AuthSession | null> {
     try {
-      const { data } = await api.post<LoginResponse>(
+      const { data } = await api.post<{
+        accessToken: string | null;
+        user: LoginResponse['user'] | null;
+      }>(
         '/api/v1/auth/refresh',
         {},
       );
+      if (!data.accessToken || !data.user) return null;
       return {
         user: data.user,
         accessToken: data.accessToken,

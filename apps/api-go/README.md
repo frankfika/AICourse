@@ -1,6 +1,12 @@
 # apps/api-go — AI Academy API (Go rewrite)
 
-**Status**: Phase 0 skeleton (2026-08-10). Decision log in `docs/go-migration-execution-plan.md`.
+**Status**: Experimental migration implementation — **not production-ready and must not receive production traffic** (2026-08-12).
+
+The repository contains broad route coverage, but several paths are deliberately
+incomplete: AI verification/generation/chat explicitly return `503`, URL import
+stops at metadata status `fetched` without claiming a course was created,
+production object uploads are not wired, and the full dockertest suite is not a
+stable release gate. NestJS in `apps/api/` remains the only production API.
 
 ## What this is
 

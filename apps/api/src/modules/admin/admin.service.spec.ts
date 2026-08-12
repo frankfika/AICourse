@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 const mockPrisma: any = {
   order: {
     aggregate: jest.fn(),
+    findMany: jest.fn(),
   },
   user: {
     count: jest.fn(),
@@ -44,11 +45,11 @@ describe('AdminService', () => {
     mockPrisma.user.count
       .mockResolvedValueOnce(3) // newUsersToday
       .mockResolvedValueOnce(2) // newUsersYesterday
-      .mockResolvedValueOnce(1) // paidUsersToday
       .mockResolvedValueOnce(100); // totalUsers
+    mockPrisma.order.findMany.mockResolvedValueOnce([{ userId: 'u1' }]); // paidUsersToday
 
     mockPrisma.progressRecord.findMany.mockResolvedValueOnce([{ userId: 'u1' }, { userId: 'u2' }]); // DAU
-    mockPrisma.progressRecord.count.mockResolvedValueOnce(8); // avgLearningMinutes
+    mockPrisma.progressRecord.count.mockResolvedValueOnce(8); // completedLessonsToday
     mockPrisma.course.findMany.mockResolvedValueOnce([
       { id: 'c1', title: 'AI 入门', _count: { enrollments: 50 } },
       { id: 'c2', title: 'LangChain 实战', _count: { enrollments: 30 } },

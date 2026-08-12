@@ -165,9 +165,7 @@ export function CourseListPage() {
 
   const [input, setInput] = useState(urlQ);
   const [debouncedQ, setDebouncedQ] = useState(urlQ);
-  const [costFilter, setCostFilter] = useState<Set<Course['costType']>>(
-    new Set(['free', 'paid']),
-  );
+  const [costFilter, setCostFilter] = useState<Set<Course['costType']>>(new Set());
   const [selectedLevels, setSelectedLevels] = useState<Set<Course['level']>>(new Set());
   const [selectedDurations, setSelectedDurations] = useState<Set<ReturnType<typeof durationBucket>>>(new Set());
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
@@ -262,7 +260,7 @@ export function CourseListPage() {
   }, [courses]);
 
   const clearAll = () => {
-    setCostFilter(new Set(['free', 'paid']));
+    setCostFilter(new Set());
     setSelectedLevels(new Set());
     setSelectedDurations(new Set());
     setSelectedTags(new Set());

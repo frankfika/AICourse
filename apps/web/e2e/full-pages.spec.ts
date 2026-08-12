@@ -171,10 +171,17 @@ test.describe('全前端页面健康检查', () => {
     await expect(page.getByText(/桌面|电脑/).first()).toBeVisible({ timeout: 10_000 });
   });
 
-  test('未登录访问所有受保护页都保留来源并跳转登录', async ({ page }) => {
+  test('未登录访问所有受保护页都保留来源并跳转登录', async ({ page, isMobile }) => {
+    // This scenario hard-navigates through every protected route, and each
+    // navigation boots auth. Keep it out of the shared loopback rate-limit
+    // bucket so concurrently running login/page-health tests cannot delay the
+    // guard beyond the assertion timeout.
+    await page.setExtraHTTPHeaders({
+      'X-Forwarded-For': isMobile ? '203.0.113.22' : '203.0.113.21',
+    });
     for (const path of [...studentPages, '/admin/dashboard']) {
       await page.goto(path);
-      await expect(page).toHaveURL(/\/auth\/login\?from=/);
+      await expect(page).toHaveURL(/\/auth\/login\?from=/, { timeout: 10_000 });
       expect(new URL(page.url()).searchParams.get('from')).toBe(path);
     }
   });

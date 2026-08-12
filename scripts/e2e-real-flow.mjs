@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * e2e-real-flow.mjs — 真实依赖 E2E 业务流 (v1.5.5)
+ * e2e-real-flow.mjs — 真实依赖 E2E 业务流
  *
  * 前置:
  *   - MySQL/Redis/MinIO 三件套已起
@@ -30,9 +30,14 @@
  * 成功时输出: 每步一行 + 总结 "ALL CHECKS PASSED", exit 0。
  */
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { parseEnv } from '../deploy/validate-production-env.mjs';
 
 const API_BASE = process.env.API_BASE_URL || 'http://127.0.0.1:8080/api';
 const MAX_READY_WAIT_MS = 60_000;
+const APP_VERSION = JSON.parse(
+  await readFile(new URL('../package.json', import.meta.url), 'utf8'),
+).version;
 
 const RUN_ID = randomUUID().slice(0, 8);
 const TEST_EMAIL = `e2e-real-${Date.now()}-${RUN_ID}@example.com`;
@@ -134,7 +139,7 @@ async function step2_login() {
 
 async function step3_listCourses() {
   log.step(3, '列课程, 找 free/charity');
-  const res = await api('GET', '/v1/courses?status=published&limit=20', {
+  const res = await api('GET', '/v1/courses?status=published', {
     headers: bearer(),
     expect: [200],
   });
@@ -275,14 +280,42 @@ async function main() {
   await step9_progressStats();
 
   console.log(`[e2e] ==========================================`);
-  console.log(`[e2e] ✅ ALL CHECKS PASSED — v1.5.5 真实业务流 E2E 通过`);
+  console.log(`[e2e] ✅ ALL CHECKS PASSED — v${APP_VERSION} 真实业务流 E2E 通过`);
   console.log(`[e2e] ==========================================`);
 }
 
-main().catch((err) => {
-  log.fail('E2E 失败', err.stack || err.message);
-  console.error(`[e2e] ==========================================`);
-  console.error(`[e2e] ❌ E2E FAILED`);
-  console.error(`[e2e] ==========================================`);
-  process.exit(1);
-});
+async function cleanupLocalTestUser() {
+  const hostname = new URL(API_BASE).hostname;
+  if (!['127.0.0.1', 'localhost', '::1'].includes(hostname)) return;
+
+  if (!process.env.DATABASE_URL) {
+    const localEnv = parseEnv(await readFile(new URL('../.env', import.meta.url), 'utf8'));
+    process.env.DATABASE_URL = localEnv.DATABASE_URL;
+  }
+
+  const { PrismaClient } = await import('@prisma/client');
+  const prisma = new PrismaClient();
+  try {
+    const result = await prisma.user.deleteMany({ where: { email: TEST_EMAIL } });
+    if (result.count > 0) log.ok(`已清理本地测试账号: ${TEST_EMAIL}`);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+main()
+  .catch((err) => {
+    log.fail('E2E 失败', err.stack || err.message);
+    console.error(`[e2e] ==========================================`);
+    console.error(`[e2e] ❌ E2E FAILED`);
+    console.error(`[e2e] ==========================================`);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    try {
+      await cleanupLocalTestUser();
+    } catch (cleanupError) {
+      log.fail('本地测试数据清理失败', cleanupError.message);
+      process.exitCode = 1;
+    }
+  });

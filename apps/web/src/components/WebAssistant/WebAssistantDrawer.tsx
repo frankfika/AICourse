@@ -31,6 +31,7 @@ import { WebAssistantMessage } from './WebAssistantMessage';
 import { WebAssistantInput } from './WebAssistantInput';
 import { WebAssistantSessionList } from './WebAssistantSessionList';
 import { useList } from '../../lib/cms';
+import { useDialogFocus } from '../ui/useDialogFocus';
 
 export function WebAssistantDrawer() {
   const open = useWebAssistantStore((s) => s.open);
@@ -45,8 +46,10 @@ export function WebAssistantDrawer() {
 
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastSourcesRef = useRef<ChatSource[]>([]);
+  useDialogFocus(drawerRef, { open, onClose: closeDrawer });
   const { data: quickPrompts = [] } = useList<{
     id: string;
     emoji: string;
@@ -99,20 +102,15 @@ export function WebAssistantDrawer() {
     }
   }, [open, currentSessionId, sessionsQuery.data, setCurrentSession]);
 
-  // ESC 关闭
+  // 打开时锁定背景滚动；ESC / focus trap / 焦点恢复由共享 dialog hook 负责。
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeDrawer();
-    };
-    document.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [open, closeDrawer]);
+  }, [open]);
 
   // 消息/loading 变化时滚到底
   useEffect(() => {
@@ -228,9 +226,11 @@ export function WebAssistantDrawer() {
 
       {/* drawer body */}
       <div
+        ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-label="AI 网页助手"
+        tabIndex={-1}
         className={cn(
           'relative bg-neutral-0 dark:bg-neutral-100 shadow-2xl',
           'flex flex-col overflow-hidden',
@@ -251,6 +251,7 @@ export function WebAssistantDrawer() {
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button
+              data-autofocus
               type="button"
               onClick={handleNewSession}
               aria-label="新对话"

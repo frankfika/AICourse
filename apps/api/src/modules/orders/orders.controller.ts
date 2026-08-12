@@ -80,7 +80,10 @@ export class OrdersController {
   }
 
   private assertDevelopmentPaymentOperation() {
-    if (this.config.get<string>('NODE_ENV') === 'production') {
+    const isProduction = this.config.get<string>('NODE_ENV') === 'production';
+    const explicitlyEnabled =
+      this.config.get<string>('ENABLE_MOCK_PAYMENTS') === 'true';
+    if (isProduction || !explicitlyEnabled) {
       throw new ServiceUnavailableException('支付通道尚未开放，请联系平台管理员');
     }
   }

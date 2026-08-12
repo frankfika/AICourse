@@ -10,11 +10,8 @@
 //	DELETE /chat/sessions/:id              hard-delete session
 //
 // Phase 2 T17 ships 4 of the 5 endpoints with full DB persistence.
-// The send-message endpoint is wired with a "test mode" stub that
-// returns a hardcoded assistant reply without calling Gemini. Real
-// Gemini integration is a follow-up (T17.1) — needs Frank's
-// GEMINI_API_KEY env and the RagService + GeminiService ports from
-// apps/api/src/common/gemini.
+// The send-message endpoint explicitly returns 503 until a real provider and
+// RAG implementation are wired; it never persists or returns a fake reply.
 package chat
 
 import (
@@ -178,12 +175,9 @@ type RagSource struct {
 	URL  string `json:"url"`
 }
 
-// SendMessage persists the user's message and returns a stub
-// assistant reply. Real Gemini + RAG integration is T17.1.
-//
-// In dev/test, the assistant reply is a deterministic echo so
-// e2e tests can verify the user-message persistence + 200 OK
-// without needing a GEMINI_API_KEY.
+// SendMessage validates input and ownership, then reports the unavailable
+// capability. It deliberately performs no writes: a failed AI request must not
+// create a user message with a fabricated assistant response.
 func (s *Service) SendMessage(ctx context.Context, userID, sessionID string, in SendMessageInput) (AnswerResult, error) {
 	if in.Content == "" {
 		return AnswerResult{}, errs.BadRequest("content required")
@@ -192,53 +186,7 @@ func (s *Service) SendMessage(ctx context.Context, userID, sessionID string, in 
 	if _, err := s.requireOwnedSession(ctx, userID, sessionID); err != nil {
 		return AnswerResult{}, err
 	}
-	now := time.Now().UTC()
-	// Persist user message
-	userMsgID := uuid.NewString()
-	if _, err := s.repo.q.CreateChatMessage(ctx, db.CreateChatMessageParams{
-		ID:        userMsgID,
-		SessionID: sessionID,
-		Role:      db.ChatMessagesRoleUser,
-		Content:   in.Content,
-		CreatedAt: now,
-	}); err != nil {
-		return AnswerResult{}, errs.Internal("save user message", err)
-	}
-	// Bump session updated_at
-	if err := s.repo.q.TouchChatSession(ctx, db.TouchChatSessionParams{
-		UpdatedAt: now,
-		ID:        sessionID,
-	}); err != nil {
-		s.log.Warn("touch chat session failed", zap.Error(err))
-	}
-	// Stub assistant reply
-	asstMsgID := uuid.NewString()
-	asstContent := stubAssistantReply(in.Content)
-	asstTime := time.Now().UTC()
-	if _, err := s.repo.q.CreateChatMessage(ctx, db.CreateChatMessageParams{
-		ID:        asstMsgID,
-		SessionID: sessionID,
-		Role:      db.ChatMessagesRoleAssistant,
-		Content:   asstContent,
-		CreatedAt: asstTime,
-	}); err != nil {
-		return AnswerResult{}, errs.Internal("save assistant message", err)
-	}
-	return AnswerResult{
-		UserMsg: MessageView{
-			ID:        userMsgID,
-			Role:      "user",
-			Content:   in.Content,
-			CreatedAt: now.UTC().Format("2006-01-02T15:04:05.000Z"),
-		},
-		AssistantMsg: MessageView{
-			ID:        asstMsgID,
-			Role:      "assistant",
-			Content:   asstContent,
-			CreatedAt: asstTime.UTC().Format("2006-01-02T15:04:05.000Z"),
-		},
-		Sources: []RagSource{},
-	}, nil
+	return AnswerResult{}, errs.ServiceUnavailable("AI chat is not implemented in the experimental Go API")
 }
 
 // requireOwnedSession returns ErrNotFound if the session doesn't
@@ -263,18 +211,4 @@ func nullableStringPtr(s sql.NullString) *string {
 	}
 	v := s.String
 	return &v
-}
-
-// stubAssistantReply is a deterministic echo used in dev/test.
-// Real Gemini integration (T17.1) will replace this with a call
-// to the GeminiService + RagService.
-func stubAssistantReply(userContent string) string {
-	return "（测试模式 stub 回复）我已收到你的消息：「" + truncate(userContent, 100) + "」。正式 Gemini 集成在 T17.1 落地。"
-}
-
-func truncate(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n] + "…"
 }

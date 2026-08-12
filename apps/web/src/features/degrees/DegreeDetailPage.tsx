@@ -29,7 +29,7 @@ import {
 import api from '../../lib/api';
 import { useAuthStore } from '../../stores/authStore';
 import type { NanoDegreeWithPath } from '@ai-academy/shared-types';
-import { Button } from '../../components/ui/Button';
+import { Button, buttonClassName } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { PurchaseModal } from './PurchaseModal';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
@@ -98,8 +98,8 @@ export function DegreeDetailPage() {
             <Button variant="primary" size="md" onClick={() => refetch()}>
               重试
             </Button>
-            <Link to="/degrees">
-              <Button variant="secondary" size="md">返回学位列表</Button>
+            <Link to="/degrees" className={buttonClassName({ variant: 'secondary', size: 'md' })}>
+              返回学位列表
             </Link>
           </div>
         </div>
@@ -117,8 +117,8 @@ export function DegreeDetailPage() {
           <p className="text-sm text-[#666666] mb-6">
             {t('degree.not_found.desc', '可能链接已失效,回到学位列表看看其他选择。')}
           </p>
-          <Link to="/degrees">
-            <Button variant="primary" size="md">回到学位列表</Button>
+          <Link to="/degrees" className={buttonClassName({ variant: 'primary', size: 'md' })}>
+            回到学位列表
           </Link>
         </div>
       </div>

@@ -7,13 +7,12 @@
 //
 // Routes:
 //
-//	POST /api/v1/courses/import-from-url          single URL → stub task
-//	POST /api/v1/courses/import-batch-from-urls   up to 20 URLs → stub tasks
+//	POST /api/v1/courses/import-from-url          single URL → metadata task
+//	POST /api/v1/courses/import-batch-from-urls   up to 20 URLs → metadata tasks
 //
-// Both endpoints return 501-style stub data: the real metadata fetch
-// (YouTube oEmbed / Bilibili API) and Gemini course-draft generation
-// ship in T22.1. T22 persists a url_imports row for each accepted
-// URL so the admin inbox has a record of attempted imports.
+// Both endpoints perform real metadata extraction and persist a url_imports
+// row. They stop at status=fetched because this experimental API does not yet
+// create a course; they never claim status=imported.
 package handler
 
 import (

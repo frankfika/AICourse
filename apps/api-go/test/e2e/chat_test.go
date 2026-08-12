@@ -2,7 +2,7 @@
 //
 // Covers the five authenticated /api/v1/chat endpoints, persistence, and
 // cross-user session isolation. Send-message uses the Go service's current
-// deterministic test-mode assistant response and never calls an external LLM.
+// explicit 503 response and never fabricates or persists an assistant reply.
 package e2e
 
 import (
@@ -218,26 +218,19 @@ func TestChat_CreateListMessagesAndDelete(t *testing.T) {
 	status, raw = env.do(t, "POST", "/api/v1/chat/sessions/"+sessionID+"/messages", token, map[string]any{
 		"content": "Explain retrieval augmented generation",
 	})
-	require.Equal(t, fiber.StatusOK, status, string(raw))
-	var answer chat.AnswerResult
-	require.NoError(t, json.Unmarshal(raw, &answer))
-	require.Equal(t, "user", answer.UserMsg.Role)
-	require.Equal(t, "Explain retrieval augmented generation", answer.UserMsg.Content)
-	require.Equal(t, "assistant", answer.AssistantMsg.Role)
-	require.Contains(t, answer.AssistantMsg.Content, "Explain retrieval augmented generation")
-	require.Empty(t, answer.Sources)
+	require.Equal(t, fiber.StatusServiceUnavailable, status, string(raw))
+	require.Contains(t, string(raw), "SERVICE_UNAVAILABLE")
 
 	status, raw = env.do(t, "GET", "/api/v1/chat/sessions/"+sessionID+"/messages", token, nil)
 	require.Equal(t, fiber.StatusOK, status, string(raw))
 	require.NoError(t, json.Unmarshal(raw, &messages))
-	require.Len(t, messages, 2)
-	require.ElementsMatch(t, []string{"user", "assistant"}, []string{messages[0].Role, messages[1].Role})
+	require.Empty(t, messages, "unavailable chat must not persist a user message or fake assistant reply")
 
 	status, raw = env.do(t, "GET", "/api/v1/chat/sessions", token, nil)
 	require.Equal(t, fiber.StatusOK, status, string(raw))
 	require.NoError(t, json.Unmarshal(raw, &sessions))
 	require.Len(t, sessions, 1)
-	require.Equal(t, int32(2), sessions[0].MessageCount)
+	require.Zero(t, sessions[0].MessageCount)
 
 	status, raw = env.do(t, "DELETE", "/api/v1/chat/sessions/"+sessionID, token, nil)
 	require.Equal(t, fiber.StatusNoContent, status, string(raw))

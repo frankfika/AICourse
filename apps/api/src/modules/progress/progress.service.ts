@@ -125,6 +125,8 @@ export class ProgressService {
 
     const courseProgress = await this.getCourseProgress(userId, courseId);
     let certificate: Awaited<ReturnType<CertificatesService['issueCertificate']>> | null = null;
+    let degreeCertificates: Awaited<ReturnType<CertificatesService['issueCertificate']>>[] = [];
+    const isFirstCompletion = !wasAlreadyCompleted || wasAlreadyCompleted.status !== 'completed';
 
     if (courseProgress.isCompleted) {
       certificate = await this.certificatesService.issueCertificate({
@@ -135,15 +137,20 @@ export class ProgressService {
         description: `已完成课程「${courseProgress.courseTitle}」的全部课时`,
         completedAt: new Date().toISOString(),
       });
-      if (!wasAlreadyCompleted || wasAlreadyCompleted.status !== 'completed') {
+      if (isFirstCompletion) {
         await this.notificationService.create({
           userId,
           type: 'announcement',
           title: '课程完成，证书已签发',
           body: `你已完成「${courseProgress.courseTitle}」，证书现已可查看。`,
-          linkUrl: `/certificates/${certificate.id}`,
+          linkUrl: `/dashboard/certificates/${certificate.id}`,
         });
       }
+      degreeCertificates = await this.issueCompletedDegreeCertificates(
+        userId,
+        courseId,
+        isFirstCompletion,
+      );
     }
 
     return {
@@ -152,7 +159,113 @@ export class ProgressService {
       pointsAwarded,
       newlyUnlockedBadges,
       certificate,
+      degreeCertificates,
     };
+  }
+
+  /**
+   * A degree certificate represents completion of every lesson in every course
+   * attached to an active degree enrollment. Payment alone never calls this path.
+   */
+  private async issueCompletedDegreeCertificates(
+    userId: string,
+    completedCourseId: string,
+    notify: boolean,
+  ) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: {
+        userId,
+        degreeId: { not: null },
+        deletedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        degree: { courses: { some: { courseId: completedCourseId } } },
+      },
+      select: { degreeId: true },
+    });
+
+    const issued = [];
+    for (const enrollment of enrollments) {
+      if (!enrollment.degreeId) continue;
+      const certificate = await this.issueDegreeCertificateIfCompleted(
+        userId,
+        enrollment.degreeId,
+        notify,
+      );
+      if (certificate) issued.push(certificate);
+    }
+    return issued;
+  }
+
+  /**
+   * Re-evaluates a single active degree enrollment. This is public so degree
+   * enrollment/payment can recognize coursework completed before enrollment.
+   */
+  async issueDegreeCertificateIfCompleted(
+    userId: string,
+    degreeId: string,
+    notify = true,
+  ) {
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: {
+        userId,
+        degreeId,
+        deletedAt: null,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      include: {
+        degree: {
+          include: {
+            courses: {
+              include: {
+                course: {
+                  include: {
+                    chapters: { include: { lessons: { select: { id: true } } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!enrollment?.degree) return null;
+
+    const lessonIds = enrollment.degree.courses.flatMap((degreeCourse) =>
+      degreeCourse.course.chapters.flatMap((chapter) =>
+        chapter.lessons.map((lesson) => lesson.id),
+      ),
+    );
+    if (lessonIds.length === 0) return null;
+
+    const completedLessons = await this.prisma.progressRecord.count({
+      where: { userId, lessonId: { in: lessonIds }, status: 'completed' },
+    });
+    if (completedLessons !== lessonIds.length) return null;
+
+    const existing = await this.prisma.certificate.findFirst({
+      where: { userId, type: 'degree', refId: degreeId, revokedAt: null },
+    });
+    if (existing) return existing;
+
+    const degreeCertificate = await this.certificatesService.issueCertificate({
+      userId,
+      type: 'degree',
+      refId: degreeId,
+      title: `${enrollment.degree.title} 学位完成证书`,
+      description: `已完成学位项目「${enrollment.degree.title}」的全部课程`,
+      completedAt: new Date().toISOString(),
+    });
+
+    if (notify) {
+      await this.notificationService.create({
+        userId,
+        type: 'announcement',
+        title: '学位项目完成，证书已签发',
+        body: `你已完成「${enrollment.degree.title}」的全部课程，学位证书现已可查看。`,
+        linkUrl: `/dashboard/certificates/${degreeCertificate.id}`,
+      });
+    }
+    return degreeCertificate;
   }
 
   // ==================== 仪表盘统计 ====================

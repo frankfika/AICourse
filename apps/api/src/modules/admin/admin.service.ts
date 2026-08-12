@@ -32,7 +32,7 @@ export class AdminService {
       newUsersYesterday,
       paidUsersToday,
       dauUsers,
-      avgLearningMinutes,
+      completedLessonsToday,
       courseEnrollTop,
       totalOrders,
       totalCourses,
@@ -60,9 +60,13 @@ export class AdminService {
       // 4) 昨日新增
       this.prisma.user.count({ where: { createdAt: { gte: yesterdayStart, lt: todayStart } } }),
       // 5) 今日付费用户
-      this.prisma.user.count({
-        where: { createdAt: { gte: todayStart }, role: { in: ['student', 'instructor'] } },
-      }),
+      this.prisma.order
+        .findMany({
+          where: { status: 'paid', paidAt: { gte: todayStart } },
+          select: { userId: true },
+          distinct: ['userId'],
+        })
+        .then((rows) => rows.length),
       // 6) DAU — 今日有 progressRecord 的用户数
       this.prisma.progressRecord
         .findMany({
@@ -71,7 +75,7 @@ export class AdminService {
           distinct: ['userId'],
         })
         .then((rows) => rows.length),
-      // 7) 平均学习时长 — 简化:今日 completed lesson * 25 min 估算
+      // 7) 今日真实完成课时数。没有可靠时长遥测时不伪造“平均学习时长”。
       this.prisma.progressRecord.count({
         where: { status: 'completed', completedAt: { gte: todayStart } },
       }),
@@ -118,10 +122,6 @@ export class AdminService {
     const userDelta = newUsersYesterday > 0
       ? ((newUsersToday - newUsersYesterday) / newUsersYesterday) * 100
       : 0;
-    const paidConvRate = newUsersToday > 0
-      ? (paidUsersToday / newUsersToday) * 100
-      : 0;
-
     return {
       kpis: [
         {
@@ -136,14 +136,14 @@ export class AdminService {
           value: newUsersToday.toString(),
           delta: `${userDelta >= 0 ? '+' : ''}${userDelta.toFixed(1)}%`,
           deltaTone: userDelta >= 0 ? 'up' : 'down',
-          sub: `其中付费 ${paidUsersToday} · ${paidConvRate.toFixed(1)}%`,
+          sub: `今日付费用户 ${paidUsersToday}`,
         },
         {
           label: '活跃学员 (DAU)',
           value: dauUsers.toString(),
           delta: '—',
           deltaTone: 'neutral',
-          sub: `平均学习时长 ${avgLearningMinutes * 25} min`,
+          sub: `今日完成课时 ${completedLessonsToday}`,
         },
         {
           label: '订单总数',
@@ -178,8 +178,8 @@ export class AdminService {
       },
       system: {
         database: dbStatus,
-        apiVersion: process.env.npm_package_version ?? '1.0.0',
-        lastDeploy: '—', // P2+: 从 git 读
+        apiVersion: process.env.APP_VERSION ?? process.env.npm_package_version ?? '未提供',
+        lastDeploy: process.env.DEPLOYED_AT ?? '未提供',
       },
       // 30 天用户增长(每 5 天一个 bucket)
       userGrowth: await this.getUserGrowth(thirtyDaysAgo),

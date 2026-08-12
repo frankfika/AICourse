@@ -34,7 +34,7 @@ import {
 import { Skeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
+import { buttonClassName } from '../components/ui/Button';
 import { searchAll, groupResults, type SearchResult, type SearchResultType } from '../lib/searchApi';
 import { cn } from '../lib/cn';
 import { firstCourseTag } from '../lib/courseTags';
@@ -228,8 +228,8 @@ export function SearchPage() {
             }
             action={
               urlQ ? (
-                <Link to="/courses">
-                  <Button variant="primary" size="md">浏览全部课程</Button>
+                <Link to="/courses" className={buttonClassName({ variant: 'primary', size: 'md' })}>
+                  浏览全部课程
                 </Link>
               ) : null
             }

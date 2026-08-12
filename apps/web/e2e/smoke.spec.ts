@@ -15,6 +15,45 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Smoke', () => {
+  test('匿名首页无运行时错误或失败请求', async ({ page, isMobile }) => {
+    const pageErrors: string[] = [];
+    const consoleErrors: string[] = [];
+    const failedRequests: string[] = [];
+    const errorResponses: string[] = [];
+
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    page.on('requestfailed', (request) => {
+      failedRequests.push(`${request.method()} ${request.url()} — ${request.failure()?.errorText ?? 'unknown error'}`);
+    });
+    page.on('response', (response) => {
+      if (response.status() >= 400) {
+        errorResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
+      }
+    });
+
+    // The wider E2E suite intentionally performs many navigations through one
+    // loopback address. Give this isolated page-health probe its own proxy IP
+    // bucket so earlier tests cannot turn a clean first visit into a 429.
+    await page.setExtraHTTPHeaders({
+      'X-Forwarded-For': isMobile ? '203.0.113.12' : '203.0.113.11',
+    });
+    await page.goto('/');
+    // The first desktop worker may pay Vite's cold transform cost while the
+    // full suite is compiling several lazy routes in parallel.
+    await expect(page.getByRole('heading', { name: /与 AI 一起/ })).toBeVisible({ timeout: 20_000 });
+    // Give lazy sections and image requests time to settle before asserting the
+    // full anonymous-home runtime surface, not just the initial document.
+    await page.waitForLoadState('networkidle');
+
+    expect(pageErrors, 'uncaught page errors').toEqual([]);
+    expect(consoleErrors, 'console.error messages').toEqual([]);
+    expect(failedRequests, 'failed network requests').toEqual([]);
+    expect(errorResponses, 'HTTP responses with status >= 400').toEqual([]);
+  });
+
   test('首页加载 + 8 段位', async ({ page }) => {
     await page.goto('/');
     // 等 nav 出来(任何 main 元素)

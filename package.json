@@ -1,6 +1,6 @@
 {
   "name": "ai-academy",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "private": true,
   "packageManager": "pnpm@11.18.0",
   "description": "AI Academy - AI and LLM education platform",
@@ -14,6 +14,8 @@
     "start": "pnpm --filter @ai-academy/api start",
     "lint": "pnpm -r lint",
     "check": "pnpm lint && pnpm test && pnpm build",
+    "check:go": "cd apps/api-go && make lint && go build ./... && go test $(go list ./... | grep -v '/test/e2e')",
+    "check:full": "pnpm check && pnpm e2e && pnpm e2e:real && pnpm check:go",
     "test": "node --test deploy/*.test.mjs && pnpm -r test",
     "e2e": "pnpm --filter @ai-academy/web e2e",
     "e2e:real": "node scripts/e2e-real-flow.mjs",

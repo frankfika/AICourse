@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Req, Res, Get, Delete, HttpCode, HttpStatus, UnauthorizedException, Param, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, Get, Delete, HttpCode, HttpStatus, Param, BadRequestException, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -32,6 +32,7 @@ export class AuthController {
   // ============ 新端点：列出可用 provider ============
 
   /** 前端 LoginPage 用：列出可用的 provider 渲染按钮（OAuth / SSO 入口） */
+  @Throttle({ short: { limit: 30, ttl: 1000 }, medium: { limit: 300, ttl: 60000 } })
   @Get('providers')
   async listProviders() {
     return { providers: await this.authService.listProviders() };
@@ -134,7 +135,10 @@ export class AuthController {
   ) {
     const token = req.cookies?.['refresh_token'];
     if (!token) {
-      throw new UnauthorizedException('No refresh token');
+      // Anonymous page loads probe the current session. Missing credentials are
+      // a normal "signed out" state, not an authentication error. Invalid or
+      // expired credentials still fail with 401 inside authService.refresh().
+      return { accessToken: null, user: null };
     }
     const result = await this.authService.refresh(token);
     this.setRefreshCookie(res, result.refreshToken);

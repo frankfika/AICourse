@@ -1096,8 +1096,8 @@ func mountPoints(v1 fiber.Router, cfg *config.Config, log *zap.Logger) {
 //	POST   /chat/sessions/:id/messages
 //	DELETE /chat/sessions/:id
 //
-// The send-message endpoint uses a stub assistant reply in dev/test;
-// real Gemini + RAG integration ships in T17.1 (needs GEMINI_API_KEY).
+// The send-message endpoint returns 503 until real Gemini + RAG integration
+// ships; it never persists or returns a fabricated assistant reply.
 func mountChat(v1 fiber.Router, cfg *config.Config, log *zap.Logger) {
 	if cfg.DatabaseURL == "" || cfg.JWTSecret == "" {
 		log.Warn("DATABASE_URL or JWT_SECRET not set, chat endpoints will return 503")
@@ -1251,13 +1251,12 @@ func wireRefundNotifier(v1 fiber.Router, cfg *config.Config, log *zap.Logger) {
 //	  PUT    /api/v1/ai/user-config/providers
 //	  DELETE /api/v1/ai/user-config/providers/:provider
 //
-//	Generate (role=admin, stub):
+//	Generate (role=admin, unavailable until real provider integration):
 //	  POST   /api/v1/ai/generate-course
 //	  POST   /api/v1/ai/generate-degree
 //
-// The 2 generate endpoints are stub-only. Real Gemini integration
-// is T21.1 (needs GEMINI_API_KEY + the AiService / GeminiService from
-// apps/api/src/common/gemini).
+// Provider verification and the 2 generate endpoints return 503. Real Gemini
+// integration requires the AiService / GeminiService from apps/api.
 func mountAI(v1 fiber.Router, cfg *config.Config, log *zap.Logger) {
 	if cfg.DatabaseURL == "" || cfg.JWTSecret == "" {
 		log.Warn("DATABASE_URL or JWT_SECRET not set, ai endpoints will return 503")
@@ -1451,9 +1450,8 @@ func mountEnterprise(v1 fiber.Router, cfg *config.Config, log *zap.Logger) {
 }
 
 // mountUrlImport opens a *sql.DB and mounts the urlimport service +
-// handler. Phase 2 T22. 2 admin-only endpoints (single + batch).
-// Both return stub task data; the real metadata fetch + Gemini
-// course-draft flow lands in T22.1.
+// handler. Phase 2 T22. 2 admin-only endpoints (single + batch). Metadata
+// extraction is real; tasks remain fetched because course creation is not.
 func mountUrlImport(v1 fiber.Router, cfg *config.Config, log *zap.Logger) {
 	if cfg.DatabaseURL == "" || cfg.JWTSecret == "" {
 		log.Warn("DATABASE_URL or JWT_SECRET not set, url-import endpoints will return 503")

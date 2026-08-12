@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, CheckCircle2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { ordersApi } from '../../lib/ordersApi';
 import { useAuthStore } from '../../stores/authStore';
 import { usePageSettings, useI18n, pickPage } from '../../lib/cms';
 import { PAYMENT_OPERATIONS_AVAILABLE } from '../../lib/runtimeFeatures';
+import { useDialogFocus } from '../../components/ui/useDialogFocus';
 
 interface PurchaseModalProps {
   open: boolean;
@@ -32,6 +33,9 @@ export function PurchaseModal({
   const qc = useQueryClient();
   const { user } = useAuthStore();
   const [step, setStep] = useState<Step>('confirm');
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   // CMS-driven copy
   const { t } = useI18n();
@@ -74,30 +78,57 @@ export function PurchaseModal({
     mutationFn: (orderId: string) => ordersApi.pay(orderId),
   });
 
+  const busy = createMutation.isPending || payMutation.isPending;
+
+  const close = () => {
+    if (busy) return;
+    setStep('confirm');
+    createMutation.reset();
+    payMutation.reset();
+    onClose();
+  };
+
+  useDialogFocus(dialogRef, { open, onClose: close, disableEscape: busy });
+
+  useEffect(() => {
+    if (open) return;
+    setStep('confirm');
+    createMutation.reset();
+    payMutation.reset();
+  }, [open]);
+
+  // Each step replaces the dialog body. Move focus to the new state after the
+  // DOM commits so focus never falls back to <body> when the prior button is removed.
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const target =
+        dialogRef.current?.querySelector<HTMLElement>('[data-autofocus]') ??
+        dialogRef.current;
+      target?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, step]);
+
   if (!open) return null;
 
   const handleConfirm = async () => {
-    const res = await createMutation.mutateAsync();
-    if (res.enrolled) {
-      setStep('success');
-      qc.invalidateQueries({ queryKey: ['enrollments', 'me'] });
-      return;
-    }
-    if (res.order) {
-      setStep('paying');
-      try {
+    try {
+      const res = await createMutation.mutateAsync();
+      if (res.enrolled) {
+        setStep('success');
+        void qc.invalidateQueries({ queryKey: ['enrollments', 'me'] });
+        return;
+      }
+      if (res.order) {
+        setStep('paying');
         await payMutation.mutateAsync(res.order.id);
         setStep('success');
-        qc.invalidateQueries({ queryKey: ['enrollments', 'me'] });
-      } catch {
-        setStep('confirm');
+        void qc.invalidateQueries({ queryKey: ['enrollments', 'me'] });
       }
+    } catch {
+      setStep('confirm');
     }
-  };
-
-  const close = () => {
-    setStep('confirm');
-    onClose();
   };
 
   const handleGoLearn = () => {
@@ -115,13 +146,32 @@ export function PurchaseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in">
-      <div className="bg-white border-2 border-[#171717] max-w-md w-full p-6 md:p-8 relative animate-in zoom-in-95">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in">
+      <button
+        type="button"
+        aria-label="关闭购买窗口"
+        onClick={close}
+        disabled={busy}
+        className="absolute inset-0 bg-black/50 disabled:cursor-wait"
+      />
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={step === 'confirm' ? descriptionId : undefined}
+        aria-busy={busy}
+        tabIndex={-1}
+        className="bg-white border-2 border-[#171717] max-w-md w-full p-6 md:p-8 relative animate-in zoom-in-95"
+      >
         <button
+          type="button"
           onClick={close}
-          className="absolute top-3 right-3 p-2 hover:bg-[#EEEDE9]"
+          disabled={busy}
+          aria-label="关闭购买窗口"
+          className="absolute top-3 right-3 p-2 hover:bg-[#EEEDE9] disabled:cursor-wait disabled:opacity-50"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" aria-hidden="true" />
         </button>
 
         {step === 'confirm' && (
@@ -129,10 +179,10 @@ export function PurchaseModal({
             <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mb-2">
               / {isFree ? t('purchase.eyebrow.enroll', 'Enroll') : t('purchase.eyebrow.checkout', 'Checkout')}
             </div>
-            <h2 className="text-2xl font-black tracking-tight mb-2">
+            <h2 id={titleId} className="text-2xl font-black tracking-tight mb-2">
               {confirmTitle}
             </h2>
-            <p className="text-sm text-[#666666] mb-6">
+            <p id={descriptionId} className="text-sm text-[#666666] mb-6">
               {confirmDesc}
             </p>
 
@@ -165,6 +215,8 @@ export function PurchaseModal({
 
             <div className="flex gap-3">
               <button
+                type="button"
+                data-autofocus
                 onClick={close}
                 className="flex-1 py-3 border-2 border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
               >
@@ -172,6 +224,7 @@ export function PurchaseModal({
               </button>
               {!isFree && !PAYMENT_OPERATIONS_AVAILABLE ? (
                 <button
+                  type="button"
                   onClick={handleConsult}
                   className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
                 >
@@ -179,12 +232,19 @@ export function PurchaseModal({
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={handleConfirm}
                   disabled={!user || !checkoutAvailable || createMutation.isPending}
                   className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors disabled:opacity-50"
                 >
                   {createMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                    <>
+                      <Loader2
+                        className="w-4 h-4 animate-spin mx-auto"
+                        aria-hidden="true"
+                      />
+                      <span className="sr-only">提交中…</span>
+                    </>
                   ) : isFree ? (
                     t('purchase.enroll_now', '立即报名')
                   ) : (
@@ -194,20 +254,31 @@ export function PurchaseModal({
               )}
             </div>
 
-            {createMutation.error && (
-              <div className="text-sm text-red-600 mt-3 text-center">
-                {(createMutation.error as any)?.response?.data?.message ?? t('purchase.error.fail', '操作失败')}
+            {(createMutation.isError || payMutation.isError) && (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="text-sm text-red-600 mt-3 text-center"
+              >
+                {payMutation.isError
+                  ? t('purchase.error.payment', '支付失败，请检查网络后重试')
+                  : t('purchase.error.fail', '操作失败，请稍后重试')}
               </div>
             )}
           </>
         )}
 
         {step === 'paying' && (
-          <div className="text-center py-8">
-            <Loader2 className="w-10 h-10 animate-spin mx-auto text-[#171717] mb-4" />
-            <div className="font-black text-lg tracking-tight">{t('common.paying', '支付中…')}</div>
+          <div role="status" aria-live="polite" className="text-center py-8">
+            <Loader2
+              className="w-10 h-10 animate-spin mx-auto text-[#171717] mb-4"
+              aria-hidden="true"
+            />
+            <div id={titleId} className="font-black text-lg tracking-tight">
+              {t('common.paying', '支付中…')}
+            </div>
             <div className="text-[10px] font-black uppercase tracking-widest text-[#666666] mt-2">
-              {t('common.paying.suffix', '支付通道待接入 · 当前为测试环境')}
+              {t('common.paying.suffix', '正在安全处理订单，请勿关闭此窗口')}
             </div>
           </div>
         )}
@@ -215,9 +286,14 @@ export function PurchaseModal({
         {step === 'success' && (
           <div className="text-center py-6">
             <div className="w-16 h-16 mx-auto bg-[#171717] text-white flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-8 h-8" strokeWidth={3} />
+              <CheckCircle2 className="w-8 h-8" strokeWidth={3} aria-hidden="true" />
             </div>
-            <h2 className="text-2xl font-black tracking-tighter mb-2">
+            <h2
+              id={titleId}
+              data-autofocus
+              tabIndex={-1}
+              className="text-2xl font-black tracking-tighter mb-2 outline-none"
+            >
               {successTitle}
             </h2>
             <p className="text-sm text-[#666666] mb-6">
@@ -225,12 +301,14 @@ export function PurchaseModal({
             </p>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={close}
                 className="flex-1 py-3 border-2 border-[#171717] text-[#171717] text-xs font-black uppercase tracking-widest hover:bg-[#EEEDE9] transition-colors"
               >
                 {t('purchase.later', '稍后')}
               </button>
               <button
+                type="button"
                 onClick={handleGoLearn}
                 className="flex-1 py-3 bg-[#171717] text-white text-xs font-black uppercase tracking-widest hover:bg-[#262626] transition-colors"
               >

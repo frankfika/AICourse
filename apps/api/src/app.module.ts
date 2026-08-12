@@ -46,7 +46,10 @@ import { AiProviderModule } from './common/ai-provider/ai-provider.module';
       envFilePath: ['../../.env', '.env'],
     }),
     RedisModule,
-    // Security: global rate limiting (H-01). Defaults to 60 req/min per IP.
+    // Global read/navigation budget must accommodate an SPA's parallel queries
+    // and users sharing one corporate/NAT address. Sensitive write endpoints
+    // (login, password reset, reviews, AI, imports, uploads) define tighter
+    // controller-level limits below this broad transport safety net.
     // P0 v1.5.4 横向扩展: 改用 Redis storage 共享计数 (key 走 THROTTLER_REDIS_PREFIX
     // 命名空间, 多实例部署下不会重复计数). 复用在 RedisModule 里创建的同一个 ioredis 连接,
     // 不再额外开连接.
@@ -58,12 +61,12 @@ import { AiProviderModule } from './common/ai-provider/ai-provider.module';
           {
             name: 'short',
             ttl: 1000,
-            limit: Number(process.env.THROTTLE_SHORT) || 5,
+            limit: Number(process.env.THROTTLE_SHORT) || 30,
           },
           {
             name: 'medium',
             ttl: 60000,
-            limit: Number(process.env.THROTTLE_MEDIUM) || 60,
+            limit: Number(process.env.THROTTLE_MEDIUM) || 600,
           },
         ],
         storage: new ThrottlerStorageRedisService(redis.getClient()),

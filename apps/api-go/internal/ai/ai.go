@@ -4,10 +4,9 @@
 // apps/api/src/modules/ai/ai-user-config.controller.ts.
 //
 // Phase 2 T21: 9 endpoints total. All 4 admin + 3 user config endpoints
-// are fully wired (DB-backed, encrypted-at-rest in stub form, masked on
-// read). The 2 generate endpoints (course / degree) are stub-only and
-// return a deterministic placeholder — real Gemini integration is T21.1
-// (needs GEMINI_API_KEY + the AiService from apps/api/src/modules/ai/ai.service.ts).
+// are fully wired (DB-backed, encrypted-at-rest, masked on read). Provider
+// verification and the 2 generate endpoints explicitly return 503 until a
+// real upstream integration is available.
 //
 // API-key crypto note: T21 uses a reversible stub encryption (base64 of
 // plaintext prefixed with "enc:") so the DB can hold ciphertext while the
@@ -281,13 +280,11 @@ func (s *Service) DeleteConfig(ctx context.Context, provider string) (map[string
 	return map[string]any{"ok": true, "provider": provider}, nil
 }
 
-// TestConnection is a stub — real Gemini round-trip is T21.1. Returns
-// the same shape the NestJS endpoint returns on success.
+// TestConnection is unavailable until the Go API has a real provider
+// round-trip. Returning a successful probe without contacting the provider
+// would make an unverified configuration look production-ready.
 func (s *Service) TestConnection(_ context.Context) (map[string]any, error) {
-	return map[string]any{
-		"ok":     true,
-		"sample": "ok (T21 stub — real Gemini round-trip in T21.1)",
-	}, nil
+	return nil, errs.ServiceUnavailable("AI provider verification is not implemented in the experimental Go API")
 }
 
 // ============================================================
@@ -411,10 +408,11 @@ func (s *Service) DeleteUserConfig(ctx context.Context, userID, provider string)
 }
 
 // ============================================================
-// Generate endpoints (stub)
+// Generate endpoints (explicitly unavailable)
 // ============================================================
 
-// GenerateCourse returns a deterministic stub. Real Gemini call is T21.1.
+// GenerateCourse validates the request but refuses to fabricate a draft until
+// a real provider integration is available.
 func (s *Service) GenerateCourse(_ context.Context, in GenerateCourseInput) (CourseDraft, error) {
 	topic := strings.TrimSpace(in.Topic)
 	if topic == "" {
@@ -423,16 +421,11 @@ func (s *Service) GenerateCourse(_ context.Context, in GenerateCourseInput) (Cou
 	if utf8.RuneCountInString(topic) > 200 {
 		return CourseDraft{}, errs.BadRequest("topic 长度不能超过 200")
 	}
-	return CourseDraft{
-		Title:       fmt.Sprintf("%s — 课程标题草稿 (stub)", topic),
-		Description: fmt.Sprintf("这是关于「%s」的课程简介草稿，由 T21 测试桩生成。", topic),
-		Outlines:    "1. 概述\n2. 核心概念\n3. 实战案例\n4. 小结",
-		Stub:        true,
-		Note:        "real Gemini integration in T21.1",
-	}, nil
+	return CourseDraft{}, errs.ServiceUnavailable("AI course generation is not implemented in the experimental Go API")
 }
 
-// GenerateDegree returns a deterministic stub. Real Gemini call is T21.1.
+// GenerateDegree validates the request but refuses to fabricate a draft until
+// a real provider integration is available.
 func (s *Service) GenerateDegree(_ context.Context, in GenerateDegreeInput) (DegreeDraft, error) {
 	topic := strings.TrimSpace(in.Topic)
 	if topic == "" {
@@ -441,13 +434,7 @@ func (s *Service) GenerateDegree(_ context.Context, in GenerateDegreeInput) (Deg
 	if utf8.RuneCountInString(topic) > 200 {
 		return DegreeDraft{}, errs.BadRequest("topic 长度不能超过 200")
 	}
-	return DegreeDraft{
-		Name:        fmt.Sprintf("%s 学士 (stub)", topic),
-		Description: fmt.Sprintf("这是关于「%s」的学位项目简介草稿。", topic),
-		Levels:      "初级 / 中级 / 高级",
-		Stub:        true,
-		Note:        "real Gemini integration in T21.1",
-	}, nil
+	return DegreeDraft{}, errs.ServiceUnavailable("AI degree generation is not implemented in the experimental Go API")
 }
 
 // ============================================================

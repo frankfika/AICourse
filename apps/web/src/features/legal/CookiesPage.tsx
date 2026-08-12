@@ -1,156 +1,43 @@
-/**
- * CookiesPage — Cookie 政策 (Cookie Notice)
- *
- * 重点:
- *   - 列出本平台使用的所有 Cookie (严格必要 / 功能 / 分析 / 营销)
- *   - 跟 backend Set-Cookie 行为一致 (refresh_token / auth_user / theme)
- *   - 满足 EU GDPR ePrivacy Directive + 中国《个人信息保护法》要求
- *   - 提供「管理 Cookie 偏好」入口 (跟 Layout 的 themeStore 类似, 走 zustand)
- */
 import { LegalPage, type LegalSection } from './LegalPage';
 
 const SECTIONS: LegalSection[] = [
   {
-    id: 'what',
-    title: '什么是 Cookie',
+    id: 'necessary',
+    title: '必要 Cookie',
     content: (
-      <>
-        <p>
-          Cookie 是浏览器在您访问网站时存储在您设备上的小型文本文件。Cookie 让我们能在您下次访问时识别您的浏览器,维持登录状态、记住偏好、提供个性化体验。
-        </p>
-        <p>
-          除 Cookie 外,我们还使用 LocalStorage (持久化本地存储) 和 SessionStorage (会话级存储) 等同类技术,本政策统称"Cookie"。
-        </p>
-      </>
+      <p>登录后，服务端使用名为 <code>refresh_token</code> 的 HttpOnly Cookie 轮换短期访问令牌。该 Cookie 的路径限定为认证接口，生产环境使用 Secure，并采用 SameSite=Lax。退出登录时系统会清除该 Cookie。</p>
     ),
   },
   {
-    id: 'types',
-    title: '我们使用的 Cookie 类型',
+    id: 'session-storage',
+    title: 'SessionStorage',
     content: (
-      <>
-        <h3>1. 严格必要 (Strictly Necessary)</h3>
-        <p>这些 Cookie 是网站运行所必需的,不能关闭。它们通常用于:</p>
-        <ul>
-          <li>身份验证:保持您的登录状态 (auth-user, refresh-token httpOnly)</li>
-          <li>安全防护:防止跨站请求伪造 (CSRF token)</li>
-          <li>会话管理:临时存储表单数据</li>
-        </ul>
-        <h3>2. 偏好 (Preferences)</h3>
-        <p>用于记住您的偏好设置,例如:</p>
-        <ul>
-          <li>主题模式 (深色 / 浅色, key: <code>theme</code>)</li>
-          <li>语言 (中文 / 英文, 跟随浏览器)</li>
-        </ul>
-        <h3>3. 分析 (Analytics)</h3>
-        <p>
-          帮助我们了解访问者如何使用本平台,以便改进。这些数据是聚合的、不识别个人身份:
-        </p>
-        <ul>
-          <li>页面浏览量、跳出率、停留时长</li>
-          <li>错误日志、性能指标</li>
-        </ul>
-        <h3>4. 营销 (Marketing)</h3>
-        <p>
-          目前<strong>未启用</strong>营销 Cookie。我们不会向第三方广告商共享您的数据。
-        </p>
-      </>
+      <ul>
+        <li><code>aicourse.accessToken</code>：当前标签页的短期访问令牌，关闭标签页后由浏览器清除。</li>
+        <li><code>webAssistant.currentSessionId</code>：当前 AI 助教会话标识，退出账户时清除。</li>
+        <li>OAuth 绑定流程可能暂存待绑定的 Provider 标识，回调完成或失败后清除。</li>
+      </ul>
     ),
   },
   {
-    id: 'list',
-    title: '具体 Cookie 清单',
+    id: 'local-storage',
+    title: 'LocalStorage',
     content: (
-      <>
-        <div className="border border-[#171717]/15 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-[#EEEDE9]">
-              <tr>
-                <th className="text-left p-3 font-black">名称</th>
-                <th className="text-left p-3 font-black">类型</th>
-                <th className="text-left p-3 font-black">用途</th>
-                <th className="text-left p-3 font-black">存储</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#171717]/10">
-              <tr>
-                <td className="p-3 font-mono">auth-user</td>
-                <td className="p-3">必要</td>
-                <td className="p-3">存储用户基本信息 (id / 角色 / 头像)</td>
-                <td className="p-3 font-mono">LocalStorage</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-mono">refresh-token</td>
-                <td className="p-3">必要</td>
-                <td className="p-3">用于无感刷新 access token (httpOnly, JS 不可读)</td>
-                <td className="p-3 font-mono">HttpOnly Cookie</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-mono">theme</td>
-                <td className="p-3">偏好</td>
-                <td className="p-3">深色 / 浅色主题模式</td>
-                <td className="p-3 font-mono">LocalStorage</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-mono">access-token</td>
-                <td className="p-3">必要</td>
-                <td className="p-3">当前会话 access token (短时, 关闭 tab 即清)</td>
-                <td className="p-3 font-mono">SessionStorage</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="text-xs text-[#666666] mt-2">
-          注:此清单会随技术更新调整,变更会在本页面公告。
-        </p>
-      </>
+      <p><code>theme</code> 仅用于保存亮色或暗色主题偏好。账户资料、密码和 AI Provider 密钥不会写入 LocalStorage。</p>
     ),
   },
   {
-    id: 'third-party',
-    title: '第三方 Cookie',
+    id: 'not-used',
+    title: '当前未使用的类别',
     content: (
-      <>
-        <p>本平台自身不使用第三方 Cookie。以下场景可能涉及:</p>
-        <ul>
-          <li>Google OAuth / GitHub OAuth 登录:跳转至第三方页面完成授权,不在本平台域名下设置 Cookie</li>
-          <li>AI 助教调用:对话内容通过后端代理转发,不在前端直接调用第三方 API, 不设置第三方 Cookie</li>
-        </ul>
-      </>
+      <p>当前代码没有营销 Cookie、第三方广告 Cookie、分析 Cookie、CSRF Token Cookie 或设备指纹 Cookie。本说明不宣称系统会响应 DNT 信号；如以后接入新的浏览器存储，将先更新清单和相应控制。</p>
     ),
   },
   {
-    id: 'manage',
-    title: '如何管理 Cookie',
+    id: 'control',
+    title: '如何控制',
     content: (
-      <>
-        <h3>浏览器设置</h3>
-        <p>
-          您可以通过浏览器设置拒绝或删除 Cookie。不同浏览器的操作方法不同,通常在"设置 → 隐私与安全"中。
-        </p>
-        <p>
-          <strong>注意</strong>:禁用严格必要 Cookie 会导致您无法登录或使用部分功能。
-        </p>
-        <h3>本平台偏好</h3>
-        <p>
-          您可以在「设置 → 主题」中切换主题模式,选择不启用深色模式。
-        </p>
-        <h3>退出分析 Cookie</h3>
-        <p>
-          如您希望完全退出访问分析,请通过浏览器的"Do Not Track" (DNT) 信号告知我们。我们尊重 DNT 信号,不会收集您的访问数据。
-        </p>
-      </>
-    ),
-  },
-  {
-    id: 'changes',
-    title: '政策更新',
-    content: (
-      <>
-        <p>
-          本政策随技术变化和法规更新会修订,变更会通过站内通知告知。
-        </p>
-      </>
+      <p>您可以在浏览器设置中查看或清除 Cookie 与本地存储。清除 <code>refresh_token</code> 或 SessionStorage 会结束或要求重新建立登录会话；清除 <code>theme</code> 只会重置显示主题。</p>
     ),
   },
 ];
@@ -158,10 +45,10 @@ const SECTIONS: LegalSection[] = [
 export function CookiesPage() {
   return (
     <LegalPage
-      eyebrow="/ Legal · Cookies"
-      title="Cookie 政策"
-      subtitle="AI Academy 使用的 Cookie 和同类技术说明"
-      lastUpdated="2026-07-24"
+      eyebrow="/ Privacy · Browser Storage"
+      title="Cookie 与本地存储说明"
+      subtitle="当前 Web 客户端实际使用的浏览器存储清单"
+      lastUpdated="2026-08-12"
       sections={SECTIONS}
     />
   );

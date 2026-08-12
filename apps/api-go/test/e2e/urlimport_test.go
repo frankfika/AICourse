@@ -2,7 +2,7 @@
 //
 // Phase 2 T22: covers the 2 admin-only endpoints under
 //
-//	/api/v1/courses/import-*. T22 ships a stub; T22.1 wires the real
+//	/api/v1/courses/import-*. T22.1 wires the real
 //	YouTube oEmbed + Bilibili view API + (optional) Gemini step.
 //
 // Routes:
@@ -263,7 +263,7 @@ func TestUrlImport_Student_403(t *testing.T) {
 
 // T22.1 happy path: YouTube oEmbed fixture returns canned metadata.
 // The service should hit the fixture, persist title/author/thumbnail,
-// flip status to 'fetched' (or 'imported' if GEMINI_API_KEY is set),
+// flip status to 'fetched',
 // and return 202 with the DTO enriched.
 func TestUrlImport_Admin_Single_YouTube_Real(t *testing.T) {
 	env := setupUrlImportEnv(t)
@@ -289,9 +289,7 @@ func TestUrlImport_Admin_Single_YouTube_Real(t *testing.T) {
 	require.NotEmpty(t, task.ID)
 	require.Equal(t, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", task.URL, "canonicalised")
 	require.Equal(t, "youtube", task.Platform)
-	// GEMINI_API_KEY is unset in tests → no Gemini call → status flips
-	// to 'imported' (per T22.1 spec: imported after the metadata pass).
-	require.Equal(t, "imported", task.Status, "T22.1 default: imported after metadata pass")
+	require.Equal(t, "fetched", task.Status, "metadata extraction alone must not claim that a course was imported")
 	require.Contains(t, task.Note, "T22.1", "note should mention the real impl")
 	require.Equal(t, "AI Academy Test Video", task.Title)
 	require.Equal(t, "Test Channel", task.Author)
@@ -306,7 +304,7 @@ func TestUrlImport_Admin_Single_YouTube_Real(t *testing.T) {
 		"SELECT url, platform, status, title, author, thumbnail_url FROM url_imports WHERE id = ?",
 		task.ID,
 	).Scan(&dbURL, &dbPlatform, &dbStatus, &dbTitle, &dbAuthor, &dbThumb))
-	require.Equal(t, "imported", dbStatus)
+	require.Equal(t, "fetched", dbStatus)
 	require.Equal(t, "AI Academy Test Video", dbTitle)
 	require.Equal(t, "Test Channel", dbAuthor)
 	require.Equal(t, "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", dbThumb)
@@ -330,7 +328,7 @@ func TestUrlImport_Admin_Single_Bilibili_Real(t *testing.T) {
 	require.NoError(t, json.Unmarshal(raw, &task))
 	require.Equal(t, "https://www.bilibili.com/video/BV1xx411c7mD", task.URL)
 	require.Equal(t, "bilibili", task.Platform)
-	require.Equal(t, "imported", task.Status)
+	require.Equal(t, "fetched", task.Status)
 	require.Equal(t, "Bili Test Video", task.Title)
 	require.Equal(t, "Test Uploader", task.Author)
 	require.NotNil(t, task.DurationSeconds)
@@ -435,13 +433,19 @@ func TestUrlImport_Admin_Batch(t *testing.T) {
 	).Scan(&dbCount))
 	require.Equal(t, 3, dbCount, "3 successful imports persisted")
 
-	// All 3 should have status in (fetched, imported, failed) — never
+	// All 3 should have status in (fetched, failed) — never imported because
+	// this experimental API does not create a course.
 	// 'pending' because the fetch is now synchronous.
 	var distinctStatuses int
 	require.NoError(t, env.db.QueryRow(
 		"SELECT COUNT(DISTINCT status) FROM url_imports WHERE requested_by = ?", env.adminID,
 	).Scan(&distinctStatuses))
-	require.GreaterOrEqual(t, distinctStatuses, 1, "at least one status (imported|fetched|failed)")
+	require.GreaterOrEqual(t, distinctStatuses, 1, "at least one status (fetched|failed)")
+	var importedCount int
+	require.NoError(t, env.db.QueryRow(
+		"SELECT COUNT(*) FROM url_imports WHERE requested_by = ? AND status = 'imported'", env.adminID,
+	).Scan(&importedCount))
+	require.Zero(t, importedCount, "metadata-only imports must never be marked imported")
 }
 
 func TestUrlImport_Admin_Batch_EmptyList(t *testing.T) {

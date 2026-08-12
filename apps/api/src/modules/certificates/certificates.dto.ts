@@ -5,7 +5,7 @@ export const CERTIFICATE_TYPES = ['course', 'degree', 'hackathon'] as const;
 export type CertificateType = PrismaCertificateType;
 
 /**
- * IssueCertificateDto — 由 order mockPay / course complete / hackathon judge 调用,
+ * IssueCertificateDto — 由课程完成 / 学位完成 / 黑客松评审流程调用,
  * 不直接对前端暴露。前端用 0 endpoint 走 trigger (service 内部生成)。
  */
 export class IssueCertificateDto {

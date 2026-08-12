@@ -17,8 +17,9 @@
  *   - ≥ md: 左侧固定 sidebar, 右侧内容滚动
  */
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home, FileText } from 'lucide-react';
+import { Seo } from '../../components/Seo';
 
 export interface LegalSection {
   /** 锚点 id, 用于 sidebar 跳转和当前 section 高亮 */
@@ -52,6 +53,7 @@ export function LegalPage({
   sections,
   contactEmail,
 }: LegalPageProps) {
+  const location = useLocation();
   // 当前活跃 section (用于 sidebar 高亮 + scroll-spy)
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? '');
 
@@ -98,6 +100,11 @@ export function LegalPage({
 
   return (
     <div className="min-h-screen bg-[#F5F4F0] text-[#171717]">
+      <Seo
+        title={title}
+        description={subtitle ?? title}
+        path={location.pathname}
+      />
       {/* 顶部 header — breadcrumb + eyebrow + title + lastUpdated */}
       <header className="border-b border-[#171717]/15 bg-white">
         <div className="max-w-6xl mx-auto px-6 py-10 md:py-14">

@@ -3,27 +3,21 @@ import {
   BadRequestException,
   NotFoundException,
   ConflictException,
-  Inject,
-  forwardRef,
-  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderType, OrderStatus, CostType, PaymentMethod } from '@prisma/client';
 import { CreateOrderDto } from './orders.dto';
-import { CertificatesService } from '../certificates/certificates.service';
 import { AuditLogService } from '../audit/audit-log.service';
 import { NotificationService } from '../notification/notification.service';
+import { ProgressService } from '../progress/progress.service';
 
 @Injectable()
 export class OrdersService {
-  private readonly logger = new Logger(OrdersService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(forwardRef(() => CertificatesService))
-    private readonly certificatesService: CertificatesService,
     private readonly auditLog: AuditLogService,
     private readonly notificationService: NotificationService,
+    private readonly progressService: ProgressService,
   ) {}
 
   /**
@@ -143,6 +137,7 @@ export class OrdersService {
           entityId: enrollment.id,
           details: { type: 'degree', degreeId: dto.degreeId },
         });
+        await this.progressService.issueDegreeCertificateIfCompleted(userId, dto.degreeId);
         return { enrolled: true, enrollment };
       }
 
@@ -183,9 +178,8 @@ export class OrdersService {
    * Mock 支付：直接标记 paid 并创建 enrollment。
    * 真实接入时改为异步回调。
    *
-   * P1-8 新增: degree 订单支付成功后, 自动签发证书(占位 mock, 实际是
-   * "完成 = 自动发证书" 业务规则的简化)。course 订单不在此发,
-   * 等 course 完成钩子(P2 接入)。
+   * 支付只负责解锁报名。课程/学位证书必须由真实学习完成度触发，
+   * 不能把“已付款”伪装成“已完成”。
    */
   async mockPay(
     userId: string,
@@ -263,19 +257,6 @@ export class OrdersService {
       return tx.order.findUnique({ where: { id: orderId } });
     });
 
-    // 事务提交后, 触发 degree 证书签发(异步, 不阻塞 pay 响应)
-    if (paidOrder && paidOrder.status === OrderStatus.paid) {
-      if (paidOrder.type === OrderType.degree && paidOrder.degreeId) {
-        // 异步 issueCertificate: 失败不影响 pay 成功
-        this.issueDegreeCertificateAsync(userId, paidOrder.degreeId).catch((err) => {
-          this.logger.error(
-            `Failed to issue degree certificate for user=${userId} degree=${paidOrder.degreeId}: ${err?.message}`,
-          );
-        });
-      }
-      // course 不在此处发: 实际业务是 course 全部 lessons 完成才发, 等 P2 接入
-    }
-
     await this.auditLog.log({
       userId,
       action: 'order.pay',
@@ -288,24 +269,13 @@ export class OrdersService {
       type: 'order',
       title: '支付成功',
       body: '订单已支付成功，相关课程内容现已解锁。',
-      linkUrl: `/orders/${orderId}`,
+      linkUrl: `/dashboard/orders/${orderId}`,
     });
+    if (existing.type === OrderType.degree && existing.degreeId) {
+      await this.progressService.issueDegreeCertificateIfCompleted(userId, existing.degreeId);
+    }
 
     return paidOrder;
-  }
-
-  private async issueDegreeCertificateAsync(userId: string, degreeId: string) {
-    const degree = await this.prisma.nanoDegree.findUnique({ where: { id: degreeId } });
-    if (!degree) return;
-    await this.certificatesService.issueCertificate({
-      userId,
-      type: 'degree',
-      refId: degreeId,
-      title: `${degree.title} · 学位证书`,
-      description: `恭喜您完成学位项目《${degree.title}》。`,
-      completedAt: new Date().toISOString(),
-      metadata: { source: 'order.mockPay' },
-    });
   }
 
   private randomTransactionId(): string {
@@ -419,7 +389,7 @@ export class OrdersService {
       type: 'order',
       title: '退款申请已完成',
       body: `订单退款已处理，退款金额 ¥${refundAmount.toFixed(2)}。`,
-      linkUrl: `/orders/${orderId}`,
+      linkUrl: `/dashboard/orders/${orderId}`,
     });
     return { ...updated, refundAmount };
   }

@@ -18,12 +18,12 @@
 //
 // The former /admin/ai-config and /ai/user-config routes remain aliases.
 //
-//	Generate (admin-only, stub):
+//	Generate (admin-only, returns 503 until a real provider is wired):
 //	  POST   /api/v1/ai/generate-course
 //	  POST   /api/v1/ai/generate-degree
 //
-// The 2 generate endpoints are stub-only (no real Gemini). T21.1 will
-// wire the real AiService + GeminiService from the NestJS app.
+// The 2 generate endpoints never fabricate drafts. They return 503 until a
+// real provider call is implemented.
 package handler
 
 import (
@@ -88,7 +88,7 @@ func (h *AIHandler) Mount(router fiber.Router) {
 	userCfg.Put("/providers", h.userUpsert)
 	userCfg.Delete("/providers/:provider", h.userDelete)
 
-	// Generate endpoints (admin-only, stub).
+	// Generate endpoints (admin-only, explicitly unavailable for now).
 	gen := router.Group("/ai",
 		middleware.RequireAuth(h.tokens),
 		middleware.RequireRole("admin"),
@@ -227,7 +227,7 @@ func (h *AIHandler) userDelete(c *fiber.Ctx) error {
 }
 
 // ============================================================
-// Generate handlers (admin-only stub)
+// Generate handlers (admin-only; service returns unavailable)
 // ============================================================
 
 func (h *AIHandler) generateCourse(c *fiber.Ctx) error {

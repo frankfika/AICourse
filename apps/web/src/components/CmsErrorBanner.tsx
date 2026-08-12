@@ -30,7 +30,11 @@ export function CmsErrorBanner() {
   const [failures, setFailures] = useState<CmsFailure[]>([]);
 
   useEffect(() => {
+    let active = true;
+    let scheduled = false;
+
     const update = () => {
+      if (!active) return;
       const next = queryClient
         .getQueryCache()
         .findAll({
@@ -45,8 +49,24 @@ export function CmsErrorBanner() {
       setFailures(next);
     };
 
-    update();
-    return queryClient.getQueryCache().subscribe(update);
+    // QueryCache can emit while another component is rendering and registering
+    // its query. Defer the React state update so the banner never updates in a
+    // sibling's render phase.
+    const scheduleUpdate = () => {
+      if (scheduled) return;
+      scheduled = true;
+      queueMicrotask(() => {
+        scheduled = false;
+        update();
+      });
+    };
+
+    scheduleUpdate();
+    const unsubscribe = queryClient.getQueryCache().subscribe(scheduleUpdate);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [queryClient]);
 
   if (failures.length === 0) return null;

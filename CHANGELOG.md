@@ -6,6 +6,68 @@
 
 ---
 
+## v1.5.6 (2026-08-12)
+
+> **Release theme: truthful product behavior and end-to-end reliability.** This patch removes fabricated success states, aligns frontend/backend contracts, fixes certificate eligibility, and closes the highest-impact UI, accessibility, and operational gaps found in a full-system audit.
+
+### Certificate and enrollment integrity
+
+- Removed degree-certificate issuance from payment. Paying for a degree now unlocks enrollment only.
+- Degree certificates are issued only after every lesson in every attached course is complete and the learner has an active degree enrollment.
+- Learners who completed the coursework before enrolling are evaluated immediately after a valid degree enrollment is created.
+- Revoked certificates no longer block a later legitimate certificate for the same learner and program.
+- Added a migration that revokes legacy degree certificates created by the old `order.mockPay` path and repairs stored notification links.
+- Certificate notifications now point to real `/dashboard/certificates/:id` routes; order notifications point to `/dashboard/orders/:id`.
+
+### API and data correctness
+
+- Anonymous degree lists now expose published degrees only; administrative status overrides remain restricted to administrators.
+- Fixed the course-admin chapter and lesson update/delete route contract.
+- Replaced misleading dashboard metrics with paid-order-derived customer counts and clearly named learning activity values.
+- Removed hard-coded home-page ratings and positional “most popular” labels. Popular courses now use the real popularity sort and real review data.
+- Home-page course, degree, and hackathon requests now render explicit error/retry states instead of disguising API failures as empty content.
+- Course filters now include charity courses by default and after “clear all.”
+- SAML is no longer exposed as an enabled login option until the complete SSO start/callback flow exists.
+- Production mock payment capability is controlled by explicit backend/runtime configuration instead of being enabled merely by a development build.
+
+### Honest unavailable states
+
+- The experimental Go AI provider test, AI content generation, and chat endpoints now return `503 SERVICE_UNAVAILABLE` instead of fixed success responses, fabricated drafts, or echo messages.
+- Go URL imports stop at the factual `fetched` state; they no longer claim that a course was imported when no course was created.
+- The Go API remains blocked from production routing. NestJS is the only production API.
+- Public legal pages no longer promise unsupported payment methods, invoices, account deletion, two-factor authentication, refund timing, infrastructure locations, or data-retention automation.
+
+### UI, UX, and accessibility
+
+- Fixed the home-page React render-phase state update warning from the CMS error banner.
+- Removed duplicate mobile bottom spacing and fixed enterprise-page horizontal overflow.
+- Fixed the authenticated mobile “My” navigation hydration race.
+- Added accessible focus trapping, Escape handling, initial focus, nested-dialog handling, and focus restoration to dialogs and drawers.
+- Improved the purchase modal with proper dialog semantics, busy/error announcements, safe close behavior, and focus movement to its success state.
+- Restored keyboard access to password visibility controls and exposed their accessible names.
+- Added dark-mode, retry, confirmation, pending, and error states to AI settings.
+- Removed invalid nested interactive elements and non-functional CMS `#` navigation targets.
+
+### Security and release gates
+
+- Reduced the Nginx API request-body limit so unauthenticated requests cannot consume the previous 5 GB buffering allowance.
+- Added a browser health gate that rejects uncaught errors, `console.error`, failed requests, and HTTP error responses on the anonymous home page.
+- Isolated high-navigation browser tests from shared local rate-limit buckets and allowed for Vite cold compilation under parallel E2E load.
+- Added `check:go` and `check:full` so the documented full gate includes browser E2E, the real dependency flow, and Go verification.
+- Reworked the root README to use English by default with a complete Chinese edition in `README.zh-CN.md`.
+
+### Verification
+
+- NestJS API: **42 suites / 363 tests passed**
+- Web unit tests: **30 files / 157 tests passed**
+- Playwright: **43 passed / 3 conditional skips**
+- Real dependency flow: **9/9 passed**
+- Production TypeScript builds: passed
+- Go internal packages and handler tests: passed
+- Docker Compose production configuration and diff whitespace checks: passed
+
+---
+
 ## v1.5.5 (2026-08-08)
 
 > **主线:发布基线收口** — 6 项遗留改动落地 + 通知 `total` 语义修复 + 版本治理漂移清理 + 真实依赖 E2E 上 CI。

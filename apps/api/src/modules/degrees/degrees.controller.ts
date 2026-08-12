@@ -25,14 +25,19 @@ export class DegreesController {
   constructor(private readonly degreesService: DegreesService) {}
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: '获取纳米学位列表（公开）' })
   @ApiQuery({ name: 'status', required: false, enum: CourseStatus, description: '状态过滤' })
   @ApiQuery({ name: 'search', required: false, description: '标题/描述模糊搜索' })
   async findAll(
     @Query('status') status?: CourseStatus,
     @Query('search') search?: string,
+    @Req() req?: { user?: { role?: UserRole } },
   ) {
-    return this.degreesService.findAll({ status, search });
+    const effectiveStatus = req?.user?.role === UserRole.admin
+      ? status
+      : CourseStatus.published;
+    return this.degreesService.findAll({ status: effectiveStatus, search });
   }
 
   // Security: same draft-filter pattern as courses/:id.

@@ -216,7 +216,15 @@ export class AuthService {
   async listProviders() {
     const providers = await this.getCmsProviderRows();
     return Array.from(this.providers.values())
-      .filter((p) => p.enabled && p.describe && this.isCmsRowActive(p.id, providers))
+      .filter((p) =>
+        p.enabled &&
+        p.describe &&
+        this.isCmsRowActive(p.id, providers) &&
+        // The current browser flow can start email/password and OAuth only.
+        // Do not advertise SAML until an SP-initiated start endpoint is wired.
+        (p.type === 'email_password' ||
+          (p.type === 'oauth' && typeof p.createAuthorizationUrl === 'function')),
+      )
       .map((p) => {
         const description = p.describe!();
         const row = providers.get(this.cmsProviderId(p.id));

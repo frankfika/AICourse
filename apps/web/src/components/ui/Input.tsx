@@ -104,7 +104,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {rightIcon && (
           <span
             className="pr-3 text-neutral-600 dark:text-neutral-600 inline-flex shrink-0"
-            aria-hidden="true"
           >
             {rightIcon}
           </span>

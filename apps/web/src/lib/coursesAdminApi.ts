@@ -4,14 +4,14 @@
  * 后端: ChaptersController + LessonsController + ResourcesController (admin only)
  *   GET    /api/v1/courses/:courseId/chapters           列表(含 lessons + resources)
  *   POST   /api/v1/courses/:courseId/chapters           新建章节
- *   PATCH  /api/v1/chapters/:id                         改章节
- *   DELETE /api/v1/chapters/:id                         软删(级联 lessons)
+ *   PATCH  /api/v1/courses/chapters/:id                 改章节
+ *   DELETE /api/v1/courses/chapters/:id                 软删(级联 lessons)
  *   POST   /api/v1/courses/:courseId/chapters/reorder    批量重排
  *
  *   GET    /api/v1/chapters/:chapterId/lessons           列表
  *   POST   /api/v1/chapters/:chapterId/lessons           新建课时
- *   PATCH  /api/v1/lessons/:id                           改课时
- *   DELETE /api/v1/lessons/:id                           软删
+ *   PATCH  /api/v1/chapters/lessons/:id                  改课时
+ *   DELETE /api/v1/chapters/lessons/:id                  软删
  *   POST   /api/v1/chapters/:chapterId/lessons/reorder   批量重排
  *
  *   GET    /api/v1/lessons/:lessonId/resources           列出课时资源
@@ -80,12 +80,12 @@ export const coursesAdminApi = {
     id: string,
     payload: { title?: string; description?: string; orderIndex?: number },
   ): Promise<Chapter> => {
-    const { data } = await api.patch(`/api/v1/chapters/${id}`, payload);
+    const { data } = await api.patch(`/api/v1/courses/chapters/${id}`, payload);
     return data;
   },
 
   deleteChapter: async (id: string): Promise<{ ok: true }> => {
-    const { data } = await api.delete(`/api/v1/chapters/${id}`);
+    const { data } = await api.delete(`/api/v1/courses/chapters/${id}`);
     return data;
   },
 
@@ -121,12 +121,12 @@ export const coursesAdminApi = {
       orderIndex?: number;
     },
   ): Promise<ChapterLesson> => {
-    const { data } = await api.patch(`/api/v1/lessons/${id}`, payload);
+    const { data } = await api.patch(`/api/v1/chapters/lessons/${id}`, payload);
     return data;
   },
 
   deleteLesson: async (id: string): Promise<{ ok: true }> => {
-    const { data } = await api.delete(`/api/v1/lessons/${id}`);
+    const { data } = await api.delete(`/api/v1/chapters/lessons/${id}`);
     return data;
   },
 

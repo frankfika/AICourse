@@ -131,12 +131,13 @@ export function EnterprisePage() {
   // 行业与方法论只来自后台 CMS 表；空表就显示空状态，不回退旧业务数据。
   const industries = (industriesData ?? [])
     .filter((i) => i.isActive !== false)
-    .map((i) => ({ label: i.label, desc: i.description ?? '' }));
+    .map((i) => ({ id: i.id, label: i.label, desc: i.description ?? '' }));
 
   // 把 3 步法拉成 list — icon 字段是字符串名,ICON_MAP 映射到 lucide-react component
   const methods = (methodsData ?? [])
     .filter((m) => m.isActive !== false)
     .map((m) => ({
+      id: m.id,
       num: m.num,
       icon: ICON_MAP[m.icon as string] ?? Target,
       title: m.title,
@@ -289,7 +290,7 @@ export function EnterprisePage() {
             { num: formatStatNumber(stats?.totalDegrees), label: statTotalDegrees },
           ].map((s, i) => (
             <div
-              key={s.label}
+              key={i}
               className={`p-8 md:p-10 ${i < 3 ? 'border-r border-[#171717]' : ''} ${
                 i < 2 ? 'border-b md:border-b-0 border-[#171717]' : ''
               }`}
@@ -315,9 +316,9 @@ export function EnterprisePage() {
           </h2>
 
           <div className="border-t border-l border-[#171717]">
-            {methods.map(({ num, icon: Icon, title, desc, bullets }) => (
+            {methods.map(({ id, num, icon: Icon, title, desc, bullets }) => (
               <div
-                key={num}
+                key={id}
                 className="grid grid-cols-1 md:grid-cols-12 border-b border-r border-[#171717] hover:bg-[#EEEDE9] transition-colors"
               >
                 <div className="md:col-span-3 p-8 border-b md:border-b-0 md:border-r border-[#171717] flex flex-col gap-4 justify-between">
@@ -336,9 +337,9 @@ export function EnterprisePage() {
                   <p className="text-sm text-[#666666] leading-relaxed">{desc}</p>
                 </div>
                 <div className="md:col-span-4 p-8 flex flex-col gap-2 justify-center">
-                  {bullets.map((b) => (
+                  {bullets.map((b, bulletIndex) => (
                     <div
-                      key={b}
+                      key={`${bulletIndex}-${b}`}
                       className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#171717]"
                     >
                       <Check className="w-3.5 h-3.5" /> {b}
@@ -375,9 +376,9 @@ export function EnterprisePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 border-t border-l border-[#171717]">
-            {industries.map(({ label, desc }) => (
+            {industries.map(({ id, label, desc }) => (
               <div
-                key={label}
+                key={id}
                 className="p-6 border-b border-r border-[#171717] hover:bg-[#EEEDE9] transition-colors"
               >
                 <div className="text-base font-black tracking-tight leading-tight mb-2">
@@ -401,7 +402,7 @@ export function EnterprisePage() {
                 {inquiryEyebrowFull}
               </span>
             </div>
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.95] mb-6">
+            <h2 className="break-words [overflow-wrap:anywhere] text-4xl sm:text-5xl md:text-7xl font-black tracking-tighter uppercase leading-[0.95] mb-6">
               {inquiryHeadlineLines[0] ?? inquiryHeadline}
               <br />{inquiryHeadlineLines[1] ?? ''}
               <br />{inquiryHeadlineLines[2] ?? ''}
@@ -506,7 +507,7 @@ export function EnterprisePage() {
                   <div className="flex flex-wrap border border-[#171717]">
                     {teamSizes.map((size, i) => (
                       <button
-                        key={size}
+                        key={`${i}-${size}`}
                         type="button"
                         onClick={() => setForm({ ...form, teamSize: size })}
                         className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { ConfirmDialog } from './ConfirmDialog';
 
 beforeAll(() => {
@@ -120,5 +121,36 @@ describe('ConfirmDialog', () => {
     await vi.waitFor(() => {
       expect(onClose).toHaveBeenCalled();
     });
+  });
+
+  it('陷阱焦点并在关闭后恢复到触发按钮', async () => {
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>删除</button>
+          <ConfirmDialog
+            open={open}
+            onClose={() => setOpen(false)}
+            onConfirm={vi.fn()}
+            title="删除确认"
+          />
+        </>
+      );
+    }
+
+    render(<Harness />);
+    const trigger = screen.getByRole('button', { name: '删除' });
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(screen.getByRole('button', { name: '取消' })).toHaveFocus();
+
+    const confirm = screen.getByRole('button', { name: '确认' });
+    confirm.focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(screen.getAllByRole('button', { name: '关闭' })[1]).toHaveFocus();
+
+    fireEvent.click(screen.getByRole('button', { name: '取消' }));
+    await vi.waitFor(() => expect(trigger).toHaveFocus());
   });
 });

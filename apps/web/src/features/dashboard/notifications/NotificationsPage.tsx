@@ -249,9 +249,15 @@ export function NotificationsPage() {
                       {content}
                     </Link>
                   ) : (
-                    <div onClick={() => !n.read && markReadMutation.mutate(n.id)} className="cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => !n.read && markReadMutation.mutate(n.id)}
+                      disabled={n.read || markReadMutation.isPending}
+                      className="block w-full cursor-pointer text-left disabled:cursor-default"
+                      aria-label={n.read ? `${n.title}，已读` : `${n.title}，标记为已读`}
+                    >
                       {content}
-                    </div>
+                    </button>
                   )}
                   <div className="flex items-center gap-1 px-4 py-2 border-t border-neutral-200 bg-neutral-100/50 dark:bg-neutral-100/50">
                     {!n.read && (

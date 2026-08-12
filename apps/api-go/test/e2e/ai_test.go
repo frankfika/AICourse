@@ -5,7 +5,7 @@
 //
 // Strategy:
 //   - All DB operations hit a real MySQL container (dockertest).
-//   - The 2 generate endpoints are stub-only; we only assert status + shape.
+//   - Provider verification and generation return 503 rather than fake success.
 //   - The 7 config endpoints (4 admin + 3 user) verify DB persistence,
 //     masking of apiKey, and the role gate (admin vs student).
 //
@@ -451,7 +451,7 @@ func TestAI_AdminCompatibilityPathsShareCRUDState(t *testing.T) {
 	require.Contains(t, compatibilityList.Data[0]["apiKeyMasked"], "5678")
 
 	status, raw = env.do(t, "POST", "/api/v1/admin/ai/config/test", tok, nil)
-	require.Equal(t, 200, status, "compatibility test route: %s", string(raw))
+	require.Equal(t, 503, status, "unimplemented provider probe must not report success: %s", string(raw))
 
 	// Delete through the compatibility path and verify through the old alias.
 	status, raw = env.do(t, "DELETE", "/api/v1/admin/ai/config/openai", tok, nil)
@@ -598,7 +598,7 @@ func TestAI_UserIsolation_TwoUsers(t *testing.T) {
 	require.Zero(t, resp.Total)
 }
 
-func TestAI_GenerateCourse_Stub(t *testing.T) {
+func TestAI_GenerateCourse_Unavailable(t *testing.T) {
 	env := setupAIEnv(t)
 	tok, _ := env.registerAdmin(t, makeEmail("ai-gc"))
 
@@ -606,21 +606,8 @@ func TestAI_GenerateCourse_Stub(t *testing.T) {
 		"topic": "RAG 系统",
 		"hint":  "面向开发者",
 	})
-	require.Equal(t, 200, status, "gen course: %s", string(raw))
-	var resp struct {
-		Draft struct {
-			Title       string `json:"title"`
-			Description string `json:"description"`
-			Outlines    string `json:"outlines"`
-			Stub        bool   `json:"stub"`
-			Note        string `json:"note"`
-		} `json:"draft"`
-	}
-	require.NoError(t, json.Unmarshal(raw, &resp))
-	require.Equal(t, true, resp.Draft.Stub)
-	require.NotEmpty(t, resp.Draft.Title)
-	require.Contains(t, resp.Draft.Title, "RAG")
-	require.NotEmpty(t, resp.Draft.Note)
+	require.Equal(t, 503, status, "unimplemented generation must not return a fabricated draft: %s", string(raw))
+	require.Contains(t, string(raw), "SERVICE_UNAVAILABLE")
 }
 
 func TestAI_GenerateCourse_RejectsEmptyTopic(t *testing.T) {
@@ -633,22 +620,13 @@ func TestAI_GenerateCourse_RejectsEmptyTopic(t *testing.T) {
 	require.Equal(t, 400, status)
 }
 
-func TestAI_GenerateDegree_Stub(t *testing.T) {
+func TestAI_GenerateDegree_Unavailable(t *testing.T) {
 	env := setupAIEnv(t)
 	tok, _ := env.registerAdmin(t, makeEmail("ai-gd"))
 
 	status, raw := env.do(t, "POST", "/api/v1/ai/generate-degree", tok, map[string]any{
 		"topic": "AI 工程",
 	})
-	require.Equal(t, 200, status, "gen degree: %s", string(raw))
-	var resp struct {
-		Draft struct {
-			Name string `json:"name"`
-			Stub bool   `json:"stub"`
-			Note string `json:"note"`
-		} `json:"draft"`
-	}
-	require.NoError(t, json.Unmarshal(raw, &resp))
-	require.Equal(t, true, resp.Draft.Stub)
-	require.NotEmpty(t, resp.Draft.Name)
+	require.Equal(t, 503, status, "unimplemented generation must not return a fabricated draft: %s", string(raw))
+	require.Contains(t, string(raw), "SERVICE_UNAVAILABLE")
 }

@@ -571,19 +571,20 @@ describe('AuthService', () => {
   // =============================================================
 
   describe('listProviders()', () => {
-    it('只返回 enabled + 有 describe 的 provider', async () => {
+    it('只返回 enabled、可描述且有可用浏览器启动流程的 provider', async () => {
       const result = await service.listProviders();
 
-      // enabled + describe: email_password / oauth.google / sso.saml
+      // SAML 尚无 SP-initiated start，不能作为可点击能力暴露。
       // disabled.one: enabled=false → 排除
       // nodesc.one: 没 describe → 排除
       const ids = result.map((r) => r.id);
       expect(ids).toEqual(
-        expect.arrayContaining(['email_password', 'oauth.google', 'sso.saml']),
+        expect.arrayContaining(['email_password', 'oauth.google']),
       );
       expect(ids).not.toContain('disabled.one');
       expect(ids).not.toContain('nodesc.one');
-      expect(result).toHaveLength(3);
+      expect(ids).not.toContain('sso.saml');
+      expect(result).toHaveLength(2);
     });
 
     it('返回的 describe 包含 label / type / id', async () => {
@@ -606,7 +607,7 @@ describe('AuthService', () => {
         expect.objectContaining({ label: '邮箱登录', icon: 'Mail' }),
       );
       expect(result.some((item) => item.id === 'oauth.google')).toBe(false);
-      expect(result.some((item) => item.id === 'sso.saml')).toBe(true);
+      expect(result.some((item) => item.id === 'sso.saml')).toBe(false);
     });
   });
 

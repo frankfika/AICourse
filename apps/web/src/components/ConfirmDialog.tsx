@@ -25,9 +25,10 @@
  *   - 走设计系统 token,dark mode 适配
  *   - role="alertdialog" 让屏幕阅读器立即播报
  */
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
 import { Button } from './ui/Button';
+import { useDialogFocus } from './ui/useDialogFocus';
 
 export type ConfirmVariant = 'danger' | 'warning' | 'info';
 
@@ -71,17 +72,16 @@ export function ConfirmDialog({
   cancelText = '取消',
 }: ConfirmDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
+
+  useDialogFocus(dialogRef, { open, onClose, disableEscape: isLoading });
 
   useEffect(() => {
     if (!open) return;
     setIsLoading(false); // 每次重开 reset
-    // ESC 关闭(loading 时不响应,避免误触)
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isLoading) onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose, isLoading]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -98,21 +98,22 @@ export function ConfirmDialog({
   };
 
   return (
-    <div
-      role="alertdialog"
-      aria-modal="true"
-      aria-labelledby="confirm-dialog-title"
-      aria-describedby="confirm-dialog-desc"
-      className="fixed inset-0 z-[200] flex items-center justify-center px-4"
-    >
-      {/* 遮罩 — backdrop-blur 适配暗色,半透明黑 */}
+    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
       <button
         type="button"
         aria-label="关闭"
         onClick={() => !isLoading && onClose()}
         className="absolute inset-0 bg-neutral-900/50 dark:bg-neutral-950/70 backdrop-blur-sm"
       />
-      <div className="relative max-w-md w-full bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 rounded-xl p-6 shadow-xl">
+      <div
+        ref={dialogRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        tabIndex={-1}
+        className="relative max-w-md w-full bg-neutral-0 dark:bg-neutral-100 border border-neutral-200 rounded-xl p-6 shadow-xl"
+      >
         <button
           type="button"
           onClick={onClose}
@@ -133,14 +134,14 @@ export function ConfirmDialog({
           </div>
           <div className="flex-1 min-w-0">
             <h2
-              id="confirm-dialog-title"
+              id={titleId}
               className="text-base font-bold text-neutral-900 dark:text-neutral-50 mb-1"
             >
               {title}
             </h2>
             {description && (
               <p
-                id="confirm-dialog-desc"
+                id={descriptionId}
                 className="text-sm text-neutral-600 dark:text-neutral-600"
               >
                 {description}
@@ -150,6 +151,7 @@ export function ConfirmDialog({
         </div>
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-5">
           <Button
+            data-autofocus
             variant="secondary"
             size="md"
             onClick={onClose}

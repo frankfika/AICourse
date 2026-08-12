@@ -43,7 +43,11 @@ const mockPrisma: any = {
   },
   enrollment: {
     findFirst: jest.fn(),
+    findMany: jest.fn(),
     upsert: jest.fn(),
+  },
+  certificate: {
+    findFirst: jest.fn(),
   },
 };
 
@@ -96,6 +100,8 @@ describe('ProgressService', () => {
     mockCertificatesService.issueCertificate.mockResolvedValue({ id: 'cert-1' });
     mockNotificationService.create.mockReset();
     mockNotificationService.create.mockResolvedValue({ id: 'notification-1' });
+    mockPrisma.enrollment.findMany.mockResolvedValue([]);
+    mockPrisma.certificate.findFirst.mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -175,7 +181,7 @@ describe('ProgressService', () => {
         expect.objectContaining({
           userId: 'u1',
           type: 'announcement',
-          linkUrl: '/certificates/cert-1',
+          linkUrl: '/dashboard/certificates/cert-1',
         }),
       );
     });
@@ -219,6 +225,84 @@ describe('ProgressService', () => {
       expect(mockNotificationService.create).not.toHaveBeenCalled();
       // 但 upsert 还是调了 (更新 completedAt)
       expect(mockPrisma.progressRecord.upsert).toHaveBeenCalled();
+    });
+
+    it('完成学位内全部课程后才签发学位证书', async () => {
+      mockPrisma.lesson.findUnique.mockResolvedValueOnce({
+        id: 'l1',
+        title: 'L1',
+        chapter: { courseId: 'c1', course: { costType: 'free' } },
+      });
+      mockPrisma.progressRecord.findUnique.mockResolvedValueOnce(null);
+      mockPrisma.progressRecord.upsert.mockResolvedValueOnce({ id: 'pr1' });
+      mockPrisma.enrollment.upsert.mockResolvedValueOnce({ id: 'course-enrollment' });
+      mockPointsService.award.mockResolvedValueOnce({ id: 'tx1' });
+      mockPrisma.course.findUnique.mockResolvedValueOnce(makeCourse('c1', ['l1']));
+      mockPrisma.progressRecord.count
+        .mockResolvedValueOnce(1) // current course complete
+        .mockResolvedValueOnce(2); // all lessons across the degree complete
+      mockPrisma.enrollment.findMany.mockResolvedValueOnce([
+        { degreeId: 'degree-1' },
+      ]);
+      mockPrisma.enrollment.findFirst.mockResolvedValueOnce({
+        degreeId: 'degree-1',
+        degree: {
+          id: 'degree-1',
+          title: 'AI Engineer',
+          courses: [
+            {
+              course: {
+                chapters: [{ lessons: [{ id: 'l1' }, { id: 'l2' }] }],
+              },
+            },
+          ],
+        },
+      });
+      mockCertificatesService.issueCertificate
+        .mockResolvedValueOnce({ id: 'course-cert' })
+        .mockResolvedValueOnce({ id: 'degree-cert' });
+
+      const result = await service.completeLesson('u1', 'l1');
+
+      expect(result.degreeCertificates).toEqual([{ id: 'degree-cert' }]);
+      expect(mockCertificatesService.issueCertificate).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          userId: 'u1',
+          type: 'degree',
+          refId: 'degree-1',
+        }),
+      );
+      expect(mockNotificationService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: expect.stringContaining('学位'),
+          linkUrl: '/dashboard/certificates/degree-cert',
+        }),
+      );
+    });
+
+    it('报名发生在完课之后仍可补签学位证书，且不会重复通知', async () => {
+      mockPrisma.enrollment.findFirst.mockResolvedValue({
+        degree: {
+          id: 'degree-1',
+          title: 'AI Engineer',
+          courses: [
+            { course: { chapters: [{ lessons: [{ id: 'l1' }, { id: 'l2' }] }] } },
+          ],
+        },
+      });
+      mockPrisma.progressRecord.count.mockResolvedValue(2);
+      mockCertificatesService.issueCertificate.mockResolvedValue({ id: 'degree-cert' });
+
+      await expect(
+        service.issueDegreeCertificateIfCompleted('u1', 'degree-1'),
+      ).resolves.toEqual({ id: 'degree-cert' });
+      expect(mockNotificationService.create).toHaveBeenCalledTimes(1);
+
+      mockPrisma.certificate.findFirst.mockResolvedValue({ id: 'degree-cert' });
+      await service.issueDegreeCertificateIfCompleted('u1', 'degree-1');
+      expect(mockCertificatesService.issueCertificate).toHaveBeenCalledTimes(1);
+      expect(mockNotificationService.create).toHaveBeenCalledTimes(1);
     });
 
     it('wasAlreadyCompleted 存在但 status≠completed → 当首次处理, 发积分', async () => {

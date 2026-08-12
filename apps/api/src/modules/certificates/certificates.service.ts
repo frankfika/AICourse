@@ -122,10 +122,11 @@ export class CertificatesService {
   }
 
   /**
-   * 业务侧触发签发。course 完成后,degree 报名后, hackathon 评审后调用。
+   * 业务侧触发签发。course / degree 完成后、hackathon 评审后调用。
    * serial 格式: OCSG-{YEAR}-{TYPE_UPPER}-{0001..N} (按 type + year 顺序递增)
    *
-   * 返回已签发的 certificate。若该 user + ref + type 已存在,直接返回(幂等)。
+   * 返回已签发的 certificate。若该 user + ref + type 已有有效证书,直接返回(幂等)。
+   * 已撤销证书只保留审计含义，不得阻止用户在重新满足条件后获得新证书。
    */
   async issueCertificate(input: IssueCertificateDto) {
     // 幂等: 同一 user + type + refId 不重复发
@@ -134,6 +135,7 @@ export class CertificatesService {
         userId: input.userId,
         type: input.type,
         refId: input.refId,
+        revokedAt: null,
       },
     });
     if (existing) return existing;

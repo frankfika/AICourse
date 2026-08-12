@@ -58,6 +58,21 @@ const sizeClass: Record<ButtonSize, string> = {
   lg: 'h-12 px-6 text-base',
 };
 
+export function buttonClassName({
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  className,
+}: Pick<ButtonProps, 'variant' | 'size' | 'fullWidth' | 'className'> = {}) {
+  return cn(
+    baseClass,
+    variantClass[variant],
+    sizeClass[size],
+    fullWidth && 'w-full',
+    className,
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = 'primary',
@@ -82,13 +97,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={isDisabled}
       aria-busy={isLoading || undefined}
-      className={cn(
-        baseClass,
-        variantClass[variant],
-        sizeClass[size],
-        fullWidth && 'w-full',
-        className,
-      )}
+      className={buttonClassName({ variant, size, fullWidth, className })}
       {...rest}
     >
       {isLoading ? (

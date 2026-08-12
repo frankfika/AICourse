@@ -16,9 +16,10 @@
  *     {content}
  *   </Drawer>
  */
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/cn';
+import { useDialogFocus } from './useDialogFocus';
 
 interface DrawerProps {
   open: boolean;
@@ -41,17 +42,16 @@ export function Drawer({
   width = 480,
   className,
 }: DrawerProps) {
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  useDialogFocus(drawerRef, { open, onClose });
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
     // 禁止 body 滚动
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
@@ -59,12 +59,7 @@ export function Drawer({
   if (!open) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? 'drawer-title' : undefined}
-      className="fixed inset-0 z-[150] flex justify-end"
-    >
+    <div className="fixed inset-0 z-[150] flex justify-end">
       {/* 遮罩 */}
       <button
         type="button"
@@ -73,6 +68,12 @@ export function Drawer({
         className="flex-1 bg-neutral-900/50 dark:bg-neutral-950/70 backdrop-blur-sm animate-in fade-in"
       />
       <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : '侧边面板'}
+        tabIndex={-1}
         className={cn(
           'relative bg-neutral-0 dark:bg-neutral-100 border-l border-neutral-200 shadow-2xl',
           'flex flex-col h-full overflow-hidden',
@@ -83,11 +84,12 @@ export function Drawer({
       >
         {(title || actions) && (
           <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-neutral-200">
-            <div id="drawer-title" className="flex-1 min-w-0 text-base font-bold truncate">
+            <div id={titleId} className="flex-1 min-w-0 text-base font-bold truncate">
               {title}
             </div>
             {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
             <button
+              data-autofocus
               type="button"
               onClick={onClose}
               aria-label="关闭"

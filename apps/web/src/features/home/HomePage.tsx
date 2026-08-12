@@ -40,10 +40,11 @@ import api from '../../lib/api';
 import { instructorsApi } from '../../lib/instructorsApi';
 import { hackathonsApi } from '../../lib/hackathonsApi';
 import { useAuthStore } from '../../stores/authStore';
-import { Button } from '../../components/ui/Button';
+import { buttonClassName } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { QueryErrorState } from '../../components/QueryErrorState';
 import { useSiteSettings, usePageSettings, useI18n, pickSite, pickPage } from '../../lib/cms';
 import { useCollapsibleHero } from '../../hooks/useCollapsibleHero';
 import { cn } from '../../lib/cn';
@@ -63,6 +64,8 @@ interface Course {
   costType: 'free' | 'paid' | 'charity';
   price: number;
   tags: string;
+  rating: number;
+  reviewCount: number;
 }
 
 interface Degree {
@@ -199,10 +202,10 @@ function getCourseCoverBg(tags: string | undefined): string {
 // 4 段:热门课程
 // =============================================================
 function CoursesSection() {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['home', 'courses'],
     queryFn: async () => {
-      const { data: d } = await api.get<Course[]>('/api/v1/courses');
+      const { data: d } = await api.get<Course[]>('/api/v1/courses?sort=popular');
       return d;
     },
     retry: 1,
@@ -248,14 +251,16 @@ function CoursesSection() {
               </Card>
             ))}
           </div>
+        ) : isError ? (
+          <QueryErrorState error={error} onRetry={() => void refetch()} />
         ) : courses.length === 0 ? (
           <EmptyState
             icon={<BookOpen className="w-6 h-6" />}
             title={t('course.empty.title', '暂无课程')}
             description={t('course.empty.desc', '课程正在准备中,稍后再来看看吧。')}
             action={
-              <Link to="/courses">
-                <Button variant="primary" size="md">{t('course.card.browse_all', '浏览全部课程')}</Button>
+              <Link to="/courses" className={buttonClassName({ variant: 'primary', size: 'md' })}>
+                {t('course.card.browse_all', '浏览全部课程')}
               </Link>
             }
           />
@@ -299,10 +304,14 @@ function CoursesSection() {
                           {course.duration}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 text-warning-500">
-                        <Star className="w-3.5 h-3.5 fill-current" />
-                        <span className="font-mono">4.8</span>
-                      </div>
+                      {course.reviewCount > 0 ? (
+                        <div className="flex items-center gap-1 text-warning-500" title={`${course.reviewCount} 条评价`}>
+                          <Star className="w-3.5 h-3.5 fill-current" />
+                          <span className="font-mono">{course.rating.toFixed(1)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-neutral-500">暂无评分</span>
+                      )}
                     </div>
                     <div className="mt-3 flex items-center justify-between">
                       {course.costType === 'free' ? (
@@ -322,11 +331,6 @@ function CoursesSection() {
                 </Link>
               ))}
             </div>
-            {isError && (
-              <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
-                {t('common.error.course_load', '课程数据加载失败')}{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
-              </p>
-            )}
           </>
         )}
       </div>
@@ -338,7 +342,7 @@ function CoursesSection() {
 // 5 段:学位路径
 // =============================================================
 function DegreesSection() {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['home', 'degrees'],
     queryFn: async () => {
       const { data: d } = await api.get<Degree[]>('/api/v1/degrees');
@@ -386,48 +390,38 @@ function DegreesSection() {
               </Card>
             ))}
           </div>
+        ) : isError ? (
+          <QueryErrorState error={error} onRetry={() => void refetch()} />
         ) : degrees.length === 0 ? (
           <EmptyState
             icon={<GraduationCap className="w-6 h-6" />}
             title={t('degree.empty.title', '暂无学位')}
             description={t('degree.empty.desc', '学位路径正在准备中。')}
             action={
-              <Link to="/degrees">
-                <Button variant="primary" size="md">{t('degree.empty.cta', '了解学位')}</Button>
+              <Link to="/degrees" className={buttonClassName({ variant: 'primary', size: 'md' })}>
+                {t('degree.empty.cta', '了解学位')}
               </Link>
             }
           />
         ) : (
           <div className="grid md:grid-cols-3 gap-6">
             {degrees.slice(0, 3).map((degree, i) => {
-              const isHot = i === 1; // 中间一张为热门
               return (
                 <Link
                   key={degree.id}
                   to={`/degrees/${degree.id}`}
-                  className={`block p-6 transition ${
-                    isHot
-                      ? 'border-2 border-[#171717] bg-[#EEEDE9]'
-                      : 'border border-[#171717] hover:bg-[#EEEDE9]'
-                  }`}
+                  className="block border border-[#171717] p-6 transition hover:bg-[#EEEDE9]"
                 >
                   <div className="flex items-center justify-between">
                     <div
                       className={`w-12 h-12 flex items-center justify-center text-2xl font-bold font-mono ${
-                        isHot
-                          ? 'bg-xp-500 text-white'
-                          : i === 2
+                        i === 2
                           ? 'bg-cert-100 text-cert-500'
                           : 'bg-[#EEEDE9] text-[#171717]'
                       }`}
                     >
                       {String(i + 1).padStart(2, '0')}
                     </div>
-                    {isHot && (
-                      <span className="text-xs px-2 py-0.5 bg-[#171717] text-white font-medium">
-                        最热门
-                      </span>
-                    )}
                   </div>
                   <h3 className="mt-4 text-xl font-semibold text-[#171717]">
                     {degree.title}
@@ -438,7 +432,7 @@ function DegreesSection() {
                       <li key={c.id} className="flex items-center gap-2 text-[#171717]">
                         <span
                           className={`w-1.5 h-1.5 ${
-                            isHot ? 'bg-[#171717]' : i === 2 ? 'bg-cert-500' : 'bg-[#171717]'
+                            i === 2 ? 'bg-cert-500' : 'bg-[#171717]'
                           }`}
                         />
                         {c.title}
@@ -462,11 +456,6 @@ function DegreesSection() {
               );
             })}
           </div>
-        )}
-        {isError && (
-          <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
-            {t('common.error.data_load', '数据加载失败')}{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
-          </p>
         )}
       </div>
     </section>
@@ -524,13 +513,13 @@ function HackathonCard({ h }: { h: Hackathon }) {
 }
 
 function HackathonsSection() {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['home', 'hackathons'],
     queryFn: async () => {
       // 取进行中 + 即将开始各 1-2 个
       const [active, upcoming] = await Promise.all([
-        hackathonsApi.getAll({ status: 'active' }).catch(() => []),
-        hackathonsApi.getAll({ status: 'upcoming' }).catch(() => []),
+        hackathonsApi.getAll({ status: 'active' }),
+        hackathonsApi.getAll({ status: 'upcoming' }),
       ]);
       return [...active, ...upcoming].slice(0, 3) as Hackathon[];
     },
@@ -584,6 +573,8 @@ function HackathonsSection() {
               <Skeleton variant="rectangle" className="h-32 w-full" />
             </div>
           </div>
+        ) : isError ? (
+          <QueryErrorState error={error} onRetry={() => void refetch()} />
         ) : hackathons.length === 0 ? (
           <EmptyState
             icon={<Trophy className="w-6 h-6" />}
@@ -639,11 +630,6 @@ function HackathonsSection() {
               )}
             </div>
           </div>
-        )}
-        {isError && (
-          <p className="mt-4 text-xs text-warning-500 text-center" aria-live="polite">
-            {t('common.error.data_load', '数据加载失败')}{(error as Error | undefined)?.message ? `: ${ (error as Error).message }` : ''}
-          </p>
         )}
       </div>
     </section>
@@ -965,8 +951,8 @@ function HeroPreviewCard() {
       <Card variant="elevated" padding="md" className="relative">
         <div className="text-center py-6">
           <div className="text-sm text-[#666666] mb-3">还没有选课,先去逛逛吧</div>
-          <Link to="/courses">
-            <Button variant="primary" size="sm">浏览课程</Button>
+          <Link to="/courses" className={buttonClassName({ variant: 'primary', size: 'sm' })}>
+            浏览课程
           </Link>
         </div>
       </Card>
@@ -1098,15 +1084,13 @@ export function HomePage() {
                 {subheadline}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link to="/courses">
-                  <Button variant="primary" size="lg" leftIcon={<Sparkles className="w-5 h-5" />}>
-                    {ctaPrimary}
-                  </Button>
+                <Link to="/courses" className={buttonClassName({ variant: 'primary', size: 'lg' })}>
+                  <Sparkles className="w-5 h-5" aria-hidden="true" />
+                  <span>{ctaPrimary}</span>
                 </Link>
-                <Link to="/degrees">
-                  <Button variant="secondary" size="lg" rightIcon={<ArrowUpRight className="w-5 h-5" />}>
-                    {ctaSecondary}
-                  </Button>
+                <Link to="/degrees" className={buttonClassName({ variant: 'secondary', size: 'lg' })}>
+                  <span>{ctaSecondary}</span>
+                  <ArrowUpRight className="w-5 h-5" aria-hidden="true" />
                 </Link>
               </div>
               <div className="mt-10 md:mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 max-w-xl">

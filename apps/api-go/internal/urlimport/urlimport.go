@@ -6,15 +6,12 @@
 // Phase 2 T22.1: replaces the T22 stub with real metadata extraction
 // from YouTube oEmbed + the Bilibili view API, and persists the
 // extracted title / author / thumbnail / duration / raw JSON onto the
-// url_imports row. The Gemini course-draft step is opt-in via the
-// GEMINI_API_KEY env var; if unset we skip the AI step and mark the
-// task as 'imported' directly.
+// url_imports row. Course creation is not implemented in the experimental Go
+// API, so successful metadata extraction stops at 'fetched'.
 //
 // Status state machine:
 //
 //	pending   → fetched    metadata extracted from upstream
-//	fetched   → imported   (optional) Gemini draft succeeded
-//	fetched   → failed     (optional) Gemini draft errored
 //	pending   → failed     upstream metadata fetch errored
 //
 // Routes (admin-only, both rate-limited at gateway):
@@ -37,7 +34,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -345,31 +341,6 @@ func truncate(s string, max int) string {
 	return s[:max]
 }
 
-// ============ Gemini stub (T22.1) ============
-//
-// The optional Gemini step asks the model to draft a course outline
-// from the video title+description. We ship a no-op stub for T22.1:
-// if GEMINI_API_KEY is unset, DraftCourseOutline returns "" and nil.
-// Real Gemini integration is intentionally out of scope for T22.1
-// (a future T22.2 / T21.1 follow-up will wire the actual API call).
-//
-// To swap in a real impl, override DraftCourseOutline from main.go or
-// a test (see the orders.SetRefundNotifier pattern).
-
-// DraftCourseOutline is the package-level hook. Default is a no-op
-// unless GEMINI_API_KEY is set, in which case it returns a short
-// placeholder ("Course: <title>") and nil — enough for the rest of
-// the pipeline to mark the task as 'imported'.
-var DraftCourseOutline = func(ctx context.Context, title, description string) (string, error) {
-	if os.Getenv("GEMINI_API_KEY") == "" {
-		return "", nil
-	}
-	// Placeholder outline — the real Gemini call will land in a
-	// follow-up. Returning a non-empty string flips the task to
-	// 'imported' so the e2e path can be exercised end-to-end.
-	return fmt.Sprintf("Course outline drafted from: %s", truncate(title, 80)), nil
-}
-
 // ============ Repo + service ============
 
 // ErrNotFound is returned when a sqlc query yields sql.ErrNoRows.
@@ -469,7 +440,7 @@ func toTaskDTO(in db.UrlImport) TaskDTO {
 		URL:       in.Url,
 		Platform:  string(in.Platform),
 		Status:    string(in.Status),
-		Note:      "T22.1 real impl, Gemini optional",
+		Note:      "T22.1 metadata extraction only; course creation unavailable",
 		CreatedAt: in.CreatedAt.UTC().Format("2006-01-02T15:04:05.000Z"),
 		UpdatedAt: in.UpdatedAt.UTC().Format("2006-01-02T15:04:05.000Z"),
 	}
@@ -516,9 +487,8 @@ func NewService(repo *Repo, log *zap.Logger) *Service {
 
 // ImportSingle handles a single-URL request. T22.1: after persisting
 // a 'pending' row, we synchronously fetch the metadata from the
-// upstream API, persist the extracted columns, then attempt the
-// (optional) Gemini step. The 202 response shape is unchanged from
-// T22 — only the persisted row gets richer.
+// upstream API and persist the extracted columns. The task remains fetched
+// until a future implementation actually creates a course.
 func (s *Service) ImportSingle(ctx context.Context, requestedBy, rawURL string) (TaskDTO, error) {
 	parsed, err := ParseVideoURL(rawURL)
 	if err != nil {
@@ -567,24 +537,6 @@ func (s *Service) ImportSingle(ctx context.Context, requestedBy, rawURL string) 
 			zap.String("taskId", task.ID), zap.Error(uerr))
 	}
 
-	// Optional Gemini step. DraftCourseOutline is a no-op unless
-	// GEMINI_API_KEY is set; the returned outline (if any) just feeds
-	// downstream log lines in T22.1 — actual course creation is
-	// future work.
-	if _, derr := DraftCourseOutline(ctx, meta.Title, meta.Description); derr != nil {
-		s.log.Warn("gemini outline draft failed",
-			zap.String("taskId", task.ID), zap.Error(derr))
-		if uerr := s.repo.UpdateFetched(ctx, task.ID, db.UrlImportsStatusFailed, meta, derr.Error(), fetchedAt); uerr != nil {
-			s.log.Warn("url-import update failed-status (gemini) failed",
-				zap.String("taskId", task.ID), zap.Error(uerr))
-		}
-	} else {
-		if uerr := s.repo.UpdateFetched(ctx, task.ID, db.UrlImportsStatusImported, meta, "", fetchedAt); uerr != nil {
-			s.log.Warn("url-import update imported failed",
-				zap.String("taskId", task.ID), zap.Error(uerr))
-		}
-	}
-
 	out, err := s.repo.GetByID(ctx, task.ID)
 	if err != nil {
 		return TaskDTO{}, errs.Internal("reload task", err)
@@ -593,9 +545,8 @@ func (s *Service) ImportSingle(ctx context.Context, requestedBy, rawURL string) 
 }
 
 // fetchMetadata dispatches to the platform-specific fetcher. The
-// helpers above are the same logic; this thin wrapper exists so
-// tests can stub it via a package-level var if they want to
-// short-circuit the network.
+// helpers above are the same logic; this thin wrapper keeps platform dispatch
+// in one place.
 func (s *Service) fetchMetadata(ctx context.Context, parsed ParsedVideoURL) (ExtractedMeta, error) {
 	switch parsed.Platform {
 	case PlatformYouTube:
@@ -630,7 +581,7 @@ type BatchSummary struct {
 const MaxBatchSize = 20
 
 // ImportBatch loops over raw URLs. Each accepted URL is persisted as
-// a 'pending' row then promoted through the same fetch+draft flow
+// a 'pending' row then promoted through the same metadata-fetch flow
 // as ImportSingle. Bad URLs / fetch failures surface as failed
 // results without aborting the rest of the batch.
 func (s *Service) ImportBatch(ctx context.Context, requestedBy string, rawURLs []string) (BatchSummary, error) {
@@ -677,22 +628,32 @@ func (s *Service) ImportBatch(ctx context.Context, requestedBy string, rawURLs [
 			continue
 		}
 
-		// Per-URL fetch + Gemini. Failures mark the row failed but
-		// don't drop the task from the batch summary; the row is
-		// still "created" (it just couldn't be auto-imported).
+		// Per-URL metadata fetch. Failures mark the persisted task failed;
+		// successful tasks stop at fetched until course creation exists.
 		meta, ferr := s.fetchMetadata(ctx, parsed)
 		if ferr != nil {
 			s.log.Warn("batch url-import metadata fetch failed",
 				zap.String("taskId", task.ID), zap.Error(ferr))
 			_ = s.repo.UpdateFetched(ctx, task.ID, db.UrlImportsStatusFailed, ExtractedMeta{}, ferr.Error(), time.Time{})
-		} else {
-			fetchedAt := time.Now().UTC()
-			_ = s.repo.UpdateFetched(ctx, task.ID, db.UrlImportsStatusFetched, meta, "", fetchedAt)
-			if _, derr := DraftCourseOutline(ctx, meta.Title, meta.Description); derr != nil {
-				_ = s.repo.UpdateFetched(ctx, task.ID, db.UrlImportsStatusFailed, meta, derr.Error(), fetchedAt)
-			} else {
-				_ = s.repo.UpdateFetched(ctx, task.ID, db.UrlImportsStatusImported, meta, "", fetchedAt)
-			}
+			results = append(results, BatchResult{
+				URL:    parsed.CanonicalURL,
+				Status: "failed",
+				TaskID: task.ID,
+				Error:  ferr.Error(),
+			})
+			failed++
+			continue
+		}
+		fetchedAt := time.Now().UTC()
+		if uerr := s.repo.UpdateFetched(ctx, task.ID, db.UrlImportsStatusFetched, meta, "", fetchedAt); uerr != nil {
+			results = append(results, BatchResult{
+				URL:    parsed.CanonicalURL,
+				Status: "failed",
+				TaskID: task.ID,
+				Error:  "metadata persistence failed",
+			})
+			failed++
+			continue
 		}
 
 		results = append(results, BatchResult{

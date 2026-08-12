@@ -167,16 +167,10 @@ describe('LegalPage 通用底层', () => {
 describe('TermsPage 服务条款', () => {
   it('渲染标题 + 核心章节', () => {
     renderWithProviders(<TermsPage />);
-    expect(screen.getByRole('heading', { name: '服务条款', level: 1 })).toBeInTheDocument();
-    // 核心章节 (h2 级别, 不包括 TOC link)
-    expect(screen.getByRole('heading', { name: '协议接受', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '服务说明', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '账户注册与安全', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '付费与订单', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '知识产权', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '禁止行为', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '免责声明', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '争议解决与司法管辖', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '服务与使用说明', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '账户与安全', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '学习、AI 与证书', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '付费与企业服务', level: 2 })).toBeInTheDocument();
   });
 
   it('包含"AI Academy" 主体声明', () => {
@@ -184,22 +178,20 @@ describe('TermsPage 服务条款', () => {
     expect(screen.getAllByText(/AI Academy/).length).toBeGreaterThan(0);
   });
 
-  it('包含退款页内链', () => {
+  it('不承诺尚未实现的在线支付或发票能力', () => {
     renderWithProviders(<TermsPage />);
-    const refundLink = screen.getByRole('link', { name: /退款政策/ });
-    expect(refundLink).toHaveAttribute('href', '/refund');
+    expect(document.body.textContent).toContain('未开放在线支付、在线退款和电子发票申请');
+    expect(document.body.textContent).not.toContain('支持支付宝、微信支付');
   });
 });
 
 describe('PrivacyPage 隐私政策', () => {
   it('渲染标题 + 核心章节', () => {
     renderWithProviders(<PrivacyPage />);
-    expect(screen.getByRole('heading', { name: '隐私政策', level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '我们收集哪些信息', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '我们如何使用信息', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '我们如何共享信息', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '您的权利', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '未成年人保护', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '隐私与数据使用说明', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '系统实际处理的信息', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'AI 服务', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '浏览器存储', level: 2 })).toBeInTheDocument();
   });
 
   it('隐私联系入口走站内联系表单', () => {
@@ -208,66 +200,59 @@ describe('PrivacyPage 隐私政策', () => {
     expect(link).toHaveAttribute('href', '/enterprise#inquiry');
   });
 
-  it('提到公开证书 /verify 接口', () => {
+  it('说明公开证书验证的分享边界', () => {
     renderWithProviders(<PrivacyPage />);
-    // /verify/:serial 出现在内容中
-    expect(screen.getAllByText(/\/verify/).length).toBeGreaterThan(0);
+    expect(document.body.textContent).toContain('任何获得该序列号的人');
   });
 
-  it('包含 cookie 政策内链', () => {
+  it('不虚构固定云区域或自动删除周期', () => {
     renderWithProviders(<PrivacyPage />);
-    const cookiesLink = screen.getByRole('link', { name: /Cookie 政策/ });
-    expect(cookiesLink).toHaveAttribute('href', '/cookies');
+    expect(document.body.textContent).not.toContain('阿里云 / 腾讯云华东节点');
+    expect(document.body.textContent).not.toContain('90 天,之后自动');
   });
 });
 
 describe('CookiesPage Cookie 政策', () => {
   it('渲染标题 + 核心章节', () => {
     renderWithProviders(<CookiesPage />);
-    expect(screen.getByRole('heading', { name: 'Cookie 政策', level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '什么是 Cookie', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '我们使用的 Cookie 类型', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '具体 Cookie 清单', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '如何管理 Cookie', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cookie 与本地存储说明', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '必要 Cookie', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'SessionStorage', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'LocalStorage', level: 2 })).toBeInTheDocument();
   });
 
-  it('Cookie 清单表格有 auth-user / refresh-token / theme 3 个关键 cookie', () => {
+  it('列出代码实际使用的存储键且不再声称 auth-user', () => {
     renderWithProviders(<CookiesPage />);
-    expect(screen.getAllByText('auth-user').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('refresh-token').length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toContain('auth-user');
+    expect(screen.getAllByText('refresh_token').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('aicourse.accessToken').length).toBeGreaterThan(0);
     expect(screen.getAllByText('theme').length).toBeGreaterThan(0);
   });
 
   it('明确说明不卖数据 / 不做营销 Cookie', () => {
     renderWithProviders(<CookiesPage />);
-    // 原文是"我们不会向第三方广告商共享您的数据"
-    expect(document.body.textContent).toMatch(/不会向第三方广告商共享您的数据/);
-    // 营销未启用
-    expect(document.body.textContent).toMatch(/营销.*未启用/);
+    expect(document.body.textContent).toMatch(/没有营销 Cookie/);
   });
 });
 
 describe('RefundPage 退款政策', () => {
   it('渲染标题 + 核心章节', () => {
     renderWithProviders(<RefundPage />);
-    expect(screen.getByRole('heading', { name: '退款政策', level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '可申请退款的情形', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '不可申请退款的情形', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '退款流程', level: 2 })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '特殊场景', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '付款与退款说明', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '当前支付状态', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '企业采购与退款', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '测试数据', level: 2 })).toBeInTheDocument();
   });
 
-  it('24 小时试听窗口 (核心规则)', () => {
+  it('不承诺不存在的 24 小时在线退款流程', () => {
     renderWithProviders(<RefundPage />);
-    expect(screen.getAllByText(/24 小时/).length).toBeGreaterThan(0);
-    // 进度 ≤ 20% 关键规则, 出现在多个地方, 用 getAllByText
-    expect(screen.getAllByText(/20%/)).toHaveLength(3);
+    expect(document.body.textContent).toContain('未开放在线支付和在线退款');
+    expect(document.body.textContent).not.toContain('24 小时试听窗口');
   });
 
-  it('包含服务条款内链 (争议解决引用)', () => {
+  it('企业采购规则以书面合同为准', () => {
     renderWithProviders(<RefundPage />);
-    const termsLink = screen.getByRole('link', { name: /服务条款/ });
-    expect(termsLink).toHaveAttribute('href', '/terms');
+    expect(document.body.textContent).toContain('双方签署的合同或订单为唯一依据');
   });
 });
 
@@ -290,6 +275,6 @@ describe('router 集成', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     );
-    expect(screen.getByRole('heading', { name: '服务条款' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '服务与使用说明' })).toBeInTheDocument();
   });
 });
