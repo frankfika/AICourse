@@ -150,7 +150,7 @@ Copy `.env.example` to `.env` for local development. Important groups include:
 | `AUTH_PROVIDERS` | enabled authentication provider list |
 | `AUTH_OAUTH_*` | OAuth client and callback configuration |
 | `PAYMENT_*` | explicit development-only payment capability switches |
-| `CORS_ORIGINS` | allowed production web origins |
+| `CORS_ORIGIN` | comma-separated allowed production web origins |
 
 Authentication examples:
 

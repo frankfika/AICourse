@@ -55,6 +55,7 @@
 - Isolated high-navigation browser tests from shared local rate-limit buckets and allowed for Vite cold compilation under parallel E2E load.
 - Added `check:go` and `check:full` so the documented full gate includes browser E2E, the real dependency flow, and Go verification.
 - Fixed GitHub Actions MinIO startup by launching the server with its required `server /data` command before API integration tests.
+- Allowed the live browser E2E origin explicitly in the CI API CORS policy.
 - Reworked the root README to use English by default with a complete Chinese edition in `README.zh-CN.md`.
 
 ### Verification
